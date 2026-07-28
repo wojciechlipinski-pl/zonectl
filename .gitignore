@@ -22,3 +22,5 @@ __pycache__/
 build/
 dist/
 .venv/
+*.bak
+*.bak-*
