@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from elkman_dns.core.zone_model import ChangeKind, ZoneChange, ZoneModel
 from elkman_dns.ui.dialogs import CursesDialogs
+from elkman_dns.ui.records.renderer import RecordRenderer
 
 import curses
 import queue
@@ -393,69 +394,35 @@ class CursesApp:
         while True:
             visible_records = ordered_records()
 
-            win.erase()
             height, width = win.getmaxyx()
+            visible = RecordRenderer.visible_rows(height)
 
-            def put(
-                row: int,
-                column: int,
-                text: str,
-                attr: int = curses.A_NORMAL,
-            ) -> None:
-                if row < 0 or row >= height:
-                    return
+            if visible_records:
+                selected = min(selected, len(visible_records) - 1)
 
-                if column < 0 or column >= width:
-                    return
+                if selected < offset:
+                    offset = selected
 
-                available = max(0, width - column - 1)
+                if selected >= offset + visible:
+                    offset = selected - visible + 1
 
-                if available <= 0:
-                    return
-
-                try:
-                    win.addnstr(
-                        row,
-                        column,
-                        str(text),
-                        available,
-                        attr,
-                    )
-                except curses.error:
-                    pass
-
-            title = f" Rekordy DNS: {zone.name} "
-
-            put(
-                0,
-                0,
-                title.ljust(width),
-                curses.A_REVERSE | curses.A_BOLD,
+            RecordRenderer.draw(
+                win,
+                zone_name=zone.name,
+                records=visible_records,
+                total_count=len(model.records),
+                selected=selected,
+                offset=offset,
+                sort_name=sort_names[sort_mode],
+                change_count=model.change_count,
+                search_query=search_query,
+                error=error,
+                error_attr=self._color(Health.FAIL),
             )
 
+            key = win.getch()
+
             if error:
-                put(
-                    3,
-                    2,
-                    "Nie udało się odczytać rekordów:",
-                    curses.A_BOLD,
-                )
-                put(
-                    5,
-                    2,
-                    error,
-                    self._color(Health.FAIL),
-                )
-                put(
-                    height - 2,
-                    0,
-                    " q/Esc/Backspace powrót ".ljust(width),
-                    curses.A_REVERSE,
-                )
-
-                win.refresh()
-                key = win.getch()
-
                 if key in (
                     ord("q"),
                     27,
@@ -466,134 +433,6 @@ class CursesApp:
                     return
 
                 continue
-
-            summary = (
-                f"Rekordy: {len(visible_records)}/{len(model.records)}"
-                f"   Sortowanie: {sort_names[sort_mode]}"
-                f"   Zmiany: {model.change_count}"
-            )
-
-            if search_query:
-                summary += f'   Filtr: "{search_query}"'
-
-            put(
-                2,
-                2,
-                summary,
-                curses.A_BOLD,
-            )
-
-            owner_width = max(12, min(28, width // 4))
-            type_width = 7
-            ttl_width = 10
-
-            owner_column = 1
-            type_column = owner_column + owner_width + 1
-            ttl_column = type_column + type_width + 1
-            value_column = ttl_column + ttl_width + 1
-
-            put(4, owner_column, "NAZWA", curses.A_BOLD)
-            put(4, type_column, "TYP", curses.A_BOLD)
-            put(4, ttl_column, "TTL", curses.A_BOLD)
-            put(4, value_column, "WARTOŚĆ", curses.A_BOLD)
-
-            separator = "-" * max(1, width - 2)
-            put(5, 1, separator, curses.A_DIM)
-
-            list_top = 6
-            visible = max(1, height - list_top - 3)
-
-            if visible_records:
-                selected = min(
-                    selected,
-                    len(visible_records) - 1,
-                )
-
-                if selected < offset:
-                    offset = selected
-
-                if selected >= offset + visible:
-                    offset = selected - visible + 1
-
-                for screen_row, record in enumerate(
-                    visible_records[offset:offset + visible],
-                    start=list_top,
-                ):
-                    index = offset + screen_row - list_top
-
-                    attr = (
-                        curses.A_REVERSE
-                        if index == selected
-                        else curses.A_NORMAL
-                    )
-
-                    owner = record.relative_owner(zone.name)
-                    ttl = (
-                        str(record.ttl)
-                        if record.ttl is not None
-                        else "-"
-                    )
-
-                    put(
-                        screen_row,
-                        owner_column,
-                        owner[:owner_width].ljust(owner_width),
-                        attr,
-                    )
-                    put(
-                        screen_row,
-                        type_column,
-                        record.rtype[:type_width].ljust(type_width),
-                        attr,
-                    )
-                    put(
-                        screen_row,
-                        ttl_column,
-                        ttl[:ttl_width].ljust(ttl_width),
-                        attr,
-                    )
-                    put(
-                        screen_row,
-                        value_column,
-                        record.rdata,
-                        attr,
-                    )
-
-            elif search_query:
-                put(
-                    list_top,
-                    2,
-                    f'Brak rekordów pasujących do: "{search_query}"',
-                    curses.A_DIM,
-                )
-
-            else:
-                put(
-                    list_top,
-                    2,
-                    "Brak rekordów do wyświetlenia.",
-                    curses.A_DIM,
-                )
-
-            footer = (
-                " ↑/↓ wybór"
-                "   / szukaj"
-                "   n/N następny/poprzedni"
-                "   c wyczyść"
-                "   s sortuj"
-                "   p zmiany"
-                "   q powrót "
-            )
-
-            put(
-                height - 2,
-                0,
-                footer.ljust(width),
-                curses.A_REVERSE,
-            )
-
-            win.refresh()
-            key = win.getch()
 
             if key in (
                 ord("q"),
@@ -622,6 +461,30 @@ class CursesApp:
                 )
                 selected = 0
                 offset = 0
+                continue
+
+            if key in (ord("e"), ord("E")):
+                if not visible_records:
+                    continue
+
+                current_record = visible_records[selected]
+
+                try:
+                    model_index = model.records.index(current_record)
+                except ValueError:
+                    continue
+
+                edited_record = self._edit_record_dialog(
+                    win,
+                    current_record,
+                    zone,
+                )
+
+                if edited_record is not None:
+                    model.replace(model_index, edited_record)
+                    selected = 0
+                    offset = 0
+
                 continue
 
             if key in (ord("c"), ord("C")):
@@ -674,6 +537,451 @@ class CursesApp:
 
             elif key == curses.KEY_END:
                 selected = len(visible_records) - 1
+
+
+
+
+    def _edit_line(
+        self,
+        win: curses.window,
+        row: int,
+        column: int,
+        initial_value: str,
+        max_width: int,
+    ) -> str | None:
+        """Prosty edytor pojedynczej linii dla formularzy curses."""
+        value = list(str(initial_value))
+        cursor = len(value)
+        offset = 0
+
+        try:
+            curses.curs_set(1)
+        except curses.error:
+            pass
+
+        def adjust_offset() -> None:
+            nonlocal offset
+
+            visible_width = max(1, max_width)
+
+            if cursor < offset:
+                offset = cursor
+            elif cursor >= offset + visible_width:
+                offset = cursor - visible_width + 1
+
+            offset = max(0, offset)
+
+        try:
+            while True:
+                adjust_offset()
+
+                visible_width = max(1, max_width)
+                visible = "".join(
+                    value[offset : offset + visible_width]
+                )
+
+                try:
+                    win.move(row, column)
+                    win.clrtoeol()
+                    win.addnstr(
+                        row,
+                        column,
+                        visible.ljust(visible_width),
+                        visible_width,
+                        curses.A_REVERSE,
+                    )
+
+                    cursor_column = column + cursor - offset
+                    cursor_column = min(
+                        column + visible_width - 1,
+                        max(column, cursor_column),
+                    )
+                    win.move(row, cursor_column)
+                except curses.error:
+                    pass
+
+                win.refresh()
+                key = win.getch()
+
+                if key in (10, 13, curses.KEY_ENTER):
+                    return "".join(value)
+
+                if key == 27:
+                    return None
+
+                if key == curses.KEY_LEFT:
+                    cursor = max(0, cursor - 1)
+                    continue
+
+                if key == curses.KEY_RIGHT:
+                    cursor = min(len(value), cursor + 1)
+                    continue
+
+                if key == curses.KEY_HOME:
+                    cursor = 0
+                    continue
+
+                if key == curses.KEY_END:
+                    cursor = len(value)
+                    continue
+
+                if key in (
+                    curses.KEY_BACKSPACE,
+                    8,
+                    127,
+                ):
+                    if cursor > 0:
+                        del value[cursor - 1]
+                        cursor -= 1
+                    continue
+
+                if key == curses.KEY_DC:
+                    if cursor < len(value):
+                        del value[cursor]
+                    continue
+
+                if 32 <= key <= 126:
+                    value.insert(cursor, chr(key))
+                    cursor += 1
+                    continue
+
+                try:
+                    character = chr(key)
+                except (TypeError, ValueError):
+                    continue
+
+                if character.isprintable():
+                    value.insert(cursor, character)
+                    cursor += 1
+        finally:
+            try:
+                curses.curs_set(0)
+            except curses.error:
+                pass
+
+    def _edit_record_dialog(
+        self,
+        win: curses.window,
+        record,
+        zone: Zone,
+    ):
+        """Edytuje rekord w pamięci. Zwraca nowy rekord albo None."""
+        from dataclasses import replace
+
+        fields = [
+            ("Nazwa", record.relative_owner(zone.name)),
+            ("Typ", record.rtype),
+            ("TTL", "" if record.ttl is None else str(record.ttl)),
+            ("Dane", record.rdata),
+        ]
+        values = [value for _, value in fields]
+        active = 0
+        message = ""
+
+        def absolute_owner(value: str) -> str:
+            value = value.strip()
+
+            if value in ("", "@"):
+                return zone.name.rstrip(".") + "."
+
+            if value.endswith("."):
+                return value
+
+            return f"{value}.{zone.name.rstrip('.')}."
+
+        while True:
+            win.erase()
+            height, width = win.getmaxyx()
+
+            def put(
+                row: int,
+                column: int,
+                text: str,
+                attr: int = curses.A_NORMAL,
+            ) -> None:
+                if row < 0 or row >= height:
+                    return
+                if column < 0 or column >= width:
+                    return
+
+                available = max(0, width - column - 1)
+                if available <= 0:
+                    return
+
+                try:
+                    win.addnstr(
+                        row,
+                        column,
+                        str(text),
+                        available,
+                        attr,
+                    )
+                except curses.error:
+                    pass
+
+            put(
+                0,
+                0,
+                f" Edycja rekordu: {zone.name} ".ljust(width),
+                curses.A_REVERSE | curses.A_BOLD,
+            )
+
+            for index, ((label, _), value) in enumerate(
+                zip(fields, values),
+                start=0,
+            ):
+                row = 3 + index * 2
+                attr = (
+                    curses.A_REVERSE
+                    if index == active
+                    else curses.A_NORMAL
+                )
+                put(row, 2, f"{label:<8}: ", curses.A_BOLD)
+                put(row, 13, value or "", attr)
+
+            if message:
+                put(12, 2, message, self._color(Health.FAIL))
+
+            footer = (
+                " ↑/↓ pole"
+                "   Enter edytuj"
+                "   F2 zapisz"
+                "   Esc anuluj "
+            )
+            put(
+                height - 2,
+                0,
+                footer.ljust(width),
+                curses.A_REVERSE,
+            )
+
+            win.refresh()
+            key = win.getch()
+
+            if key in (27, ord("q"), ord("Q")):
+                return None
+
+            if key in (curses.KEY_UP, ord("k")):
+                active = max(0, active - 1)
+                continue
+
+            if key in (curses.KEY_DOWN, ord("j"), 9):
+                active = min(len(values) - 1, active + 1)
+                continue
+
+            if key in (10, 13, curses.KEY_ENTER):
+                row = 3 + active * 2
+
+                edited_value = self._edit_line(
+                    win=win,
+                    row=row,
+                    column=13,
+                    initial_value=values[active],
+                    max_width=max(1, width - 14),
+                )
+
+                if edited_value is not None:
+                    values[active] = edited_value
+                    message = ""
+
+                continue
+
+            if key == curses.KEY_F2:
+                owner_value = values[0].strip()
+                rtype_value = values[1].strip().upper()
+                ttl_value = values[2].strip()
+                rdata_value = values[3].strip()
+
+                if not rtype_value:
+                    message = "Typ rekordu nie może być pusty."
+                    continue
+
+                if not rdata_value:
+                    message = "Dane rekordu nie mogą być puste."
+                    continue
+
+                try:
+                    ttl = None if not ttl_value else int(ttl_value)
+                except ValueError:
+                    message = "TTL musi być liczbą całkowitą."
+                    continue
+
+                if ttl is not None and ttl < 0:
+                    message = "TTL nie może być ujemny."
+                    continue
+
+                try:
+                    return replace(
+                        record,
+                        owner=absolute_owner(owner_value),
+                        rtype=rtype_value,
+                        ttl=ttl,
+                        rdata=rdata_value,
+                    )
+                except TypeError as exc:
+                    message = f"Nie można utworzyć rekordu: {exc}"
+
+    def _pending_changes_view(
+        self,
+        win: curses.window,
+        model: ZoneModel,
+        zone: Zone,
+    ) -> None:
+        """Wyświetla oczekujące zmiany w rekordach strefy."""
+        selected = 0
+        offset = 0
+
+        labels = {
+            ChangeKind.ADD: ("+", "DODANO"),
+            ChangeKind.MODIFY: ("~", "ZMIENIONO"),
+            ChangeKind.DELETE: ("-", "USUNIĘTO"),
+        }
+
+        def record_text(change: ZoneChange) -> str:
+            record = change.record
+            owner = record.relative_owner(zone.name)
+            ttl = str(record.ttl) if record.ttl is not None else "-"
+            return f"{owner:<28} {record.rtype:<7} {ttl:<10} {record.rdata}"
+
+        while True:
+            changes = model.pending_changes
+            win.erase()
+            height, width = win.getmaxyx()
+
+            def put(
+                row: int,
+                column: int,
+                text: str,
+                attr: int = curses.A_NORMAL,
+            ) -> None:
+                if row < 0 or row >= height:
+                    return
+
+                if column < 0 or column >= width:
+                    return
+
+                available = max(0, width - column - 1)
+
+                if available <= 0:
+                    return
+
+                try:
+                    win.addnstr(
+                        row,
+                        column,
+                        str(text),
+                        available,
+                        attr,
+                    )
+                except curses.error:
+                    pass
+
+            title = f" Oczekujące zmiany: {zone.name} "
+            put(
+                0,
+                0,
+                title.ljust(width),
+                curses.A_REVERSE | curses.A_BOLD,
+            )
+
+            put(
+                2,
+                2,
+                f"Liczba zmian: {len(changes)}",
+                curses.A_BOLD,
+            )
+
+            list_top = 5
+            visible = max(1, height - list_top - 3)
+
+            if changes:
+                selected = min(selected, len(changes) - 1)
+
+                if selected < offset:
+                    offset = selected
+
+                if selected >= offset + visible:
+                    offset = selected - visible + 1
+
+                put(
+                    4,
+                    1,
+                    "  STATUS       NAZWA                        TYP     TTL        WARTOŚĆ",
+                    curses.A_BOLD,
+                )
+
+                for screen_row, change in enumerate(
+                    changes[offset:offset + visible],
+                    start=list_top,
+                ):
+                    index = offset + screen_row - list_top
+                    symbol, label = labels[change.kind]
+
+                    attr = (
+                        curses.A_REVERSE
+                        if index == selected
+                        else curses.A_NORMAL
+                    )
+
+                    line = f"{symbol} {label:<11} {record_text(change)}"
+                    put(screen_row, 1, line, attr)
+            else:
+                put(
+                    list_top,
+                    2,
+                    "Brak oczekujących zmian.",
+                    curses.A_DIM,
+                )
+
+            footer = (
+                " ↑/↓ wybór"
+                "   PgUp/PgDn przewijanie"
+                "   Home/End"
+                "   q powrót "
+            )
+            put(
+                height - 2,
+                0,
+                footer.ljust(width),
+                curses.A_REVERSE,
+            )
+
+            win.refresh()
+            key = win.getch()
+
+            if key in (
+                ord("q"),
+                ord("Q"),
+                27,
+                curses.KEY_BACKSPACE,
+                127,
+                8,
+            ):
+                return
+
+            if not changes:
+                continue
+
+            if key in (
+                curses.KEY_DOWN,
+                ord("j"),
+                ord("n"),
+            ):
+                selected = min(selected + 1, len(changes) - 1)
+            elif key in (
+                curses.KEY_UP,
+                ord("k"),
+                ord("N"),
+            ):
+                selected = max(selected - 1, 0)
+            elif key == curses.KEY_NPAGE:
+                selected = min(selected + visible, len(changes) - 1)
+            elif key == curses.KEY_PPAGE:
+                selected = max(selected - visible, 0)
+            elif key == curses.KEY_HOME:
+                selected = 0
+            elif key == curses.KEY_END:
+                selected = len(changes) - 1
 
     def _domain_view(self, win: curses.window, zone: Zone) -> None:
         """
