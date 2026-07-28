@@ -34,6 +34,7 @@ class TransactionResult:
     transaction_id: str
     zone: str
     committed: bool
+    status: str = "UNKNOWN"
     rolled_back: bool = False
     backup: str | None = None
     steps: list[StepResult] = field(default_factory=list)
@@ -332,6 +333,7 @@ class TransactionEngine:
         path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
 
     def _finish(self, result: TransactionResult, outcome: str, **extra) -> TransactionResult:
+        result.status = outcome
         self._save_manifest(result, {"outcome": outcome, **extra})
         self.audit.append(result.transaction_id, result.zone, "transaction-finish", outcome, backup=result.backup, rolled_back=result.rolled_back, **extra)
         return result
