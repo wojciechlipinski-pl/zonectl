@@ -238,36 +238,102 @@ class CursesApp:
         elif row.zone:
             self._domain_view(win, row.zone)
 
-    def _search(self, win: curses.window) -> None:
-        height, width = win.getmaxyx()
-        prompt = "Szukaj domeny lub grupy (puste = wszystko): "
-        curses.echo()
-        curses.curs_set(1)
-        win.move(height - 1, 0)
-        win.clrtoeol()
-        win.addnstr(height - 1, 0, prompt, max(0, width - 1))
+    def _search(self, stdscr: curses.window) -> None:
+        """Wyszukuje domeny na głównej liście."""
+        height, width = stdscr.getmaxyx()
+        prompt = " Szukaj domeny: "
+        row = max(0, height - 1)
+
         try:
-            raw = win.getstr(height - 1, min(len(prompt), width - 1), max(1, width - len(prompt) - 1))
-            self.query = raw.decode("utf-8", errors="ignore").strip()
+            stdscr.nodelay(False)
+            stdscr.timeout(-1)
+        except curses.error:
+            pass
+
+        try:
+            curses.curs_set(1)
+        except curses.error:
+            pass
+
+        curses.echo()
+
+        try:
+            stdscr.move(row, 0)
+            stdscr.clrtoeol()
+
+            stdscr.addnstr(
+                row,
+                0,
+                prompt,
+                max(0, width - 1),
+                curses.A_REVERSE,
+            )
+
+            stdscr.refresh()
+
+            available = max(1, width - len(prompt) - 2)
+
+            raw = stdscr.getstr(
+                row,
+                len(prompt),
+                available,
+            )
+
+            query = raw.decode(
+                "utf-8",
+                errors="replace",
+            ).strip()
+
+            self.query = query
+            self._rebuild_rows()
+
+            if query:
+                for index, row_item in enumerate(self.rows):
+                    zone = getattr(row_item, "zone", None)
+
+                    if zone is None:
+                        continue
+
+                    zone_name = getattr(zone, "name", "")
+
+                    if query.casefold() in zone_name.casefold():
+                        self.selected = index
+                        break
+                else:
+                    self.selected = 0
+
+            else:
+                self.selected = 0
+
+        except curses.error:
+            pass
+
         finally:
             curses.noecho()
-            curses.curs_set(0)
-        self.selected = 0
-        self.offset = 0
-        self._rebuild_rows()
 
+            try:
+                curses.curs_set(0)
+            except curses.error:
+                pass
+
+            try:
+                stdscr.nodelay(True)
+            except curses.error:
+                pass
 
     def _records_view(self, win: curses.window, zone: Zone) -> None:
-        """Wyświetla rekordy strefy jako tabelę."""
+        """Wyświetla rekordy strefy jako przeszukiwalną tabelę."""
         records, error = self.bind.parsed_zone_records(zone)
         selected = 0
         offset = 0
         sort_mode = 0
+        search_query = ""
+
         sort_names = ("Nazwa", "Typ", "TTL")
 
         def ordered_records():
             if sort_mode == 1:
-                return sorted(
+                result = sorted(
                     records,
                     key=lambda item: (
                         item.rtype.casefold(),
@@ -276,8 +342,8 @@ class CursesApp:
                     ),
                 )
 
-            if sort_mode == 2:
-                return sorted(
+            elif sort_mode == 2:
+                result = sorted(
                     records,
                     key=lambda item: (
                         item.ttl is None,
@@ -286,14 +352,104 @@ class CursesApp:
                     ),
                 )
 
-            return sorted(
-                records,
-                key=lambda item: (
-                    item.relative_owner(zone.name).casefold(),
-                    item.rtype.casefold(),
-                    item.rdata.casefold(),
-                ),
-            )
+            else:
+                result = sorted(
+                    records,
+                    key=lambda item: (
+                        item.relative_owner(zone.name).casefold(),
+                        item.rtype.casefold(),
+                        item.rdata.casefold(),
+                    ),
+                )
+
+            query = search_query.strip().casefold()
+
+            if not query:
+                return result
+
+            filtered = []
+
+            for record in result:
+                owner = record.relative_owner(zone.name)
+                ttl = "" if record.ttl is None else str(record.ttl)
+
+                searchable = " ".join(
+                    (
+                        owner,
+                        record.owner,
+                        record.rtype,
+                        record.rrclass,
+                        ttl,
+                        record.rdata,
+                        record.raw,
+                    )
+                ).casefold()
+
+                if query in searchable:
+                    filtered.append(record)
+
+            return filtered
+
+        def prompt_search() -> str | None:
+            height, width = win.getmaxyx()
+            prompt = " Szukaj: "
+            row = max(0, height - 2)
+
+            try:
+                win.nodelay(False)
+                win.timeout(-1)
+            except curses.error:
+                pass
+
+            try:
+                curses.curs_set(1)
+            except curses.error:
+                pass
+
+            curses.echo()
+
+            try:
+                win.move(row, 0)
+                win.clrtoeol()
+
+                win.addnstr(
+                    row,
+                    0,
+                    prompt,
+                    max(0, width - 1),
+                    curses.A_REVERSE,
+                )
+
+                win.refresh()
+
+                available = max(1, width - len(prompt) - 2)
+
+                raw = win.getstr(
+                    row,
+                    len(prompt),
+                    available,
+                )
+
+                return raw.decode(
+                    "utf-8",
+                    errors="replace",
+                ).strip()
+
+            except curses.error:
+                return None
+
+            finally:
+                curses.noecho()
+
+                try:
+                    curses.curs_set(0)
+                except curses.error:
+                    pass
+
+                try:
+                    win.nodelay(True)
+                except curses.error:
+                    pass
 
         while True:
             visible_records = ordered_records()
@@ -309,6 +465,7 @@ class CursesApp:
             ) -> None:
                 if row < 0 or row >= height:
                     return
+
                 if column < 0 or column >= width:
                     return
 
@@ -329,6 +486,7 @@ class CursesApp:
                     pass
 
             title = f" Rekordy DNS: {zone.name} "
+
             put(
                 0,
                 0,
@@ -370,13 +528,18 @@ class CursesApp:
 
                 continue
 
+            summary = (
+                f"Rekordy: {len(visible_records)}/{len(records)}"
+                f"   Sortowanie: {sort_names[sort_mode]}"
+            )
+
+            if search_query:
+                summary += f'   Filtr: "{search_query}"'
+
             put(
                 2,
                 2,
-                (
-                    f"Rekordy: {len(visible_records)}"
-                    f"   Sortowanie: {sort_names[sort_mode]}"
-                ),
+                summary,
                 curses.A_BOLD,
             )
 
@@ -401,7 +564,10 @@ class CursesApp:
             visible = max(1, height - list_top - 3)
 
             if visible_records:
-                selected = min(selected, len(visible_records) - 1)
+                selected = min(
+                    selected,
+                    len(visible_records) - 1,
+                )
 
                 if selected < offset:
                     offset = selected
@@ -414,6 +580,7 @@ class CursesApp:
                     start=list_top,
                 ):
                     index = offset + screen_row - list_top
+
                     attr = (
                         curses.A_REVERSE
                         if index == selected
@@ -421,7 +588,11 @@ class CursesApp:
                     )
 
                     owner = record.relative_owner(zone.name)
-                    ttl = str(record.ttl) if record.ttl is not None else "-"
+                    ttl = (
+                        str(record.ttl)
+                        if record.ttl is not None
+                        else "-"
+                    )
 
                     put(
                         screen_row,
@@ -447,6 +618,15 @@ class CursesApp:
                         record.rdata,
                         attr,
                     )
+
+            elif search_query:
+                put(
+                    list_top,
+                    2,
+                    f'Brak rekordów pasujących do: "{search_query}"',
+                    curses.A_DIM,
+                )
+
             else:
                 put(
                     list_top,
@@ -457,11 +637,13 @@ class CursesApp:
 
             footer = (
                 " ↑/↓ wybór"
-                "   PgUp/PgDn"
-                "   Home/End"
+                "   / szukaj"
+                "   n/N następny/poprzedni"
+                "   c wyczyść"
                 "   s sortuj"
                 "   q powrót "
             )
+
             put(
                 height - 2,
                 0,
@@ -481,6 +663,22 @@ class CursesApp:
             ):
                 return
 
+            if key == ord("/"):
+                value = prompt_search()
+
+                if value is not None:
+                    search_query = value
+                    selected = 0
+                    offset = 0
+
+                continue
+
+            if key in (ord("c"), ord("C")):
+                search_query = ""
+                selected = 0
+                offset = 0
+                continue
+
             if key in (ord("s"), ord("S"), curses.KEY_F7):
                 sort_mode = (sort_mode + 1) % len(sort_names)
                 selected = 0
@@ -490,13 +688,21 @@ class CursesApp:
             if not visible_records:
                 continue
 
-            if key in (curses.KEY_DOWN, ord("j")):
+            if key in (
+                curses.KEY_DOWN,
+                ord("j"),
+                ord("n"),
+            ):
                 selected = min(
                     selected + 1,
                     len(visible_records) - 1,
                 )
 
-            elif key in (curses.KEY_UP, ord("k")):
+            elif key in (
+                curses.KEY_UP,
+                ord("k"),
+                ord("N"),
+            ):
                 selected = max(selected - 1, 0)
 
             elif key == curses.KEY_NPAGE:
@@ -506,7 +712,10 @@ class CursesApp:
                 )
 
             elif key == curses.KEY_PPAGE:
-                selected = max(selected - visible, 0)
+                selected = max(
+                    selected - visible,
+                    0,
+                )
 
             elif key == curses.KEY_HOME:
                 selected = 0
