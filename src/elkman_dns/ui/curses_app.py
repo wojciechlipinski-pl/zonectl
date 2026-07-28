@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from elkman_dns.core.zone_model import ChangeKind, ZoneChange, ZoneModel
+from elkman_dns.ui.dialogs import CursesDialogs
+
 import curses
 import queue
 import threading
@@ -239,91 +242,25 @@ class CursesApp:
             self._domain_view(win, row.zone)
 
     def _search(self, stdscr: curses.window) -> None:
-        """Wyszukuje domeny na głównej liście."""
-        height, width = stdscr.getmaxyx()
-        prompt = " Szukaj domeny: "
-        row = max(0, height - 1)
+        """Filtruje domeny na głównej liście."""
+        query = CursesDialogs.search(
+            stdscr,
+            prompt=" Szukaj domeny: ",
+            initial=self.query,
+        )
 
-        try:
-            stdscr.nodelay(False)
-            stdscr.timeout(-1)
-        except curses.error:
-            pass
+        if query is None:
+            return
 
-        try:
-            curses.curs_set(1)
-        except curses.error:
-            pass
-
-        curses.echo()
-
-        try:
-            stdscr.move(row, 0)
-            stdscr.clrtoeol()
-
-            stdscr.addnstr(
-                row,
-                0,
-                prompt,
-                max(0, width - 1),
-                curses.A_REVERSE,
-            )
-
-            stdscr.refresh()
-
-            available = max(1, width - len(prompt) - 2)
-
-            raw = stdscr.getstr(
-                row,
-                len(prompt),
-                available,
-            )
-
-            query = raw.decode(
-                "utf-8",
-                errors="replace",
-            ).strip()
-
-            self.query = query
-            self._rebuild_rows()
-
-            if query:
-                for index, row_item in enumerate(self.rows):
-                    zone = getattr(row_item, "zone", None)
-
-                    if zone is None:
-                        continue
-
-                    zone_name = getattr(zone, "name", "")
-
-                    if query.casefold() in zone_name.casefold():
-                        self.selected = index
-                        break
-                else:
-                    self.selected = 0
-
-            else:
-                self.selected = 0
-
-        except curses.error:
-            pass
-
-        finally:
-            curses.noecho()
-
-            try:
-                curses.curs_set(0)
-            except curses.error:
-                pass
-
-            try:
-                stdscr.nodelay(True)
-            except curses.error:
-                pass
+        self.query = query
+        self.selected = 0
+        self.offset = 0
+        self._rebuild_rows()
 
     def _records_view(self, win: curses.window, zone: Zone) -> None:
         """Wyświetla rekordy strefy jako przeszukiwalną tabelę."""
         records, error = self.bind.parsed_zone_records(zone)
+        model = ZoneModel(zone.name, records)
         selected = 0
         offset = 0
         sort_mode = 0
@@ -332,6 +269,8 @@ class CursesApp:
         sort_names = ("Nazwa", "Typ", "TTL")
 
         def ordered_records():
+            records = list(model.records)
+
             if sort_mode == 1:
                 result = sorted(
                     records,
@@ -529,8 +468,9 @@ class CursesApp:
                 continue
 
             summary = (
-                f"Rekordy: {len(visible_records)}/{len(records)}"
+                f"Rekordy: {len(visible_records)}/{len(model.records)}"
                 f"   Sortowanie: {sort_names[sort_mode]}"
+                f"   Zmiany: {model.change_count}"
             )
 
             if search_query:
@@ -641,6 +581,7 @@ class CursesApp:
                 "   n/N następny/poprzedni"
                 "   c wyczyść"
                 "   s sortuj"
+                "   p zmiany"
                 "   q powrót "
             )
 
@@ -673,10 +614,21 @@ class CursesApp:
 
                 continue
 
-            if key in (ord("c"), ord("C")):
-                search_query = ""
+            if key in (ord("p"), ord("P")):
+                self._pending_changes_view(
+                    win,
+                    model,
+                    zone,
+                )
                 selected = 0
                 offset = 0
+                continue
+
+            if key in (ord("c"), ord("C")):
+                if search_query:
+                    search_query = ""
+                    selected = 0
+                    offset = 0
                 continue
 
             if key in (ord("s"), ord("S"), curses.KEY_F7):
