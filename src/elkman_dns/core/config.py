@@ -4,7 +4,7 @@ import configparser
 from pathlib import Path
 
 from .models import Zone
-
+from .bind_config import BindConfigDiscovery, BindConfigError
 DEFAULT_CONFIG = Path("/etc/elkman-dns-toolkit/toolkit.conf")
 DEFAULT_ZONES = Path("/etc/elkman-dns-toolkit/zones.conf")
 DEFAULT_GROUPS = Path("/etc/elkman-dns-toolkit/groups.yaml")
@@ -85,15 +85,40 @@ class ToolkitConfig:
         self.group_mapping: dict[str, str] = {}
 
     def load(self) -> "ToolkitConfig":
+        """
+        Wczytuje konfigurację toolkitu.
+
+        Konfiguracja BIND jest podstawowym źródłem stref.
+        zones.conf i groups.yaml są opcjonalnymi źródłami
+        zgodności wstecznej.
+        """
         if not self.config_path.exists():
-            raise RuntimeError(f"Brak pliku konfiguracji: {self.config_path}")
-        if not self.zones_path.exists():
-            raise RuntimeError(f"Brak pliku stref: {self.zones_path}")
+            raise RuntimeError(
+                f"Brak pliku konfiguracji: {self.config_path}"
+            )
+
         self.general.read(self.config_path)
-        self.zone_config.read(self.zones_path)
+
         if "toolkit" not in self.general:
-            raise RuntimeError(f"Brak sekcji [toolkit] w {self.config_path}")
-        self.group_order, self.group_mapping = load_groups_yaml(self.groups_path)
+            raise RuntimeError(
+                f"Brak sekcji [toolkit] w {self.config_path}"
+            )
+
+        # zones.conf jest od teraz tylko awaryjnym źródłem stref.
+        if self.zones_path.exists():
+            self.zone_config.read(self.zones_path)
+
+        # groups.yaml jest opcjonalny. Parser BIND potrafi
+        # sam przypisać podstawowe grupy: Publiczne, RPZ
+        # oraz Strefy odwrotne.
+        if self.groups_path.exists():
+            self.group_order, self.group_mapping = (
+                load_groups_yaml(self.groups_path)
+            )
+        else:
+            self.group_order = []
+            self.group_mapping = {}
+
         return self
 
     @property
@@ -101,15 +126,102 @@ class ToolkitConfig:
         return self.general["toolkit"]
 
     def zones(self) -> list[Zone]:
+        """
+        Zwraca strefy wykryte w rzeczywistej konfiguracji BIND.
+
+        zones.conf jest używany wyłącznie wtedy, gdy konfiguracji
+        BIND nie da się odczytać lub przeanalizować.
+        """
+        bind_root = Path(
+            self.toolkit.get(
+                "bind_config",
+                "/etc/bind/named.conf.local",
+            )
+        )
+
+        bind_error: BindConfigError | None = None
+
+        try:
+            zones = BindConfigDiscovery(bind_root).zones()
+
+            if zones:
+                return self._apply_group_overrides(zones)
+
+            bind_error = BindConfigError(
+                f"Nie znaleziono stref w {bind_root}"
+            )
+        except BindConfigError as exc:
+            bind_error = exc
+
+        fallback = self._zones_from_legacy_config()
+
+        if fallback:
+            return fallback
+
+        raise RuntimeError(
+            "Nie udało się odczytać żadnych stref. "
+            f"Błąd konfiguracji BIND: {bind_error}. "
+            f"Brak poprawnego fallbacku: {self.zones_path}"
+        )
+
+    def _apply_group_overrides(
+        self,
+        zones: list[Zone],
+    ) -> list[Zone]:
+        """Nakłada ręczne grupy z groups.yaml, jeżeli istnieją."""
+        if not self.group_mapping:
+            return zones
+
         result: list[Zone] = []
-        for name in sorted(self.zone_config.sections(), key=str.casefold):
+
+        for zone in zones:
+            key = zone.name.rstrip(".").casefold()
+            override = self.group_mapping.get(key)
+
+            if not override:
+                result.append(zone)
+                continue
+
+            result.append(
+                Zone(
+                    name=zone.name,
+                    file=zone.file,
+                    enabled=zone.enabled,
+                    dns2=zone.dns2,
+                    he=zone.he,
+                    notify=zone.notify,
+                    reload=zone.reload,
+                    group=override,
+                )
+            )
+
+        return result
+
+    def _zones_from_legacy_config(self) -> list[Zone]:
+        """Wczytuje opcjonalny fallback ze starego zones.conf."""
+        result: list[Zone] = []
+
+        for name in sorted(
+            self.zone_config.sections(),
+            key=str.casefold,
+        ):
             item = self.zone_config[name]
             enabled = _yes(item.get("enabled"), True)
+
             if not enabled:
                 continue
+
             raw_file = item.get("file", "").strip()
             explicit_group = item.get("group", "").strip()
-            group = explicit_group or self.group_mapping.get(name.rstrip(".").casefold(), "Pozostałe")
+
+            group = (
+                explicit_group
+                or self.group_mapping.get(
+                    name.rstrip(".").casefold(),
+                    "Pozostałe",
+                )
+            )
+
             result.append(
                 Zone(
                     name=name,
@@ -122,4 +234,5 @@ class ToolkitConfig:
                     group=group,
                 )
             )
+
         return result
