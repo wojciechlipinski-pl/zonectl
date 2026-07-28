@@ -117,12 +117,31 @@ class TransactionEngine:
     def _config_validation(self) -> StepResult:
         return self._step_command("named-checkconf", ["named-checkconf", "-z"])
 
+    def _zone_serial(self, zone: Zone, candidate: Path) -> str | None:
+        result = run(["named-checkzone", zone.name, str(candidate)], self.timeout)
+        if result.returncode != 0:
+            return None
+        marker = "loaded serial "
+        for line in result.stdout.splitlines():
+            if marker in line:
+                return line.split(marker, 1)[1].strip()
+        return None
+
     def _serial(self, zone: str) -> str | None:
         result = run(["dig", f"@{self.local_server}", zone, "SOA", "+short", "+time=3", "+tries=1"], 6)
         if result.returncode != 0 or not result.stdout.strip():
             return None
         parts = result.stdout.splitlines()[0].split()
         return parts[2] if len(parts) >= 3 else None
+
+    def _loaded_serial(self, zone: str) -> str | None:
+        result = run(["rndc", "zonestatus", zone], self.timeout)
+        if result.returncode != 0:
+            return None
+        for line in result.stdout.splitlines():
+            if line.startswith("serial:"):
+                return line.split(":", 1)[1].strip()
+        return None
 
     def validate(self, zone_name: str, source: Path | None = None) -> TransactionResult:
         zone = self.find_zone(zone_name)
@@ -201,6 +220,11 @@ class TransactionEngine:
             backup = self._backup(zone, target, txid)
             result.backup = str(backup)
             result.steps.append(StepResult("backup", True, str(backup)))
+            expected_serial = self._zone_serial(zone, source)
+            if expected_serial is None:
+                result.steps.append(StepResult("expected-serial", False, "Nie udało się odczytać seriala z pliku źródłowego"))
+                return self._finish(result, "FAILED", source=str(source), target=str(target))
+            result.steps.append(StepResult("expected-serial", True, f"serial oczekiwany={expected_serial}"))
             old_serial = self._serial(zone.name)
             try:
                 self._atomic_install(source, target)
@@ -217,11 +241,29 @@ class TransactionEngine:
                 result.steps.append(reload_step)
                 if not reload_step.ok:
                     raise RuntimeError("rndc reload nie powiódł się")
+                loaded_serial = self._loaded_serial(zone.name)
                 new_serial = self._serial(zone.name)
-                serial_ok = new_serial is not None
-                result.steps.append(StepResult("verify-soa", serial_ok, f"serial przed={old_serial or '-'} po={new_serial or '-'}"))
-                if not serial_ok:
-                    raise RuntimeError("Brak odpowiedzi SOA po reload")
+                serial_ok = loaded_serial is not None and loaded_serial == expected_serial
+
+                result.steps.append(
+                    StepResult(
+                        "verify-soa",
+                        serial_ok,
+                        (
+                            f"serial oczekiwany={expected_serial} "
+                            f"załadowany={loaded_serial or '-'} "
+                            f"serwowany={new_serial or '-'}"
+                        ),
+                    )
+                )
+
+                if loaded_serial is None:
+                    raise RuntimeError("Nie udało się odczytać seriala z rndc zonestatus")
+
+                if loaded_serial != expected_serial:
+                    raise RuntimeError(
+                        f"Załadowany serial ({loaded_serial}) różni się od oczekiwanego ({expected_serial})"
+                    )
                 result.committed = True
                 return self._finish(result, "COMMIT", source=str(source), target=str(target), old_serial=old_serial, new_serial=new_serial)
             except Exception as exc:
