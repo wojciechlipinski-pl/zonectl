@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "elkman-dns-toolkit"
+version = "3.1.0"
+description = "Administrative toolkit for BIND DNS servers"
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [
+    { name = "Wojciech Lipiński" }
+]
+
+[project.scripts]
+elkman-dns = "elkman_dns_toolkit.cli:main"
