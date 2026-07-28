@@ -175,6 +175,24 @@ class TransactionEngine:
             if not conf_check.ok:
                 return self._finish(result, "FAIL", source=str(source), target=str(target))
 
+            source_digest = self._digest(source)
+            target_digest = self._digest(target)
+            if source_digest == target_digest:
+                result.steps.append(
+                    StepResult(
+                        "no-change",
+                        True,
+                        f"Plik źródłowy jest identyczny z aktywnym plikiem strefy; sha256={source_digest}",
+                    )
+                )
+                return self._finish(
+                    result,
+                    "NO-CHANGE",
+                    source=str(source),
+                    target=str(target),
+                    sha256=source_digest,
+                )
+
             if not commit:
                 result.steps.append(StepResult("dry-run", True, "Walidacja zakończona. Nie zmieniono pliku (brak --commit)."))
                 return self._finish(result, "DRY-RUN", source=str(source), target=str(target))
