@@ -3,6 +3,7 @@ from __future__ import annotations
 from elkman_dns.core.zone_model import ChangeKind, ZoneChange, ZoneModel
 from elkman_dns.ui.dialogs import CursesDialogs
 from elkman_dns.ui.records.editor import RecordEditor
+from elkman_dns.ui.records.new_record import NewRecordDialog
 from elkman_dns.ui.records.renderer import RecordRenderer
 
 import curses
@@ -462,6 +463,37 @@ class CursesApp:
                 )
                 selected = 0
                 offset = 0
+                continue
+
+            if key in (ord("a"), ord("A")):
+                new_record = NewRecordDialog(
+                    error_attr=self._color(Health.FAIL),
+                ).create_record_dialog(
+                    win=win,
+                    zone=zone,
+                    records=model.records,
+                )
+
+                if new_record is not None:
+                    added_index = model.add(new_record)
+
+                    search_query = ""
+                    visible_records = ordered_records()
+
+                    try:
+                        added_record = model.records[added_index]
+                        selected = visible_records.index(added_record)
+                    except (IndexError, ValueError):
+                        selected = max(
+                            0,
+                            len(visible_records) - 1,
+                        )
+
+                    offset = max(
+                        0,
+                        selected - max(1, visible) + 1,
+                    )
+
                 continue
 
             if key in (ord("e"), ord("E")):

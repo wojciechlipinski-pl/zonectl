@@ -7,6 +7,7 @@ from typing import Any
 import curses
 
 from ...core.models import Zone
+from ...core.zone_parser import DNSRecord
 
 
 class RecordEditor:
@@ -14,6 +15,7 @@ class RecordEditor:
 
     def __init__(self, error_attr: int = curses.A_BOLD) -> None:
         self._error_attr = error_attr
+        self._save_requested = False
 
     def _edit_line(
         self,
@@ -77,6 +79,10 @@ class RecordEditor:
                 win.refresh()
                 key = win.getch()
 
+                if key == curses.KEY_F2:
+                    self._save_requested = True
+                    return "".join(value)
+
                 if key in (10, 13, curses.KEY_ENTER):
                     return "".join(value)
 
@@ -133,6 +139,27 @@ class RecordEditor:
             except curses.error:
                 pass
 
+    def create_record_dialog(
+        self,
+        win: curses.window,
+        zone: Zone,
+    ) -> DNSRecord | None:
+        """Tworzy nowy rekord, wykorzystując formularz edycji."""
+        template = DNSRecord(
+            owner=zone.name.rstrip(".") + ".",
+            ttl=None,
+            rrclass="IN",
+            rtype="A",
+            rdata="",
+            raw="",
+        )
+
+        return self.edit_record_dialog(
+            win,
+            template,
+            zone,
+        )
+
     def edit_record_dialog(
         self,
         win: curses.window,
@@ -162,6 +189,39 @@ class RecordEditor:
                 return value
 
             return f"{value}.{zone.name.rstrip('.')}."
+
+        def build_record():
+            owner_value = values[0].strip()
+            rtype_value = values[1].strip().upper()
+            ttl_value = values[2].strip()
+            rdata_value = values[3].strip()
+
+            if not rtype_value:
+                return None, "Typ rekordu nie może być pusty."
+
+            if not rdata_value:
+                return None, "Dane rekordu nie mogą być puste."
+
+            try:
+                ttl = None if not ttl_value else int(ttl_value)
+            except ValueError:
+                return None, "TTL musi być liczbą całkowitą."
+
+            if ttl is not None and ttl < 0:
+                return None, "TTL nie może być ujemny."
+
+            try:
+                updated_record = replace(
+                    record,
+                    owner=absolute_owner(owner_value),
+                    rtype=rtype_value,
+                    ttl=ttl,
+                    rdata=rdata_value,
+                )
+            except TypeError as exc:
+                return None, f"Nie można utworzyć rekordu: {exc}"
+
+            return updated_record, ""
 
         while True:
             win.erase()
@@ -245,6 +305,7 @@ class RecordEditor:
 
             if key in (10, 13, curses.KEY_ENTER):
                 row = 3 + active * 2
+                self._save_requested = False
 
                 edited_value = self._edit_line(
                     win=win,
@@ -258,39 +319,22 @@ class RecordEditor:
                     values[active] = edited_value
                     message = ""
 
+                    if self._save_requested:
+                        self._save_requested = False
+                        updated_record, message = build_record()
+
+                        if updated_record is not None:
+                            return updated_record
+
+                        continue
+
+                    if active < len(values) - 1:
+                        active += 1
+
                 continue
 
             if key == curses.KEY_F2:
-                owner_value = values[0].strip()
-                rtype_value = values[1].strip().upper()
-                ttl_value = values[2].strip()
-                rdata_value = values[3].strip()
+                updated_record, message = build_record()
 
-                if not rtype_value:
-                    message = "Typ rekordu nie może być pusty."
-                    continue
-
-                if not rdata_value:
-                    message = "Dane rekordu nie mogą być puste."
-                    continue
-
-                try:
-                    ttl = None if not ttl_value else int(ttl_value)
-                except ValueError:
-                    message = "TTL musi być liczbą całkowitą."
-                    continue
-
-                if ttl is not None and ttl < 0:
-                    message = "TTL nie może być ujemny."
-                    continue
-
-                try:
-                    return replace(
-                        record,
-                        owner=absolute_owner(owner_value),
-                        rtype=rtype_value,
-                        ttl=ttl,
-                        rdata=rdata_value,
-                    )
-                except TypeError as exc:
-                    message = f"Nie można utworzyć rekordu: {exc}"
+                if updated_record is not None:
+                    return updated_record
