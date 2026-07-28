@@ -35,6 +35,11 @@ def parser() -> argparse.ArgumentParser:
     apply.add_argument("--source", type=Path, required=True)
     apply.add_argument("--commit", action="store_true", help="wykonaj zmianę; bez tej opcji działa dry-run")
     apply.add_argument("--json", action="store_true")
+
+    verify = txsub.add_parser("verify", help="zweryfikuj aktualnie załadowaną strefę")
+    verify.add_argument("zone")
+    verify.add_argument("--json", action="store_true")
+
     rollback = txsub.add_parser("rollback", help="przywróć wskazany backup")
     rollback.add_argument("zone")
     rollback.add_argument("--backup", type=Path, required=True)
@@ -109,6 +114,8 @@ def transaction_main(args, config: ToolkitConfig) -> int:
             return print_transaction(engine.validate(args.zone, args.source), args.json)
         if args.tx_command == "apply":
             return print_transaction(engine.apply(args.zone, args.source, args.commit), args.json)
+        if args.tx_command == "verify":
+            return print_transaction(engine.verify(args.zone), args.json)
         if args.tx_command == "rollback":
             return print_transaction(engine.rollback(args.zone, args.backup, args.commit), args.json)
         if args.tx_command == "backups":

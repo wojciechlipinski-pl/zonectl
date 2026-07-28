@@ -143,6 +143,26 @@ class TransactionEngine:
                 return line.split(":", 1)[1].strip()
         return None
 
+    def _verify_loaded_zone(
+        self,
+        zone: Zone,
+        expected_serial: str,
+    ) -> tuple[StepResult, str | None, str | None]:
+        loaded_serial = self._loaded_serial(zone.name)
+        served_serial = self._serial(zone.name)
+        serial_ok = loaded_serial is not None and loaded_serial == expected_serial
+
+        step = StepResult(
+            "verify-soa",
+            serial_ok,
+            (
+                f"serial oczekiwany={expected_serial} "
+                f"załadowany={loaded_serial or '-'} "
+                f"serwowany={served_serial or '-'}"
+            ),
+        )
+        return step, loaded_serial, served_serial
+
     def validate(self, zone_name: str, source: Path | None = None) -> TransactionResult:
         zone = self.find_zone(zone_name)
         candidate = source or zone.file
@@ -160,6 +180,99 @@ class TransactionEngine:
         self._save_manifest(result, {"mode": "validate", "candidate": str(candidate)})
         self.audit.append(txid, zone.name, "validate", "PASS" if all(s.ok for s in result.steps) else "FAIL", candidate=str(candidate))
         return result
+
+    def verify(self, zone_name: str) -> TransactionResult:
+        zone = self.find_zone(zone_name)
+        txid = self._new_id(zone.name)
+        result = TransactionResult(txid, zone.name, committed=False)
+
+        if not zone.file:
+            result.steps.append(
+                StepResult("zone-file", False, f"Strefa {zone.name} nie ma ustawionego parametru file")
+            )
+            return self._finish(result, "FAIL", mode="verify")
+
+        candidate = zone.file.resolve()
+
+        if not candidate.is_file():
+            result.steps.append(
+                StepResult("zone-file", False, f"Aktywny plik strefy nie istnieje: {candidate}")
+            )
+            return self._finish(
+                result,
+                "FAIL",
+                mode="verify",
+                candidate=str(candidate),
+            )
+
+        result.steps.append(
+            StepResult(
+                "zone-file",
+                True,
+                f"{candidate} sha256={self._digest(candidate)}",
+            )
+        )
+
+        zone_check = self._zone_validation(zone, candidate)
+        result.steps.append(zone_check)
+        if not zone_check.ok:
+            return self._finish(
+                result,
+                "FAIL",
+                mode="verify",
+                candidate=str(candidate),
+            )
+
+        conf_check = self._config_validation()
+        result.steps.append(conf_check)
+        if not conf_check.ok:
+            return self._finish(
+                result,
+                "FAIL",
+                mode="verify",
+                candidate=str(candidate),
+            )
+
+        expected_serial = self._zone_serial(zone, candidate)
+        if expected_serial is None:
+            result.steps.append(
+                StepResult(
+                    "expected-serial",
+                    False,
+                    "Nie udało się odczytać seriala z aktywnego pliku strefy",
+                )
+            )
+            return self._finish(
+                result,
+                "FAIL",
+                mode="verify",
+                candidate=str(candidate),
+            )
+
+        result.steps.append(
+            StepResult(
+                "expected-serial",
+                True,
+                f"serial oczekiwany={expected_serial}",
+            )
+        )
+
+        verify_step, loaded_serial, served_serial = self._verify_loaded_zone(
+            zone,
+            expected_serial,
+        )
+        result.steps.append(verify_step)
+
+        outcome = "VERIFY" if verify_step.ok else "FAIL"
+        return self._finish(
+            result,
+            outcome,
+            mode="verify",
+            candidate=str(candidate),
+            expected_serial=expected_serial,
+            loaded_serial=loaded_serial,
+            served_serial=served_serial,
+        )
 
     def apply(self, zone_name: str, source: Path, commit: bool = False) -> TransactionResult:
         zone = self.find_zone(zone_name)
@@ -241,26 +354,16 @@ class TransactionEngine:
                 result.steps.append(reload_step)
                 if not reload_step.ok:
                     raise RuntimeError("rndc reload nie powiódł się")
-                loaded_serial = self._loaded_serial(zone.name)
-                new_serial = self._serial(zone.name)
-                serial_ok = loaded_serial is not None and loaded_serial == expected_serial
-
-                result.steps.append(
-                    StepResult(
-                        "verify-soa",
-                        serial_ok,
-                        (
-                            f"serial oczekiwany={expected_serial} "
-                            f"załadowany={loaded_serial or '-'} "
-                            f"serwowany={new_serial or '-'}"
-                        ),
-                    )
+                verify_step, loaded_serial, new_serial = self._verify_loaded_zone(
+                    zone,
+                    expected_serial,
                 )
+                result.steps.append(verify_step)
 
                 if loaded_serial is None:
                     raise RuntimeError("Nie udało się odczytać seriala z rndc zonestatus")
 
-                if loaded_serial != expected_serial:
+                if not verify_step.ok:
                     raise RuntimeError(
                         f"Załadowany serial ({loaded_serial}) różni się od oczekiwanego ({expected_serial})"
                     )
