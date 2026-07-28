@@ -256,6 +256,171 @@ class CursesApp:
         self.offset = 0
         self._rebuild_rows()
 
+
+    def _records_view(self, win: curses.window, zone: Zone) -> None:
+        """Wyświetla przewijaną listę rekordów wybranej strefy."""
+        records, error = self.bind.zone_records(zone)
+        selected = 0
+        offset = 0
+
+        while True:
+            win.erase()
+            height, width = win.getmaxyx()
+
+            def put(
+                row: int,
+                column: int,
+                text: str,
+                attr: int = curses.A_NORMAL,
+            ) -> None:
+                if row < 0 or row >= height:
+                    return
+                if column < 0 or column >= width:
+                    return
+
+                available = max(0, width - column - 1)
+
+                if available <= 0:
+                    return
+
+                try:
+                    win.addnstr(
+                        row,
+                        column,
+                        str(text),
+                        available,
+                        attr,
+                    )
+                except curses.error:
+                    pass
+
+            title = f" Rekordy DNS: {zone.name} "
+            put(
+                0,
+                0,
+                title.ljust(width),
+                curses.A_REVERSE | curses.A_BOLD,
+            )
+
+            if error:
+                put(3, 2, "Nie udało się odczytać rekordów:", curses.A_BOLD)
+                put(5, 2, error, self._color(Health.FAIL))
+
+                footer = " q/Esc/Backspace powrót "
+                put(
+                    height - 2,
+                    0,
+                    footer.ljust(width),
+                    curses.A_REVERSE,
+                )
+
+                win.refresh()
+                key = win.getch()
+
+                if key in (
+                    ord("q"),
+                    27,
+                    curses.KEY_BACKSPACE,
+                    127,
+                    8,
+                ):
+                    return
+
+                continue
+
+            put(
+                2,
+                2,
+                f"Liczba rekordów: {len(records)}",
+                curses.A_BOLD,
+            )
+
+            list_top = 4
+            visible = max(1, height - list_top - 3)
+
+            if records:
+                selected = min(selected, len(records) - 1)
+
+                if selected < offset:
+                    offset = selected
+
+                if selected >= offset + visible:
+                    offset = selected - visible + 1
+
+                for screen_row, record in enumerate(
+                    records[offset:offset + visible],
+                    start=list_top,
+                ):
+                    index = offset + screen_row - list_top
+                    attr = (
+                        curses.A_REVERSE
+                        if index == selected
+                        else curses.A_NORMAL
+                    )
+
+                    put(
+                        screen_row,
+                        1,
+                        record,
+                        attr,
+                    )
+            else:
+                put(
+                    list_top,
+                    2,
+                    "Brak rekordów do wyświetlenia.",
+                    curses.A_DIM,
+                )
+
+            footer = (
+                " ↑/↓ przewijanie"
+                "   PgUp/PgDn strona"
+                "   Home/End"
+                "   q/Esc powrót "
+            )
+            put(
+                height - 2,
+                0,
+                footer.ljust(width),
+                curses.A_REVERSE,
+            )
+
+            win.refresh()
+            key = win.getch()
+
+            if key in (
+                ord("q"),
+                27,
+                curses.KEY_BACKSPACE,
+                127,
+                8,
+            ):
+                return
+
+            if not records:
+                continue
+
+            if key in (curses.KEY_DOWN, ord("j")):
+                selected = min(selected + 1, len(records) - 1)
+
+            elif key in (curses.KEY_UP, ord("k")):
+                selected = max(selected - 1, 0)
+
+            elif key == curses.KEY_NPAGE:
+                selected = min(
+                    selected + visible,
+                    len(records) - 1,
+                )
+
+            elif key == curses.KEY_PPAGE:
+                selected = max(selected - visible, 0)
+
+            elif key == curses.KEY_HOME:
+                selected = 0
+
+            elif key == curses.KEY_END:
+                selected = len(records) - 1
+
     def _domain_view(self, win: curses.window, zone: Zone) -> None:
         """
         Wyświetla szczegóły wybranej strefy.
@@ -474,7 +639,8 @@ class CursesApp:
                 )
 
             footer = (
-                " r odśwież strefę"
+                " v rekordy"
+                "   r odśwież strefę"
                 "   q/Esc/Backspace powrót "
             )
             put(
@@ -495,6 +661,10 @@ class CursesApp:
                 8,
             ):
                 return
+
+            if key in (ord("v"), ord("V")):
+                self._records_view(win, zone)
+                continue
 
             if key in (ord("r"), ord("R")):
                 notice = "Sprawdzanie strefy..."

@@ -33,6 +33,52 @@ class BindService:
         text = (result.stdout + result.stderr).lower()
         return "zone signing:" in text and "yes" in text
 
+
+    def zone_records(self, zone: Zone) -> tuple[list[str], str | None]:
+        """Zwraca kanoniczną listę rekordów z aktywnego pliku strefy."""
+        if zone.file is None:
+            return [], "Brak ścieżki do pliku strefy"
+
+        if not zone.file.exists():
+            return [], f"Plik strefy nie istnieje: {zone.file}"
+
+        result = run(
+            [
+                "named-checkzone",
+                "-D",
+                zone.name,
+                str(zone.file),
+            ],
+            15,
+        )
+
+        if result.returncode != 0:
+            message = (result.stdout + result.stderr).strip()
+            return [], message or "named-checkzone zakończył się błędem"
+
+        records: list[str] = []
+
+        for raw_line in result.stdout.splitlines():
+            line = raw_line.strip()
+
+            if not line:
+                continue
+
+            lowered = line.casefold()
+
+            if lowered.startswith("zone "):
+                continue
+
+            if lowered.startswith("loaded serial"):
+                continue
+
+            if lowered == "ok":
+                continue
+
+            records.append(line)
+
+        return records, None
+
     def quick_status(self, zone: Zone) -> ZoneStatus:
         status = ZoneStatus(zone=zone)
         status.file_exists = bool(zone.file and zone.file.exists())
