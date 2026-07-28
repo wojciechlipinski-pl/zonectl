@@ -13,4 +13,10 @@ authors = [
 ]
 
 [project.scripts]
-elkman-dns = "elkman_dns_toolkit.cli:main"
+elkman-dns = "elkman_dns.cli:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]

@@ -6,7 +6,7 @@ if [ "$(id -u)" -ne 0 ]; then
   exit 1
 fi
 SRC="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
-LIB=/usr/local/lib/elkman_dns_toolkit
+LIB=/usr/local/lib/elkman_dns
 BIN=/usr/local/bin/elkman-dns
 SBIN=/usr/local/sbin/elkman-dns
 ETC=/etc/elkman-dns-toolkit
@@ -29,8 +29,8 @@ chmod 0750 "$STATE" "$STATE/backups" "$STATE/transactions" "$STATE/locks" "$LOG"
 touch "$LOG/audit.jsonl"
 chmod 0640 "$LOG/audit.jsonl" 2>/dev/null || true
 rm -rf "$LIB"
-cp -a "$SRC/usr/local/lib/elkman_dns_toolkit" "$LIB"
-install -m 0755 "$SRC/usr/local/bin/elkman-dns" "$BIN"
+cp -a "$SRC/src/elkman_dns" "$LIB"
+install -m 0755 "$SRC/scripts/elkman-dns" "$BIN"
 rm -f "$SBIN"
 ln -s ../bin/elkman-dns "$SBIN"
 if [ ! -e "$ETC/groups.yaml" ]; then
