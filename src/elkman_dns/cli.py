@@ -84,6 +84,7 @@ def print_transaction(result: TransactionResult, as_json: bool = False) -> int:
     else:
         print(f"Transakcja: {result.transaction_id}")
         print(f"Strefa:     {result.zone}")
+        print(f"Status:     {result.status}")
         print(f"Commit:     {'TAK' if result.committed else 'NIE'}")
         print(f"Rollback:   {'TAK' if result.rolled_back else 'NIE'}")
         if result.backup:
