@@ -1,0 +1,17 @@
+# Plik: /etc/elkman-dns-toolkit/groups.yaml
+# Domeny nieujęte poniżej trafią automatycznie do grupy "Pozostałe".
+groups:
+  Urząd Miasta:
+    - um.elk.pl
+    - bip.elk.pl
+    - cyfrowy.elk.pl
+    - radny.elk.pl
+  Jednostki:
+    - mops.elk.pl
+    - mzk.elk.pl
+    - zlobek.elk.pl
+    - sds.elk.pl
+  Prywatne:
+    - elkman.pl
+    - lipinski.elk.pl
+    - lipinska.elk.pl
