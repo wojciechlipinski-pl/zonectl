@@ -258,12 +258,46 @@ class CursesApp:
 
 
     def _records_view(self, win: curses.window, zone: Zone) -> None:
-        """Wyświetla przewijaną listę rekordów wybranej strefy."""
-        records, error = self.bind.zone_records(zone)
+        """Wyświetla rekordy strefy jako tabelę."""
+        records, error = self.bind.parsed_zone_records(zone)
         selected = 0
         offset = 0
+        sort_mode = 0
+        sort_names = ("Nazwa", "Typ", "TTL")
+
+        def ordered_records():
+            if sort_mode == 1:
+                return sorted(
+                    records,
+                    key=lambda item: (
+                        item.rtype.casefold(),
+                        item.relative_owner(zone.name).casefold(),
+                        item.rdata.casefold(),
+                    ),
+                )
+
+            if sort_mode == 2:
+                return sorted(
+                    records,
+                    key=lambda item: (
+                        item.ttl is None,
+                        item.ttl or 0,
+                        item.relative_owner(zone.name).casefold(),
+                    ),
+                )
+
+            return sorted(
+                records,
+                key=lambda item: (
+                    item.relative_owner(zone.name).casefold(),
+                    item.rtype.casefold(),
+                    item.rdata.casefold(),
+                ),
+            )
 
         while True:
+            visible_records = ordered_records()
+
             win.erase()
             height, width = win.getmaxyx()
 
@@ -303,14 +337,22 @@ class CursesApp:
             )
 
             if error:
-                put(3, 2, "Nie udało się odczytać rekordów:", curses.A_BOLD)
-                put(5, 2, error, self._color(Health.FAIL))
-
-                footer = " q/Esc/Backspace powrót "
+                put(
+                    3,
+                    2,
+                    "Nie udało się odczytać rekordów:",
+                    curses.A_BOLD,
+                )
+                put(
+                    5,
+                    2,
+                    error,
+                    self._color(Health.FAIL),
+                )
                 put(
                     height - 2,
                     0,
-                    footer.ljust(width),
+                    " q/Esc/Backspace powrót ".ljust(width),
                     curses.A_REVERSE,
                 )
 
@@ -331,15 +373,35 @@ class CursesApp:
             put(
                 2,
                 2,
-                f"Liczba rekordów: {len(records)}",
+                (
+                    f"Rekordy: {len(visible_records)}"
+                    f"   Sortowanie: {sort_names[sort_mode]}"
+                ),
                 curses.A_BOLD,
             )
 
-            list_top = 4
+            owner_width = max(12, min(28, width // 4))
+            type_width = 7
+            ttl_width = 10
+
+            owner_column = 1
+            type_column = owner_column + owner_width + 1
+            ttl_column = type_column + type_width + 1
+            value_column = ttl_column + ttl_width + 1
+
+            put(4, owner_column, "NAZWA", curses.A_BOLD)
+            put(4, type_column, "TYP", curses.A_BOLD)
+            put(4, ttl_column, "TTL", curses.A_BOLD)
+            put(4, value_column, "WARTOŚĆ", curses.A_BOLD)
+
+            separator = "-" * max(1, width - 2)
+            put(5, 1, separator, curses.A_DIM)
+
+            list_top = 6
             visible = max(1, height - list_top - 3)
 
-            if records:
-                selected = min(selected, len(records) - 1)
+            if visible_records:
+                selected = min(selected, len(visible_records) - 1)
 
                 if selected < offset:
                     offset = selected
@@ -348,7 +410,7 @@ class CursesApp:
                     offset = selected - visible + 1
 
                 for screen_row, record in enumerate(
-                    records[offset:offset + visible],
+                    visible_records[offset:offset + visible],
                     start=list_top,
                 ):
                     index = offset + screen_row - list_top
@@ -358,10 +420,31 @@ class CursesApp:
                         else curses.A_NORMAL
                     )
 
+                    owner = record.relative_owner(zone.name)
+                    ttl = str(record.ttl) if record.ttl is not None else "-"
+
                     put(
                         screen_row,
-                        1,
-                        record,
+                        owner_column,
+                        owner[:owner_width].ljust(owner_width),
+                        attr,
+                    )
+                    put(
+                        screen_row,
+                        type_column,
+                        record.rtype[:type_width].ljust(type_width),
+                        attr,
+                    )
+                    put(
+                        screen_row,
+                        ttl_column,
+                        ttl[:ttl_width].ljust(ttl_width),
+                        attr,
+                    )
+                    put(
+                        screen_row,
+                        value_column,
+                        record.rdata,
                         attr,
                     )
             else:
@@ -373,10 +456,11 @@ class CursesApp:
                 )
 
             footer = (
-                " ↑/↓ przewijanie"
-                "   PgUp/PgDn strona"
+                " ↑/↓ wybór"
+                "   PgUp/PgDn"
                 "   Home/End"
-                "   q/Esc powrót "
+                "   s sortuj"
+                "   q powrót "
             )
             put(
                 height - 2,
@@ -397,11 +481,20 @@ class CursesApp:
             ):
                 return
 
-            if not records:
+            if key in (ord("s"), ord("S"), curses.KEY_F7):
+                sort_mode = (sort_mode + 1) % len(sort_names)
+                selected = 0
+                offset = 0
+                continue
+
+            if not visible_records:
                 continue
 
             if key in (curses.KEY_DOWN, ord("j")):
-                selected = min(selected + 1, len(records) - 1)
+                selected = min(
+                    selected + 1,
+                    len(visible_records) - 1,
+                )
 
             elif key in (curses.KEY_UP, ord("k")):
                 selected = max(selected - 1, 0)
@@ -409,7 +502,7 @@ class CursesApp:
             elif key == curses.KEY_NPAGE:
                 selected = min(
                     selected + visible,
-                    len(records) - 1,
+                    len(visible_records) - 1,
                 )
 
             elif key == curses.KEY_PPAGE:
@@ -419,7 +512,7 @@ class CursesApp:
                 selected = 0
 
             elif key == curses.KEY_END:
-                selected = len(records) - 1
+                selected = len(visible_records) - 1
 
     def _domain_view(self, win: curses.window, zone: Zone) -> None:
         """

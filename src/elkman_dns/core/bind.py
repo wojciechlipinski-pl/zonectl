@@ -3,6 +3,7 @@ from __future__ import annotations
 from .config import ToolkitConfig
 from .models import Health, Zone, ZoneStatus
 from .runner import run
+from .zone_parser import DNSRecord, ZoneRecordParser
 
 
 class BindService:
@@ -77,6 +78,35 @@ class BindService:
 
             records.append(line)
 
+        return records, None
+
+
+    def parsed_zone_records(
+        self,
+        zone: Zone,
+    ) -> tuple[list[DNSRecord], str | None]:
+        """Zwraca rekordy strefy przekształcone do modelu DNSRecord."""
+        if zone.file is None:
+            return [], "Brak ścieżki do pliku strefy"
+
+        if not zone.file.exists():
+            return [], f"Plik strefy nie istnieje: {zone.file}"
+
+        result = run(
+            [
+                "named-checkzone",
+                "-D",
+                zone.name,
+                str(zone.file),
+            ],
+            15,
+        )
+
+        if result.returncode != 0:
+            message = (result.stdout + result.stderr).strip()
+            return [], message or "named-checkzone zakończył się błędem"
+
+        records = ZoneRecordParser.parse_output(result.stdout)
         return records, None
 
     def quick_status(self, zone: Zone) -> ZoneStatus:
