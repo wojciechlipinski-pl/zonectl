@@ -7,9 +7,9 @@
 - Wersja: **3.2.3**
 - Katalog: `/root/elkman-dns`
 - Gałąź: `master`
-- Commit: `6efd150`
-- Ostatni commit: `6efd150 | 2026-07-29 18:21:48 +0200 | Wojciech Lipiński | docs: add project memory and technical documentation set`
-- Wygenerowano: `2026-07-29T18:37:27+02:00`
+- Commit: `aec45de`
+- Ostatni commit: `aec45de | 2026-07-29 18:37:46 +0200 | Wojciech Lipiński | docs: add automatic project documentation generator`
+- Wygenerowano: `2026-07-29T18:55:06+02:00`
 
 ## Statystyki
 - Moduły Python: **31**
@@ -19,7 +19,7 @@
 - TODO/FIXME/HACK/XXX: **0**
 
 ## Start nowej sesji
-Przeczytaj kolejno: `docs/AI_CONTEXT.md`, `PROJECT_CONTEXT.md`, `ARCHITECTURE.md`, `MODULE_REFERENCE.md`, `CHANGELOG.md`, `DECISIONS.md`, `SESSION_HANDOFF.md`.
+Przeczytaj kolejno: `docs/AI_CONTEXT.md`, `docs/PROJECT_CONTEXT.md`, `docs/ARCHITECTURE.md`, `docs/MODULE_REFERENCE.md`, `docs/CHANGELOG.md`, `docs/DECISIONS.md`, `docs/SESSION_HANDOFF.md`.
 
 Następnie wykonaj:
 ```bash
@@ -32,9 +32,15 @@ Nie zgaduj działania kodu. Potwierdzaj je w implementacji, testach i Git.
 
 ## Stan Git
 ```text
-?? .docs-backup-20260729-183727/
-?? scripts/update_project_docs.py
-?? scripts/update_project_docs.sh
+M .gitignore
+D  AI_CONTEXT.md
+ M docs/AI_CONTEXT.md
+ M docs/ARCHITECTURE.md
+ M docs/CHANGELOG.md
+ M docs/MODULE_REFERENCE.md
+ M docs/PROJECT_CONTEXT.md
+ M docs/SESSION_HANDOFF.md
+ M scripts/update_project_docs.py
 ```
 
 ## Wynik testów

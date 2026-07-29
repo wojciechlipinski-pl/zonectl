@@ -1,7 +1,8 @@
 # Historia zmian
 
-> Wygenerowano z Git: `2026-07-29T18:37:27+02:00`.
+> Wygenerowano z Git: `2026-07-29T18:55:06+02:00`.
 
+- `2026-07-29` — `aec45de` — docs: add automatic project documentation generator
 - `2026-07-29` — `6efd150` — docs: add project memory and technical documentation set
 - `2026-07-29` — `66802d0` — Release 3.2.3: add F2 save support
 - `2026-07-29` — `7ac71d2` — Release 3.2.0: transactional zone editor and BIND discovery

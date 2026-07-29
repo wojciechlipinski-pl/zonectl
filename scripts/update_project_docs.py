@@ -108,7 +108,7 @@ def main():
 - TODO/FIXME/HACK/XXX: **{todos}**
 
 ## Start nowej sesji
-Przeczytaj kolejno: `docs/AI_CONTEXT.md`, `PROJECT_CONTEXT.md`, `ARCHITECTURE.md`, `MODULE_REFERENCE.md`, `CHANGELOG.md`, `DECISIONS.md`, `SESSION_HANDOFF.md`.
+Przeczytaj kolejno: `docs/AI_CONTEXT.md`, `docs/PROJECT_CONTEXT.md`, `docs/ARCHITECTURE.md`, `docs/MODULE_REFERENCE.md`, `docs/CHANGELOG.md`, `docs/DECISIONS.md`, `docs/SESSION_HANDOFF.md`.
 
 Następnie wykonaj:
 ```bash

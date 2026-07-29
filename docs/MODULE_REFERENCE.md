@@ -1,6 +1,6 @@
 # Dokumentacja modułów
 
-> Wygenerowano z AST: `2026-07-29T18:37:27+02:00`.
+> Wygenerowano z AST: `2026-07-29T18:55:06+02:00`.
 
 ## `src/elkman_dns/__init__.py`
 

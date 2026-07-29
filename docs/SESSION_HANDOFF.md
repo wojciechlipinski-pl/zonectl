@@ -26,9 +26,9 @@ wersję w src/elkman_dns/__init__.py,
 aktualny commit Git.
 Stan przy generowaniu
 Wersja: 3.2.3
-Commit: 66802d0
+Commit: aec45de
 Gałąź: master
-Ostatnia zmiana: 66802d0 | 2026-07-29 17:22:47 +0200 | Wojciech Lipiński | Release 3.2.3: add F2 save support
+Ostatnia zmiana: aec45de | 2026-07-29 18:37:46 +0200 | Wojciech Lipiński | docs: add automatic project documentation generator
 Gotowy tekst rozpoczynający nową rozmowę
 Pracujemy nad projektem ELKMAN-DNS.
 

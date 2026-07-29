@@ -43,3 +43,7 @@ dist/
 # OS files
 .DS_Store
 Thumbs.db
+
+# Dokumentacja — lokalne kopie generatora
+.docs-backup-*
+AI_CONTEXT.md.backup-*
