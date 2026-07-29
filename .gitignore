@@ -1,26 +1,45 @@
-__pycache__/
-*.py[cod]
-*.log
-*.tmp
-*.bak
-*.swp
-*.swo
-.env
-.venv/
-venv/
-build/
-dist/
-*.egg-info/
-.pytest_cache/
-.coverage
-htmlcov/
-
 # Python
 __pycache__/
 *.py[cod]
-*.egg-info/
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Tests and coverage
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+
+# Build artifacts
 build/
 dist/
-.venv/
+*.egg-info/
+.eggs/
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Local backups and temporary files
 *.bak
 *.bak-*
+*.orig
+*.rej
+*.tmp
+*.new
+
+# Local logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from elkman_dns.ui.credits import draw_project_credits
 from elkman_dns.core.zone_model import ChangeKind, ZoneChange, ZoneModel
 from elkman_dns.ui.dialogs import CursesDialogs
 from elkman_dns.ui.records.editor import RecordEditor
@@ -12,8 +13,15 @@ import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 
+from .. import __version__
 from ..core.bind import BindService
+from ..core.config import ToolkitConfig
 from ..core.models import Health, Zone, ZoneStatus
+from ..core.transaction import TransactionEngine, TransactionResult
+from ..core.zone_edit_session import (
+    ZoneEditSession,
+    ZoneEditSessionError,
+)
 
 
 @dataclass(slots=True)
@@ -27,10 +35,22 @@ class Row:
 class CursesApp:
     SORTS = ("A-Z", "Health", "DNSSEC", "Serial")
 
-    def __init__(self, zones: list[Zone], bind: BindService, group_order: list[str] | None = None):
+    def __init__(
+        self,
+        zones: list[Zone],
+        bind: BindService,
+        group_order: list[str] | None = None,
+        *,
+        config: ToolkitConfig | None = None,
+    ):
         self.all_zones = zones
         self.bind = bind
         self.group_order = group_order or []
+        self.transaction_engine = (
+            TransactionEngine(config)
+            if config is not None
+            else None
+        )
         self.statuses: dict[str, ZoneStatus] = {}
         self.selected = 0
         self.offset = 0
@@ -191,7 +211,7 @@ class CursesApp:
     def _draw(self, win: curses.window) -> None:
         win.erase()
         height, width = win.getmaxyx()
-        title = " elkman DNS Toolkit 3.1.0 — Transaction Layer "
+        title = f" elkman DNS Toolkit {__version__} "
         win.addnstr(0, 0, title.ljust(width), width, curses.A_REVERSE | curses.A_BOLD)
         checked = len(self.statuses)
         subtitle = (
@@ -229,6 +249,7 @@ class CursesApp:
 
         footer = " Enter/Spacja otwórz-zwiń  / szukaj  g grupy  F7/s sortuj  r odśwież  q wyjście "
         win.addnstr(height - 2, 0, footer.ljust(width), max(0, width - 1), curses.A_REVERSE)
+        draw_project_credits(win)
         win.refresh()
 
     def _activate(self, win: curses.window) -> None:
@@ -261,9 +282,43 @@ class CursesApp:
         self._rebuild_rows()
 
     def _records_view(self, win: curses.window, zone: Zone) -> None:
-        """Wyświetla rekordy strefy jako przeszukiwalną tabelę."""
-        records, error = self.bind.parsed_zone_records(zone)
-        model = ZoneModel(zone.name, records)
+        """Wyświetla i edytuje źródłowy dokument strefy."""
+        if self.transaction_engine is None:
+            self._message_view(
+                win,
+                title="Błąd konfiguracji",
+                lines=[
+                    "Brak TransactionEngine.",
+                    "Aplikacja TUI nie otrzymała ToolkitConfig.",
+                ],
+                error=True,
+            )
+            return
+
+        try:
+            session = ZoneEditSession(
+                zone,
+                self.transaction_engine,
+            )
+        except ZoneEditSessionError as exc:
+            self._message_view(
+                win,
+                title=f"Nie można otworzyć: {zone.name}",
+                lines=[str(exc)],
+                error=True,
+            )
+            return
+        except Exception as exc:
+            self._message_view(
+                win,
+                title=f"Błąd otwierania: {zone.name}",
+                lines=[f"{type(exc).__name__}: {exc}"],
+                error=True,
+            )
+            return
+
+        model = session.model
+        error = None
         selected = 0
         offset = 0
         sort_mode = 0
@@ -447,7 +502,79 @@ class CursesApp:
                 127,
                 8,
             ):
+                if model.dirty:
+                    discard = CursesDialogs.confirm(
+                        win,
+                        "Są niezapisane zmiany. Porzucić je?",
+                    )
+
+                    if not discard:
+                        continue
+
+                    session.discard()
+
                 return
+
+            # Ctrl+S
+            if key == 19:
+                if not model.dirty:
+                    self._message_view(
+                        win,
+                        title=f"Zapis: {zone.name}",
+                        lines=["Brak zmian do zapisania."],
+                    )
+                    continue
+
+                confirmed = CursesDialogs.confirm(
+                    win,
+                    (
+                        f"Zapisać {model.change_count} "
+                        f"zmian w strefie {zone.name}?"
+                    ),
+                )
+
+                if not confirmed:
+                    continue
+
+                try:
+                    save_result = session.save(
+                        commit=True,
+                    )
+                except Exception as exc:
+                    self._message_view(
+                        win,
+                        title=f"Błąd zapisu: {zone.name}",
+                        lines=[
+                            f"{type(exc).__name__}: {exc}",
+                        ],
+                        error=True,
+                    )
+                    continue
+
+                self._transaction_result_view(
+                    win,
+                    save_result.transaction,
+                )
+
+                if (
+                    save_result.transaction.committed
+                    or save_result.transaction.status
+                    == "NO-CHANGE"
+                ):
+                    if (
+                        save_result.transaction.status
+                        == "NO-CHANGE"
+                    ):
+                        session.reload()
+
+                    model = session.model
+                    selected = 0
+                    offset = 0
+                    search_query = ""
+
+                    self._start_refresh(force=True)
+
+                continue
 
             if key == ord("/"):
                 value = prompt_search()
@@ -655,6 +782,106 @@ class CursesApp:
 
 
 
+
+    def _message_view(
+        self,
+        win: curses.window,
+        *,
+        title: str,
+        lines: list[str],
+        error: bool = False,
+    ) -> None:
+        """Wyświetla prosty modalny komunikat."""
+        win.erase()
+        height, width = win.getmaxyx()
+
+        title_attr = curses.A_REVERSE | curses.A_BOLD
+        body_attr = (
+            self._color(Health.FAIL)
+            if error
+            else curses.A_NORMAL
+        )
+
+        try:
+            win.addnstr(
+                0,
+                0,
+                f" {title} ".ljust(width),
+                max(0, width - 1),
+                title_attr,
+            )
+
+            row = 2
+
+            for line in lines:
+                if row >= height - 2:
+                    break
+
+                win.addnstr(
+                    row,
+                    2,
+                    str(line),
+                    max(0, width - 4),
+                    body_attr,
+                )
+                row += 1
+
+            footer = " Dowolny klawisz — powrót "
+            win.addnstr(
+                height - 1,
+                0,
+                footer.ljust(width),
+                max(0, width - 1),
+                curses.A_REVERSE,
+            )
+            win.refresh()
+            win.getch()
+
+        except curses.error:
+            pass
+
+    def _transaction_result_view(
+        self,
+        win: curses.window,
+        result: TransactionResult,
+    ) -> None:
+        """Wyświetla wynik zapisu lub rollbacku transakcji."""
+        lines = [
+            f"Transakcja: {result.transaction_id}",
+            f"Strefa:      {result.zone}",
+            f"Status:      {result.status}",
+            f"Commit:      {'TAK' if result.committed else 'NIE'}",
+            f"Rollback:    {'TAK' if result.rolled_back else 'NIE'}",
+        ]
+
+        if result.backup:
+            lines.append(f"Backup:      {result.backup}")
+
+        lines.append("")
+        lines.append("Etapy:")
+
+        for step in result.steps:
+            marker = "OK" if step.ok else "BŁĄD"
+            lines.append(
+                f"{marker:<5} {step.name:<20} {step.message}"
+            )
+
+            if not step.ok:
+                if step.stderr.strip():
+                    lines.append(
+                        f"      stderr: {step.stderr.strip()}"
+                    )
+                elif step.stdout.strip():
+                    lines.append(
+                        f"      stdout: {step.stdout.strip()}"
+                    )
+
+        self._message_view(
+            win,
+            title=f"Wynik zapisu: {result.status}",
+            lines=lines,
+            error=not result.committed,
+        )
 
     def _pending_changes_view(
         self,

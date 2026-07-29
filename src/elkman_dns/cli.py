@@ -13,7 +13,7 @@ from .ui.curses_app import CursesApp
 
 
 def parser() -> argparse.ArgumentParser:
-    p = argparse.ArgumentParser(prog="elkman-dns", description="elkman DNS Toolkit 3.1 — Sprint 2: Transaction Layer")
+    p = argparse.ArgumentParser(prog="elkman-dns", description=f"elkman DNS Toolkit {__version__}")
     p.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     p.add_argument("--config", type=Path, default=DEFAULT_CONFIG)
     p.add_argument("--zones", type=Path, default=DEFAULT_ZONES)
@@ -161,7 +161,12 @@ def main(argv: list[str] | None = None) -> int:
     if not sys.stdin.isatty() or not sys.stdout.isatty():
         print("BŁĄD: TUI wymaga interaktywnego terminala. Użyj: elkman-dns domains", file=sys.stderr)
         return 2
-    CursesApp(zones, BindService(config), config.group_order).run()
+    CursesApp(
+        zones,
+        BindService(config),
+        config.group_order,
+        config=config,
+    ).run()
     return 0
 
 
