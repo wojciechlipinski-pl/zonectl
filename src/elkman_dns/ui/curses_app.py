@@ -522,6 +522,27 @@ class CursesApp:
 
                 continue
 
+            if key in (curses.KEY_DC,):
+                if not visible_records:
+                    continue
+
+                current_record = visible_records[selected]
+
+                try:
+                    model_index = model.records.index(current_record)
+                except ValueError:
+                    continue
+
+                model.delete(model_index)
+
+                visible_records = ordered_records()
+                selected = min(
+                    selected,
+                    max(0, len(visible_records) - 1),
+                )
+                offset = min(offset, selected)
+                continue
+
             if key in (ord("c"), ord("C")):
                 if search_query:
                     search_query = ""

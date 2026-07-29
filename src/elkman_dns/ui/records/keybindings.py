@@ -20,6 +20,7 @@ RECORD_VIEW_BINDINGS: tuple[KeyBinding, ...] = (
     KeyBinding("c", "wyczyść"),
     KeyBinding("s", "sortuj"),
     KeyBinding("e", "edytuj"),
+    KeyBinding("Del", "usuń"),
     KeyBinding("p", "zmiany"),
     KeyBinding("q", "powrót"),
 )
