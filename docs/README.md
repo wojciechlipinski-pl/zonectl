@@ -1,21 +1,18 @@
-# Dokumentacja ELKMAN-DNS
+# Dokumentacja projektu
 
-Pliki
-../AI_CONTEXT.md — pełna pamięć projektu dla nowej sesji.
-PROJECT_CONTEXT.md — cel i aktualny zakres projektu.
-ARCHITECTURE.md — podział na warstwy i przepływ danych.
-MODULE_REFERENCE.md — automatyczny wykaz modułów, klas, metod i funkcji.
-CHANGELOG.md — historia zmian wygenerowana z Git.
-ROADMAP.md — proponowane kierunki rozwoju.
-DEVELOPER_GUIDE.md — instrukcja pracy z kodem.
-OPERATIONS.md — uruchamianie, wdrażanie i diagnostyka.
-DECISIONS.md — decyzje architektoniczne.
-SESSION_HANDOFF.md — przekazanie prac do kolejnej sesji.
-Aktualizacja
-./scripts/generate_docs.sh
+- `AI_CONTEXT.md` — pamięć projektu dla nowej sesji.
+- `PROJECT_CONTEXT.md` — bieżący kontekst.
+- `ARCHITECTURE.md` — moduły i importy.
+- `MODULE_REFERENCE.md` — klasy, funkcje i metody.
+- `CHANGELOG.md` — historia Git.
+- `TODO.md` — znaczniki TODO/FIXME/HACK/XXX.
+- `ROADMAP.md` — plan rozwoju.
+- `DEVELOPER_GUIDE.md` — praca z kodem.
+- `OPERATIONS.md` — operacje i wdrożenie.
+- `DECISIONS.md` — decyzje architektoniczne.
+- `SESSION_HANDOFF.md` — przekazanie prac.
 
-Z uruchomieniem testów:
-
-./scripts/generate_docs.sh --with-tests
-
-Przed regeneracją skrypt tworzy kopię istniejącego katalogu docs/.
+## Aktualizacja
+```bash
+./scripts/update_project_docs.sh --with-tests
+```

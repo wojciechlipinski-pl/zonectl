@@ -1,66 +1,50 @@
-# Dokumentacja modułów, klas i funkcji
+# Dokumentacja modułów
 
-> Wygenerowano automatycznie: `2026-07-29T18:21:02+02:00`.
-
-Dokument jest wynikiem analizy AST aktualnego kodu w katalogu `src/`.
-Pokazuje deklaracje, a nie pełną semantykę implementacji.
+> Wygenerowano z AST: `2026-07-29T18:37:27+02:00`.
 
 ## `src/elkman_dns/__init__.py`
 
 elkman DNS Toolkit.
 
-Brak publicznych deklaracji klas lub funkcji.
+Brak klas i funkcji na poziomie modułu.
 
 ## `src/elkman_dns/cli.py`
 
-Brak docstringa modułu.
+Brak docstringa.
 
-**Najważniejsze importy:**
+### `def parser`
 
-- `__future__: annotations`
-- `argparse`
-- `json`
-- `sys`
-- `pathlib: Path`
-- `: __version__`
-- `core.bind: BindService`
-- `core.config: DEFAULT_CONFIG, DEFAULT_GROUPS, DEFAULT_ZONES, ToolkitConfig`
-- `core.transaction: TransactionEngine, TransactionResult`
-- `ui.curses_app: CursesApp`
-
-### `def parser() -> argparse.ArgumentParser`
-
-Lokalizacja: linia `15`.
+Linia: `15`
 
 Brak docstringa.
 
-### `def legacy_main(arguments: list[str]) -> int`
+### `def legacy_main`
 
-Lokalizacja: linia `61`.
-
-Brak docstringa.
-
-### `def grouped_lines(config: ToolkitConfig, zones)`
-
-Lokalizacja: linia `71`.
+Linia: `61`
 
 Brak docstringa.
 
-### `def print_transaction(result: TransactionResult, as_json: bool = False) -> int`
+### `def grouped_lines`
 
-Lokalizacja: linia `85`.
-
-Brak docstringa.
-
-### `def transaction_main(args, config: ToolkitConfig) -> int`
-
-Lokalizacja: linia `110`.
+Linia: `71`
 
 Brak docstringa.
 
-### `def main(argv: list[str] | None = None) -> int`
+### `def print_transaction`
 
-Lokalizacja: linia `139`.
+Linia: `85`
+
+Brak docstringa.
+
+### `def transaction_main`
+
+Linia: `110`
+
+Brak docstringa.
+
+### `def main`
+
+Linia: `139`
 
 Brak docstringa.
 
@@ -68,1128 +52,955 @@ Brak docstringa.
 
 Core services for elkman DNS Toolkit.
 
-Brak publicznych deklaracji klas lub funkcji.
+Brak klas i funkcji na poziomie modułu.
 
 ## `src/elkman_dns/core/audit.py`
 
-Brak docstringa modułu.
-
-**Najważniejsze importy:**
-
-- `__future__: annotations`
-- `json`
-- `os`
-- `pwd`
-- `socket`
-- `dataclasses: asdict, dataclass`
-- `datetime: datetime, timezone`
-- `pathlib: Path`
-- `typing: Any`
+Brak docstringa.
 
 ### `class AuditEvent`
 
-Lokalizacja: linia `14`.
+Linia: `14`
 
 Brak docstringa.
 
 ### `class AuditLog`
 
-Lokalizacja: linia `26`.
+Linia: `26`
 
 Brak docstringa.
 
 **Metody:**
 
-- `def __init__(self, path: Path)` — linia 27, prywatna; brak docstringa.
-- `def identity() -> tuple[str, int]` — linia 31, publiczna; brak docstringa.
-- `def append(self, transaction_id: str, zone: str, action: str, outcome: str, **details: Any) -> None` — linia 40, publiczna; brak docstringa.
-- `def read(self, zone: str | None = None, limit: int = 50) -> list[dict[str, Any]]` — linia 63, publiczna; brak docstringa.
+- `__init__` — linia 27; brak docstringa.
+- `identity` — linia 31; brak docstringa.
+- `append` — linia 40; brak docstringa.
+- `read` — linia 63; brak docstringa.
 
 ## `src/elkman_dns/core/bind.py`
 
-Brak docstringa modułu.
-
-**Najważniejsze importy:**
-
-- `__future__: annotations`
-- `config: ToolkitConfig`
-- `models: Health, Zone, ZoneStatus`
-- `runner: run`
-- `zone_parser: DNSRecord, ZoneRecordParser`
+Brak docstringa.
 
 ### `class BindService`
 
-Lokalizacja: linia `9`.
+Linia: `9`
 
 Read-only BIND status service used by the Sprint 1 dashboard.
 
 **Metody:**
 
-- `def __init__(self, config: ToolkitConfig)` — linia 12, prywatna; brak docstringa.
-- `def serial(self, server: str, zone: str) -> str | None` — linia 20, publiczna; brak docstringa.
-- `def dnssec_enabled(self, zone: str) -> bool | None` — linia 30, publiczna; brak docstringa.
-- `def zone_records(self, zone: Zone) -> tuple[list[str], str | None]` — linia 38, publiczna; zwraca kanoniczną listę rekordów z aktywnego pliku strefy.
-- `def parsed_zone_records(self, zone: Zone) -> tuple[list[DNSRecord], str | None]` — linia 84, publiczna; zwraca rekordy strefy przekształcone do modelu dnsrecord.
-- `def quick_status(self, zone: Zone) -> ZoneStatus` — linia 112, publiczna; brak docstringa.
+- `__init__` — linia 12; brak docstringa.
+- `serial` — linia 20; brak docstringa.
+- `dnssec_enabled` — linia 30; brak docstringa.
+- `zone_records` — linia 38; zwraca kanoniczną listę rekordów z aktywnego pliku strefy.
+- `parsed_zone_records` — linia 84; zwraca rekordy strefy przekształcone do modelu dnsrecord.
+- `quick_status` — linia 112; brak docstringa.
 
 ## `src/elkman_dns/core/bind_config.py`
 
-Brak docstringa modułu.
+Brak docstringa.
 
-**Najważniejsze importy:**
+### `class BindConfigError`
 
-- `__future__: annotations`
-- `re`
-- `pathlib: Path`
-- `models: Zone`
-
-### `class BindConfigError(RuntimeError)`
-
-Lokalizacja: linia `9`.
+Linia: `9`
 
 Błąd odczytu lub analizy konfiguracji BIND.
 
 ### `class BindConfigDiscovery`
 
-Lokalizacja: linia `13`.
+Linia: `13`
 
-Odczytuje strefy bezpośrednio z konfiguracji BIND.
+Odczytuje strefy bezpośrednio z konfiguracji BIND. Obsługuje: - zone "example.org" { ... }; - rekurencyjne dyrektywy include; - konfigurację w named.conf.local; - przyszłą strukturę zones.d; - wykrywanie pliku strefy, DNSSEC, notify, dns2 i HE.
 
 **Metody:**
 
-- `def __init__(self, root: Path = Path('/etc/bind/named.conf.local'))` — linia 50, prywatna; brak docstringa.
-- `def zones(self) -> list[Zone]` — linia 54, publiczna; zwróć wszystkie strefy znalezione w konfiguracji bind.
-- `def _read_file(self, path: Path, discovered: dict[str, Zone]) -> None` — linia 63, prywatna; brak docstringa.
-- `def _resolve_include(parent_file: Path, raw_path: str) -> Path` — linia 101, prywatna; brak docstringa.
-- `def _zone_blocks(self, text: str, source: Path)` — linia 109, prywatna; brak docstringa.
-- `def _matching_brace(text: str, opening: int) -> int | None` — linia 147, prywatna; brak docstringa.
-- `def _zone_from_block(self, name: str, block: str, source: Path) -> Zone` — linia 177, prywatna; brak docstringa.
-- `def _group_for(name: str, source: Path, block: str) -> str` — linia 242, prywatna; brak docstringa.
-- `def _strip_comments(text: str) -> str` — linia 266, prywatna; usuń komentarze //, # i /* ...
+- `__init__` — linia 50; brak docstringa.
+- `zones` — linia 54; zwróć wszystkie strefy znalezione w konfiguracji bind.
+- `_read_file` — linia 63; brak docstringa.
+- `_resolve_include` — linia 101; brak docstringa.
+- `_zone_blocks` — linia 109; brak docstringa.
+- `_matching_brace` — linia 147; brak docstringa.
+- `_zone_from_block` — linia 177; brak docstringa.
+- `_group_for` — linia 242; brak docstringa.
+- `_strip_comments` — linia 266; usuń komentarze //, # i /* ... */ bez niszczenia tekstu znajdującego się wewnątrz cudzysłowów.
 
 ## `src/elkman_dns/core/config.py`
 
-Brak docstringa modułu.
+Brak docstringa.
 
-**Najważniejsze importy:**
+### `def _yes`
 
-- `__future__: annotations`
-- `configparser`
-- `pathlib: Path`
-- `discovery: BindConfigDiscovery, BindDiscoveryError, DEFAULT_NAMED_CONF, ZoneConfig`
-- `models: Zone`
-
-### `def _yes(value: str | None, default: bool) -> bool`
-
-Lokalizacja: linia `20`.
+Linia: `20`
 
 Brak docstringa.
 
-### `def _unquote(value: str) -> str`
+### `def _unquote`
 
-Lokalizacja: linia `33`.
+Linia: `33`
 
 Brak docstringa.
 
-### `def load_groups_yaml(path: Path) -> tuple[list[str], dict[str, str]]`
+### `def load_groups_yaml`
 
-Lokalizacja: linia `46`.
+Linia: `46`
 
 Odczytaj uproszczony format groups.yaml bez PyYAML.
 
 ### `class ToolkitConfig`
 
-Lokalizacja: linia `120`.
+Linia: `120`
 
-Konfiguracja elkman DNS Toolkit.
+Konfiguracja elkman DNS Toolkit. Konfiguracja BIND jest źródłem prawdy dla: - nazw stref, - typów stref, - aktywnych plików źródłowych. zones.conf może nadpisywać wyłącznie ustawienia Toolkitu, np. grupę, obsługę serwerów wtórnych i widoczność strefy.
 
 **Metody:**
 
-- `def __init__(self, config_path: Path = DEFAULT_CONFIG, zones_path: Path = DEFAULT_ZONES, groups_path: Path = DEFAULT_GROUPS)` — linia 134, prywatna; brak docstringa.
-- `def load(self) -> 'ToolkitConfig'` — linia 153, publiczna; brak docstringa.
-- `def toolkit(self) -> configparser.SectionProxy` — linia 186, publiczna; brak docstringa.
-- `def auto_discover_zones(self) -> bool` — linia 190, publiczna; brak docstringa.
-- `def bind_config_path(self) -> Path` — linia 197, publiczna; brak docstringa.
-- `def _normalise_zone_name(name: str) -> str` — linia 206, prywatna; brak docstringa.
-- `def _discover_bind_zones(self) -> None` — linia 209, prywatna; brak docstringa.
-- `def discovered_zone(self, name: str) -> ZoneConfig | None` — linia 226, publiczna; brak docstringa.
-- `def _zone_override(self, name: str) -> configparser.SectionProxy | None` — linia 234, prywatna; brak docstringa.
-- `def _group_for(self, name: str, override: configparser.SectionProxy | None) -> str` — linia 246, prywatna; brak docstringa.
-- `def _zone_from_discovery(self, discovered: ZoneConfig) -> Zone | None` — linia 262, prywatna; brak docstringa.
-- `def _zones_from_discovery(self) -> list[Zone]` — linia 317, prywatna; brak docstringa.
-- `def _zones_from_legacy_config(self) -> list[Zone]` — linia 331, prywatna; tryb zgodności ze starym zones.conf.
-- `def zones(self) -> list[Zone]` — linia 396, publiczna; brak docstringa.
+- `__init__` — linia 134; brak docstringa.
+- `load` — linia 153; brak docstringa.
+- `toolkit` — linia 186; brak docstringa.
+- `auto_discover_zones` — linia 190; brak docstringa.
+- `bind_config_path` — linia 197; brak docstringa.
+- `_normalise_zone_name` — linia 206; brak docstringa.
+- `_discover_bind_zones` — linia 209; brak docstringa.
+- `discovered_zone` — linia 226; brak docstringa.
+- `_zone_override` — linia 234; brak docstringa.
+- `_group_for` — linia 246; brak docstringa.
+- `_zone_from_discovery` — linia 262; brak docstringa.
+- `_zones_from_discovery` — linia 317; brak docstringa.
+- `_zones_from_legacy_config` — linia 331; tryb zgodności ze starym zones.conf. używany wyłącznie, gdy auto_discover_zones = no.
+- `zones` — linia 396; brak docstringa.
 
 ## `src/elkman_dns/core/discovery.py`
 
 Automatyczne wykrywanie stref i plików źródłowych BIND.
 
-**Najważniejsze importy:**
+### `class BindDiscoveryError`
 
-- `__future__: annotations`
-- `os`
-- `re`
-- `dataclasses: dataclass`
-- `pathlib: Path`
-
-### `class BindDiscoveryError(RuntimeError)`
-
-Lokalizacja: linia `14`.
+Linia: `14`
 
 Błąd odczytu lub interpretacji konfiguracji BIND.
 
 ### `class ZoneConfig`
 
-Lokalizacja: linia `19`.
+Linia: `19`
 
 Konfiguracja pojedynczej strefy wykryta z konfiguracji BIND.
 
 **Metody:**
 
-- `def is_primary(self) -> bool` — linia 42, publiczna; brak docstringa.
-- `def is_secondary(self) -> bool` — linia 46, publiczna; brak docstringa.
-- `def dnssec_enabled(self) -> bool` — linia 50, publiczna; brak docstringa.
-- `def editable(self) -> bool` — linia 54, publiczna; brak docstringa.
-- `def is_managed_signed_file(self) -> bool` — linia 64, publiczna; brak docstringa.
-- `def requires_freeze(self) -> bool` — linia 72, publiczna; journal aktywnej strefy oznacza, że zwykła atomowa podmiana pliku może być niewystarczająca.
-- `def save_mode(self) -> str` — linia 83, publiczna; brak docstringa.
+- `is_primary` — linia 42; brak docstringa.
+- `is_secondary` — linia 46; brak docstringa.
+- `dnssec_enabled` — linia 50; brak docstringa.
+- `editable` — linia 54; brak docstringa.
+- `is_managed_signed_file` — linia 64; brak docstringa.
+- `requires_freeze` — linia 72; journal aktywnej strefy oznacza, że zwykła atomowa podmiana pliku może być niewystarczająca. sama obecność .signed.jnl nie powoduje ustawienia tej flagi, ponieważ jest to journal podpisanej strony inline-signing.
+- `save_mode` — linia 83; brak docstringa.
 
 ### `class DiscoveryResult`
 
-Lokalizacja: linia `106`.
+Linia: `106`
 
 Wynik przejścia przez konfigurację BIND.
 
 **Metody:**
 
-- `def zone(self, name: str) -> ZoneConfig` — linia 113, publiczna; brak docstringa.
+- `zone` — linia 113; brak docstringa.
 
 ### `class _ConfigSource`
 
-Lokalizacja: linia `137`.
+Linia: `137`
 
 Brak docstringa.
 
 ### `class BindConfigDiscovery`
 
-Lokalizacja: linia `142`.
+Linia: `142`
 
 Czyta konfigurację BIND, rozwija include i wykrywa strefy.
 
 **Metody:**
 
-- `def __init__(self, root_config: Path = DEFAULT_NAMED_CONF) -> None` — linia 181, prywatna; brak docstringa.
-- `def discover(self) -> DiscoveryResult` — linia 187, publiczna; brak docstringa.
-- `def _load_config_tree(self, path: Path, sources: list[_ConfigSource], visited: set[Path], stack: list[Path]) -> None` — linia 217, prywatna; brak docstringa.
-- `def _parse_zones(self, source: _ConfigSource) -> list[ZoneConfig]` — linia 273, prywatna; brak docstringa.
-- `def _zone_from_block(self, name: str, body: str, config_file: Path) -> ZoneConfig` — linia 321, prywatna; brak docstringa.
-- `def _match_value(pattern: re.Pattern[str], text: str, default: str | None) -> str | None` — linia 429, prywatna; brak docstringa.
-- `def _resolve_config_path(raw_path: str, parent: Path) -> Path` — linia 442, prywatna; brak docstringa.
-- `def _resolve_zone_path(raw_path: str, config_parent: Path) -> Path` — linia 454, prywatna; brak docstringa.
-- `def _find_block_end(text: str, opening: int, source_path: Path) -> int` — linia 470, prywatna; brak docstringa.
-- `def _strip_comments(text: str) -> str` — linia 509, prywatna; usuwa komentarze //, # i /* ...
+- `__init__` — linia 181; brak docstringa.
+- `discover` — linia 187; brak docstringa.
+- `_load_config_tree` — linia 217; brak docstringa.
+- `_parse_zones` — linia 273; brak docstringa.
+- `_zone_from_block` — linia 321; brak docstringa.
+- `_match_value` — linia 429; brak docstringa.
+- `_resolve_config_path` — linia 442; brak docstringa.
+- `_resolve_zone_path` — linia 454; brak docstringa.
+- `_find_block_end` — linia 470; brak docstringa.
+- `_strip_comments` — linia 509; usuwa komentarze //, # i /* ... */, ale zachowuje tekst wewnątrz cudzysłowów.
 
 ## `src/elkman_dns/core/models.py`
 
-Brak docstringa modułu.
+Brak docstringa.
 
-**Najważniejsze importy:**
+### `class Health`
 
-- `__future__: annotations`
-- `dataclasses: dataclass`
-- `enum: Enum`
-- `pathlib: Path`
-
-### `class Health(str, Enum)`
-
-Lokalizacja: linia `8`.
+Linia: `8`
 
 Brak docstringa.
 
 ### `class Zone`
 
-Lokalizacja: linia `16`.
+Linia: `16`
 
 Brak docstringa.
 
 ### `class ZoneStatus`
 
-Lokalizacja: linia `28`.
+Linia: `28`
 
 Brak docstringa.
 
 ## `src/elkman_dns/core/runner.py`
 
-Brak docstringa modułu.
-
-**Najważniejsze importy:**
-
-- `__future__: annotations`
-- `subprocess`
-- `dataclasses: dataclass`
+Brak docstringa.
 
 ### `class CommandResult`
 
-Lokalizacja: linia `8`.
+Linia: `8`
 
 Brak docstringa.
 
-### `def run(command: list[str], timeout: int = 10) -> CommandResult`
+### `def run`
 
-Lokalizacja: linia `14`.
+Linia: `14`
 
 Brak docstringa.
 
 ## `src/elkman_dns/core/soa_serial.py`
 
-Brak docstringa modułu.
+Brak docstringa.
 
-**Najważniejsze importy:**
+### `class SoaSerialError`
 
-- `__future__: annotations`
-- `re`
-- `dataclasses: dataclass, replace`
-- `datetime: date`
-- `zone_document: RawLine, RecordNode, ZoneDocument`
-- `zone_parser: DNSRecord`
-
-### `class SoaSerialError(RuntimeError)`
-
-Lokalizacja: linia `11`.
+Linia: `11`
 
 Błąd odczytu lub aktualizacji serialu SOA.
 
 ### `class SoaSerialChange`
 
-Lokalizacja: linia `16`.
+Linia: `16`
 
 Brak docstringa.
 
-### `def next_soa_serial(current: int, *, today: date | None = None) -> int`
+### `def next_soa_serial`
 
-Lokalizacja: linia `33`.
+Linia: `33`
 
-Wylicza kolejny serial w formacie RRRRMMDDNN.
+Wylicza kolejny serial w formacie RRRRMMDDNN. Jeżeli aktualny serial jest starszy niż dzisiejszy: RRRRMMDD01 Jeżeli jest dzisiejszy albo większy: aktualny + 1 Druga reguła gwarantuje monotoniczność również wtedy, gdy w strefie znajduje się serial z przyszłą datą lub niestandardowy wysoki serial.
 
-### `def _replace_record_serial(record: DNSRecord, new_serial: int) -> DNSRecord`
+### `def _replace_record_serial`
 
-Lokalizacja: linia `72`.
+Linia: `72`
 
 Brak docstringa.
 
-### `def bump_document_soa_serial(document: ZoneDocument, *, today: date | None = None) -> SoaSerialChange`
+### `def bump_document_soa_serial`
 
-Lokalizacja: linia `100`.
+Linia: `100`
 
-Podbija serial pierwszego rekordu SOA w ZoneDocument.
+Podbija serial pierwszego rekordu SOA w ZoneDocument. Obsługiwane są: - wielowierszowe SOA zachowane jako RawLine, - jednowierszowe SOA zapisane jako RecordNode. Komentarze i wcięcia wielowierszowego SOA pozostają bez zmian.
 
 ## `src/elkman_dns/core/transaction.py`
 
-Brak docstringa modułu.
-
-**Najważniejsze importy:**
-
-- `__future__: annotations`
-- `fcntl`
-- `hashlib`
-- `json`
-- `os`
-- `shutil`
-- `stat`
-- `tempfile`
-- `time`
-- `uuid`
-- `dataclasses: asdict, dataclass, field`
-- `datetime: datetime`
-- `pathlib: Path`
-- `audit: AuditLog`
-- `config: ToolkitConfig`
-- `models: Zone`
-- `runner: CommandResult, run`
+Brak docstringa.
 
 ### `class StepResult`
 
-Lokalizacja: linia `23`.
+Linia: `23`
 
 Brak docstringa.
 
 ### `class TransactionResult`
 
-Lokalizacja: linia `33`.
+Linia: `33`
 
 Brak docstringa.
 
 **Metody:**
 
-- `def ok(self) -> bool` — linia 43, publiczna; brak docstringa.
+- `ok` — linia 43; brak docstringa.
 
 ### `class ZoneLock`
 
-Lokalizacja: linia `47`.
+Linia: `47`
 
 Brak docstringa.
 
 **Metody:**
 
-- `def __init__(self, path: Path)` — linia 48, prywatna; brak docstringa.
-- `def __enter__(self)` — linia 52, prywatna; brak docstringa.
-- `def __exit__(self, exc_type, exc, tb)` — linia 66, prywatna; brak docstringa.
+- `__init__` — linia 48; brak docstringa.
+- `__enter__` — linia 52; brak docstringa.
+- `__exit__` — linia 66; brak docstringa.
 
 ### `class TransactionEngine`
 
-Lokalizacja: linia `76`.
+Linia: `76`
 
 Atomic zone-file replacement with validation, backup, reload and rollback.
 
 **Metody:**
 
-- `def __init__(self, config: ToolkitConfig)` — linia 79, prywatna; brak docstringa.
-- `def find_zone(self, name: str) -> Zone` — linia 90, publiczna; brak docstringa.
-- `def _safe_zone_name(name: str) -> str` — linia 98, prywatna; brak docstringa.
-- `def _digest(path: Path) -> str` — linia 102, prywatna; brak docstringa.
-- `def _step_command(self, name: str, command: list[str], timeout: int | None = None) -> StepResult` — linia 109, prywatna; brak docstringa.
-- `def _zone_validation(self, zone: Zone, candidate: Path) -> StepResult` — linia 114, prywatna; brak docstringa.
-- `def _config_validation(self) -> StepResult` — linia 117, prywatna; brak docstringa.
-- `def _zone_serial(self, zone: Zone, candidate: Path) -> str | None` — linia 120, prywatna; brak docstringa.
-- `def _serial(self, zone: str) -> str | None` — linia 130, prywatna; brak docstringa.
-- `def _loaded_serial(self, zone: str) -> str | None` — linia 137, prywatna; brak docstringa.
-- `def _verify_loaded_zone(self, zone: Zone, expected_serial: str) -> tuple[StepResult, str | None, str | None]` — linia 146, prywatna; brak docstringa.
-- `def validate(self, zone_name: str, source: Path | None = None) -> TransactionResult` — linia 166, publiczna; brak docstringa.
-- `def verify(self, zone_name: str) -> TransactionResult` — linia 184, publiczna; brak docstringa.
-- `def apply(self, zone_name: str, source: Path, commit: bool = False) -> TransactionResult` — linia 277, publiczna; brak docstringa.
-- `def rollback(self, zone_name: str, backup: Path, commit: bool = False) -> TransactionResult` — linia 379, publiczna; brak docstringa.
-- `def backups(self, zone_name: str, limit: int = 20) -> list[Path]` — linia 404, publiczna; brak docstringa.
-- `def _new_id(self, zone: str) -> str` — linia 411, prywatna; brak docstringa.
-- `def _backup(self, zone: Zone, target: Path, txid: str) -> Path` — linia 415, prywatna; brak docstringa.
-- `def _atomic_install(source: Path, target: Path) -> None` — linia 436, prywatna; brak docstringa.
-- `def _rollback(self, zone: Zone, target: Path, backup: Path) -> StepResult` — linia 463, prywatna; brak docstringa.
-- `def _save_manifest(self, result: TransactionResult, extra: dict) -> None` — linia 473, prywatna; brak docstringa.
-- `def _finish(self, result: TransactionResult, outcome: str, **extra) -> TransactionResult` — linia 480, prywatna; brak docstringa.
+- `__init__` — linia 79; brak docstringa.
+- `find_zone` — linia 90; brak docstringa.
+- `_safe_zone_name` — linia 98; brak docstringa.
+- `_digest` — linia 102; brak docstringa.
+- `_step_command` — linia 109; brak docstringa.
+- `_zone_validation` — linia 114; brak docstringa.
+- `_config_validation` — linia 117; brak docstringa.
+- `_zone_serial` — linia 120; brak docstringa.
+- `_serial` — linia 130; brak docstringa.
+- `_loaded_serial` — linia 137; brak docstringa.
+- `_verify_loaded_zone` — linia 146; brak docstringa.
+- `validate` — linia 166; brak docstringa.
+- `verify` — linia 184; brak docstringa.
+- `apply` — linia 277; brak docstringa.
+- `rollback` — linia 379; brak docstringa.
+- `backups` — linia 404; brak docstringa.
+- `_new_id` — linia 411; brak docstringa.
+- `_backup` — linia 415; brak docstringa.
+- `_atomic_install` — linia 436; brak docstringa.
+- `_rollback` — linia 463; brak docstringa.
+- `_save_manifest` — linia 473; brak docstringa.
+- `_finish` — linia 480; brak docstringa.
 
 ## `src/elkman_dns/core/zone_document.py`
 
-Brak docstringa modułu.
-
-**Najważniejsze importy:**
-
-- `__future__: annotations`
-- `dataclasses: dataclass, field`
-- `pathlib: Path`
-- `typing: Iterable`
-- `zone_parser: DNSRecord`
+Brak docstringa.
 
 ### `class ZoneNode`
 
-Lokalizacja: linia `10`.
+Linia: `10`
 
 Element źródłowego dokumentu strefy.
 
-### `class BlankLine(ZoneNode)`
+### `class BlankLine`
 
-Lokalizacja: linia `15`.
+Linia: `15`
 
 Brak docstringa.
 
-### `class Comment(ZoneNode)`
+### `class Comment`
 
-Lokalizacja: linia `20`.
+Linia: `20`
 
 Brak docstringa.
 
 **Metody:**
 
-- `def text(self) -> str` — linia 24, publiczna; brak docstringa.
+- `text` — linia 24; brak docstringa.
 
-### `class Directive(ZoneNode)`
+### `class Directive`
 
-Lokalizacja: linia `29`.
-
-Brak docstringa.
-
-### `class RecordNode(ZoneNode)`
-
-Lokalizacja: linia `36`.
+Linia: `29`
 
 Brak docstringa.
 
-### `class RawLine(ZoneNode)`
+### `class RecordNode`
 
-Lokalizacja: linia `44`.
+Linia: `36`
 
-Linia zachowana bez interpretacji.
+Brak docstringa.
+
+### `class RawLine`
+
+Linia: `44`
+
+Linia zachowana bez interpretacji. Używana m.in. dla: - rekordów wielowierszowych, - nieobsługiwanej składni, - linii kontynuacji.
 
 ### `class ZoneDocument`
 
-Lokalizacja: linia `58`.
+Linia: `58`
 
 Brak docstringa.
 
 **Metody:**
 
-- `def records(self) -> list[DNSRecord]` — linia 64, publiczna; brak docstringa.
-- `def iter_record_nodes(self) -> Iterable[RecordNode]` — linia 71, publiczna; brak docstringa.
-- `def find_record(self, record: DNSRecord) -> RecordNode | None` — linia 76, publiczna; brak docstringa.
+- `records` — linia 64; brak docstringa.
+- `iter_record_nodes` — linia 71; brak docstringa.
+- `find_record` — linia 76; brak docstringa.
 
 ## `src/elkman_dns/core/zone_document_adapter.py`
 
-Brak docstringa modułu.
+Brak docstringa.
 
-**Najważniejsze importy:**
+### `class ZoneDocumentAdapterError`
 
-- `__future__: annotations`
-- `dataclasses: dataclass`
-- `zone_document: RecordNode, ZoneDocument`
-- `zone_model: ChangeKind, ZoneModel`
-
-### `class ZoneDocumentAdapterError(RuntimeError)`
-
-Lokalizacja: linia `9`.
+Linia: `9`
 
 Błąd synchronizacji ZoneModel z ZoneDocument.
 
 ### `class _NodeBinding`
 
-Lokalizacja: linia `14`.
+Linia: `14`
 
 Brak docstringa.
 
 ### `class ZoneDocumentAdapter`
 
-Lokalizacja: linia `19`.
+Linia: `19`
 
-Łączy bufor edycji ZoneModel z bezstratnym ZoneDocument.
+Łączy bufor edycji ZoneModel z bezstratnym ZoneDocument. ZoneModel nadal obsługuje logikę zmian dla UI, natomiast adapter nanosi te zmiany na węzły dokumentu przed użyciem ZoneWriter. Istniejące rekordy są wiązane z RecordNode według ich kolejności podczas tworzenia adaptera. Dzięki temu poprawnie obsługiwane są również identyczne rekordy występujące więcej niż raz.
 
 **Metody:**
 
-- `def __init__(self, document: ZoneDocument, model: ZoneModel) -> None` — linia 31, prywatna; brak docstringa.
-- `def _bind_existing_records(self) -> None` — linia 44, prywatna; brak docstringa.
-- `def apply(self) -> ZoneDocument` — linia 71, publiczna; nanieś bieżące zmiany modelu na dokument.
-- `def _apply_add(self, identifier: int, record) -> None` — linia 117, prywatna; brak docstringa.
-- `def _remove_abandoned_added_nodes(self, active_identifiers: set[int]) -> None` — linia 140, prywatna; brak docstringa.
-- `def discard(self) -> ZoneDocument` — linia 158, publiczna; przywróć dokument do stanu sprzed zmian modelu.
+- `__init__` — linia 31; brak docstringa.
+- `_bind_existing_records` — linia 44; brak docstringa.
+- `apply` — linia 71; nanieś bieżące zmiany modelu na dokument. metoda może być wykonywana wielokrotnie. dodane rekordy nie będą ponownie dopisywane, a cofnięte zmiany zostaną wyzerowane.
+- `_apply_add` — linia 117; brak docstringa.
+- `_remove_abandoned_added_nodes` — linia 140; brak docstringa.
+- `discard` — linia 158; przywróć dokument do stanu sprzed zmian modelu. powinno być wywołane razem z zonemodel.discard().
 
 ## `src/elkman_dns/core/zone_edit_session.py`
 
-Brak docstringa modułu.
+Brak docstringa.
 
-**Najważniejsze importy:**
+### `class TransactionEngineProtocol`
 
-- `__future__: annotations`
-- `dataclasses: dataclass`
-- `datetime: date`
-- `pathlib: Path`
-- `typing: Callable, Protocol`
-- `models: Zone`
-- `soa_serial: SoaSerialChange, SoaSerialError, bump_document_soa_serial`
-- `transaction: TransactionResult`
-- `zone_document: ZoneDocument`
-- `zone_document_adapter: ZoneDocumentAdapter`
-- `zone_file_parser: ZoneFileParser`
-- `zone_model: ZoneModel`
-- `zone_writer: ZoneWriter`
-
-### `class TransactionEngineProtocol(Protocol)`
-
-Lokalizacja: linia `22`.
+Linia: `22`
 
 Brak docstringa.
 
 **Metody:**
 
-- `def apply(self, zone_name: str, source: Path, commit: bool = False) -> TransactionResult` — linia 23, publiczna; brak docstringa.
+- `apply` — linia 23; brak docstringa.
 
-### `class ZoneEditSessionError(RuntimeError)`
+### `class ZoneEditSessionError`
 
-Lokalizacja: linia `32`.
+Linia: `32`
 
 Błąd sesji edycji strefy.
 
 ### `class ZoneSaveResult`
 
-Lokalizacja: linia `37`.
+Linia: `37`
 
 Brak docstringa.
 
 **Metody:**
 
-- `def committed(self) -> bool` — linia 42, publiczna; brak docstringa.
-- `def ok(self) -> bool` — linia 46, publiczna; brak docstringa.
-- `def status(self) -> str` — linia 50, publiczna; brak docstringa.
+- `committed` — linia 42; brak docstringa.
+- `ok` — linia 46; brak docstringa.
+- `status` — linia 50; brak docstringa.
 
 ### `class ZoneEditSession`
 
-Lokalizacja: linia `54`.
+Linia: `54`
 
-Pełna sesja edycji źródłowego pliku strefy.
+Pełna sesja edycji źródłowego pliku strefy. Pipeline: ZoneFileParser -> ZoneDocument -> ZoneModel -> ZoneDocumentAdapter -> ZoneWriter -> TransactionEngine
 
 **Metody:**
 
-- `def __init__(self, zone: Zone, engine: TransactionEngineProtocol, *, writer: ZoneWriter | None = None, candidate_directory: Path | None = None, auto_bump_serial: bool = True, today_provider: Callable[[], date] = date.today) -> None` — linia 68, prywatna; brak docstringa.
-- `def source_path(self) -> Path` — linia 100, publiczna; brak docstringa.
-- `def dirty(self) -> bool` — linia 109, publiczna; brak docstringa.
-- `def change_count(self) -> int` — linia 113, publiczna; brak docstringa.
-- `def _load(self) -> None` — linia 116, prywatna; brak docstringa.
-- `def _prepare_document(self) -> None` — linia 137, prywatna; brak docstringa.
-- `def render_candidate(self) -> str` — linia 162, publiczna; wygeneruj tekst kandydata bez tworzenia pliku.
-- `def create_candidate(self) -> Path` — linia 169, publiczna; utwórz bezpieczny plik tymczasowy z bieżącymi zmianami.
-- `def save(self, *, commit: bool = False, remove_candidate: bool = True) -> ZoneSaveResult` — linia 186, publiczna; waliduj albo zapisz zmiany przez transactionengine.
-- `def discard(self) -> None` — linia 227, publiczna; porzuć wszystkie niezapisane zmiany.
-- `def reload(self) -> None` — linia 235, publiczna; ponownie odczytaj aktywny plik strefy.
+- `__init__` — linia 68; brak docstringa.
+- `source_path` — linia 100; brak docstringa.
+- `dirty` — linia 109; brak docstringa.
+- `change_count` — linia 113; brak docstringa.
+- `_load` — linia 116; brak docstringa.
+- `_prepare_document` — linia 137; brak docstringa.
+- `render_candidate` — linia 162; wygeneruj tekst kandydata bez tworzenia pliku.
+- `create_candidate` — linia 169; utwórz bezpieczny plik tymczasowy z bieżącymi zmianami.
+- `save` — linia 186; waliduj albo zapisz zmiany przez transactionengine. commit=false: dry-run, aktywny plik nie jest zmieniany. commit=true: backup, atomic install, reload, weryfikacja i rollback.
+- `discard` — linia 227; porzuć wszystkie niezapisane zmiany.
+- `reload` — linia 235; ponownie odczytaj aktywny plik strefy. niezapisane zmiany są tracone.
 
 ## `src/elkman_dns/core/zone_file_parser.py`
 
-Brak docstringa modułu.
+Brak docstringa.
 
-**Najważniejsze importy:**
+### `class ZoneFileParseError`
 
-- `__future__: annotations`
-- `dataclasses: dataclass`
-- `pathlib: Path`
-- `zone_document: BlankLine, Comment, Directive, RawLine, RecordNode, ZoneDocument`
-- `zone_parser: DNSRecord`
-
-### `class ZoneFileParseError(RuntimeError)`
-
-Lokalizacja: linia `17`.
+Linia: `17`
 
 Błąd odczytu źródłowego pliku strefy.
 
 ### `class _Token`
 
-Lokalizacja: linia `22`.
+Linia: `22`
 
 Brak docstringa.
 
 ### `class ZoneFileParser`
 
-Lokalizacja: linia `28`.
+Linia: `28`
 
-Zachowujący formatowanie parser źródłowego pliku strefy.
+Zachowujący formatowanie parser źródłowego pliku strefy. Parser interpretuje bezpieczne rekordy jednowierszowe. Linie, których nie potrafi jednoznacznie rozpoznać, zapisuje jako RawLine. Dzięki temu żadna część źródłowego pliku nie jest tracona.
 
 **Metody:**
 
-- `def parse_file(cls, path: Path) -> ZoneDocument` — linia 100, publiczna; brak docstringa.
-- `def parse_text(cls, text: str) -> ZoneDocument` — linia 120, publiczna; brak docstringa.
-- `def _parse_directive(cls, raw_line: str) -> Directive | None` — linia 199, prywatna; brak docstringa.
-- `def _parse_record_line(cls, raw_line: str, previous_owner: str | None) -> tuple[DNSRecord, bool] | None` — linia 223, prywatna; brak docstringa.
-- `def _is_ttl(value: str) -> bool` — linia 314, prywatna; brak docstringa.
-- `def _is_record_type(cls, value: str) -> bool` — linia 326, prywatna; brak docstringa.
-- `def _normalise_class(value: str) -> str` — linia 337, prywatna; brak docstringa.
-- `def _remove_comment(line: str) -> str` — linia 346, prywatna; usuń komentarz rozpoczynający się średnikiem poza cudzysłowem.
-- `def _tokenise(line: str) -> list[_Token]` — linia 372, prywatna; podziel linię według białych znaków, zachowując tekst w cudzysłowach.
-- `def _parenthesis_delta(line: str) -> int` — linia 425, prywatna; policz nawiasy poza cudzysłowami.
+- `parse_file` — linia 100; brak docstringa.
+- `parse_text` — linia 120; brak docstringa.
+- `_parse_directive` — linia 199; brak docstringa.
+- `_parse_record_line` — linia 223; brak docstringa.
+- `_is_ttl` — linia 314; brak docstringa.
+- `_is_record_type` — linia 326; brak docstringa.
+- `_normalise_class` — linia 337; brak docstringa.
+- `_remove_comment` — linia 346; usuń komentarz rozpoczynający się średnikiem poza cudzysłowem.
+- `_tokenise` — linia 372; podziel linię według białych znaków, zachowując tekst w cudzysłowach.
+- `_parenthesis_delta` — linia 425; policz nawiasy poza cudzysłowami. nie interpretuje rekordów wielowierszowych, lecz pozwala zachować cały blok jako rawline.
 
 ## `src/elkman_dns/core/zone_model.py`
 
-Brak docstringa modułu.
+Brak docstringa.
 
-**Najważniejsze importy:**
+### `class ChangeKind`
 
-- `__future__: annotations`
-- `dataclasses: dataclass`
-- `enum: Enum`
-- `typing: Iterable`
-- `zone_parser: DNSRecord`
-
-### `class ChangeKind(str, Enum)`
-
-Lokalizacja: linia `10`.
+Linia: `10`
 
 Brak docstringa.
 
 ### `class ZoneChange`
 
-Lokalizacja: linia `17`.
+Linia: `17`
 
 Brak docstringa.
 
 **Metody:**
 
-- `def record(self) -> DNSRecord` — linia 23, publiczna; brak docstringa.
+- `record` — linia 23; brak docstringa.
 
 ### `class ZoneRecordView`
 
-Lokalizacja: linia `34`.
+Linia: `34`
 
 Rekord prezentowany w edytorze wraz ze stanem zmiany.
 
 **Metody:**
 
-- `def deleted(self) -> bool` — linia 42, publiczna; brak docstringa.
-- `def marker(self) -> str` — linia 46, publiczna; brak docstringa.
+- `deleted` — linia 42; brak docstringa.
+- `marker` — linia 46; brak docstringa.
 
 ### `class _RecordEntry`
 
-Lokalizacja: linia `56`.
+Linia: `56`
 
 Brak docstringa.
 
 ### `class ZoneModel`
 
-Lokalizacja: linia `62`.
+Linia: `62`
 
-Bufor edycji rekordów pojedynczej strefy.
+Bufor edycji rekordów pojedynczej strefy. Model nie zapisuje plików i nie wykonuje poleceń systemowych. Przechowuje jedynie stan początkowy, bieżący i wyliczony diff.
 
 **Metody:**
 
-- `def __init__(self, zone_name: str, records: Iterable[DNSRecord]) -> None` — linia 70, prywatna; brak docstringa.
-- `def _allocate_identifier(self) -> int` — linia 89, prywatna; brak docstringa.
-- `def _visible_entries(self) -> list[_RecordEntry]` — linia 94, prywatna; brak docstringa.
-- `def _entry_at(self, index: int) -> _RecordEntry` — linia 101, prywatna; brak docstringa.
-- `def records(self) -> tuple[DNSRecord, ...]` — linia 112, publiczna; brak docstringa.
-- `def original_records(self) -> tuple[DNSRecord, ...]` — linia 120, publiczna; brak docstringa.
-- `def record_views(self) -> tuple[ZoneRecordView, ...]` — linia 128, publiczna; zwraca rekordy widoczne w edytorze, również usuwane.
-- `def pending_changes(self) -> tuple[ZoneChange, ...]` — linia 166, publiczna; brak docstringa.
-- `def dirty(self) -> bool` — linia 208, publiczna; brak docstringa.
-- `def change_count(self) -> int` — linia 212, publiczna; brak docstringa.
-- `def add(self, record: DNSRecord) -> int` — linia 215, publiczna; brak docstringa.
-- `def _entry_by_identifier(self, identifier: int) -> _RecordEntry` — linia 226, prywatna; brak docstringa.
-- `def replace_by_identifier(self, identifier: int, record: DNSRecord) -> DNSRecord` — linia 235, publiczna; brak docstringa.
-- `def delete_by_identifier(self, identifier: int) -> DNSRecord` — linia 251, publiczna; brak docstringa.
-- `def replace(self, index: int, record: DNSRecord) -> DNSRecord` — linia 267, publiczna; brak docstringa.
-- `def delete(self, index: int) -> DNSRecord` — linia 284, publiczna; brak docstringa.
-- `def discard(self) -> None` — linia 303, publiczna; brak docstringa.
-- `def accept(self) -> None` — linia 315, publiczna; uznaje aktualny stan za nowy stan bazowy.
+- `__init__` — linia 70; brak docstringa.
+- `_allocate_identifier` — linia 89; brak docstringa.
+- `_visible_entries` — linia 94; brak docstringa.
+- `_entry_at` — linia 101; brak docstringa.
+- `records` — linia 112; brak docstringa.
+- `original_records` — linia 120; brak docstringa.
+- `record_views` — linia 128; zwraca rekordy widoczne w edytorze, również usuwane.
+- `pending_changes` — linia 166; brak docstringa.
+- `dirty` — linia 208; brak docstringa.
+- `change_count` — linia 212; brak docstringa.
+- `add` — linia 215; brak docstringa.
+- `_entry_by_identifier` — linia 226; brak docstringa.
+- `replace_by_identifier` — linia 235; brak docstringa.
+- `delete_by_identifier` — linia 251; brak docstringa.
+- `replace` — linia 267; brak docstringa.
+- `delete` — linia 284; brak docstringa.
+- `discard` — linia 303; brak docstringa.
+- `accept` — linia 315; uznaje aktualny stan za nowy stan bazowy. metoda będzie używana dopiero po udanym zapisie transakcji.
 
 ## `src/elkman_dns/core/zone_parser.py`
 
-Brak docstringa modułu.
-
-**Najważniejsze importy:**
-
-- `__future__: annotations`
-- `dataclasses: dataclass`
+Brak docstringa.
 
 ### `class DNSRecord`
 
-Lokalizacja: linia `7`.
+Linia: `7`
 
 Brak docstringa.
 
 **Metody:**
 
-- `def relative_owner(self, zone_name: str) -> str` — linia 15, publiczna; brak docstringa.
+- `relative_owner` — linia 15; brak docstringa.
 
 ### `class ZoneRecordParser`
 
-Lokalizacja: linia `30`.
+Linia: `30`
 
 Parser kanonicznego wyjścia `named-checkzone -D`.
 
 **Metody:**
 
-- `def parse_output(cls, output: str) -> list[DNSRecord]` — linia 39, publiczna; brak docstringa.
-- `def parse_line(line: str) -> DNSRecord | None` — linia 67, publiczna; oczekiwany format kanoniczny: owner ttl class type rdata rdata pozostaje tekstem, dzięki czemu zachowujemy składnię rekordów txt, soa, mx, srv, caa i innych typów.
+- `parse_output` — linia 39; brak docstringa.
+- `parse_line` — linia 67; oczekiwany format kanoniczny: owner ttl class type rdata rdata pozostaje tekstem, dzięki czemu zachowujemy składnię rekordów txt, soa, mx, srv, caa i innych typów.
 
 ## `src/elkman_dns/core/zone_serializer.py`
 
 Serializacja modelu strefy DNS do pliku kandydata.
 
-**Najważniejsze importy:**
+### `class ZoneSerializationError`
 
-- `__future__: annotations`
-- `os`
-- `tempfile`
-- `pathlib: Path`
-- `typing: Iterable, Protocol`
-- `zone_parser: DNSRecord`
-
-### `class ZoneSerializationError(RuntimeError)`
-
-Lokalizacja: linia `13`.
+Linia: `13`
 
 Błąd podczas serializacji strefy DNS.
 
-### `class ZoneModelProtocol(Protocol)`
+### `class ZoneModelProtocol`
 
-Lokalizacja: linia `17`.
+Linia: `17`
 
 Brak docstringa.
 
 **Metody:**
 
-- `def records(self) -> Iterable[DNSRecord]` — linia 19, publiczna; brak docstringa.
+- `records` — linia 19; brak docstringa.
 
 ### `class ZoneSerializer`
 
-Lokalizacja: linia `23`.
+Linia: `23`
 
-Serializuje rekordy DNS do tekstowego pliku strefy.
+Serializuje rekordy DNS do tekstowego pliku strefy. Serializer: - nie wykonuje walidacji, - nie zwiększa numeru SOA, - nie zapisuje aktywnego pliku strefy, - nie uruchamia rndc, - pomija rekordy oznaczone jako usunięte.
 
 **Metody:**
 
-- `def __init__(self, record_separator: str = '\n', final_newline: bool = True) -> None` — linia 35, prywatna; brak docstringa.
-- `def _is_deleted(record: DNSRecord) -> bool` — linia 44, prywatna; obsługuje kilka wariantów modelu rekordów.
-- `def _normalise_owner(owner: str | None) -> str` — linia 90, prywatna; brak docstringa.
-- `def _normalise_class(record_class: str | None) -> str` — linia 96, prywatna; brak docstringa.
-- `def _record_owner(record: DNSRecord) -> str` — linia 102, prywatna; brak docstringa.
-- `def _record_type(record: DNSRecord) -> str` — linia 118, prywatna; brak docstringa.
-- `def _record_rdata(record: DNSRecord) -> str` — linia 134, prywatna; brak docstringa.
-- `def _record_ttl(record: DNSRecord) -> int | None` — linia 153, prywatna; brak docstringa.
-- `def _record_class(record: DNSRecord) -> str` — linia 174, prywatna; brak docstringa.
-- `def render_record(self, record: DNSRecord) -> str` — linia 189, publiczna; brak docstringa.
-- `def render_records(self, records: Iterable[DNSRecord]) -> str` — linia 216, publiczna; brak docstringa.
-- `def render_model(self, model: ZoneModelProtocol) -> str` — linia 235, publiczna; brak docstringa.
-- `def write_candidate(self, model: ZoneModelProtocol, directory: Path | None = None, prefix: str = 'elkman-zone-', suffix: str = '.zone') -> Path` — linia 248, publiczna; brak docstringa.
+- `__init__` — linia 35; brak docstringa.
+- `_is_deleted` — linia 44; obsługuje kilka wariantów modelu rekordów. preferowane pole: deleted: bool obsługiwane również: is_deleted: bool state == "deleted" change_type == "deleted"
+- `_normalise_owner` — linia 90; brak docstringa.
+- `_normalise_class` — linia 96; brak docstringa.
+- `_record_owner` — linia 102; brak docstringa.
+- `_record_type` — linia 118; brak docstringa.
+- `_record_rdata` — linia 134; brak docstringa.
+- `_record_ttl` — linia 153; brak docstringa.
+- `_record_class` — linia 174; brak docstringa.
+- `render_record` — linia 189; brak docstringa.
+- `render_records` — linia 216; brak docstringa.
+- `render_model` — linia 235; brak docstringa.
+- `write_candidate` — linia 248; brak docstringa.
 
 ## `src/elkman_dns/core/zone_writer.py`
 
-Brak docstringa modułu.
+Brak docstringa.
 
-**Najważniejsze importy:**
+### `class ZoneWriteError`
 
-- `__future__: annotations`
-- `os`
-- `tempfile`
-- `pathlib: Path`
-- `zone_document: BlankLine, Comment, Directive, RawLine, RecordNode, ZoneDocument, ZoneNode`
-- `zone_parser: DNSRecord`
-
-### `class ZoneWriteError(RuntimeError)`
-
-Lokalizacja: linia `19`.
+Linia: `19`
 
 Błąd podczas generowania lub zapisywania dokumentu strefy.
 
 ### `class ZoneWriter`
 
-Lokalizacja: linia `23`.
+Linia: `23`
 
-Bezstratny zapis źródłowego dokumentu strefy.
+Bezstratny zapis źródłowego dokumentu strefy. Zasady: - niezmienione węzły są zapisywane z pola `raw`, - zmodyfikowane rekordy są renderowane ponownie, - rekordy oznaczone jako usunięte są pomijane, - komentarze, dyrektywy, puste linie i RawLine pozostają bez zmian, - zachowywana jest informacja o końcowym znaku nowej linii.
 
 **Metody:**
 
-- `def __init__(self, field_separator: str = '\t') -> None` — linia 35, prywatna; brak docstringa.
-- `def render_document(self, document: ZoneDocument) -> str` — linia 41, publiczna; brak docstringa.
-- `def render_node(self, node: ZoneNode) -> str | None` — linia 62, publiczna; brak docstringa.
-- `def render_record(self, record: DNSRecord) -> str` — linia 90, publiczna; brak docstringa.
-- `def write_candidate(self, document: ZoneDocument, directory: Path | None = None, prefix: str = 'elkman-zone-', suffix: str = '.zone') -> Path` — linia 129, publiczna; brak docstringa.
+- `__init__` — linia 35; brak docstringa.
+- `render_document` — linia 41; brak docstringa.
+- `render_node` — linia 62; brak docstringa.
+- `render_record` — linia 90; brak docstringa.
+- `write_candidate` — linia 129; brak docstringa.
 
 ## `src/elkman_dns/legacy_v220.py`
 
-Brak docstringa modułu.
+Brak docstringa.
 
-**Najważniejsze importy:**
+### `def c`
 
-- `__future__: annotations`
-- `argparse`
-- `configparser`
-- `datetime`
-- `json`
-- `re`
-- `tempfile`
-- `os`
-- `shutil`
-- `subprocess`
-- `sys`
-- `tarfile`
-- `time`
-- `concurrent.futures: ThreadPoolExecutor, as_completed`
-- `pathlib: Path`
-
-### `def c(text, code, enabled = True)`
-
-Lokalizacja: linia `24`.
+Linia: `24`
 
 Brak docstringa.
 
-### `def run(cmd, timeout = 30)`
+### `def run`
 
-Lokalizacja: linia `26`.
-
-Brak docstringa.
-
-### `def yes(value, default = False)`
-
-Lokalizacja: linia `32`.
+Linia: `26`
 
 Brak docstringa.
 
-### `def require_root(name)`
+### `def yes`
 
-Lokalizacja: linia `39`.
-
-Brak docstringa.
-
-### `def load_config(config_path, zones_path)`
-
-Lokalizacja: linia `42`.
+Linia: `32`
 
 Brak docstringa.
 
-### `def zone_items(zones)`
+### `def require_root`
 
-Lokalizacja: linia `50`.
-
-Brak docstringa.
-
-### `def sync_zone_items(zones)`
-
-Lokalizacja: linia `55`.
+Linia: `39`
 
 Brak docstringa.
 
-### `def selected(zones, requested)`
+### `def load_config`
 
-Lokalizacja: linia `59`.
-
-Brak docstringa.
-
-### `def dig_lines(server, name, rtype, timeout = 3, dnssec = False)`
-
-Lokalizacja: linia `66`.
+Linia: `42`
 
 Brak docstringa.
 
-### `def dig_serial(server, zone, timeout)`
+### `def zone_items`
 
-Lokalizacja: linia `72`.
-
-Brak docstringa.
-
-### `def authoritative_servers(zone, timeout = 3)`
-
-Lokalizacja: linia `77`.
+Linia: `50`
 
 Brak docstringa.
 
-### `def parent_ds(zone, timeout = 3)`
+### `def sync_zone_items`
 
-Lokalizacja: linia `78`.
-
-Brak docstringa.
-
-### `def local_dnskeys(server, zone, timeout = 3)`
-
-Lokalizacja: linia `79`.
+Linia: `55`
 
 Brak docstringa.
 
-### `def has_rrsig(server, zone, rtype = 'A', timeout = 3)`
+### `def selected`
 
-Lokalizacja: linia `81`.
-
-Brak docstringa.
-
-### `def delv_validate(zone, server = None, timeout = 15)`
-
-Lokalizacja: linia `94`.
+Linia: `59`
 
 Brak docstringa.
 
-### `def validation_targets(cfg)`
+### `def dig_lines`
 
-Lokalizacja: linia `104`.
-
-Zwróć walidatory DNSSEC używane do ustalenia wyniku konsensusu.
-
-### `def dnssec_validation_consensus(cfg, zone, timeout = 15)`
-
-Lokalizacja: linia `118`.
+Linia: `66`
 
 Brak docstringa.
 
-### `def cmd_check(cfg, zones, args)`
+### `def dig_serial`
 
-Lokalizacja: linia `140`.
-
-Brak docstringa.
-
-### `def cmd_sync(cfg, zones, args)`
-
-Lokalizacja: linia `156`.
+Linia: `72`
 
 Brak docstringa.
 
-### `def cmd_notify(cfg, zones, args)`
+### `def authoritative_servers`
 
-Lokalizacja: linia `178`.
-
-Brak docstringa.
-
-### `def cmd_reload(cfg, zones, args)`
-
-Lokalizacja: linia `187`.
+Linia: `77`
 
 Brak docstringa.
 
-### `def cmd_backup(cfg, zones, args)`
+### `def parent_ds`
 
-Lokalizacja: linia `199`.
-
-Brak docstringa.
-
-### `def dnssec_zone_result(cfg, zones, zone)`
-
-Lokalizacja: linia `214`.
+Linia: `78`
 
 Brak docstringa.
 
-### `def cmd_dnssec_status(cfg, zones, args)`
+### `def local_dnskeys`
 
-Lokalizacja: linia `236`.
-
-Brak docstringa.
-
-### `def explain_dnssec_result(r, no_color = False)`
-
-Lokalizacja: linia `251`.
+Linia: `79`
 
 Brak docstringa.
 
-### `def cmd_dnssec_check(cfg, zones, args)`
+### `def has_rrsig`
 
-Lokalizacja: linia `279`.
-
-Brak docstringa.
-
-### `def cmd_dnssec_report(cfg, zones, args)`
-
-Lokalizacja: linia `304`.
+Linia: `81`
 
 Brak docstringa.
 
-### `def cmd_health(cfg, zones, args)`
+### `def delv_validate`
 
-Lokalizacja: linia `313`.
-
-Brak docstringa.
-
-### `def cmd_doctor(cfg, zones, args)`
-
-Lokalizacja: linia `327`.
+Linia: `94`
 
 Brak docstringa.
 
-### `def confirm(question, default = False)`
+### `def validation_targets`
 
-Lokalizacja: linia `348`.
+Linia: `104`
 
-Brak docstringa.
+Zwróć walidatory DNSSEC używane do ustalenia wyniku konsensusu. Konfiguracja opcjonalna w [toolkit]: dnssec_validators = 1.1.1.1, 8.8.8.8, 9.9.9.9 dnssec_validation_quorum = 2
 
-### `def update_ini_zone(zones_path, zone, new_path = None, dnssec = None)`
+### `def dnssec_validation_consensus`
 
-Lokalizacja: linia `356`.
-
-Brak docstringa.
-
-### `def find_zone_config(zone, bind_dir = Path('/etc/bind'))`
-
-Lokalizacja: linia `380`.
-
-Znajdź aktywny plik zawierający deklarację zone.
-
-### `def zone_block_bounds(text, start)`
-
-Lokalizacja: linia `415`.
+Linia: `118`
 
 Brak docstringa.
 
-### `def patch_zone_declaration(path, text, start, old_file, new_file, key_dir)`
+### `def cmd_check`
 
-Lokalizacja: linia `434`.
-
-Brak docstringa.
-
-### `def generate_ds(server, zone, timeout = 5)`
-
-Lokalizacja: linia `451`.
+Linia: `140`
 
 Brak docstringa.
 
-### `def cmd_dnssec_enable(cfg, zones, args)`
+### `def cmd_sync`
 
-Lokalizacja: linia `469`.
-
-Brak docstringa.
-
-### `def tui_select(stdscr, title, items, status_lines = None)`
-
-Lokalizacja: linia `543`.
+Linia: `156`
 
 Brak docstringa.
 
-### `def human_age(path)`
+### `def cmd_notify`
 
-Lokalizacja: linia `572`.
-
-Brak docstringa.
-
-### `def latest_backup(cfg)`
-
-Lokalizacja: linia `581`.
+Linia: `178`
 
 Brak docstringa.
 
-### `def zone_quick_status(cfg, zones, zone)`
+### `def cmd_reload`
 
-Lokalizacja: linia `587`.
-
-Brak docstringa.
-
-### `def domain_status_lines(cfg, zones, zone, quick = None)`
-
-Lokalizacja: linia `605`.
+Linia: `187`
 
 Brak docstringa.
 
-### `def cmd_zone_serial(cfg, zones, args)`
+### `def cmd_backup`
 
-Lokalizacja: linia `619`.
-
-Brak docstringa.
-
-### `def cmd_zone_edit(cfg, zones, args)`
-
-Lokalizacja: linia `642`.
+Linia: `199`
 
 Brak docstringa.
 
-### `def cmd_zone_report(cfg, zones, args)`
+### `def dnssec_zone_result`
 
-Lokalizacja: linia `656`.
-
-Brak docstringa.
-
-### `def cmd_backups(cfg, zones, args)`
-
-Lokalizacja: linia `667`.
+Linia: `214`
 
 Brak docstringa.
 
-### `def domain_menu(cfg, zones, args, zone)`
+### `def cmd_dnssec_status`
 
-Lokalizacja: linia `675`.
-
-Brak docstringa.
-
-### `def cmd_domains(cfg, zones, args)`
-
-Lokalizacja: linia `697`.
+Linia: `236`
 
 Brak docstringa.
 
-### `def cmd_menu(cfg, zones, args)`
+### `def explain_dnssec_result`
 
-Lokalizacja: linia `721`.
-
-Brak docstringa.
-
-### `def cmd_update(cfg, zones, args)`
-
-Lokalizacja: linia `739`.
+Linia: `251`
 
 Brak docstringa.
 
-### `def parser()`
+### `def cmd_dnssec_check`
 
-Lokalizacja: linia `745`.
+Linia: `279`
 
 Brak docstringa.
 
-### `def main()`
+### `def cmd_dnssec_report`
 
-Lokalizacja: linia `766`.
+Linia: `304`
+
+Brak docstringa.
+
+### `def cmd_health`
+
+Linia: `313`
+
+Brak docstringa.
+
+### `def cmd_doctor`
+
+Linia: `327`
+
+Brak docstringa.
+
+### `def confirm`
+
+Linia: `348`
+
+Brak docstringa.
+
+### `def update_ini_zone`
+
+Linia: `356`
+
+Brak docstringa.
+
+### `def find_zone_config`
+
+Linia: `380`
+
+Znajdź aktywny plik zawierający deklarację zone. Nie ograniczamy wyszukiwania do ``*.conf``, ponieważ typowy plik BIND ``named.conf.local`` nie pasuje do tego wzorca. Pomijamy kopie zapasowe i pliki robocze, aby nie wykrywać tej samej strefy wielokrotnie.
+
+### `def zone_block_bounds`
+
+Linia: `415`
+
+Brak docstringa.
+
+### `def patch_zone_declaration`
+
+Linia: `434`
+
+Brak docstringa.
+
+### `def generate_ds`
+
+Linia: `451`
+
+Brak docstringa.
+
+### `def cmd_dnssec_enable`
+
+Linia: `469`
+
+Brak docstringa.
+
+### `def tui_select`
+
+Linia: `543`
+
+Brak docstringa.
+
+### `def human_age`
+
+Linia: `572`
+
+Brak docstringa.
+
+### `def latest_backup`
+
+Linia: `581`
+
+Brak docstringa.
+
+### `def zone_quick_status`
+
+Linia: `587`
+
+Brak docstringa.
+
+### `def domain_status_lines`
+
+Linia: `605`
+
+Brak docstringa.
+
+### `def cmd_zone_serial`
+
+Linia: `619`
+
+Brak docstringa.
+
+### `def cmd_zone_edit`
+
+Linia: `642`
+
+Brak docstringa.
+
+### `def cmd_zone_report`
+
+Linia: `656`
+
+Brak docstringa.
+
+### `def cmd_backups`
+
+Linia: `667`
+
+Brak docstringa.
+
+### `def domain_menu`
+
+Linia: `675`
+
+Brak docstringa.
+
+### `def cmd_domains`
+
+Linia: `697`
+
+Brak docstringa.
+
+### `def cmd_menu`
+
+Linia: `721`
+
+Brak docstringa.
+
+### `def cmd_update`
+
+Linia: `739`
+
+Brak docstringa.
+
+### `def parser`
+
+Linia: `745`
+
+Brak docstringa.
+
+### `def main`
+
+Linia: `766`
 
 Brak docstringa.
 
@@ -1197,209 +1008,151 @@ Brak docstringa.
 
 Terminal UI for elkman DNS Toolkit.
 
-Brak publicznych deklaracji klas lub funkcji.
+Brak klas i funkcji na poziomie modułu.
 
 ## `src/elkman_dns/ui/credits.py`
 
 Dyskretny podpis twórców projektu w głównym widoku TUI.
 
-**Najważniejsze importy:**
+### `def _safe_addnstr`
 
-- `__future__: annotations`
-- `curses`
-
-### `def _safe_addnstr(window: curses.window, row: int, column: int, text: str, width: int, attributes: int = curses.A_NORMAL) -> None`
-
-Lokalizacja: linia `20`.
+Linia: `20`
 
 Rysuje tekst bez przerywania pracy przy małym terminalu.
 
-### `def draw_project_credits(window: curses.window) -> None`
+### `def draw_project_credits`
 
-Lokalizacja: linia `44`.
+Linia: `44`
 
-Wyświetla dane twórców w prawym dolnym rogu głównego widoku.
+Wyświetla dane twórców w prawym dolnym rogu głównego widoku. Podpis jest pomijany, gdy terminal jest zbyt mały, dzięki czemu nie nachodzi na listę domen ani dolny pasek klawiszy.
 
 ## `src/elkman_dns/ui/curses_app.py`
 
-Brak docstringa modułu.
-
-**Najważniejsze importy:**
-
-- `__future__: annotations`
-- `elkman_dns.ui.credits: draw_project_credits`
-- `elkman_dns.core.zone_model: ChangeKind, ZoneChange, ZoneModel`
-- `elkman_dns.ui.dialogs: CursesDialogs`
-- `elkman_dns.ui.records.editor: RecordEditor`
-- `elkman_dns.ui.records.new_record: NewRecordDialog`
-- `elkman_dns.ui.records.renderer: RecordRenderer`
-- `curses`
-- `queue`
-- `threading`
-- `concurrent.futures: ThreadPoolExecutor, as_completed`
-- `dataclasses: dataclass`
-- `: __version__`
-- `core.bind: BindService`
-- `core.config: ToolkitConfig`
-- `core.models: Health, Zone, ZoneStatus`
-- `core.transaction: TransactionEngine, TransactionResult`
-- `core.zone_edit_session: ZoneEditSession, ZoneEditSessionError`
+Brak docstringa.
 
 ### `class Row`
 
-Lokalizacja: linia `28`.
+Linia: `28`
 
 Brak docstringa.
 
 ### `class CursesApp`
 
-Lokalizacja: linia `35`.
+Linia: `35`
 
 Brak docstringa.
 
 **Metody:**
 
-- `def __init__(self, zones: list[Zone], bind: BindService, group_order: list[str] | None = None, *, config: ToolkitConfig | None = None)` — linia 38, prywatna; brak docstringa.
-- `def run(self) -> None` — linia 66, publiczna; brak docstringa.
-- `def _main(self, stdscr: curses.window) -> None` — linia 69, prywatna; brak docstringa.
-- `def _init_colors(self) -> None` — linia 101, prywatna; brak docstringa.
-- `def _color(self, health: Health) -> int` — linia 111, prywatna; brak docstringa.
-- `def _symbol(health: Health) -> str` — linia 122, prywatna; brak docstringa.
-- `def _start_refresh(self, force: bool = False) -> None` — linia 125, prywatna; brak docstringa.
-- `def _refresh_worker(self) -> None` — linia 133, prywatna; brak docstringa.
-- `def _consume_results(self) -> bool` — linia 147, prywatna; brak docstringa.
-- `def _zone_key(self, zone: Zone)` — linia 158, prywatna; brak docstringa.
-- `def _ordered_groups(self, groups: dict[str, list[Zone]]) -> list[str]` — linia 175, prywatna; brak docstringa.
-- `def _rebuild_rows(self, keep_zone: str | None = None) -> None` — linia 182, prywatna; brak docstringa.
-- `def _selected_zone_name(self) -> str | None` — linia 206, prywatna; brak docstringa.
-- `def _draw(self, win: curses.window) -> None` — linia 211, prywatna; brak docstringa.
-- `def _activate(self, win: curses.window) -> None` — linia 255, prywatna; brak docstringa.
-- `def _search(self, stdscr: curses.window) -> None` — linia 268, prywatna; filtruje domeny na głównej liście.
-- `def _records_view(self, win: curses.window, zone: Zone) -> None` — linia 284, prywatna; wyświetla i edytuje źródłowy dokument strefy.
-- `def _message_view(self, win: curses.window, *, title: str, lines: list[str], error: bool = False) -> None` — linia 789, prywatna; wyświetla prosty modalny komunikat.
-- `def _get_key(win: curses.window) -> int` — linia 847, prywatna; odczytuje klawisz i rozpoznaje f2 wysyłane jako esc [ 12 ~.
-- `def _transaction_result_view(self, win: curses.window, result: TransactionResult) -> None` — linia 890, prywatna; wyświetla wynik zapisu lub rollbacku transakcji.
-- `def _pending_changes_view(self, win: curses.window, session: ZoneEditSession, model: ZoneModel, zone: Zone) -> None` — linia 933, prywatna; wyświetla oczekujące zmiany w rekordach strefy.
-- `def _domain_view(self, win: curses.window, zone: Zone) -> None` — linia 1130, prywatna; wyświetla szczegóły wybranej strefy.
-- `def _serial_ok(zone: Zone, status: ZoneStatus) -> bool` — linia 1399, prywatna; brak docstringa.
-- `def _bool_text(value: bool | None) -> str` — linia 1409, prywatna; brak docstringa.
+- `__init__` — linia 38; brak docstringa.
+- `run` — linia 66; brak docstringa.
+- `_main` — linia 69; brak docstringa.
+- `_init_colors` — linia 101; brak docstringa.
+- `_color` — linia 111; brak docstringa.
+- `_symbol` — linia 122; brak docstringa.
+- `_start_refresh` — linia 125; brak docstringa.
+- `_refresh_worker` — linia 133; brak docstringa.
+- `_consume_results` — linia 147; brak docstringa.
+- `_zone_key` — linia 158; brak docstringa.
+- `_ordered_groups` — linia 175; brak docstringa.
+- `_rebuild_rows` — linia 182; brak docstringa.
+- `_selected_zone_name` — linia 206; brak docstringa.
+- `_draw` — linia 211; brak docstringa.
+- `_activate` — linia 255; brak docstringa.
+- `_search` — linia 268; filtruje domeny na głównej liście.
+- `_records_view` — linia 284; wyświetla i edytuje źródłowy dokument strefy.
+- `_message_view` — linia 789; wyświetla prosty modalny komunikat.
+- `_get_key` — linia 847; odczytuje klawisz i rozpoznaje f2 wysyłane jako esc [ 12 ~.
+- `_transaction_result_view` — linia 890; wyświetla wynik zapisu lub rollbacku transakcji.
+- `_pending_changes_view` — linia 933; wyświetla oczekujące zmiany w rekordach strefy.
+- `_domain_view` — linia 1130; wyświetla szczegóły wybranej strefy. klawisze: - r: ponowne sprawdzenie strefy, - q / esc / backspace: powrót do listy.
+- `_serial_ok` — linia 1399; brak docstringa.
+- `_bool_text` — linia 1409; brak docstringa.
 
 ## `src/elkman_dns/ui/dialogs.py`
 
-Brak docstringa modułu.
-
-**Najważniejsze importy:**
-
-- `__future__: annotations`
-- `curses`
+Brak docstringa.
 
 ### `class CursesDialogs`
 
-Lokalizacja: linia `6`.
+Linia: `6`
 
 Wspólne dialogi tekstowe interfejsu curses.
 
 **Metody:**
 
-- `def normalize_query(value: str) -> str` — linia 10, publiczna; normalizuje frazę wyszukiwania.
-- `def text_input(win: curses.window, prompt: str, *, initial: str = '', row: int | None = None) -> str | None` — linia 29, publiczna; wyświetla jednowierszowy dialog tekstowy.
-- `def search(cls, win: curses.window, *, prompt: str = ' Szukaj: ', initial: str = '', row: int | None = None) -> str | None` — linia 131, publiczna; brak docstringa.
-- `def confirm(win: curses.window, message: str, *, row: int | None = None) -> bool` — linia 152, publiczna; wyświetla potwierdzenie [t/n].
+- `normalize_query` — linia 10; normalizuje frazę wyszukiwania. wyszukiwanie działa jako dopasowanie fragmentu tekstu. gwiazdki na początku i końcu są traktowane jak opcjonalne symbole wildcard, np. *elk.pl oraz elk.pl*.
+- `text_input` — linia 29; wyświetla jednowierszowy dialog tekstowy. enter zatwierdza wartość. esc anuluje dialog.
+- `search` — linia 131; brak docstringa.
+- `confirm` — linia 152; wyświetla potwierdzenie [t/n].
 
 ## `src/elkman_dns/ui/records/__init__.py`
 
 Widoki i komponenty obsługi rekordów DNS.
 
-**Najważniejsze importy:**
-
-- `editor: RecordEditor`
-- `renderer: RecordRenderer`
-- `new_record: NewRecordDialog, RECORD_TYPES`
-- `controller: RecordController`
-
-Brak publicznych deklaracji klas lub funkcji.
+Brak klas i funkcji na poziomie modułu.
 
 ## `src/elkman_dns/ui/records/controller.py`
 
 Stan, sortowanie i filtrowanie widoku rekordów DNS.
 
-**Najważniejsze importy:**
-
-- `__future__: annotations`
-- `collections.abc: Sequence`
-- `elkman_dns.core.zone_model: ZoneModel, ZoneRecordView`
-
 ### `class RecordController`
 
-Lokalizacja: linia `10`.
+Linia: `10`
 
 Zarządza prezentacją rekordów bez zależności od curses.
 
 **Metody:**
 
-- `def __init__(self, model: ZoneModel, zone_name: str) -> None` — linia 19, prywatna; brak docstringa.
-- `def sort_name(self) -> str` — linia 33, publiczna; brak docstringa.
-- `def cycle_sort(self) -> None` — linia 36, publiczna; brak docstringa.
-- `def set_search(self, value: str) -> None` — linia 44, publiczna; brak docstringa.
-- `def clear_search(self) -> None` — linia 49, publiczna; brak docstringa.
-- `def _name_key(self, view: ZoneRecordView) -> tuple[str, str, str, int]` — linia 54, prywatna; brak docstringa.
-- `def _type_key(self, view: ZoneRecordView) -> tuple[str, str, str, int]` — linia 67, prywatna; brak docstringa.
-- `def _ttl_key(self, view: ZoneRecordView) -> tuple[bool, int, str, str, int]` — linia 80, prywatna; brak docstringa.
-- `def ordered_views(self) -> list[ZoneRecordView]` — linia 94, publiczna; brak docstringa.
-- `def clamp_selection(self, views: Sequence[ZoneRecordView], visible_rows: int) -> None` — linia 140, publiczna; brak docstringa.
-- `def move(self, delta: int, views: Sequence[ZoneRecordView]) -> None` — linia 167, publiczna; brak docstringa.
-- `def current(self, views: Sequence[ZoneRecordView]) -> ZoneRecordView | None` — linia 181, publiczna; brak docstringa.
-- `def select_identifier(self, views: Sequence[ZoneRecordView], identifier: int) -> bool` — linia 193, publiczna; brak docstringa.
+- `__init__` — linia 19; brak docstringa.
+- `sort_name` — linia 33; brak docstringa.
+- `cycle_sort` — linia 36; brak docstringa.
+- `set_search` — linia 44; brak docstringa.
+- `clear_search` — linia 49; brak docstringa.
+- `_name_key` — linia 54; brak docstringa.
+- `_type_key` — linia 67; brak docstringa.
+- `_ttl_key` — linia 80; brak docstringa.
+- `ordered_views` — linia 94; brak docstringa.
+- `clamp_selection` — linia 140; brak docstringa.
+- `move` — linia 167; brak docstringa.
+- `current` — linia 181; brak docstringa.
+- `select_identifier` — linia 193; brak docstringa.
 
 ## `src/elkman_dns/ui/records/editor.py`
 
 Formularz edycji rekordów DNS w interfejsie curses.
 
-**Najważniejsze importy:**
-
-- `__future__: annotations`
-- `typing: Any`
-- `curses`
-- `core.models: Zone`
-- `core.zone_parser: DNSRecord`
-
 ### `class RecordEditor`
 
-Lokalizacja: linia `13`.
+Linia: `13`
 
 Obsługuje formularz edycji pojedynczego rekordu DNS.
 
 **Metody:**
 
-- `def __init__(self, error_attr: int = curses.A_BOLD) -> None` — linia 16, prywatna; brak docstringa.
-- `def _get_key(win: curses.window) -> int` — linia 21, prywatna; odczytuje klawisz i rozpoznaje f2 wysyłane jako esc [ 12 ~.
-- `def _edit_line(self, win: curses.window, row: int, column: int, initial_value: str, max_width: int) -> str | None` — linia 60, prywatna; prosty edytor pojedynczej linii dla formularzy curses.
-- `def create_record_dialog(self, win: curses.window, zone: Zone) -> DNSRecord | None` — linia 182, publiczna; tworzy nowy rekord, wykorzystując formularz edycji.
-- `def edit_record_dialog(self, win: curses.window, record, zone: Zone)` — linia 203, publiczna; edytuje rekord w pamięci.
+- `__init__` — linia 16; brak docstringa.
+- `_get_key` — linia 21; odczytuje klawisz i rozpoznaje f2 wysyłane jako esc [ 12 ~.
+- `_edit_line` — linia 60; prosty edytor pojedynczej linii dla formularzy curses.
+- `create_record_dialog` — linia 182; tworzy nowy rekord, wykorzystując formularz edycji.
+- `edit_record_dialog` — linia 203; edytuje rekord w pamięci. zwraca nowy rekord albo none.
 
 ## `src/elkman_dns/ui/records/keybindings.py`
 
-Brak docstringa modułu.
-
-**Najważniejsze importy:**
-
-- `__future__: annotations`
-- `dataclasses: dataclass`
-- `typing: Sequence`
+Brak docstringa.
 
 ### `class KeyBinding`
 
-Lokalizacja: linia `8`.
+Linia: `8`
 
 Brak docstringa.
 
 **Metody:**
 
-- `def render(self) -> str` — linia 12, publiczna; brak docstringa.
+- `render` — linia 12; brak docstringa.
 
-### `def render_footer(bindings: Sequence[KeyBinding] = RECORD_VIEW_BINDINGS) -> str`
+### `def render_footer`
 
-Lokalizacja: linia `31`.
+Linia: `31`
 
 Brak docstringa.
 
@@ -1407,56 +1160,39 @@ Brak docstringa.
 
 Interaktywny kreator nowych rekordów DNS.
 
-**Najważniejsze importy:**
-
-- `__future__: annotations`
-- `collections.abc: Iterable`
-- `ipaddress: IPv4Address, IPv6Address`
-- `curses`
-- `core.models: Zone`
-- `core.zone_parser: DNSRecord`
-
 ### `class NewRecordDialog`
 
-Lokalizacja: linia `35`.
+Linia: `35`
 
 Tworzy rekord DNS bez modyfikowania pliku strefy.
 
 **Metody:**
 
-- `def __init__(self, error_attr: int = curses.A_BOLD) -> None` — linia 43, prywatna; brak docstringa.
-- `def default_ttl(zone_name: str, records: Iterable[DNSRecord]) -> int` — linia 50, publiczna; pobiera ttl z głównego rekordu soa strefy.
-- `def absolute_owner(owner: str, zone_name: str) -> str` — linia 80, publiczna; brak docstringa.
-- `def validate_hostname(value: str) -> bool` — linia 96, publiczna; brak docstringa.
-- `def validate_rdata(cls, rtype: str, rdata: str) -> str | None` — linia 120, publiczna; brak docstringa.
-- `def build_record(cls, zone_name: str, owner: str, rtype: str, ttl_text: str, rdata: str) -> tuple[DNSRecord | None, str]` — linia 227, publiczna; brak docstringa.
-- `def _put(win: curses.window, row: int, column: int, text: str, attr: int = curses.A_NORMAL) -> None` — linia 277, prywatna; brak docstringa.
-- `def _type_window(type_index: int, maximum: int = 9) -> tuple[int, int]` — linia 309, prywatna; brak docstringa.
-- `def create_record_dialog(self, win: curses.window, zone: Zone, records: Iterable[DNSRecord]) -> DNSRecord | None` — linia 320, publiczna; brak docstringa.
+- `__init__` — linia 43; brak docstringa.
+- `default_ttl` — linia 50; pobiera ttl z głównego rekordu soa strefy.
+- `absolute_owner` — linia 80; brak docstringa.
+- `validate_hostname` — linia 96; brak docstringa.
+- `validate_rdata` — linia 120; brak docstringa.
+- `build_record` — linia 227; brak docstringa.
+- `_put` — linia 277; brak docstringa.
+- `_type_window` — linia 309; brak docstringa.
+- `create_record_dialog` — linia 320; brak docstringa.
 
 ## `src/elkman_dns/ui/records/renderer.py`
 
-Brak docstringa modułu.
-
-**Najważniejsze importy:**
-
-- `__future__: annotations`
-- `curses`
-- `collections.abc: Sequence`
-- `elkman_dns.core.zone_model: ChangeKind, ZoneRecordView`
-- `elkman_dns.ui.records.keybindings: render_footer`
+Brak docstringa.
 
 ### `class RecordRenderer`
 
-Lokalizacja: linia `10`.
+Linia: `10`
 
 Renderuje ekran rekordów DNS bez obsługi klawiatury.
 
 **Metody:**
 
-- `def visible_rows(cls, height: int) -> int` — linia 17, publiczna; brak docstringa.
-- `def summary_text(*, visible_count: int, total_count: int, sort_name: str, change_count: int, search_query: str = '') -> str` — linia 21, publiczna; brak docstringa.
-- `def footer_text() -> str` — linia 41, publiczna; brak docstringa.
-- `def _put(win: curses.window, row: int, column: int, text: str, attr: int = curses.A_NORMAL) -> None` — linia 45, prywatna; brak docstringa.
-- `def _change_attr(view: ZoneRecordView) -> int` — linia 74, prywatna; brak docstringa.
-- `def draw(cls, win: curses.window, *, zone_name: str, records: Sequence[ZoneRecordView], total_count: int, selected: int, offset: int, sort_name: str, change_count: int, search_query: str = '', error: str | None = None, error_attr: int = curses.A_BOLD) -> None` — linia 87, publiczna; brak docstringa.
+- `visible_rows` — linia 17; brak docstringa.
+- `summary_text` — linia 21; brak docstringa.
+- `footer_text` — linia 41; brak docstringa.
+- `_put` — linia 45; brak docstringa.
+- `_change_attr` — linia 74; brak docstringa.
+- `draw` — linia 87; brak docstringa.

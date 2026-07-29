@@ -1,210 +1,388 @@
 # Architektura
 
-1. Widok ogólny
-Użytkownik
-    │
-    ▼
-CLI / Curses TUI
-    │
-    ▼
-Kontrolery i dialogi rekordów
-    │
-    ▼
-ZoneModel / ZoneEditSession
-    │
-    ├── parser pliku strefy
-    ├── adapter dokumentu
-    ├── serializer
-    ├── obsługa SOA
-    └── writer
-            │
-            ▼
-        walidacja strefy
-            │
-            ▼
-         zapis pliku
-            │
-            ▼
-        przeładowanie BIND
-2. Warstwa CLI
-Odpowiada za:
+> Wygenerowano z importów AST: `2026-07-29T18:37:27+02:00`.
 
-uruchamianie programu,
-interpretację argumentów,
-polecenia diagnostyczne i weryfikacyjne,
-przekazanie kontroli do właściwej warstwy.
+## `src/elkman_dns/__init__.py`
 
-Punkt wejścia należy potwierdzić w pyproject.toml oraz
-src/elkman_dns/cli.py.
+elkman DNS Toolkit.
 
-3. Warstwa UI
+## `src/elkman_dns/cli.py`
 
-Główny interfejs znajduje się w:
+Brak docstringa.
 
-src/elkman_dns/ui/
+**Importy:**
 
-curses_app.py koordynuje ekrany aplikacji. Logika rekordów została
-stopniowo wydzielona do:
+- `__future__: annotations`
+- `argparse`
+- `json`
+- `sys`
+- `pathlib: Path`
+- `: __version__`
+- `core.bind: BindService`
+- `core.config: DEFAULT_CONFIG, DEFAULT_GROUPS, DEFAULT_ZONES, ToolkitConfig`
+- `core.transaction: TransactionEngine, TransactionResult`
+- `ui.curses_app: CursesApp`
 
-src/elkman_dns/ui/records/
+## `src/elkman_dns/core/__init__.py`
 
-Celem tego podziału jest ograniczenie rozmiaru i odpowiedzialności
-głównej klasy aplikacji curses.
+Core services for elkman DNS Toolkit.
 
-4. Warstwa modelu i sesji
-Model reprezentuje stan strefy widoczny dla interfejsu oraz zmiany
-wykonane przez użytkownika.
+## `src/elkman_dns/core/audit.py`
 
-Sesja edycji łączy:
+Brak docstringa.
 
-stan początkowy,
-stan zmodyfikowany,
-wykrywanie zmian,
-przygotowanie zapisu,
-wynik transakcji,
-ponowne wczytanie danych.
-5. Warstwa dokumentu strefy
+**Importy:**
 
-Plik strefy nie powinien być traktowany wyłącznie jako lista rekordów.
-Może zawierać komentarze, dyrektywy i układ istotny dla administratora.
+- `__future__: annotations`
+- `json`
+- `os`
+- `pwd`
+- `socket`
+- `dataclasses: asdict, dataclass`
+- `datetime: datetime, timezone`
+- `pathlib: Path`
+- `typing: Any`
 
-Dlatego projekt posiada elementy odpowiedzialne za:
+## `src/elkman_dns/core/bind.py`
 
-analizę dokumentu strefy,
-konwersję dokumentu do modelu edycyjnego,
-konwersję modelu do dokumentu,
-serializację końcową.
-6. Warstwa zapisu
+Brak docstringa.
 
-Proces zapisu powinien zachowywać kolejność:
+**Importy:**
 
-wykrycie zmian
-→ przygotowanie dokumentu
-→ ustalenie SOA
-→ serializacja
-→ walidacja
-→ bezpieczny zapis
-→ reload BIND
-→ potwierdzenie wyniku
-→ odświeżenie modelu
+- `__future__: annotations`
+- `config: ToolkitConfig`
+- `models: Health, Zone, ZoneStatus`
+- `runner: run`
+- `zone_parser: DNSRecord, ZoneRecordParser`
 
-Szczegółową implementację należy sprawdzać w:
+## `src/elkman_dns/core/bind_config.py`
 
-src/elkman_dns/core/zone_edit_session.py
-src/elkman_dns/core/zone_writer.py
-src/elkman_dns/core/zone_serializer.py
-src/elkman_dns/core/soa_serial.py
-7. Obsługa klawiatury
-Nie wszystkie terminale przekazują F2 jako curses.KEY_F2.
+Brak docstringa.
 
-W wersji 3.2.3 projekt rozpoznaje także sekwencję:
+**Importy:**
 
-ESC [ 12 ~
+- `__future__: annotations`
+- `re`
+- `pathlib: Path`
+- `models: Zone`
 
-Ta logika jest elementem kompatybilności terminalowej, a nie
-przypadkowym obejściem.
+## `src/elkman_dns/core/config.py`
 
-8. Zależności
+Brak docstringa.
 
-Automatyczny wykaz importów oraz deklaracji znajduje się w
-MODULE_REFERENCE.md.
+**Importy:**
 
-9. Struktura repozytorium
-.
-├── CHANGELOG.md
-├── CHANGELOG.md.bak-release-3.2.0
-├── dist
-│   ├── elkman_dns_toolkit-3.2.3-py3-none-any.whl
-│   └── elkman_dns_toolkit-3.2.3.tar.gz
-├── docs
-├── .gitignore
-├── groups.yaml.example
-├── packaging
-├── pyproject.toml
-├── pyproject.toml.bak-3.1.1-credits
-├── pyproject.toml.bak-release-3.2.0
-├── README.md
-├── requirements.txt
-├── scripts
-│   ├── deploy.sh
-│   ├── elkman-dns
-│   ├── generate_docs.sh
-│   ├── lib.sh
-│   └── verify.sh
-├── src
-│   ├── elkman_dns
-│   │   ├── cli.py
-│   │   ├── cli.py.bak-release-3.2.0
-│   │   ├── core
-│   │   │   ├── audit.py
-│   │   │   ├── bind_config.py
-│   │   │   ├── bind.py
-│   │   │   ├── config.py
-│   │   │   ├── discovery.py
-│   │   │   ├── __init__.py
-│   │   │   ├── models.py
-│   │   │   ├── runner.py
-│   │   │   ├── soa_serial.py
-│   │   │   ├── transaction.py
-│   │   │   ├── zone_document_adapter.py
-│   │   │   ├── zone_document.py
-│   │   │   ├── zone_edit_session.py
-│   │   │   ├── zone_file_parser.py
-│   │   │   ├── zone_model.py
-│   │   │   ├── zone_parser.py
-│   │   │   ├── zone_serializer.py
-│   │   │   └── zone_writer.py
-│   │   ├── __init__.py
-│   │   ├── __init__.py.bak-3.1.1-credits
-│   │   ├── __init__.py.bak-release-3.2.0
-│   │   ├── legacy_v220.py
-│   │   └── ui
-│   │       ├── credits.py
-│   │       ├── credits.py.bak-release-3.2.0
-│   │       ├── curses_app.py
-│   │       ├── curses_app.py.bak-3.1.1-credits
-│   │       ├── curses_app.py.bak-before-debug-indent-fix
-│   │       ├── curses_app.py.bak-f2-global-parser
-│   │       ├── curses_app.py.bak-pending-save-fix
-│   │       ├── curses_app.py.bak-release-3.2.0
-│   │       ├── curses_app.py.bak-save-hotkeys
-│   │       ├── dialogs.py
-│   │       ├── __init__.py
-│   │       └── records
-│   └── elkman_dns_toolkit.egg-info
-│       ├── dependency_links.txt
-│       ├── entry_points.txt
-│       ├── PKG-INFO
-│       ├── SOURCES.txt
-│       └── top_level.txt
-├── tests
-│   ├── test_config_discovery.py
-│   ├── test_discovery.py
-│   ├── test_new_record_dialog.py
-│   ├── test_record_controller.py
-│   ├── test_record_editor.py
-│   ├── test_record_renderer.py
-│   ├── test_soa_serial.py
-│   ├── test_ui_dialogs.py
-│   ├── test_zone_document_adapter.py
-│   ├── test_zone_edit_session.py
-│   ├── test_zone_file_parser.py
-│   ├── test_zone_model_delete.py
-│   ├── test_zone_model.py
-│   ├── test_zone_model_record_views.py
-│   ├── test_zone_serializer.py
-│   └── test_zone_writer.py
-└── tools
-    └── migrate
-        ├── add_pending_changes_view.py
-        ├── add_zone_edit_model.py
-        ├── add_zone_record_parser.py
-        ├── add_zone_record_search.py
-        ├── add_zone_records_view.py
-        ├── extract_curses_dialogs.py
-        ├── fix_main_domain_search.py
-        ├── fix_zone_record_search_input.py
-        ├── integrate_zone_model_with_tui.py
-        └── sprint_4_2_enter.py
+- `__future__: annotations`
+- `configparser`
+- `pathlib: Path`
+- `discovery: BindConfigDiscovery, BindDiscoveryError, DEFAULT_NAMED_CONF, ZoneConfig`
+- `models: Zone`
 
-14 directories, 82 files
+## `src/elkman_dns/core/discovery.py`
+
+Automatyczne wykrywanie stref i plików źródłowych BIND.
+
+**Importy:**
+
+- `__future__: annotations`
+- `os`
+- `re`
+- `dataclasses: dataclass`
+- `pathlib: Path`
+
+## `src/elkman_dns/core/models.py`
+
+Brak docstringa.
+
+**Importy:**
+
+- `__future__: annotations`
+- `dataclasses: dataclass`
+- `enum: Enum`
+- `pathlib: Path`
+
+## `src/elkman_dns/core/runner.py`
+
+Brak docstringa.
+
+**Importy:**
+
+- `__future__: annotations`
+- `subprocess`
+- `dataclasses: dataclass`
+
+## `src/elkman_dns/core/soa_serial.py`
+
+Brak docstringa.
+
+**Importy:**
+
+- `__future__: annotations`
+- `re`
+- `dataclasses: dataclass, replace`
+- `datetime: date`
+- `zone_document: RawLine, RecordNode, ZoneDocument`
+- `zone_parser: DNSRecord`
+
+## `src/elkman_dns/core/transaction.py`
+
+Brak docstringa.
+
+**Importy:**
+
+- `__future__: annotations`
+- `fcntl`
+- `hashlib`
+- `json`
+- `os`
+- `shutil`
+- `stat`
+- `tempfile`
+- `time`
+- `uuid`
+- `dataclasses: asdict, dataclass, field`
+- `datetime: datetime`
+- `pathlib: Path`
+- `audit: AuditLog`
+- `config: ToolkitConfig`
+- `models: Zone`
+- `runner: CommandResult, run`
+
+## `src/elkman_dns/core/zone_document.py`
+
+Brak docstringa.
+
+**Importy:**
+
+- `__future__: annotations`
+- `dataclasses: dataclass, field`
+- `pathlib: Path`
+- `typing: Iterable`
+- `zone_parser: DNSRecord`
+
+## `src/elkman_dns/core/zone_document_adapter.py`
+
+Brak docstringa.
+
+**Importy:**
+
+- `__future__: annotations`
+- `dataclasses: dataclass`
+- `zone_document: RecordNode, ZoneDocument`
+- `zone_model: ChangeKind, ZoneModel`
+
+## `src/elkman_dns/core/zone_edit_session.py`
+
+Brak docstringa.
+
+**Importy:**
+
+- `__future__: annotations`
+- `dataclasses: dataclass`
+- `datetime: date`
+- `pathlib: Path`
+- `typing: Callable, Protocol`
+- `models: Zone`
+- `soa_serial: SoaSerialChange, SoaSerialError, bump_document_soa_serial`
+- `transaction: TransactionResult`
+- `zone_document: ZoneDocument`
+- `zone_document_adapter: ZoneDocumentAdapter`
+- `zone_file_parser: ZoneFileParser`
+- `zone_model: ZoneModel`
+- `zone_writer: ZoneWriter`
+
+## `src/elkman_dns/core/zone_file_parser.py`
+
+Brak docstringa.
+
+**Importy:**
+
+- `__future__: annotations`
+- `dataclasses: dataclass`
+- `pathlib: Path`
+- `zone_document: BlankLine, Comment, Directive, RawLine, RecordNode, ZoneDocument`
+- `zone_parser: DNSRecord`
+
+## `src/elkman_dns/core/zone_model.py`
+
+Brak docstringa.
+
+**Importy:**
+
+- `__future__: annotations`
+- `dataclasses: dataclass`
+- `enum: Enum`
+- `typing: Iterable`
+- `zone_parser: DNSRecord`
+
+## `src/elkman_dns/core/zone_parser.py`
+
+Brak docstringa.
+
+**Importy:**
+
+- `__future__: annotations`
+- `dataclasses: dataclass`
+
+## `src/elkman_dns/core/zone_serializer.py`
+
+Serializacja modelu strefy DNS do pliku kandydata.
+
+**Importy:**
+
+- `__future__: annotations`
+- `os`
+- `tempfile`
+- `pathlib: Path`
+- `typing: Iterable, Protocol`
+- `zone_parser: DNSRecord`
+
+## `src/elkman_dns/core/zone_writer.py`
+
+Brak docstringa.
+
+**Importy:**
+
+- `__future__: annotations`
+- `os`
+- `tempfile`
+- `pathlib: Path`
+- `zone_document: BlankLine, Comment, Directive, RawLine, RecordNode, ZoneDocument, ZoneNode`
+- `zone_parser: DNSRecord`
+
+## `src/elkman_dns/legacy_v220.py`
+
+Brak docstringa.
+
+**Importy:**
+
+- `__future__: annotations`
+- `argparse`
+- `configparser`
+- `datetime`
+- `json`
+- `re`
+- `tempfile`
+- `os`
+- `shutil`
+- `subprocess`
+- `sys`
+- `tarfile`
+- `time`
+- `concurrent.futures: ThreadPoolExecutor, as_completed`
+- `pathlib: Path`
+
+## `src/elkman_dns/ui/__init__.py`
+
+Terminal UI for elkman DNS Toolkit.
+
+## `src/elkman_dns/ui/credits.py`
+
+Dyskretny podpis twórców projektu w głównym widoku TUI.
+
+**Importy:**
+
+- `__future__: annotations`
+- `curses`
+
+## `src/elkman_dns/ui/curses_app.py`
+
+Brak docstringa.
+
+**Importy:**
+
+- `__future__: annotations`
+- `elkman_dns.ui.credits: draw_project_credits`
+- `elkman_dns.core.zone_model: ChangeKind, ZoneChange, ZoneModel`
+- `elkman_dns.ui.dialogs: CursesDialogs`
+- `elkman_dns.ui.records.editor: RecordEditor`
+- `elkman_dns.ui.records.new_record: NewRecordDialog`
+- `elkman_dns.ui.records.renderer: RecordRenderer`
+- `curses`
+- `queue`
+- `threading`
+- `concurrent.futures: ThreadPoolExecutor, as_completed`
+- `dataclasses: dataclass`
+- `: __version__`
+- `core.bind: BindService`
+- `core.config: ToolkitConfig`
+- `core.models: Health, Zone, ZoneStatus`
+- `core.transaction: TransactionEngine, TransactionResult`
+- `core.zone_edit_session: ZoneEditSession, ZoneEditSessionError`
+
+## `src/elkman_dns/ui/dialogs.py`
+
+Brak docstringa.
+
+**Importy:**
+
+- `__future__: annotations`
+- `curses`
+
+## `src/elkman_dns/ui/records/__init__.py`
+
+Widoki i komponenty obsługi rekordów DNS.
+
+**Importy:**
+
+- `editor: RecordEditor`
+- `renderer: RecordRenderer`
+- `new_record: NewRecordDialog, RECORD_TYPES`
+- `controller: RecordController`
+
+## `src/elkman_dns/ui/records/controller.py`
+
+Stan, sortowanie i filtrowanie widoku rekordów DNS.
+
+**Importy:**
+
+- `__future__: annotations`
+- `collections.abc: Sequence`
+- `elkman_dns.core.zone_model: ZoneModel, ZoneRecordView`
+
+## `src/elkman_dns/ui/records/editor.py`
+
+Formularz edycji rekordów DNS w interfejsie curses.
+
+**Importy:**
+
+- `__future__: annotations`
+- `typing: Any`
+- `curses`
+- `core.models: Zone`
+- `core.zone_parser: DNSRecord`
+
+## `src/elkman_dns/ui/records/keybindings.py`
+
+Brak docstringa.
+
+**Importy:**
+
+- `__future__: annotations`
+- `dataclasses: dataclass`
+- `typing: Sequence`
+
+## `src/elkman_dns/ui/records/new_record.py`
+
+Interaktywny kreator nowych rekordów DNS.
+
+**Importy:**
+
+- `__future__: annotations`
+- `collections.abc: Iterable`
+- `ipaddress: IPv4Address, IPv6Address`
+- `curses`
+- `core.models: Zone`
+- `core.zone_parser: DNSRecord`
+
+## `src/elkman_dns/ui/records/renderer.py`
+
+Brak docstringa.
+
+**Importy:**
+
+- `__future__: annotations`
+- `curses`
+- `collections.abc: Sequence`
+- `elkman_dns.core.zone_model: ChangeKind, ZoneRecordView`
+- `elkman_dns.ui.records.keybindings: render_footer`
