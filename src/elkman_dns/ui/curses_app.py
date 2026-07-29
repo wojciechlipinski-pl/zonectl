@@ -272,37 +272,42 @@ class CursesApp:
         sort_names = ("Nazwa", "Typ", "TTL")
 
         def ordered_records():
-            records = list(model.records)
+            views = list(model.record_views)
+
+            def name_key(view):
+                record = view.record
+                return (
+                    record.relative_owner(zone.name).casefold(),
+                    record.rtype.casefold(),
+                    record.rdata.casefold(),
+                    view.identifier,
+                )
+
+            def type_key(view):
+                record = view.record
+                return (
+                    record.rtype.casefold(),
+                    record.relative_owner(zone.name).casefold(),
+                    record.rdata.casefold(),
+                    view.identifier,
+                )
+
+            def ttl_key(view):
+                record = view.record
+                return (
+                    record.ttl is None,
+                    record.ttl or 0,
+                    record.relative_owner(zone.name).casefold(),
+                    record.rtype.casefold(),
+                    view.identifier,
+                )
 
             if sort_mode == 1:
-                result = sorted(
-                    records,
-                    key=lambda item: (
-                        item.rtype.casefold(),
-                        item.relative_owner(zone.name).casefold(),
-                        item.rdata.casefold(),
-                    ),
-                )
-
+                result = sorted(views, key=type_key)
             elif sort_mode == 2:
-                result = sorted(
-                    records,
-                    key=lambda item: (
-                        item.ttl is None,
-                        item.ttl or 0,
-                        item.relative_owner(zone.name).casefold(),
-                    ),
-                )
-
+                result = sorted(views, key=ttl_key)
             else:
-                result = sorted(
-                    records,
-                    key=lambda item: (
-                        item.relative_owner(zone.name).casefold(),
-                        item.rtype.casefold(),
-                        item.rdata.casefold(),
-                    ),
-                )
+                result = sorted(views, key=name_key)
 
             query = search_query.strip().casefold()
 
@@ -311,24 +316,23 @@ class CursesApp:
 
             filtered = []
 
-            for record in result:
+            for view in result:
+                record = view.record
                 owner = record.relative_owner(zone.name)
                 ttl = "" if record.ttl is None else str(record.ttl)
 
                 searchable = " ".join(
                     (
+                        view.marker,
                         owner,
-                        record.owner,
                         record.rtype,
-                        record.rrclass,
                         ttl,
                         record.rdata,
-                        record.raw,
                     )
                 ).casefold()
 
                 if query in searchable:
-                    filtered.append(record)
+                    filtered.append(view)
 
             return filtered
 
@@ -412,7 +416,7 @@ class CursesApp:
                 win,
                 zone_name=zone.name,
                 records=visible_records,
-                total_count=len(model.records),
+                total_count=len(model.record_views),
                 selected=selected,
                 offset=offset,
                 sort_name=sort_names[sort_mode],
@@ -475,15 +479,41 @@ class CursesApp:
                 )
 
                 if new_record is not None:
-                    added_index = model.add(new_record)
+                    identifiers_before = {
+                        view.identifier
+                        for view in model.record_views
+                    }
+
+                    model.add(new_record)
+
+                    added_view = next(
+                        (
+                            view
+                            for view in model.record_views
+                            if view.identifier not in identifiers_before
+                        ),
+                        None,
+                    )
 
                     search_query = ""
                     visible_records = ordered_records()
 
-                    try:
-                        added_record = model.records[added_index]
-                        selected = visible_records.index(added_record)
-                    except (IndexError, ValueError):
+                    if added_view is not None:
+                        try:
+                            selected = next(
+                                index
+                                for index, view in enumerate(
+                                    visible_records
+                                )
+                                if view.identifier
+                                == added_view.identifier
+                            )
+                        except StopIteration:
+                            selected = max(
+                                0,
+                                len(visible_records) - 1,
+                            )
+                    else:
                         selected = max(
                             0,
                             len(visible_records) - 1,
@@ -500,12 +530,12 @@ class CursesApp:
                 if not visible_records:
                     continue
 
-                current_record = visible_records[selected]
+                current_view = visible_records[selected]
 
-                try:
-                    model_index = model.records.index(current_record)
-                except ValueError:
+                if current_view.deleted:
                     continue
+
+                current_record = current_view.record
 
                 edited_record = RecordEditor(
                     error_attr=self._color(Health.FAIL),
@@ -516,30 +546,59 @@ class CursesApp:
                 )
 
                 if edited_record is not None:
-                    model.replace(model_index, edited_record)
-                    selected = 0
-                    offset = 0
+                    model.replace_by_identifier(
+                        current_view.identifier,
+                        edited_record,
+                    )
+
+                    visible_records = ordered_records()
+
+                    try:
+                        selected = next(
+                            index
+                            for index, view in enumerate(
+                                visible_records
+                            )
+                            if view.identifier
+                            == current_view.identifier
+                        )
+                    except StopIteration:
+                        selected = 0
+
+                    offset = min(offset, selected)
 
                 continue
 
-            if key in (curses.KEY_DC,):
+            if key == curses.KEY_DC:
                 if not visible_records:
                     continue
 
-                current_record = visible_records[selected]
+                current_view = visible_records[selected]
 
-                try:
-                    model_index = model.records.index(current_record)
-                except ValueError:
+                if current_view.deleted:
                     continue
 
-                model.delete(model_index)
+                model.delete_by_identifier(
+                    current_view.identifier
+                )
 
                 visible_records = ordered_records()
-                selected = min(
-                    selected,
-                    max(0, len(visible_records) - 1),
-                )
+
+                try:
+                    selected = next(
+                        index
+                        for index, view in enumerate(
+                            visible_records
+                        )
+                        if view.identifier
+                        == current_view.identifier
+                    )
+                except StopIteration:
+                    selected = min(
+                        selected,
+                        max(0, len(visible_records) - 1),
+                    )
+
                 offset = min(offset, selected)
                 continue
 

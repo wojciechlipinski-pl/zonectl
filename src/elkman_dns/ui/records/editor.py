@@ -17,6 +17,46 @@ class RecordEditor:
         self._error_attr = error_attr
         self._save_requested = False
 
+    @staticmethod
+    def _get_key(win: curses.window) -> int:
+        """Odczytuje klawisz i rozpoznaje F2 wysyłane jako ESC [ 12 ~."""
+        key = win.getch()
+
+        if key != 27:
+            return key
+
+        sequence: list[int] = []
+
+        try:
+            # Krótko czekamy na dalszą część sekwencji ESC.
+            win.timeout(80)
+
+            for _ in range(4):
+                next_key = win.getch()
+
+                if next_key == -1:
+                    break
+
+                sequence.append(next_key)
+        finally:
+            try:
+                win.timeout(-1)
+            except curses.error:
+                pass
+
+        if sequence == [ord("["), ord("1"), ord("2"), ord("~")]:
+            return curses.KEY_F2
+
+        # To nie było F2. Odtwarzamy pobrane znaki,
+        # a samo ESC zwracamy jako anulowanie.
+        for item in reversed(sequence):
+            try:
+                curses.ungetch(item)
+            except curses.error:
+                break
+
+        return 27
+
     def _edit_line(
         self,
         win: curses.window,
@@ -77,7 +117,7 @@ class RecordEditor:
                     pass
 
                 win.refresh()
-                key = win.getch()
+                key = self._get_key(win)
 
                 if key == curses.KEY_F2:
                     self._save_requested = True
@@ -168,6 +208,18 @@ class RecordEditor:
     ):
         """Edytuje rekord w pamięci. Zwraca nowy rekord albo None."""
         from dataclasses import replace
+
+        self._save_requested = False
+
+        # Formularz musi pracować w trybie blokującym.
+        # W trybie nodelay sekwencje klawiszy funkcyjnych, np. F2,
+        # mogą zostać odczytane jako osobne znaki ESC, [, 1, 2, ~.
+        try:
+            win.keypad(True)
+            win.nodelay(False)
+            win.timeout(-1)
+        except curses.error:
+            pass
 
         fields = [
             ("Nazwa", record.relative_owner(zone.name)),
@@ -290,7 +342,7 @@ class RecordEditor:
             )
 
             win.refresh()
-            key = win.getch()
+            key = self._get_key(win)
 
             if key in (27, ord("q"), ord("Q")):
                 return None

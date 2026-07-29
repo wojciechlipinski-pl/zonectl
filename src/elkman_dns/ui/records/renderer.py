@@ -3,7 +3,7 @@ from __future__ import annotations
 import curses
 from collections.abc import Sequence
 
-from elkman_dns.core.zone_parser import DNSRecord
+from elkman_dns.core.zone_model import ChangeKind, ZoneRecordView
 from elkman_dns.ui.records.keybindings import render_footer
 
 
@@ -31,8 +31,10 @@ class RecordRenderer:
             f"   Sortowanie: {sort_name}"
             f"   Zmiany: {change_count}"
         )
+
         if search_query:
             summary += f'   Filtr: "{search_query}"'
+
         return summary
 
     @staticmethod
@@ -48,17 +50,38 @@ class RecordRenderer:
         attr: int = curses.A_NORMAL,
     ) -> None:
         height, width = win.getmaxyx()
+
         if row < 0 or row >= height or column < 0 or column >= width:
             return
 
         available = max(0, width - column - 1)
+
         if available <= 0:
             return
 
         try:
-            win.addnstr(row, column, str(text), available, attr)
+            win.addnstr(
+                row,
+                column,
+                str(text),
+                available,
+                attr,
+            )
         except curses.error:
             pass
+
+    @staticmethod
+    def _change_attr(view: ZoneRecordView) -> int:
+        if view.change_kind is ChangeKind.ADD:
+            return curses.A_BOLD
+
+        if view.change_kind is ChangeKind.MODIFY:
+            return curses.A_BOLD
+
+        if view.change_kind is ChangeKind.DELETE:
+            return curses.A_DIM
+
+        return curses.A_NORMAL
 
     @classmethod
     def draw(
@@ -66,7 +89,7 @@ class RecordRenderer:
         win: curses.window,
         *,
         zone_name: str,
-        records: Sequence[DNSRecord],
+        records: Sequence[ZoneRecordView],
         total_count: int,
         selected: int,
         offset: int,
@@ -95,7 +118,13 @@ class RecordRenderer:
                 "Nie udało się odczytać rekordów:",
                 curses.A_BOLD,
             )
-            cls._put(win, 5, 2, error, error_attr)
+            cls._put(
+                win,
+                5,
+                2,
+                error,
+                error_attr,
+            )
             cls._put(
                 win,
                 height - 2,
@@ -120,37 +149,85 @@ class RecordRenderer:
             curses.A_BOLD,
         )
 
+        marker_width = 1
         owner_width = max(12, min(28, width // 4))
         type_width = 7
         ttl_width = 10
 
-        owner_column = 1
+        marker_column = 1
+        owner_column = marker_column + marker_width + 1
         type_column = owner_column + owner_width + 1
         ttl_column = type_column + type_width + 1
         value_column = ttl_column + ttl_width + 1
 
-        cls._put(win, 4, owner_column, "NAZWA", curses.A_BOLD)
-        cls._put(win, 4, type_column, "TYP", curses.A_BOLD)
-        cls._put(win, 4, ttl_column, "TTL", curses.A_BOLD)
-        cls._put(win, 4, value_column, "WARTOŚĆ", curses.A_BOLD)
-        cls._put(win, 5, 1, "-" * max(1, width - 2), curses.A_DIM)
+        cls._put(
+            win,
+            4,
+            marker_column,
+            "S",
+            curses.A_BOLD,
+        )
+        cls._put(
+            win,
+            4,
+            owner_column,
+            "NAZWA",
+            curses.A_BOLD,
+        )
+        cls._put(
+            win,
+            4,
+            type_column,
+            "TYP",
+            curses.A_BOLD,
+        )
+        cls._put(
+            win,
+            4,
+            ttl_column,
+            "TTL",
+            curses.A_BOLD,
+        )
+        cls._put(
+            win,
+            4,
+            value_column,
+            "WARTOŚĆ",
+            curses.A_BOLD,
+        )
+        cls._put(
+            win,
+            5,
+            1,
+            "-" * max(1, width - 2),
+            curses.A_DIM,
+        )
 
         visible = cls.visible_rows(height)
 
         if records:
-            for screen_row, record in enumerate(
+            for screen_row, view in enumerate(
                 records[offset : offset + visible],
                 start=cls.LIST_TOP,
             ):
                 index = offset + screen_row - cls.LIST_TOP
-                attr = (
-                    curses.A_REVERSE
-                    if index == selected
-                    else curses.A_NORMAL
-                )
+                record = view.record
+
+                attr = cls._change_attr(view)
+
+                if index == selected:
+                    attr |= curses.A_REVERSE
+
                 owner = record.relative_owner(zone_name)
                 ttl = "-" if record.ttl is None else str(record.ttl)
 
+                cls._put(
+                    win,
+                    screen_row,
+                    marker_column,
+                    view.marker,
+                    attr,
+                )
                 cls._put(
                     win,
                     screen_row,
@@ -179,6 +256,7 @@ class RecordRenderer:
                     record.rdata,
                     attr,
                 )
+
         elif search_query:
             cls._put(
                 win,
@@ -187,6 +265,7 @@ class RecordRenderer:
                 f'Brak rekordów pasujących do: "{search_query}"',
                 curses.A_DIM,
             )
+
         else:
             cls._put(
                 win,

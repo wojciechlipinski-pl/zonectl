@@ -30,6 +30,28 @@ class ZoneChange:
         raise RuntimeError("Zmiana nie zawiera rekordu")
 
 
+@dataclass(slots=True, frozen=True)
+class ZoneRecordView:
+    """Rekord prezentowany w edytorze wraz ze stanem zmiany."""
+
+    identifier: int
+    record: DNSRecord
+    change_kind: ChangeKind | None
+
+    @property
+    def deleted(self) -> bool:
+        return self.change_kind is ChangeKind.DELETE
+
+    @property
+    def marker(self) -> str:
+        return {
+            ChangeKind.ADD: "+",
+            ChangeKind.MODIFY: "~",
+            ChangeKind.DELETE: "-",
+            None: " ",
+        }[self.change_kind]
+
+
 @dataclass(slots=True)
 class _RecordEntry:
     identifier: int
@@ -103,6 +125,44 @@ class ZoneModel:
         )
 
     @property
+    def record_views(self) -> tuple[ZoneRecordView, ...]:
+        """Zwraca rekordy widoczne w edytorze, również usuwane."""
+
+        result: list[ZoneRecordView] = []
+
+        for entry in self._entries:
+            before = entry.original
+            after = entry.current
+
+            if before is None and after is None:
+                continue
+
+            if before is None and after is not None:
+                record = after
+                kind = ChangeKind.ADD
+            elif before is not None and after is None:
+                record = before
+                kind = ChangeKind.DELETE
+            elif before != after:
+                assert after is not None
+                record = after
+                kind = ChangeKind.MODIFY
+            else:
+                assert after is not None
+                record = after
+                kind = None
+
+            result.append(
+                ZoneRecordView(
+                    identifier=entry.identifier,
+                    record=record,
+                    change_kind=kind,
+                )
+            )
+
+        return tuple(result)
+
+    @property
     def pending_changes(self) -> tuple[ZoneChange, ...]:
         changes: list[ZoneChange] = []
 
@@ -162,6 +222,47 @@ class ZoneModel:
         self._entries.append(entry)
 
         return len(self.records) - 1
+
+    def _entry_by_identifier(self, identifier: int) -> _RecordEntry:
+        for entry in self._entries:
+            if entry.identifier == identifier:
+                return entry
+
+        raise KeyError(
+            f"Nie znaleziono rekordu o identyfikatorze: {identifier}"
+        )
+
+    def replace_by_identifier(
+        self,
+        identifier: int,
+        record: DNSRecord,
+    ) -> DNSRecord:
+        entry = self._entry_by_identifier(identifier)
+        previous = entry.current
+
+        if previous is None:
+            raise RuntimeError(
+                "Nie można edytować usuniętego rekordu"
+            )
+
+        entry.current = record
+        return previous
+
+    def delete_by_identifier(self, identifier: int) -> DNSRecord:
+        entry = self._entry_by_identifier(identifier)
+        previous = entry.current
+
+        if previous is None:
+            raise RuntimeError(
+                "Rekord jest już usunięty"
+            )
+
+        entry.current = None
+
+        if entry.original is None:
+            self._entries.remove(entry)
+
+        return previous
 
     def replace(
         self,
