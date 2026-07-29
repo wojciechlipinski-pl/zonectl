@@ -481,7 +481,7 @@ class CursesApp:
                 error_attr=self._color(Health.FAIL),
             )
 
-            key = win.getch()
+            key = self._get_key(win)
 
             if error:
                 if key in (
@@ -515,8 +515,8 @@ class CursesApp:
 
                 return
 
-            # Ctrl+S
-            if key == 19:
+            # F2 / Ctrl+S
+            if key in (curses.KEY_F2, 19):
                 if not model.dirty:
                     self._message_view(
                         win,
@@ -589,11 +589,14 @@ class CursesApp:
             if key in (ord("p"), ord("P")):
                 self._pending_changes_view(
                     win,
+                    session,
                     model,
                     zone,
                 )
+                model = session.model
                 selected = 0
                 offset = 0
+                search_query = ""
                 continue
 
             if key in (ord("a"), ord("A")):
@@ -840,6 +843,50 @@ class CursesApp:
         except curses.error:
             pass
 
+    @staticmethod
+    def _get_key(win: curses.window) -> int:
+        """
+        Odczytuje klawisz i rozpoznaje F2 wysyłane jako ESC [ 12 ~.
+        """
+        key = win.getch()
+
+        if key != 27:
+            return key
+
+        sequence: list[int] = []
+
+        try:
+            win.timeout(80)
+
+            for _ in range(4):
+                next_key = win.getch()
+
+                if next_key == -1:
+                    break
+
+                sequence.append(next_key)
+        finally:
+            try:
+                win.timeout(-1)
+            except curses.error:
+                pass
+
+        if sequence == [
+            ord("["),
+            ord("1"),
+            ord("2"),
+            ord("~"),
+        ]:
+            return curses.KEY_F2
+
+        for item in reversed(sequence):
+            try:
+                curses.ungetch(item)
+            except curses.error:
+                break
+
+        return 27
+
     def _transaction_result_view(
         self,
         win: curses.window,
@@ -886,6 +933,7 @@ class CursesApp:
     def _pending_changes_view(
         self,
         win: curses.window,
+        session: ZoneEditSession,
         model: ZoneModel,
         zone: Zone,
     ) -> None:
@@ -997,7 +1045,8 @@ class CursesApp:
 
             footer = (
                 " ↑/↓ wybór"
-                "   PgUp/PgDn przewijanie"
+                "   F2/Ctrl+S zapisz"
+                "   PgUp/PgDn"
                 "   Home/End"
                 "   q powrót "
             )
@@ -1009,7 +1058,7 @@ class CursesApp:
             )
 
             win.refresh()
-            key = win.getch()
+            key = self._get_key(win)
 
             if key in (
                 ord("q"),
@@ -1020,6 +1069,39 @@ class CursesApp:
                 8,
             ):
                 return
+
+            if key in (curses.KEY_F2, 19):
+                if not changes:
+                    self._message_view(
+                        win,
+                        title=f"Zapis: {zone.name}",
+                        lines=["Brak zmian do zapisania."],
+                    )
+                    continue
+
+                try:
+                    save_result = session.save(commit=True)
+                except Exception as exc:
+                    self._message_view(
+                        win,
+                        title=f"Błąd zapisu: {zone.name}",
+                        lines=[f"{type(exc).__name__}: {exc}"],
+                        error=True,
+                    )
+                    continue
+
+                self._transaction_result_view(
+                    win,
+                    save_result.transaction,
+                )
+
+                if (
+                    save_result.transaction.committed
+                    or save_result.transaction.status == "NO-CHANGE"
+                ):
+                    if save_result.transaction.status == "NO-CHANGE":
+                        session.reload()
+                    return
 
             if not changes:
                 continue
