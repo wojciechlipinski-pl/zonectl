@@ -22,6 +22,8 @@ Rozwój funkcjonalny
  Integracja z repozytorium Git przechowującym strefy.
  Tryb tylko do odczytu.
  Mechanizm blokowania równoległej edycji.
+ Profile kontroli zdrowia zależne od przeznaczenia strefy.
+ Profil RPZ: składnia, stan załadowania i świeżość lokalnego pliku.
 Jakość
  Pokrycie testami krytycznych ścieżek zapisu.
  Statyczna analiza typów.
