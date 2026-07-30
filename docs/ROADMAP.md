@@ -16,8 +16,8 @@ zrealizowane, a `[ ]` pozostają do wykonania.
 
 ## Etap 1 — bezpieczeństwo zapisu i obsługa awarii
 
-- [ ] Dodać test zapisu z widoku Pending Changes.
-- [ ] Dodać test odświeżenia modelu po COMMIT.
+- [x] Dodać test zapisu z widoku Pending Changes.
+- [x] Dodać test odświeżenia modelu po COMMIT.
 - [x] Dodać test zachowania po nieudanym `named-checkzone`.
 - [x] Dodać test zachowania po nieudanym `rndc reload`.
 - [x] Potwierdzić automatyczny rollback pliku strefy po błędzie reloadu.
