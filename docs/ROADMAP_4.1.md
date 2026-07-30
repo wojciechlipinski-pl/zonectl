@@ -1,5 +1,9 @@
 # ZoneCTL 4.1 — Rebranding & Bulk Operations
 
+> Dokument historyczny. Aktualny plan rozwoju znajduje się w
+> `docs/ROADMAP.md`. Operacje masowe opisane poniżej zostały zrealizowane
+> w wydaniu 4.3.0.
+
 ## Tożsamość
 
 - Projekt: **ZoneCTL**
@@ -23,7 +27,7 @@ Status: **zrealizowane w 4.1.0**
 
 ### Bulk Operations
 
-Status: **planowane — po etapie bezpieczeństwa zapisu**
+Status: **zrealizowane w 4.3.0**
 
 Planowana składnia:
 

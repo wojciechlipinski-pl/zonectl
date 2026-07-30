@@ -40,7 +40,59 @@ zrealizowane, a `[ ]` pozostają do wykonania.
 - [x] Dodać operacje masowe `SELECT`, `SET` i `DELETE`.
 - [x] Zapisywać operację masową jako jedną transakcję.
 - [x] Dodać obsługę wielu stref w jednej sesji.
-- [ ] Rozważyć integrację z repozytorium Git przechowującym strefy.
+
+## ZoneCTL 4.4 — cykl życia stref DNS
+
+### Tworzenie strefy
+
+- [ ] Dodać kreator nowej domeny w TUI i odpowiadające mu polecenie CLI.
+- [ ] Walidować nazwę domeny i odrzucać strefy już istniejące.
+- [ ] Umożliwić wybór grupy, serwerów NS, administratora SOA i parametrów
+  czasowych SOA.
+- [ ] Generować minimalny plik strefy z SOA, NS i poprawnym serialem.
+- [ ] Opcjonalnie dodawać rekordy A/AAAA dla apexu i `www`.
+- [ ] Dodawać deklarację `primary` do zarządzanego fragmentu konfiguracji
+  BIND bez modyfikowania obcych sekcji.
+- [ ] Przed aktywacją wykonywać `named-checkzone` i `named-checkconf`.
+- [ ] Aktywować strefę przez kontrolowane `rndc reconfig` i potwierdzać jej
+  załadowanie.
+- [ ] Zapisywać manifest utworzenia, backup konfiguracji i wynik każdego
+  etapu.
+- [ ] Automatycznie wycofywać plik oraz konfigurację po błędzie aktywacji.
+
+### Wyłączanie i przywracanie
+
+- [ ] Dodać odwracalną operację wyłączenia strefy bez usuwania jej danych.
+- [ ] Przed wyłączeniem zapisywać plik strefy, konfigurację i manifest.
+- [ ] Usuwać deklarację strefy z aktywnej konfiguracji przez transakcję.
+- [ ] Potwierdzać przez BIND, że wyłączona strefa nie jest już obsługiwana.
+- [ ] Prowadzić listę stref wyłączonych wraz z datą, operatorem i przyczyną.
+- [ ] Umożliwić przywrócenie wyłączonej strefy po pełnej walidacji.
+
+### Kwarantanna i usuwanie
+
+- [ ] Wymagać wcześniejszego wyłączenia strefy przed jej usunięciem.
+- [ ] Wymagać podwójnego potwierdzenia, w tym wpisania pełnej nazwy domeny.
+- [ ] Przenosić dane do chronionej kwarantanny zamiast wykonywać bezpośrednie
+  i nieodwracalne usunięcie.
+- [ ] Zapisywać sumy kontrolne, manifest i kompletny pakiet odtworzeniowy.
+- [ ] Umożliwić odtworzenie strefy z kwarantanny.
+- [ ] Dodać konfigurowalny okres retencji przed trwałym usunięciem.
+- [ ] Trwałe usunięcie udostępnić wyłącznie jako osobną operację
+  administracyjną.
+
+### Wymagania bezpieczeństwa 4.4
+
+- [ ] Dodać testy integracyjne tworzenia, wyłączania i przywracania z
+  odseparowaną instancją BIND.
+- [ ] Testować awarie `named-checkzone`, `named-checkconf`, `rndc reconfig`
+  i weryfikacji załadowania.
+- [ ] Potwierdzić rollback po awarii na każdym etapie cyklu życia strefy.
+- [ ] Wykluczyć przypadkowe zarządzanie automatyczną strefą RPZ jak zwykłą
+  domeną.
+- [ ] Uwzględnić strefy DNSSEC i `inline-signing`.
+- [ ] Udokumentować współpracę z backupem Veeam jako głównym zabezpieczeniem
+  maszyny wirtualnej.
 
 ## Jakość techniczna
 
@@ -71,3 +123,11 @@ zrealizowane, a `[ ]` pozostają do wykonania.
 - [ ] Dodać wybór języka w konfiguracji.
 - [ ] Opcjonalnie wykrywać język z locale systemu.
 - [ ] Testować kompletność katalogów tłumaczeń i oba warianty interfejsu.
+
+## Pomysły po 4.4
+
+- [ ] Rozważyć lokalne repozytorium Git jako dodatkową historię zmian stref.
+- [ ] Nie traktować Git jako zamiennika backupu Veeam ani backupów
+  transakcyjnych ZoneCTL.
+- [ ] Domyślnie wykluczyć automatycznie aktualizowaną strefę RPZ z historii
+  Git.
