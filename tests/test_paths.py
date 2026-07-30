@@ -1,7 +1,7 @@
 from pathlib import Path
 
-from elkman_dns.core import paths
-from elkman_dns.core.config import (
+from zonectl.core import paths
+from zonectl.core.config import (
     DEFAULT_CONFIG,
     DEFAULT_GROUPS,
     DEFAULT_ZONES,

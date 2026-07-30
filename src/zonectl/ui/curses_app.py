@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from elkman_dns.ui.credits import draw_project_credits
-from elkman_dns.core.zone_model import ChangeKind, ZoneChange, ZoneModel
-from elkman_dns.ui.dialogs import CursesDialogs
-from elkman_dns.ui.records.editor import RecordEditor
-from elkman_dns.ui.records.new_record import NewRecordDialog
-from elkman_dns.ui.records.renderer import RecordRenderer
+from zonectl.ui.credits import draw_project_credits
+from zonectl.core.zone_model import ChangeKind, ZoneChange, ZoneModel
+from zonectl.ui.dialogs import CursesDialogs
+from zonectl.ui.records.editor import RecordEditor
+from zonectl.ui.records.new_record import NewRecordDialog
+from zonectl.ui.records.renderer import RecordRenderer
 
 import curses
 import queue

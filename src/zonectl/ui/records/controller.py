@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
-from elkman_dns.core.zone_model import ZoneModel, ZoneRecordView
+from zonectl.core.zone_model import ZoneModel, ZoneRecordView
 
 
 class RecordController:

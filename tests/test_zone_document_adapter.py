@@ -1,12 +1,12 @@
-from elkman_dns.core.zone_document import RecordNode
-from elkman_dns.core.zone_document_adapter import (
+from zonectl.core.zone_document import RecordNode
+from zonectl.core.zone_document_adapter import (
     ZoneDocumentAdapter,
     ZoneDocumentAdapterError,
 )
-from elkman_dns.core.zone_file_parser import ZoneFileParser
-from elkman_dns.core.zone_model import ChangeKind, ZoneModel
-from elkman_dns.core.zone_parser import DNSRecord
-from elkman_dns.core.zone_writer import ZoneWriter
+from zonectl.core.zone_file_parser import ZoneFileParser
+from zonectl.core.zone_model import ChangeKind, ZoneModel
+from zonectl.core.zone_parser import DNSRecord
+from zonectl.core.zone_writer import ZoneWriter
 
 
 def make_record(

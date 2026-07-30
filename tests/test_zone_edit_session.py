@@ -3,16 +3,16 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-from elkman_dns.core.models import Zone
-from elkman_dns.core.transaction import (
+from zonectl.core.models import Zone
+from zonectl.core.transaction import (
     StepResult,
     TransactionResult,
 )
-from elkman_dns.core.zone_edit_session import (
+from zonectl.core.zone_edit_session import (
     ZoneEditSession,
     ZoneEditSessionError,
 )
-from elkman_dns.core.zone_parser import DNSRecord
+from zonectl.core.zone_parser import DNSRecord
 
 
 @dataclass

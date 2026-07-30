@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from elkman_dns.core.discovery import (
+from zonectl.core.discovery import (
     BindConfigDiscovery,
     BindDiscoveryError,
 )

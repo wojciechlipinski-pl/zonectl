@@ -2,14 +2,14 @@ from pathlib import Path
 
 import pytest
 
-from elkman_dns.core.zone_document import (
+from zonectl.core.zone_document import (
     RawLine,
     RecordNode,
     ZoneDocument,
 )
-from elkman_dns.core.zone_file_parser import ZoneFileParser
-from elkman_dns.core.zone_parser import DNSRecord
-from elkman_dns.core.zone_writer import (
+from zonectl.core.zone_file_parser import ZoneFileParser
+from zonectl.core.zone_parser import DNSRecord
+from zonectl.core.zone_writer import (
     ZoneWriteError,
     ZoneWriter,
 )

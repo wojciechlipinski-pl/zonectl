@@ -2,13 +2,13 @@ from datetime import date
 
 import pytest
 
-from elkman_dns.core.soa_serial import (
+from zonectl.core.soa_serial import (
     SoaSerialError,
     bump_document_soa_serial,
     next_soa_serial,
 )
-from elkman_dns.core.zone_file_parser import ZoneFileParser
-from elkman_dns.core.zone_writer import ZoneWriter
+from zonectl.core.zone_file_parser import ZoneFileParser
+from zonectl.core.zone_writer import ZoneWriter
 
 
 def test_old_serial_becomes_today_sequence_01() -> None:

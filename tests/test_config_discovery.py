@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from elkman_dns.core.config import ToolkitConfig
+from zonectl.core.config import ToolkitConfig
 
 
 def write_toolkit_config(

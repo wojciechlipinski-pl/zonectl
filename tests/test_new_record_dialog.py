@@ -1,5 +1,5 @@
-from elkman_dns.core.zone_parser import DNSRecord
-from elkman_dns.ui.records.new_record import NewRecordDialog
+from zonectl.core.zone_parser import DNSRecord
+from zonectl.ui.records.new_record import NewRecordDialog
 
 
 def record(

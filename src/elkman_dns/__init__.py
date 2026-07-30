@@ -1,2 +1,7 @@
-"""ZoneCTL — Transactional DNS Management Toolkit."""
-__version__ = "4.1.0"
+"""Zgodna nazwa historyczna; nowy kod powinien używać pakietu zonectl."""
+
+from __future__ import annotations
+
+from zonectl import __path__, __version__
+
+__all__ = ["__version__"]

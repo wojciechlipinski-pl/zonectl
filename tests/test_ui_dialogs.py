@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import unittest
 
-from elkman_dns.ui.dialogs import CursesDialogs
+from zonectl.ui.dialogs import CursesDialogs
 
 
 class CursesDialogsTests(unittest.TestCase):

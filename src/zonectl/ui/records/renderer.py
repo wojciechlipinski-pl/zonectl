@@ -3,8 +3,8 @@ from __future__ import annotations
 import curses
 from collections.abc import Sequence
 
-from elkman_dns.core.zone_model import ChangeKind, ZoneRecordView
-from elkman_dns.ui.records.keybindings import render_footer
+from zonectl.core.zone_model import ChangeKind, ZoneRecordView
+from zonectl.ui.records.keybindings import render_footer
 
 
 class RecordRenderer:

@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from elkman_dns.core.zone_serializer import (
+from zonectl.core.zone_serializer import (
     ZoneSerializationError,
     ZoneSerializer,
 )

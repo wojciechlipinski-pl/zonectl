@@ -2,11 +2,11 @@ from __future__ import annotations
 
 import unittest
 
-from elkman_dns.core.zone_model import (
+from zonectl.core.zone_model import (
     ChangeKind,
     ZoneModel,
 )
-from elkman_dns.core.zone_parser import DNSRecord
+from zonectl.core.zone_parser import DNSRecord
 
 
 def record(

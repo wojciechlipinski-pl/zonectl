@@ -1,6 +1,6 @@
-from elkman_dns.core.zone_model import ChangeKind, ZoneModel
-from elkman_dns.core.zone_parser import DNSRecord
-from elkman_dns.ui.records.controller import RecordController
+from zonectl.core.zone_model import ChangeKind, ZoneModel
+from zonectl.core.zone_parser import DNSRecord
+from zonectl.ui.records.controller import RecordController
 
 
 def make_record(

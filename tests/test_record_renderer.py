@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import unittest
 
-from elkman_dns.ui.records.renderer import RecordRenderer
+from zonectl.ui.records.renderer import RecordRenderer
 
 
 class RecordRendererTests(unittest.TestCase):

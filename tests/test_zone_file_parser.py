@@ -1,13 +1,13 @@
 from pathlib import Path
 
-from elkman_dns.core.zone_document import (
+from zonectl.core.zone_document import (
     BlankLine,
     Comment,
     Directive,
     RawLine,
     RecordNode,
 )
-from elkman_dns.core.zone_file_parser import ZoneFileParser
+from zonectl.core.zone_file_parser import ZoneFileParser
 
 
 def test_preserves_blank_lines_and_comments() -> None:
