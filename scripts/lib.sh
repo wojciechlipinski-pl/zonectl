@@ -11,10 +11,10 @@ PREVIOUS_LINK="${APP_ROOT}/previous"
 BIN_LINK="/usr/local/bin/zctl"
 LEGACY_BIN_LINK="/usr/local/bin/elkman-dns"
 
-CONFIG_DIR="/etc/elkman-dns-toolkit"
-STATE_DIR="/var/lib/elkman-dns-toolkit"
-LOG_DIR="/var/log/elkman-dns-toolkit"
-BACKUP_DIR="/var/backups/elkman-dns"
+CONFIG_DIR="/etc/zonectl"
+STATE_DIR="/var/lib/zonectl"
+LOG_DIR="/var/log/zonectl"
+BACKUP_DIR="/var/backups/zonectl"
 DNSSEC_DS_DIR="${STATE_DIR}/ds"
 
 log() {

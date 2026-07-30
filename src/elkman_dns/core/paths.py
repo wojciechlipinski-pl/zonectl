@@ -9,10 +9,10 @@ z backupem i możliwością wycofania.
 from pathlib import Path
 
 
-CONFIG_DIR = Path("/etc/elkman-dns-toolkit")
-STATE_DIR = Path("/var/lib/elkman-dns-toolkit")
-LOG_DIR = Path("/var/log/elkman-dns-toolkit")
-BACKUP_DIR = Path("/var/backups/elkman-dns")
+CONFIG_DIR = Path("/etc/zonectl")
+STATE_DIR = Path("/var/lib/zonectl")
+LOG_DIR = Path("/var/log/zonectl")
+BACKUP_DIR = Path("/var/backups/zonectl")
 APP_ROOT = Path("/opt/zonectl")
 
 DEFAULT_CONFIG = CONFIG_DIR / "toolkit.conf"

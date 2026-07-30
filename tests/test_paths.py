@@ -8,11 +8,11 @@ from elkman_dns.core.config import (
 )
 
 
-def test_legacy_system_paths_are_centralised() -> None:
-    assert paths.CONFIG_DIR == Path("/etc/elkman-dns-toolkit")
-    assert paths.STATE_DIR == Path("/var/lib/elkman-dns-toolkit")
-    assert paths.LOG_DIR == Path("/var/log/elkman-dns-toolkit")
-    assert paths.BACKUP_DIR == Path("/var/backups/elkman-dns")
+def test_zonectl_system_paths_are_centralised() -> None:
+    assert paths.CONFIG_DIR == Path("/etc/zonectl")
+    assert paths.STATE_DIR == Path("/var/lib/zonectl")
+    assert paths.LOG_DIR == Path("/var/log/zonectl")
+    assert paths.BACKUP_DIR == Path("/var/backups/zonectl")
     assert paths.APP_ROOT == Path("/opt/zonectl")
 
 
