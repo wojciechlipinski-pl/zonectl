@@ -33,8 +33,12 @@ RECORD_VIEW_BINDINGS: tuple[KeyBinding, ...] = (
 
 def render_footer(
     bindings: Sequence[KeyBinding] = RECORD_VIEW_BINDINGS,
+    *,
+    read_only: bool = False,
 ) -> str:
+    blocked = {"a", "e", "Del", "u", "F2"} if read_only else set()
     return " " + "   ".join(
         binding.render()
         for binding in bindings
+        if binding.key not in blocked
     ) + " "

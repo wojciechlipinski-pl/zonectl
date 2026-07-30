@@ -79,6 +79,7 @@ class ZoneEditSession:
         candidate_directory: Path | None = None,
         auto_bump_serial: bool = True,
         today_provider: Callable[[], date] = date.today,
+        read_only: bool = False,
     ) -> None:
         if zone.file is None:
             raise ZoneEditSessionError(
@@ -91,6 +92,7 @@ class ZoneEditSession:
         self.candidate_directory = candidate_directory
         self.auto_bump_serial = auto_bump_serial
         self.today_provider = today_provider
+        self.read_only = read_only
 
         self.serial_change: SoaSerialChange | None = None
         self._serial_prepared = False
@@ -133,6 +135,7 @@ class ZoneEditSession:
         self.model = ZoneModel(
             self.zone.name,
             self.document.records,
+            read_only=self.read_only,
         )
         self.adapter = ZoneDocumentAdapter(
             self.document,

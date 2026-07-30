@@ -122,6 +122,9 @@ class TransactionEngine:
         )
         self.timeout = int(t.get("command_timeout", "20"))
         self.local_server = t.get("local_server", "127.0.0.1")
+        self.read_only = str(
+            t.get("read_only", "no")
+        ).strip().casefold() in {"1", "yes", "true", "on"}
 
     def find_zone(self, name: str) -> Zone:
         wanted = name.rstrip(".").casefold()
@@ -318,6 +321,20 @@ class TransactionEngine:
         target = zone.file.resolve()
         txid = self._new_id(zone.name)
         result = TransactionResult(txid, zone.name, committed=False)
+        if commit and self.read_only:
+            result.steps.append(
+                StepResult(
+                    "read-only",
+                    False,
+                    "Tryb tylko do odczytu: COMMIT jest zablokowany",
+                )
+            )
+            return self._finish(
+                result,
+                "READ-ONLY",
+                source=str(source),
+                target=str(target),
+            )
         lock_path = self.lock_dir / f"{self._safe_zone_name(zone.name)}.lock"
         with ZoneLock(lock_path):
             self.audit.append(txid, zone.name, "transaction-start", "START", source=str(source), target=str(target), commit=commit)
@@ -418,6 +435,19 @@ class TransactionEngine:
             raise RuntimeError(f"Strefa {zone.name} nie ma ustawionego parametru file")
         txid = self._new_id(zone.name)
         result = TransactionResult(txid, zone.name, committed=False)
+        if commit and self.read_only:
+            result.steps.append(
+                StepResult(
+                    "read-only",
+                    False,
+                    "Tryb tylko do odczytu: rollback z COMMIT jest zablokowany",
+                )
+            )
+            return self._finish(
+                result,
+                "READ-ONLY",
+                backup=str(backup),
+            )
         if not backup.is_file():
             result.steps.append(StepResult("backup", False, f"Nie znaleziono backupu: {backup}"))
             return result
@@ -637,5 +667,16 @@ class TransactionEngine:
     def _finish(self, result: TransactionResult, outcome: str, **extra) -> TransactionResult:
         result.status = outcome
         self._save_manifest(result, {"outcome": outcome, **extra})
-        self.audit.append(result.transaction_id, result.zone, "transaction-finish", outcome, backup=result.backup, rolled_back=result.rolled_back, **extra)
+        audit_details = {
+            "backup": result.backup,
+            "rolled_back": result.rolled_back,
+        }
+        audit_details.update(extra)
+        self.audit.append(
+            result.transaction_id,
+            result.zone,
+            "transaction-finish",
+            outcome,
+            **audit_details,
+        )
         return result

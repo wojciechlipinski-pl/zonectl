@@ -8,6 +8,22 @@
 - Nie usuwaj backupów transakcyjnych przed potwierdzeniem poprawnego SOA.
 - Po każdej zmianie sprawdź stan BIND oraz dziennik audytowy ZoneCTL.
 
+## Tryb tylko do odczytu
+
+Na czas diagnostyki lub pracy operatora bez uprawnień do zmian można
+włączyć globalną blokadę zapisu:
+
+```ini
+[toolkit]
+read_only = yes
+```
+
+W tym trybie TUI pozwala przeglądać strefy, ich stan, oczekujące zmiany
+i historię transakcji, ale ukrywa akcje dodawania, edycji, usuwania,
+cofania oraz zapisu. Silnik transakcyjny niezależnie blokuje także
+`apply --commit` i `rollback --commit`, zwracając status `READ-ONLY`.
+Tryby walidacyjne bez `--commit` pozostają dostępne.
+
 ## Kontrola instalacji
 
 ```bash

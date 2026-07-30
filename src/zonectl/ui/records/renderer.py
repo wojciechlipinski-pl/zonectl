@@ -25,6 +25,7 @@ class RecordRenderer:
         sort_name: str,
         change_count: int,
         search_query: str = "",
+        read_only: bool = False,
     ) -> str:
         summary = (
             f"Rekordy: {visible_count}/{total_count}"
@@ -35,11 +36,14 @@ class RecordRenderer:
         if search_query:
             summary += f'   Filtr: "{search_query}"'
 
+        if read_only:
+            summary += "   TYLKO ODCZYT"
+
         return summary
 
     @staticmethod
-    def footer_text() -> str:
-        return render_footer()
+    def footer_text(*, read_only: bool = False) -> str:
+        return render_footer(read_only=read_only)
 
     @staticmethod
     def _put(
@@ -96,6 +100,7 @@ class RecordRenderer:
         sort_name: str,
         change_count: int,
         search_query: str = "",
+        read_only: bool = False,
         error: str | None = None,
         error_attr: int = curses.A_BOLD,
     ) -> None:
@@ -145,6 +150,7 @@ class RecordRenderer:
                 sort_name=sort_name,
                 change_count=change_count,
                 search_query=search_query,
+                read_only=read_only,
             ),
             curses.A_BOLD,
         )
@@ -279,7 +285,7 @@ class RecordRenderer:
             win,
             height - 2,
             0,
-            cls.footer_text().ljust(width),
+            cls.footer_text(read_only=read_only).ljust(width),
             curses.A_REVERSE,
         )
         win.refresh()

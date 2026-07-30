@@ -13,6 +13,10 @@ class ChangeKind(str, Enum):
     DELETE = "delete"
 
 
+class ZoneModelReadOnlyError(RuntimeError):
+    """Próba zmiany modelu uruchomionego w trybie tylko do odczytu."""
+
+
 @dataclass(slots=True, frozen=True)
 class ZoneChange:
     kind: ChangeKind
@@ -77,8 +81,11 @@ class ZoneModel:
         self,
         zone_name: str,
         records: Iterable[DNSRecord],
+        *,
+        read_only: bool = False,
     ) -> None:
         self.zone_name = zone_name.rstrip(".")
+        self.read_only = read_only
 
         self._entries: list[_RecordEntry] = []
         self._next_identifier = 1
@@ -113,6 +120,12 @@ class ZoneModel:
 
     def _remember(self) -> None:
         self._undo_stack.append(self._snapshot())
+
+    def _ensure_writable(self) -> None:
+        if self.read_only:
+            raise ZoneModelReadOnlyError(
+                "Tryb tylko do odczytu: modyfikowanie rekordów jest zablokowane"
+            )
 
     def _visible_entries(self) -> list[_RecordEntry]:
         return [
@@ -240,6 +253,7 @@ class ZoneModel:
         return bool(self._undo_stack)
 
     def add(self, record: DNSRecord) -> int:
+        self._ensure_writable()
         self._remember()
         entry = _RecordEntry(
             identifier=self._allocate_identifier(),
@@ -265,6 +279,7 @@ class ZoneModel:
         identifier: int,
         record: DNSRecord,
     ) -> DNSRecord:
+        self._ensure_writable()
         entry = self._entry_by_identifier(identifier)
         previous = entry.current
 
@@ -281,6 +296,7 @@ class ZoneModel:
         return previous
 
     def delete_by_identifier(self, identifier: int) -> DNSRecord:
+        self._ensure_writable()
         entry = self._entry_by_identifier(identifier)
         previous = entry.current
 
@@ -302,6 +318,7 @@ class ZoneModel:
         index: int,
         record: DNSRecord,
     ) -> DNSRecord:
+        self._ensure_writable()
         entry = self._entry_at(index)
 
         previous = entry.current
@@ -319,6 +336,7 @@ class ZoneModel:
         return previous
 
     def delete(self, index: int) -> DNSRecord:
+        self._ensure_writable()
         entry = self._entry_at(index)
 
         previous = entry.current

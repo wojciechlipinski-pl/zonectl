@@ -48,6 +48,28 @@ class RecordRendererTests(unittest.TestCase):
         self.assertIn("x eksport", footer)
         self.assertIn("u cofnij", footer)
 
+    def test_read_only_summary_and_footer_hide_write_actions(self) -> None:
+        summary = RecordRenderer.summary_text(
+            visible_count=13,
+            total_count=13,
+            sort_name="Nazwa",
+            change_count=0,
+            read_only=True,
+        )
+        footer = RecordRenderer.footer_text(read_only=True)
+
+        self.assertIn("TYLKO ODCZYT", summary)
+        self.assertIn("p zmiany", footer)
+        self.assertIn("d diff", footer)
+        for action in (
+            "a dodaj",
+            "e edytuj",
+            "Del usuń",
+            "u cofnij",
+            "F2 zapisz",
+        ):
+            self.assertNotIn(action, footer)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -53,6 +53,11 @@ class CursesApp:
             if config is not None
             else None
         )
+        self.read_only = bool(
+            config.read_only
+            if config is not None
+            else False
+        )
         self.statuses: dict[str, ZoneStatus] = {}
         self.selected = 0
         self.offset = 0
@@ -315,6 +320,7 @@ class CursesApp:
             session = ZoneEditSession(
                 zone,
                 self.transaction_engine,
+                read_only=self.read_only,
             )
         except ZoneEditSessionError as exc:
             self._message_view(
@@ -493,6 +499,7 @@ class CursesApp:
                 sort_name=sort_names[sort_mode],
                 change_count=model.change_count,
                 search_query=search_query,
+                read_only=self.read_only,
                 error=error,
                 error_attr=self._color(Health.FAIL),
             )
@@ -533,6 +540,9 @@ class CursesApp:
 
             # F2 / Ctrl+S
             if key in (curses.KEY_F2, 19):
+                if self.read_only:
+                    self._read_only_message(win, zone)
+                    continue
                 if not model.dirty:
                     self._message_view(
                         win,
@@ -624,6 +634,9 @@ class CursesApp:
                 continue
 
             if key in (ord("u"), ord("U")):
+                if self.read_only:
+                    self._read_only_message(win, zone)
+                    continue
                 if session.undo():
                     model = session.model
                     selected = min(
@@ -641,6 +654,9 @@ class CursesApp:
                 continue
 
             if key in (ord("a"), ord("A")):
+                if self.read_only:
+                    self._read_only_message(win, zone)
+                    continue
                 new_record = NewRecordDialog(
                     error_attr=self._color(Health.FAIL),
                 ).create_record_dialog(
@@ -698,6 +714,9 @@ class CursesApp:
                 continue
 
             if key in (ord("e"), ord("E")):
+                if self.read_only:
+                    self._read_only_message(win, zone)
+                    continue
                 if not visible_records:
                     continue
 
@@ -741,6 +760,9 @@ class CursesApp:
                 continue
 
             if key == curses.KEY_DC:
+                if self.read_only:
+                    self._read_only_message(win, zone)
+                    continue
                 if not visible_records:
                     continue
 
@@ -879,7 +901,14 @@ class CursesApp:
                 curses.A_REVERSE,
             )
             win.refresh()
-            win.getch()
+            try:
+                # Główne okno działa z krótkim timeoutem, aby odświeżać
+                # statusy w tle. Modal musi jednak czekać na świadome
+                # naciśnięcie kolejnego klawisza.
+                win.timeout(-1)
+                win.getch()
+            finally:
+                win.timeout(150)
 
         except curses.error:
             pass
@@ -1071,6 +1100,16 @@ class CursesApp:
                 "   Home/End"
                 "   q powrót "
             )
+            if self.read_only:
+                footer = (
+                    " TYLKO ODCZYT"
+                    "   d diff"
+                    "   x eksport"
+                    "   PgUp/PgDn"
+                    "   Home/End"
+                    "   q powrót "
+                )
+
             put(
                 height - 2,
                 0,
@@ -1092,6 +1131,9 @@ class CursesApp:
                 return
 
             if key in (curses.KEY_F2, 19):
+                if self.read_only:
+                    self._read_only_message(win, zone)
+                    continue
                 if not changes:
                     self._message_view(
                         win,
@@ -1291,6 +1333,20 @@ class CursesApp:
                 str(destination),
                 "",
                 "Aktywny plik strefy nie został zmieniony.",
+            ],
+        )
+
+    def _read_only_message(
+        self,
+        win: curses.window,
+        zone: Zone,
+    ) -> None:
+        self._message_view(
+            win,
+            title=f"Tylko odczyt: {zone.name}",
+            lines=[
+                "Modyfikowanie rekordów i COMMIT są zablokowane.",
+                "Ustawienie: [toolkit] read_only = yes",
             ],
         )
 

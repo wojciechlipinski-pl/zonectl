@@ -190,6 +190,11 @@ class ToolkitConfig:
         )
 
     @property
+    def read_only(self) -> bool:
+        """Blokuje operacje zapisujące, pozostawiając diagnostykę i odczyt."""
+        return _yes(self.toolkit.get("read_only"), False)
+
+    @property
     def bind_config_path(self) -> Path:
         raw = self.toolkit.get(
             "bind_config",

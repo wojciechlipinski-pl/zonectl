@@ -30,7 +30,7 @@ zrealizowane, a `[ ]` pozostają do wykonania.
 - [x] Dodać eksport zmian przed COMMIT.
 - [x] Rozbudować historię zmian i transakcji.
 - [x] Dodać cofanie ostatniej zmiany w bieżącej sesji.
-- [ ] Dodać tryb tylko do odczytu.
+- [x] Dodać tryb tylko do odczytu.
 - [ ] Dodać mechanizm blokowania równoległej edycji.
 
 ## Etap 3 — operacje masowe i wiele stref
