@@ -10,7 +10,7 @@ import tempfile
 import time
 import uuid
 from dataclasses import asdict, dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 from .audit import AuditLog
@@ -444,6 +444,122 @@ class TransactionEngine:
             return []
         return sorted((p for p in path.iterdir() if p.is_file() and not p.name.endswith(".json")), key=lambda p: p.stat().st_mtime, reverse=True)[:limit]
 
+    def history(
+        self,
+        zone_name: str | None = None,
+        limit: int = 50,
+    ) -> list[dict]:
+        """Odczytaj ostatnie manifesty transakcji."""
+        if not self.transaction_dir.exists():
+            return []
+
+        wanted = (
+            zone_name.rstrip(".").casefold()
+            if zone_name
+            else None
+        )
+        records: list[dict] = []
+        paths = sorted(
+            self.transaction_dir.glob("*.json"),
+            key=lambda path: path.stat().st_mtime,
+            reverse=True,
+        )
+
+        for path in paths:
+            try:
+                payload = json.loads(
+                    path.read_text(encoding="utf-8")
+                )
+            except (OSError, json.JSONDecodeError):
+                continue
+
+            zone = str(payload.get("zone", ""))
+
+            if (
+                wanted is not None
+                and zone.rstrip(".").casefold() != wanted
+            ):
+                continue
+
+            payload.setdefault(
+                "saved_at",
+                datetime.fromtimestamp(
+                    path.stat().st_mtime,
+                    tz=timezone.utc,
+                ).astimezone().isoformat(timespec="seconds"),
+            )
+            records.append(payload)
+
+            if len(records) >= max(1, limit):
+                break
+
+        return records
+
+    def load_transaction(
+        self,
+        transaction_id: str,
+    ) -> TransactionResult:
+        """Odtwórz wynik transakcji z manifestu."""
+        if (
+            not transaction_id
+            or Path(transaction_id).name != transaction_id
+            or transaction_id in {".", ".."}
+            or transaction_id
+            != self._safe_zone_name(transaction_id)
+        ):
+            raise RuntimeError(
+                "Nieprawidłowy identyfikator transakcji"
+            )
+
+        path = self.transaction_dir / f"{transaction_id}.json"
+
+        if not path.is_file():
+            raise RuntimeError(
+                f"Nie znaleziono transakcji: {transaction_id}"
+            )
+
+        try:
+            payload = json.loads(
+                path.read_text(encoding="utf-8")
+            )
+        except (OSError, json.JSONDecodeError) as exc:
+            raise RuntimeError(
+                f"Nie można odczytać manifestu transakcji: {path}"
+            ) from exc
+
+        try:
+            steps = [
+                StepResult(
+                    name=str(step["name"]),
+                    ok=bool(step["ok"]),
+                    message=str(step["message"]),
+                    command=step.get("command"),
+                    stdout=str(step.get("stdout", "")),
+                    stderr=str(step.get("stderr", "")),
+                )
+                for step in payload.get("steps", [])
+            ]
+            return TransactionResult(
+                transaction_id=str(payload["transaction_id"]),
+                zone=str(payload["zone"]),
+                committed=bool(payload.get("committed", False)),
+                status=str(
+                    payload.get(
+                        "status",
+                        payload.get("outcome", "UNKNOWN"),
+                    )
+                ),
+                rolled_back=bool(
+                    payload.get("rolled_back", False)
+                ),
+                backup=payload.get("backup"),
+                steps=steps,
+            )
+        except (KeyError, TypeError, ValueError) as exc:
+            raise RuntimeError(
+                f"Nieprawidłowy manifest transakcji: {path}"
+            ) from exc
+
     def _new_id(self, zone: str) -> str:
         stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
         return f"{stamp}-{self._safe_zone_name(zone)}-{uuid.uuid4().hex[:8]}"
@@ -510,6 +626,11 @@ class TransactionEngine:
         self.transaction_dir.mkdir(parents=True, exist_ok=True)
         payload = asdict(result)
         payload.update(extra)
+        payload["saved_at"] = (
+            datetime.now(timezone.utc)
+            .astimezone()
+            .isoformat(timespec="seconds")
+        )
         path = self.transaction_dir / f"{result.transaction_id}.json"
         path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
 

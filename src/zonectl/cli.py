@@ -56,6 +56,17 @@ def parser() -> argparse.ArgumentParser:
     history.add_argument("zone", nargs="?")
     history.add_argument("--limit", type=int, default=50)
     history.add_argument("--json", action="store_true")
+    history.add_argument(
+        "--events",
+        action="store_true",
+        help="pokaż surowe zdarzenia audytowe zamiast manifestów",
+    )
+    show = txsub.add_parser(
+        "show",
+        help="pokaż pełny wynik wskazanej transakcji",
+    )
+    show.add_argument("transaction_id")
+    show.add_argument("--json", action="store_true")
 
     legacy = sub.add_parser("legacy", help="uruchom zgodne polecenie silnika 2.2.0")
     legacy.add_argument("arguments", nargs=argparse.REMAINDER)
@@ -112,13 +123,48 @@ def transaction_main(args, config: ToolkitConfig) -> int:
                 print(path)
             return 0
         if args.tx_command == "history":
-            events = engine.audit.read(args.zone, max(1, args.limit))
-            if args.json:
-                print(json.dumps(events, ensure_ascii=False, indent=2))
+            if args.events:
+                records = engine.audit.read(
+                    args.zone,
+                    max(1, args.limit),
+                )
             else:
-                for event in events:
-                    print(f"{event.get('timestamp','-')}  {event.get('zone','-'):<30} {event.get('outcome','-'):<16} {event.get('action','-')}  user={event.get('user','-')}")
+                records = engine.history(
+                    args.zone,
+                    max(1, args.limit),
+                )
+
+            if args.json:
+                print(
+                    json.dumps(
+                        records,
+                        ensure_ascii=False,
+                        indent=2,
+                    )
+                )
+            else:
+                for record in records:
+                    if args.events:
+                        print(
+                            f"{record.get('timestamp', '-')}"
+                            f"  {record.get('zone', '-'):<30}"
+                            f" {record.get('outcome', '-'):<16}"
+                            f" {record.get('action', '-')}"
+                            f"  user={record.get('user', '-')}"
+                        )
+                    else:
+                        print(
+                            f"{record.get('saved_at', '-')}"
+                            f"  {record.get('zone', '-'):<30}"
+                            f" {record.get('outcome', record.get('status', '-')):<16}"
+                            f" {record.get('transaction_id', '-')}"
+                        )
             return 0
+        if args.tx_command == "show":
+            return print_transaction(
+                engine.load_transaction(args.transaction_id),
+                args.json,
+            )
     except (RuntimeError, OSError) as exc:
         print(f"BŁĄD: {exc}", file=sys.stderr)
         return 2

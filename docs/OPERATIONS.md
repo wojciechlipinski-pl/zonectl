@@ -45,6 +45,22 @@ Lista ostatnich zdarzeń:
 zctl tx history example.pl --limit 20
 ```
 
+Domyślnie historia pokazuje po jednym podsumowaniu na manifest
+transakcji: czas, strefę, wynik i identyfikator. Pełny wynik wybranej
+transakcji można odtworzyć poleceniem:
+
+```bash
+zctl tx show IDENTYFIKATOR_TRANSAKCJI
+```
+
+Surowe zdarzenia dziennika audytowego pozostają dostępne przez:
+
+```bash
+zctl tx history example.pl --events --limit 20
+```
+
+Każde z poleceń historii obsługuje również format JSON przez `--json`.
+
 Lista backupów, od najnowszego:
 
 ```bash
