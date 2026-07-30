@@ -10,6 +10,9 @@
 ## Zakres
 
 ### Rebranding
+
+Status: **zrealizowane w 4.1.0**
+
 - nazwa produktu,
 - komenda `zctl`,
 - przestrzeń nazw Python,
@@ -19,6 +22,9 @@
 - migracja istniejącej instalacji.
 
 ### Bulk Operations
+
+Status: **planowane — po etapie bezpieczeństwa zapisu**
+
 Planowana składnia:
 
 ```text
@@ -36,7 +42,7 @@ Operacje masowe mają korzystać z istniejącego modelu zmian i jednej transakcj
 
 ### Profile kontroli zdrowia stref
 
-Status: **zaplanowane**
+Status: **zrealizowane w 4.1.1**
 
 Nie wszystkie strefy powinny być oceniane jak publiczne strefy
 autorytatywne. ZoneCTL otrzyma jawny `health_profile`, wybierany w

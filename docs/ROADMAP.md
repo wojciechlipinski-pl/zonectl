@@ -1,48 +1,72 @@
 # Roadmap
 
-Poniższe pozycje są propozycjami rozwoju. Nie oznaczają,
-że zostały zatwierdzone lub rozpoczęte.
+Roadmapa porządkuje dalszy rozwój ZoneCTL. Pozycje oznaczone `[x]` zostały
+zrealizowane, a `[ ]` pozostają do wykonania.
 
-Najbliższe zadania
- Dodać test regresyjny parsera sekwencji F2.
- Dodać test zapisu z widoku Pending Changes.
- Dodać test odświeżenia modelu po COMMIT.
- Uzupełnić docstringi publicznych klas i metod.
- Ujednolicić obsługę błędów UI i warstwy core.
- Zweryfikować wszystkie skróty w różnych terminalach.
- Opisać procedurę rollbacku po błędzie reloadu BIND.
-Rozwój funkcjonalny
- Cofanie ostatniej zmiany w bieżącej sesji.
- Historia zmian i transakcji.
- Eksport zmian przed COMMIT.
- Podgląd różnic w formacie unified diff.
- Obsługa wielu stref w jednej sesji.
- Rozbudowane filtrowanie rekordów.
- Walidacja wartości zależna od typu rekordu.
- Integracja z repozytorium Git przechowującym strefy.
- Tryb tylko do odczytu.
- Mechanizm blokowania równoległej edycji.
- Profile kontroli zdrowia zależne od przeznaczenia strefy.
- Profil RPZ: składnia, stan załadowania i świeżość lokalnego pliku.
-Jakość
- Pokrycie testami krytycznych ścieżek zapisu.
- Statyczna analiza typów.
- Automatyczne formatowanie i lint.
- Testy integracyjne z odseparowaną instancją BIND.
- Testy zachowania po nieudanym named-checkzone.
- Testy zachowania po nieudanym rndc reload.
- Testy stref inline-signing.
-Dokumentacja
- Przykłady obsługi każdego wspieranego typu rekordu.
- Zrzuty ekranów TUI.
- Instrukcja odtwarzania po awarii.
- Procedura wydania nowej wersji.
- Lista wspieranych wersji Pythona, BIND i systemów.
- Dokumentacja publiczna w języku polskim i angielskim.
- Angielska wersja README, instrukcji instalacji, CLI i opisu architektury.
-Internationalization (i18n)
- Oddzielenie komunikatów użytkownika od kodu programu.
- Polski jako język domyślny i angielski jako drugi język.
- Obsługa tłumaczeń CLI, TUI, ostrzeżeń i komunikatów błędów przez gettext.
- Wybór języka w konfiguracji oraz opcjonalne wykrywanie locale systemu.
- Test kompletności katalogów tłumaczeń i zachowania interfejsu w obu językach.
+## Zrealizowane
+
+- [x] Rebranding projektu na ZoneCTL.
+- [x] Komenda `zctl` i przestrzeń nazw Python `zonectl`.
+- [x] Migracja katalogów systemowych do ścieżek ZoneCTL.
+- [x] Generator dokumentacji projektu.
+- [x] Profil kontroli zdrowia RPZ.
+- [x] Kontrola składni, stanu załadowania i świeżości pliku RPZ.
+- [x] Testy dekodowania klawiszy funkcyjnych dla xterm i PuTTY/Linux.
+- [x] Wyjście z głównego TUI przez F10, `q` i Esc.
+
+## Etap 1 — bezpieczeństwo zapisu i obsługa awarii
+
+- [ ] Dodać test zapisu z widoku Pending Changes.
+- [ ] Dodać test odświeżenia modelu po COMMIT.
+- [ ] Dodać test zachowania po nieudanym `named-checkzone`.
+- [ ] Dodać test zachowania po nieudanym `rndc reload`.
+- [ ] Potwierdzić automatyczny rollback pliku strefy po błędzie reloadu.
+- [ ] Opisać procedurę ręcznego rollbacku po błędzie reloadu BIND.
+- [ ] Ujednolicić prezentację błędów warstwy UI i core.
+
+## Etap 2 — kontrola i historia zmian
+
+- [ ] Dodać podgląd różnic w formacie unified diff przed COMMIT.
+- [ ] Dodać eksport zmian przed COMMIT.
+- [ ] Rozbudować historię zmian i transakcji.
+- [ ] Dodać cofanie ostatniej zmiany w bieżącej sesji.
+- [ ] Dodać tryb tylko do odczytu.
+- [ ] Dodać mechanizm blokowania równoległej edycji.
+
+## Etap 3 — operacje masowe i wiele stref
+
+- [ ] Dodać rozbudowane filtrowanie rekordów.
+- [ ] Dodać walidację wartości zależną od typu rekordu.
+- [ ] Dodać operacje masowe `SELECT`, `SET` i `DELETE`.
+- [ ] Zapisywać operację masową jako jedną transakcję.
+- [ ] Dodać obsługę wielu stref w jednej sesji.
+- [ ] Rozważyć integrację z repozytorium Git przechowującym strefy.
+
+## Jakość techniczna
+
+- [ ] Uzupełnić docstringi publicznych klas i metod.
+- [ ] Rozszerzyć pokrycie testami krytycznych ścieżek zapisu.
+- [ ] Dodać statyczną analizę typów.
+- [ ] Dodać automatyczne formatowanie i lint.
+- [ ] Dodać testy integracyjne z odseparowaną instancją BIND.
+- [ ] Dodać testy stref `inline-signing`.
+- [ ] Zweryfikować skróty klawiszowe w kolejnych typach terminali.
+
+## Dokumentacja
+
+- [ ] Dodać przykłady obsługi każdego wspieranego typu rekordu.
+- [ ] Dodać zrzuty ekranów TUI.
+- [ ] Przygotować instrukcję odtwarzania po awarii.
+- [ ] Opisać procedurę wydania nowej wersji.
+- [ ] Prowadzić listę wspieranych wersji Pythona, BIND i systemów.
+- [ ] Przygotować publiczną dokumentację w języku polskim i angielskim.
+- [ ] Dodać `README.en.md` oraz angielskie instrukcje instalacji i CLI.
+
+## Przyszłe rozszerzenie — internationalization (i18n)
+
+- [ ] Oddzielić komunikaty użytkownika od kodu programu.
+- [ ] Zachować język polski jako domyślny i dodać język angielski.
+- [ ] Obsłużyć tłumaczenia CLI, TUI, ostrzeżeń i błędów przez `gettext`.
+- [ ] Dodać wybór języka w konfiguracji.
+- [ ] Opcjonalnie wykrywać język z locale systemu.
+- [ ] Testować kompletność katalogów tłumaczeń i oba warianty interfejsu.
