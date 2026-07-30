@@ -37,7 +37,7 @@ zrealizowane, a `[ ]` pozostają do wykonania.
 
 - [x] Dodać rozbudowane filtrowanie rekordów.
 - [x] Dodać walidację wartości zależną od typu rekordu.
-- [ ] Dodać operacje masowe `SELECT`, `SET` i `DELETE`.
+- [x] Dodać operacje masowe `SELECT`, `SET` i `DELETE`.
 - [ ] Zapisywać operację masową jako jedną transakcję.
 - [ ] Dodać obsługę wielu stref w jednej sesji.
 - [ ] Rozważyć integrację z repozytorium Git przechowującym strefy.

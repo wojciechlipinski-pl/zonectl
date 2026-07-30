@@ -62,16 +62,19 @@ zctl tx history um.elk.pl
 
 ## Bulk Operations
 
+W widoku rekordów naciśnij `b`, wpisz pojedyncze polecenie i sprawdź
+podgląd dopasowań przed potwierdzeniem:
+
 ```text
-SELECT type=A AND ttl=3600
-SET ttl=7200
-
-SELECT type=A AND value=192.0.2.10
-SET value=192.0.2.20
-
-SELECT type=TXT AND name~="^_old"
-DELETE
+SELECT type:A ttl:3600 SET ttl=7200
+SELECT type:A value:192.0.2.10 SET value=192.0.2.20
+SELECT type:TXT name~"^_old" DELETE
 ```
+
+Operacje obsługują filtry opisane wyżej. `SET` zmienia obecnie `ttl` lub
+`value`. Wynik trafia wyłącznie do bufora sesji, przechodzi walidację
+strefy i wymaga późniejszego, osobnego COMMIT. Jedno `u` cofa całą
+operację masową.
 
 ## Testy
 

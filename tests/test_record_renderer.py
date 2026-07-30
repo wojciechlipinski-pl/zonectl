@@ -46,6 +46,7 @@ class RecordRendererTests(unittest.TestCase):
         self.assertIn("p zmiany", footer)
         self.assertIn("d diff", footer)
         self.assertIn("x eksport", footer)
+        self.assertIn("b masowe", footer)
         self.assertIn("u cofnij", footer)
 
     def test_read_only_summary_and_footer_hide_write_actions(self) -> None:
@@ -65,6 +66,7 @@ class RecordRendererTests(unittest.TestCase):
             "a dodaj",
             "e edytuj",
             "Del usuń",
+            "b masowe",
             "u cofnij",
             "F2 zapisz",
         ):

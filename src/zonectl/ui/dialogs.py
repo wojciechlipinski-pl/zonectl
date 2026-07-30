@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import curses
+from collections.abc import Callable
 
 
 class CursesDialogs:
@@ -154,6 +155,7 @@ class CursesDialogs:
         message: str,
         *,
         row: int | None = None,
+        key_reader: Callable[[curses.window], int] | None = None,
     ) -> bool:
         """Wyświetla potwierdzenie [t/N]."""
         height, width = win.getmaxyx()
@@ -179,7 +181,12 @@ class CursesDialogs:
             # odświeżania statusów. Potwierdzenie musi jednak czekać
             # na świadomą odpowiedź operatora.
             win.timeout(-1)
-            key = win.getch()
+            read_key = key_reader or (lambda window: window.getch())
+            while True:
+                key = read_key(win)
+                if curses.KEY_F1 <= key <= curses.KEY_F12:
+                    continue
+                break
 
             return key in (
                 ord("t"),

@@ -17,6 +17,7 @@ from pathlib import Path
 
 from .. import __version__
 from ..core.bind import BindService
+from ..core.bulk_operations import BulkOperation, BulkOperationError
 from ..core.config import ToolkitConfig
 from ..core.edit_lock import ZoneEditLockedError
 from ..core.models import Health, Zone, ZoneStatus
@@ -658,6 +659,20 @@ class CursesApp:
 
             if key in (ord("x"), ord("X")):
                 self._export_diff(win, session)
+                continue
+
+            if key in (ord("b"), ord("B")):
+                if self.read_only:
+                    self._read_only_message(win, zone)
+                    continue
+                self._bulk_operation_view(
+                    win,
+                    zone,
+                    model,
+                )
+                selected = 0
+                offset = 0
+                search_query = ""
                 continue
 
             if key in (ord("u"), ord("U")):
@@ -1406,6 +1421,169 @@ class CursesApp:
                 "Ustawienie: [toolkit] read_only = yes",
             ],
         )
+
+    def _bulk_operation_view(
+        self,
+        win: curses.window,
+        zone: Zone,
+        model: ZoneModel,
+    ) -> None:
+        command = CursesDialogs.text_input(
+            win,
+            " Operacja masowa: ",
+        )
+        if command is None or not command.strip():
+            return
+
+        try:
+            operation = BulkOperation.parse(command)
+            matches = operation.matches(model)
+        except BulkOperationError as exc:
+            self._message_view(
+                win,
+                title="Nieprawidłowa operacja masowa",
+                lines=[
+                    str(exc),
+                    "",
+                    "Przykład: SELECT type:A SET ttl=7200",
+                ],
+                error=True,
+            )
+            return
+
+        if not matches:
+            self._message_view(
+                win,
+                title=f"Operacja masowa: {zone.name}",
+                lines=["Filtr nie wskazał żadnego rekordu."],
+            )
+            return
+
+        action = (
+            "DELETE"
+            if operation.action.value == "DELETE"
+            else f"SET {operation.field}={operation.value}"
+        )
+        preview = [
+            f"{match.before.relative_owner(zone.name):<24} "
+            f"{match.before.rtype:<7} "
+            f"{match.before.rdata}"
+            for match in matches[:10]
+        ]
+        if len(matches) > len(preview):
+            preview.append(
+                f"... oraz {len(matches) - len(preview)} kolejnych"
+            )
+
+        if not self._bulk_preview_view(
+            win,
+            title=f"Podgląd operacji masowej: {zone.name}",
+            lines=[
+                f"Operacja: {action}",
+                f"Dopasowane rekordy: {len(matches)}",
+                "",
+                *preview,
+            ],
+        ):
+            return
+
+        if not CursesDialogs.confirm(
+            win,
+            f"Zastosować {action} do {len(matches)} rekordów?",
+            key_reader=self._get_key,
+        ):
+            return
+
+        try:
+            proposed = operation.proposed_records(model)
+        except BulkOperationError as exc:
+            self._message_view(
+                win,
+                title="Błąd operacji masowej",
+                lines=[str(exc)],
+                error=True,
+            )
+            return
+
+        if not self._approve_zone_change(
+            win,
+            zone,
+            model.records,
+            proposed,
+        ):
+            return
+
+        changed = operation.apply(model)
+        self._message_view(
+            win,
+            title=f"Operacja masowa: {zone.name}",
+            lines=[
+                f"Zmieniono rekordów: {changed}",
+                "Zmiany są tylko w bieżącej sesji.",
+                "Klawisz u cofnie całą operację.",
+                "COMMIT nie został wykonany.",
+            ],
+        )
+
+    def _bulk_preview_view(
+        self,
+        win: curses.window,
+        *,
+        title: str,
+        lines: list[str],
+    ) -> bool:
+        """Pokaż podgląd; Enter przechodzi do potwierdzenia."""
+        win.erase()
+        height, width = win.getmaxyx()
+
+        try:
+            win.addnstr(
+                0,
+                0,
+                f" {title} ".ljust(width),
+                max(0, width - 1),
+                curses.A_REVERSE | curses.A_BOLD,
+            )
+
+            row = 2
+            for line in lines:
+                if row >= height - 2:
+                    break
+                win.addnstr(
+                    row,
+                    2,
+                    str(line),
+                    max(0, width - 4),
+                    curses.A_NORMAL,
+                )
+                row += 1
+
+            footer = " Enter — dalej    q/Esc — anuluj "
+            win.addnstr(
+                height - 1,
+                0,
+                footer.ljust(width),
+                max(0, width - 1),
+                curses.A_REVERSE,
+            )
+            win.refresh()
+
+            while True:
+                key = self._get_key(win)
+                if key in (10, 13, curses.KEY_ENTER):
+                    return True
+                if key in (ord("q"), ord("Q"), 27):
+                    return False
+                # Pozostałe klawisze, w tym F1–F12, nie zamykają
+                # ekranu podglądu.
+
+        except curses.error:
+            return False
+        finally:
+            try:
+                win.timeout(150)
+            except curses.error:
+                pass
 
     def _approve_zone_change(
         self,

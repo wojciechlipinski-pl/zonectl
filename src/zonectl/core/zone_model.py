@@ -356,6 +356,58 @@ class ZoneModel:
 
         return previous
 
+    def bulk_replace_by_identifiers(
+        self,
+        replacements: dict[int, DNSRecord],
+    ) -> int:
+        """Zastąp wiele rekordów jako jeden krok historii cofania."""
+        self._ensure_writable()
+        pending: list[tuple[_RecordEntry, DNSRecord]] = []
+
+        for identifier, record in replacements.items():
+            entry = self._entry_by_identifier(identifier)
+            if entry.current is None:
+                raise RuntimeError(
+                    "Nie można edytować usuniętego rekordu"
+                )
+            if entry.current != record:
+                pending.append((entry, record))
+
+        if not pending:
+            return 0
+
+        self._remember()
+        for entry, record in pending:
+            entry.current = record
+        return len(pending)
+
+    def bulk_delete_by_identifiers(
+        self,
+        identifiers: list[int],
+    ) -> int:
+        """Usuń wiele rekordów jako jeden krok historii cofania."""
+        self._ensure_writable()
+        entries: list[_RecordEntry] = []
+        seen: set[int] = set()
+
+        for identifier in identifiers:
+            if identifier in seen:
+                continue
+            seen.add(identifier)
+            entry = self._entry_by_identifier(identifier)
+            if entry.current is not None:
+                entries.append(entry)
+
+        if not entries:
+            return 0
+
+        self._remember()
+        for entry in entries:
+            entry.current = None
+            if entry.original is None:
+                self._entries.remove(entry)
+        return len(entries)
+
     def undo(self) -> bool:
         """Cofnij ostatnią operację wykonaną w modelu."""
         if not self._undo_stack:
