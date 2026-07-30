@@ -46,6 +46,7 @@ class RecordRendererTests(unittest.TestCase):
         self.assertIn("p zmiany", footer)
         self.assertIn("d diff", footer)
         self.assertIn("x eksport", footer)
+        self.assertIn("u cofnij", footer)
 
 
 if __name__ == "__main__":

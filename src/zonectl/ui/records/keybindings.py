@@ -25,6 +25,7 @@ RECORD_VIEW_BINDINGS: tuple[KeyBinding, ...] = (
     KeyBinding("p", "zmiany"),
     KeyBinding("d", "diff"),
     KeyBinding("x", "eksport"),
+    KeyBinding("u", "cofnij"),
     KeyBinding("F2", "zapisz"),
     KeyBinding("q", "powrót"),
 )

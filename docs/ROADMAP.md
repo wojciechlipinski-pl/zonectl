@@ -29,7 +29,7 @@ zrealizowane, a `[ ]` pozostają do wykonania.
 - [x] Dodać podgląd różnic w formacie unified diff przed COMMIT.
 - [x] Dodać eksport zmian przed COMMIT.
 - [x] Rozbudować historię zmian i transakcji.
-- [ ] Dodać cofanie ostatniej zmiany w bieżącej sesji.
+- [x] Dodać cofanie ostatniej zmiany w bieżącej sesji.
 - [ ] Dodać tryb tylko do odczytu.
 - [ ] Dodać mechanizm blokowania równoległej edycji.
 

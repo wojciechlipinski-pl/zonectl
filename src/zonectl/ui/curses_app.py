@@ -623,6 +623,23 @@ class CursesApp:
                 self._export_diff(win, session)
                 continue
 
+            if key in (ord("u"), ord("U")):
+                if session.undo():
+                    model = session.model
+                    selected = min(
+                        selected,
+                        max(0, len(model.record_views) - 1),
+                    )
+                    offset = min(offset, selected)
+                    search_query = ""
+                else:
+                    self._message_view(
+                        win,
+                        title=f"Cofanie: {zone.name}",
+                        lines=["Brak zmian do cofnięcia."],
+                    )
+                continue
+
             if key in (ord("a"), ord("A")):
                 new_record = NewRecordDialog(
                     error_attr=self._color(Health.FAIL),
@@ -1048,6 +1065,7 @@ class CursesApp:
                 " ↑/↓ wybór"
                 "   d diff"
                 "   x eksport"
+                "   u cofnij"
                 "   F2/Ctrl+S zapisz"
                 "   PgUp/PgDn"
                 "   Home/End"
@@ -1113,6 +1131,15 @@ class CursesApp:
             if key in (ord("x"), ord("X")):
                 self._export_diff(win, session)
                 continue
+
+            if key in (ord("u"), ord("U")):
+                if not session.undo():
+                    self._message_view(
+                        win,
+                        title=f"Cofanie: {zone.name}",
+                        lines=["Brak zmian do cofnięcia."],
+                    )
+                return
 
             if not changes:
                 continue

@@ -59,6 +59,12 @@ class _RecordEntry:
     current: DNSRecord | None
 
 
+@dataclass(slots=True)
+class _ModelSnapshot:
+    entries: list[_RecordEntry]
+    next_identifier: int
+
+
 class ZoneModel:
     """
     Bufor edycji rekordów pojedynczej strefy.
@@ -76,6 +82,7 @@ class ZoneModel:
 
         self._entries: list[_RecordEntry] = []
         self._next_identifier = 1
+        self._undo_stack: list[_ModelSnapshot] = []
 
         for record in records:
             self._entries.append(
@@ -90,6 +97,22 @@ class ZoneModel:
         identifier = self._next_identifier
         self._next_identifier += 1
         return identifier
+
+    def _snapshot(self) -> _ModelSnapshot:
+        return _ModelSnapshot(
+            entries=[
+                _RecordEntry(
+                    identifier=entry.identifier,
+                    original=entry.original,
+                    current=entry.current,
+                )
+                for entry in self._entries
+            ],
+            next_identifier=self._next_identifier,
+        )
+
+    def _remember(self) -> None:
+        self._undo_stack.append(self._snapshot())
 
     def _visible_entries(self) -> list[_RecordEntry]:
         return [
@@ -212,7 +235,12 @@ class ZoneModel:
     def change_count(self) -> int:
         return len(self.pending_changes)
 
+    @property
+    def can_undo(self) -> bool:
+        return bool(self._undo_stack)
+
     def add(self, record: DNSRecord) -> int:
+        self._remember()
         entry = _RecordEntry(
             identifier=self._allocate_identifier(),
             original=None,
@@ -245,6 +273,10 @@ class ZoneModel:
                 "Nie można edytować usuniętego rekordu"
             )
 
+        if previous == record:
+            return previous
+
+        self._remember()
         entry.current = record
         return previous
 
@@ -257,6 +289,7 @@ class ZoneModel:
                 "Rekord jest już usunięty"
             )
 
+        self._remember()
         entry.current = None
 
         if entry.original is None:
@@ -278,6 +311,10 @@ class ZoneModel:
                 "Nie można edytować usuniętego rekordu"
             )
 
+        if previous == record:
+            return previous
+
+        self._remember()
         entry.current = record
         return previous
 
@@ -291,6 +328,7 @@ class ZoneModel:
                 "Rekord jest już usunięty"
             )
 
+        self._remember()
         entry.current = None
 
         # Dodanie, a następnie usunięcie nowego rekordu
@@ -299,6 +337,16 @@ class ZoneModel:
             self._entries.remove(entry)
 
         return previous
+
+    def undo(self) -> bool:
+        """Cofnij ostatnią operację wykonaną w modelu."""
+        if not self._undo_stack:
+            return False
+
+        snapshot = self._undo_stack.pop()
+        self._entries = snapshot.entries
+        self._next_identifier = snapshot.next_identifier
+        return True
 
     def discard(self) -> None:
         restored: list[_RecordEntry] = []
@@ -311,6 +359,7 @@ class ZoneModel:
             restored.append(entry)
 
         self._entries = restored
+        self._undo_stack.clear()
 
     def accept(self) -> None:
         """
@@ -328,3 +377,4 @@ class ZoneModel:
             accepted.append(entry)
 
         self._entries = accepted
+        self._undo_stack.clear()

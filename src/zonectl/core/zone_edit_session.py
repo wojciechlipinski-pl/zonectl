@@ -320,6 +320,16 @@ class ZoneEditSession:
         # podczas wcześniejszego podglądu lub dry-run.
         self._load()
 
+    def undo(self) -> bool:
+        """Cofnij ostatnią zmianę bieżącej sesji."""
+        if not self.model.undo():
+            return False
+
+        if not self.model.dirty:
+            self._load()
+
+        return True
+
     def reload(self) -> None:
         """
         Ponownie odczytaj aktywny plik strefy.
