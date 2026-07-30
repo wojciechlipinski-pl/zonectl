@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import time
+
 from .config import ToolkitConfig
 from .models import Health, Zone, ZoneStatus
 from .runner import run
@@ -33,6 +35,57 @@ class BindService:
             return None
         text = (result.stdout + result.stderr).lower()
         return "zone signing:" in text and "yes" in text
+
+    def rpz_status(self, zone: Zone) -> ZoneStatus:
+        status = ZoneStatus(zone=zone)
+        status.file_exists = bool(
+            zone.file and zone.file.exists()
+        )
+        problems: list[str] = []
+
+        if not status.file_exists or zone.file is None:
+            problems.append("brak pliku RPZ")
+        else:
+            status.file_age_seconds = max(
+                0,
+                int(time.time() - zone.file.stat().st_mtime),
+            )
+            syntax = run(
+                [
+                    "named-checkzone",
+                    zone.name,
+                    str(zone.file),
+                ],
+                self.timeout + 3,
+            )
+            if syntax.returncode != 0:
+                problems.append("błędna składnia RPZ")
+
+        loaded = run(
+            ["rndc", "zonestatus", zone.name],
+            self.timeout + 3,
+        )
+        if loaded.returncode != 0:
+            problems.append("RPZ niezaładowana")
+
+        if (
+            status.file_age_seconds is not None
+            and status.file_age_seconds > zone.rpz_max_age
+        ):
+            problems.append(
+                f"RPZ nieaktualna ({status.file_age_seconds}s)"
+            )
+
+        if problems:
+            status.health = Health.FAIL
+            status.message = "; ".join(problems)
+        else:
+            status.health = Health.PASS
+            status.message = (
+                f"RPZ aktualna ({status.file_age_seconds}s)"
+            )
+
+        return status
 
 
     def zone_records(self, zone: Zone) -> tuple[list[str], str | None]:
@@ -110,6 +163,9 @@ class BindService:
         return records, None
 
     def quick_status(self, zone: Zone) -> ZoneStatus:
+        if zone.health_profile == "rpz":
+            return self.rpz_status(zone)
+
         status = ZoneStatus(zone=zone)
         status.file_exists = bool(zone.file and zone.file.exists())
         status.local_serial = self.serial(self.local_server, zone.name)

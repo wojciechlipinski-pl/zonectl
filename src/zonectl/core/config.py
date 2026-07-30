@@ -308,6 +308,16 @@ class ToolkitConfig:
                 discovered.name,
                 override,
             ),
+            health_profile=(
+                override.get("health_profile", "authoritative")
+                if override
+                else "authoritative"
+            ).strip().casefold(),
+            rpz_max_age=int(
+                override.get("rpz_max_age", "600")
+                if override
+                else "600"
+            ),
         )
 
     def _zones_from_discovery(self) -> list[Zone]:
@@ -384,6 +394,13 @@ class ToolkitConfig:
                         True,
                     ),
                     group=group,
+                    health_profile=item.get(
+                        "health_profile",
+                        "authoritative",
+                    ).strip().casefold(),
+                    rpz_max_age=int(
+                        item.get("rpz_max_age", "600")
+                    ),
                 )
             )
 

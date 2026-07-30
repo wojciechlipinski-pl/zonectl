@@ -239,9 +239,20 @@ class CursesApp:
                 assert row.zone is not None
                 status = self.statuses.get(row.zone.name, ZoneStatus(zone=row.zone))
                 marker = self._symbol(status.health)
-                dnssec = "✔" if status.dnssec is True else "✘" if status.dnssec is False else "?"
-                serial = status.local_serial or "-"
-                line = f"   {marker} {row.zone.name:<38} {status.health.value:<7} DNSSEC {dnssec}  SOA {serial}"
+                if row.zone.health_profile == "rpz":
+                    age = (
+                        f"{status.file_age_seconds // 60:02d}m"
+                        if status.file_age_seconds is not None
+                        else "-"
+                    )
+                    line = (
+                        f"   {marker} {row.zone.name:<38} "
+                        f"{status.health.value:<7} RPZ  AGE {age}"
+                    )
+                else:
+                    dnssec = "✔" if status.dnssec is True else "✘" if status.dnssec is False else "?"
+                    serial = status.local_serial or "-"
+                    line = f"   {marker} {row.zone.name:<38} {status.health.value:<7} DNSSEC {dnssec}  SOA {serial}"
                 attr = self._color(status.health)
             if idx == self.selected:
                 attr |= curses.A_REVERSE

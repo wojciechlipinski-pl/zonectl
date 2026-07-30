@@ -22,6 +22,8 @@ class Zone:
     notify: bool = True
     reload: bool = True
     group: str = "Pozostałe"
+    health_profile: str = "authoritative"
+    rpz_max_age: int = 600
 
 
 @dataclass(slots=True)
@@ -33,4 +35,5 @@ class ZoneStatus:
     he_serial: str | None = None
     dnssec: bool | None = None
     file_exists: bool | None = None
+    file_age_seconds: int | None = None
     message: str = "Nie sprawdzono"
