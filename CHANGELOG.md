@@ -1,5 +1,38 @@
 # Changelog
 
+## 4.2.0 - 2026-07-30
+
+### Added
+
+- unified diff preview before committing zone changes
+- protected export of pending changes without modifying the active zone
+- persistent transaction manifest history with CLI history and detail views
+- undo of the latest change in the current editing session
+- global read-only mode for diagnostics and restricted operator access
+- exclusive per-zone editing locks with operator, host, PID and start-time metadata
+- automatic recovery from stale editing-lock files after process failure
+
+### Changed
+
+- transaction results now use one presentation layer in CLI and TUI
+- edited records preserve relative owner notation and inline comments
+- the TUI clearly marks read-only sessions and hides write actions
+- read-only sessions can inspect a zone without blocking other readers
+- operational documentation now includes manual BIND rollback and editing-lock procedures
+
+### Fixed
+
+- failed `named-checkzone` validation cannot modify the active zone
+- failed `rndc reload` restores the original zone file
+- transaction audit completion no longer duplicates rollback metadata
+- modal TUI messages wait for an explicit key press
+
+### Safety
+
+- concurrent writable sessions for the same zone are rejected
+- `apply --commit` and `rollback --commit` are blocked in read-only mode
+- transaction failure, rollback and Pending Changes commit paths have dedicated tests
+
 ## 4.1.2 - 2026-07-30
 
 ### Fixed
