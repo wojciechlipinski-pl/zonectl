@@ -1,7 +1,10 @@
 # Historia zmian
 
-> Wygenerowano z Git: `2026-07-30T15:27:55+02:00`.
+> Wygenerowano z Git: `2026-07-30T16:13:37+02:00`.
 
+- `2026-07-30` — `30c3134` — release: prepare ZoneCTL 4.1.2
+- `2026-07-30` — `0fe3dcd` — fix: handle function keys in main TUI
+- `2026-07-30` — `46218ce` — docs: regenerate documentation for 4.1.1
 - `2026-07-30` — `68ed0b9` — release: prepare ZoneCTL 4.1.1
 - `2026-07-30` — `a140553` — feat: add RPZ health profile
 - `2026-07-30` — `1f6ea27` — docs: add RPZ health profile to roadmap

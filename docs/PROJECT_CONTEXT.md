@@ -3,9 +3,9 @@
 | Pole | Wartość |
 |---|---|
 | Projekt | zonectl |
-| Wersja | `4.1.1` |
+| Wersja | `4.1.2` |
 | Gałąź | `feature/4.1-zonectl` |
-| Commit | `68ed0b9` |
-| Wygenerowano | `2026-07-30T15:27:55+02:00` |
+| Commit | `30c3134` |
+| Wygenerowano | `2026-07-30T16:13:37+02:00` |
 
 Pełny wykaz klas, funkcji i metod znajduje się w `MODULE_REFERENCE.md`.

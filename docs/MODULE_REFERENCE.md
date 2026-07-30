@@ -1,6 +1,6 @@
 # Dokumentacja modułów
 
-> Wygenerowano z AST: `2026-07-30T15:27:55+02:00`.
+> Wygenerowano z AST: `2026-07-30T16:13:37+02:00`.
 
 ## `src/elkman_dns/__init__.py`
 
@@ -1066,27 +1066,28 @@ Brak docstringa.
 - `__init__` — linia 38; brak docstringa.
 - `run` — linia 66; brak docstringa.
 - `_main` — linia 69; brak docstringa.
-- `_init_colors` — linia 101; brak docstringa.
-- `_color` — linia 111; brak docstringa.
-- `_symbol` — linia 122; brak docstringa.
-- `_start_refresh` — linia 125; brak docstringa.
-- `_refresh_worker` — linia 133; brak docstringa.
-- `_consume_results` — linia 147; brak docstringa.
-- `_zone_key` — linia 158; brak docstringa.
-- `_ordered_groups` — linia 175; brak docstringa.
-- `_rebuild_rows` — linia 182; brak docstringa.
-- `_selected_zone_name` — linia 206; brak docstringa.
-- `_draw` — linia 211; brak docstringa.
-- `_activate` — linia 266; brak docstringa.
-- `_search` — linia 279; filtruje domeny na głównej liście.
-- `_records_view` — linia 295; wyświetla i edytuje źródłowy dokument strefy.
-- `_message_view` — linia 800; wyświetla prosty modalny komunikat.
-- `_get_key` — linia 858; odczytuje klawisz i rozpoznaje f2 wysyłane jako esc [ 12 ~.
-- `_transaction_result_view` — linia 901; wyświetla wynik zapisu lub rollbacku transakcji.
-- `_pending_changes_view` — linia 944; wyświetla oczekujące zmiany w rekordach strefy.
-- `_domain_view` — linia 1141; wyświetla szczegóły wybranej strefy. klawisze: - r: ponowne sprawdzenie strefy, - q / esc / backspace: powrót do listy.
-- `_serial_ok` — linia 1410; brak docstringa.
-- `_bool_text` — linia 1420; brak docstringa.
+- `_init_colors` — linia 104; brak docstringa.
+- `_color` — linia 114; brak docstringa.
+- `_symbol` — linia 125; brak docstringa.
+- `_start_refresh` — linia 128; brak docstringa.
+- `_refresh_worker` — linia 136; brak docstringa.
+- `_consume_results` — linia 150; brak docstringa.
+- `_zone_key` — linia 161; brak docstringa.
+- `_ordered_groups` — linia 178; brak docstringa.
+- `_rebuild_rows` — linia 185; brak docstringa.
+- `_selected_zone_name` — linia 209; brak docstringa.
+- `_draw` — linia 214; brak docstringa.
+- `_activate` — linia 269; brak docstringa.
+- `_search` — linia 282; filtruje domeny na głównej liście.
+- `_records_view` — linia 298; wyświetla i edytuje źródłowy dokument strefy.
+- `_message_view` — linia 803; wyświetla prosty modalny komunikat.
+- `_function_key_sequence` — linia 861; brak docstringa.
+- `_get_key` — linia 891; odczytuje klawisz i rozpoznaje f2 wysyłane jako esc [ 12 ~.
+- `_transaction_result_view` — linia 935; wyświetla wynik zapisu lub rollbacku transakcji.
+- `_pending_changes_view` — linia 978; wyświetla oczekujące zmiany w rekordach strefy.
+- `_domain_view` — linia 1175; wyświetla szczegóły wybranej strefy. klawisze: - r: ponowne sprawdzenie strefy, - q / esc / backspace: powrót do listy.
+- `_serial_ok` — linia 1444; brak docstringa.
+- `_bool_text` — linia 1454; brak docstringa.
 
 ## `src/zonectl/ui/dialogs.py`
 

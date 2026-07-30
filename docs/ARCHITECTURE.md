@@ -1,6 +1,6 @@
 # Architektura
 
-> Wygenerowano z importów AST: `2026-07-30T15:27:55+02:00`.
+> Wygenerowano z importów AST: `2026-07-30T16:13:37+02:00`.
 
 ## `src/elkman_dns/__init__.py`
 
