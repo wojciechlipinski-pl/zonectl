@@ -76,3 +76,30 @@ def test_committed_transaction_is_presented_as_success() -> None:
     assert result.ok is True
     assert transaction_exit_code(result) == 0
     assert "Commit:     TAK" in transaction_lines(result)
+
+
+def test_bulk_operation_is_presented_from_manifest_metadata() -> None:
+    result = result_with_step(
+        status="COMMIT",
+        committed=True,
+        step=StepResult("verify-soa", True, "OK"),
+    )
+    result.metadata = {
+        "bulk_operations": [
+            {
+                "query": "type:A",
+                "action": "SET",
+                "field": "ttl",
+                "value": "7200",
+                "matched_count": 3,
+            }
+        ]
+    }
+
+    lines = transaction_lines(result)
+
+    assert "Operacje masowe:" in lines
+    assert (
+        "  SELECT type:A SET ttl=7200 (3 rekordów)"
+        in lines
+    )

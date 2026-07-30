@@ -14,6 +14,7 @@ class UnusedEngine:
         zone_name: str,
         source: Path,
         commit: bool = False,
+        metadata: dict[str, object] | None = None,
     ) -> TransactionResult:
         raise AssertionError("Podgląd diff nie może uruchamiać transakcji")
 

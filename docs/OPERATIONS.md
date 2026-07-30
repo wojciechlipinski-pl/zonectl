@@ -91,6 +91,21 @@ zctl tx history example.pl --events --limit 20
 
 Każde z poleceń historii obsługuje również format JSON przez `--json`.
 
+### Operacje masowe w historii
+
+Operacje `SELECT ... SET` i `SELECT ... DELETE` są zapisywane jako jedna
+transakcja obejmująca cały kandydat strefy. Jeden manifest zawiera filtr,
+rodzaj operacji i liczbę dopasowanych rekordów. Walidacja, instalacja
+atomowa, przeładowanie BIND i ewentualny rollback dotyczą całego zestawu.
+Nie jest możliwy częściowy COMMIT wybranych rekordów.
+
+Szczegóły operacji są widoczne przez:
+
+```bash
+zctl tx show IDENTYFIKATOR_TRANSAKCJI
+zctl tx show IDENTYFIKATOR_TRANSAKCJI --json
+```
+
 Lista backupów, od najnowszego:
 
 ```bash

@@ -21,6 +21,7 @@ class UnusedEngine:
         zone_name: str,
         source: Path,
         commit: bool = False,
+        metadata: dict[str, object] | None = None,
     ) -> TransactionResult:
         raise AssertionError("Eksport nie może uruchamiać transakcji")
 

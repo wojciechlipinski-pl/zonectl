@@ -31,6 +31,7 @@ class TransactionEngineProtocol(Protocol):
         zone_name: str,
         source: Path,
         commit: bool = False,
+        metadata: dict[str, object] | None = None,
     ) -> TransactionResult:
         ...
 
@@ -315,6 +316,7 @@ class ZoneEditSession:
                 self.zone.name,
                 candidate,
                 commit=commit,
+                metadata=self.model.transaction_metadata,
             )
 
             result = ZoneSaveResult(

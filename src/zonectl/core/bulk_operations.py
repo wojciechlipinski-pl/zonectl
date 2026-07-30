@@ -183,13 +183,26 @@ class BulkOperation:
     def apply(self, model: ZoneModel) -> int:
         matches = self.matches(model)
         if self.action is BulkAction.DELETE:
-            return model.bulk_delete_by_identifiers(
+            changed = model.bulk_delete_by_identifiers(
                 [match.identifier for match in matches]
             )
-        return model.bulk_replace_by_identifiers(
-            {
-                match.identifier: match.after
-                for match in matches
-                if match.after is not None
-            }
-        )
+        else:
+            changed = model.bulk_replace_by_identifiers(
+                {
+                    match.identifier: match.after
+                    for match in matches
+                    if match.after is not None
+                }
+            )
+
+        if changed:
+            model.describe_last_bulk_operation(
+                {
+                    "query": self.query,
+                    "action": self.action.value,
+                    "field": self.field,
+                    "value": self.value,
+                    "matched_count": changed,
+                }
+            )
+        return changed

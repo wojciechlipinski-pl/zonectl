@@ -67,6 +67,7 @@ class _RecordEntry:
 class _ModelSnapshot:
     entries: list[_RecordEntry]
     next_identifier: int
+    bulk_operations: list[dict[str, object]]
 
 
 class ZoneModel:
@@ -90,6 +91,7 @@ class ZoneModel:
         self._entries: list[_RecordEntry] = []
         self._next_identifier = 1
         self._undo_stack: list[_ModelSnapshot] = []
+        self._bulk_operations: list[dict[str, object]] = []
 
         for record in records:
             self._entries.append(
@@ -116,6 +118,10 @@ class ZoneModel:
                 for entry in self._entries
             ],
             next_identifier=self._next_identifier,
+            bulk_operations=[
+                dict(operation)
+                for operation in self._bulk_operations
+            ],
         )
 
     def _remember(self) -> None:
@@ -251,6 +257,25 @@ class ZoneModel:
     @property
     def can_undo(self) -> bool:
         return bool(self._undo_stack)
+
+    @property
+    def transaction_metadata(self) -> dict[str, object]:
+        """Zwróć opis zmian przekazywany do manifestu transakcji."""
+        return {
+            "change_count": self.change_count,
+            "bulk_operation_count": len(self._bulk_operations),
+            "bulk_operations": [
+                dict(operation)
+                for operation in self._bulk_operations
+            ],
+        }
+
+    def describe_last_bulk_operation(
+        self,
+        operation: dict[str, object],
+    ) -> None:
+        """Przypisz opis do ostatniego atomowego kroku masowego."""
+        self._bulk_operations.append(dict(operation))
 
     def add(self, record: DNSRecord) -> int:
         self._ensure_writable()
@@ -416,6 +441,7 @@ class ZoneModel:
         snapshot = self._undo_stack.pop()
         self._entries = snapshot.entries
         self._next_identifier = snapshot.next_identifier
+        self._bulk_operations = snapshot.bulk_operations
         return True
 
     def discard(self) -> None:
@@ -430,6 +456,7 @@ class ZoneModel:
 
         self._entries = restored
         self._undo_stack.clear()
+        self._bulk_operations.clear()
 
     def accept(self) -> None:
         """
@@ -448,3 +475,4 @@ class ZoneModel:
 
         self._entries = accepted
         self._undo_stack.clear()
+        self._bulk_operations.clear()

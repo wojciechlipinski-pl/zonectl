@@ -135,3 +135,25 @@ def test_read_only_model_rejects_bulk_change() -> None:
 
     with pytest.raises(ZoneModelReadOnlyError):
         operation.apply(zone)
+
+
+def test_bulk_operation_metadata_is_removed_by_single_undo() -> None:
+    zone = model()
+    operation = BulkOperation.parse(
+        "SELECT type:A SET ttl=7200"
+    )
+
+    assert operation.apply(zone) == 2
+    assert zone.transaction_metadata["bulk_operation_count"] == 1
+    assert zone.transaction_metadata["bulk_operations"] == [
+        {
+            "query": "type:A",
+            "action": "SET",
+            "field": "ttl",
+            "value": "7200",
+            "matched_count": 2,
+        }
+    ]
+
+    assert zone.undo() is True
+    assert zone.transaction_metadata["bulk_operation_count"] == 0

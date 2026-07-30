@@ -45,6 +45,7 @@ class TransactionResult:
     rolled_back: bool = False
     backup: str | None = None
     steps: list[StepResult] = field(default_factory=list)
+    metadata: dict[str, object] = field(default_factory=dict)
 
     @property
     def ok(self) -> bool:
@@ -313,14 +314,25 @@ class TransactionEngine:
             served_serial=served_serial,
         )
 
-    def apply(self, zone_name: str, source: Path, commit: bool = False) -> TransactionResult:
+    def apply(
+        self,
+        zone_name: str,
+        source: Path,
+        commit: bool = False,
+        metadata: dict[str, object] | None = None,
+    ) -> TransactionResult:
         zone = self.find_zone(zone_name)
         if not zone.file:
             raise RuntimeError(f"Strefa {zone.name} nie ma ustawionego parametru file")
         source = source.resolve()
         target = zone.file.resolve()
         txid = self._new_id(zone.name)
-        result = TransactionResult(txid, zone.name, committed=False)
+        result = TransactionResult(
+            txid,
+            zone.name,
+            committed=False,
+            metadata=dict(metadata or {}),
+        )
         if commit and self.read_only:
             result.steps.append(
                 StepResult(
@@ -337,7 +349,16 @@ class TransactionEngine:
             )
         lock_path = self.lock_dir / f"{self._safe_zone_name(zone.name)}.lock"
         with ZoneLock(lock_path):
-            self.audit.append(txid, zone.name, "transaction-start", "START", source=str(source), target=str(target), commit=commit)
+            self.audit.append(
+                txid,
+                zone.name,
+                "transaction-start",
+                "START",
+                source=str(source),
+                target=str(target),
+                commit=commit,
+                metadata=result.metadata,
+            )
             if not source.is_file():
                 result.steps.append(StepResult("source", False, f"Plik źródłowy nie istnieje: {source}"))
                 return self._finish(result, "FAIL", source=str(source), target=str(target))
@@ -584,6 +605,7 @@ class TransactionEngine:
                 ),
                 backup=payload.get("backup"),
                 steps=steps,
+                metadata=dict(payload.get("metadata", {})),
             )
         except (KeyError, TypeError, ValueError) as exc:
             raise RuntimeError(

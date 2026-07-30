@@ -16,6 +16,7 @@ class UnusedEngine:
         zone_name: str,
         source: Path,
         commit: bool = False,
+        metadata: dict[str, object] | None = None,
     ) -> TransactionResult:
         raise AssertionError("Cofanie nie może uruchamiać transakcji")
 

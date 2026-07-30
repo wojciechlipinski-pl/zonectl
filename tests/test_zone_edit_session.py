@@ -28,6 +28,7 @@ class FakeEngine:
         zone_name: str,
         source: Path,
         commit: bool = False,
+        metadata: dict[str, object] | None = None,
     ) -> TransactionResult:
         self.calls += 1
         self.last_commit = commit
