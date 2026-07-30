@@ -1,7 +1,22 @@
 # Historia zmian
 
-> Wygenerowano z Git: `2026-07-30T16:13:37+02:00`.
+> Wygenerowano z Git: `2026-07-30T23:09:24+02:00`.
 
+- `2026-07-30` — `0a481f3` — release: prepare ZoneCTL 4.2.0
+- `2026-07-30` — `a84faba` — feat: lock concurrent zone editing sessions
+- `2026-07-30` — `abeccdf` — feat: add read-only operating mode
+- `2026-07-30` — `abda9db` — feat: undo last change in editing session
+- `2026-07-30` — `dc5d69c` — feat: add transaction manifest history
+- `2026-07-30` — `e040c2d` — fix: preserve record owner and inline comments
+- `2026-07-30` — `ca60873` — feat: export pending changes before commit
+- `2026-07-30` — `e74516a` — feat: add unified diff preview before commit
+- `2026-07-30` — `2bb15fd` — refactor: unify transaction result presentation
+- `2026-07-30` — `171874f` — docs: add manual BIND rollback procedure
+- `2026-07-30` — `0b6a584` — test: cover Pending Changes commit workflow
+- `2026-07-30` — `0e19447` — test: cover transaction validation and reload failures
+- `2026-07-30` — `820d023` — docs: prioritize write safety roadmap
+- `2026-07-30` — `22dafc8` — docs: plan bilingual documentation and i18n
+- `2026-07-30` — `e31b237` — docs: regenerate documentation for 4.1.2
 - `2026-07-30` — `30c3134` — release: prepare ZoneCTL 4.1.2
 - `2026-07-30` — `0fe3dcd` — fix: handle function keys in main TUI
 - `2026-07-30` — `46218ce` — docs: regenerate documentation for 4.1.1

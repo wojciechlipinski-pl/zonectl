@@ -1,6 +1,6 @@
 # Architektura
 
-> Wygenerowano z importów AST: `2026-07-30T16:13:37+02:00`.
+> Wygenerowano z importów AST: `2026-07-30T23:09:24+02:00`.
 
 ## `src/elkman_dns/__init__.py`
 
@@ -30,6 +30,7 @@ Brak docstringa.
 - `core.bind: BindService`
 - `core.config: DEFAULT_CONFIG, DEFAULT_GROUPS, DEFAULT_ZONES, ToolkitConfig`
 - `core.transaction: TransactionEngine, TransactionResult`
+- `presentation: transaction_exit_code, transaction_lines`
 - `ui.curses_app: CursesApp`
 
 ## `src/zonectl/core/__init__.py`
@@ -101,6 +102,24 @@ Automatyczne wykrywanie stref i plików źródłowych BIND.
 - `dataclasses: dataclass`
 - `pathlib: Path`
 
+## `src/zonectl/core/edit_lock.py`
+
+Brak docstringa.
+
+**Importy:**
+
+- `__future__: annotations`
+- `fcntl`
+- `getpass`
+- `json`
+- `os`
+- `re`
+- `socket`
+- `uuid`
+- `datetime: datetime, timezone`
+- `pathlib: Path`
+- `typing: TextIO`
+
 ## `src/zonectl/core/models.py`
 
 Brak docstringa.
@@ -160,7 +179,7 @@ Brak docstringa.
 - `time`
 - `uuid`
 - `dataclasses: asdict, dataclass, field`
-- `datetime: datetime`
+- `datetime: datetime, timezone`
 - `pathlib: Path`
 - `audit: AuditLog`
 - `config: ToolkitConfig`
@@ -198,11 +217,17 @@ Brak docstringa.
 **Importy:**
 
 - `__future__: annotations`
+- `difflib`
+- `os`
+- `tempfile`
+- `uuid`
 - `dataclasses: dataclass`
-- `datetime: date`
+- `datetime: date, datetime`
 - `pathlib: Path`
 - `typing: Callable, Protocol`
 - `models: Zone`
+- `edit_lock: ZoneEditLock`
+- `paths: CHANGE_EXPORT_DIR`
 - `soa_serial: SoaSerialChange, SoaSerialError, bump_document_soa_serial`
 - `transaction: TransactionResult`
 - `zone_document: ZoneDocument`
@@ -293,6 +318,15 @@ Brak docstringa.
 - `pathlib: Path`
 - `core.paths: BACKUP_DIR, DEFAULT_CONFIG, DEFAULT_ZONES, DNSSEC_DS_DIR`
 
+## `src/zonectl/presentation.py`
+
+Brak docstringa.
+
+**Importy:**
+
+- `__future__: annotations`
+- `core.transaction: TransactionResult`
+
 ## `src/zonectl/ui/__init__.py`
 
 Terminal UI for ZoneCTL.
@@ -316,6 +350,7 @@ Brak docstringa.
 - `zonectl.ui.credits: draw_project_credits`
 - `zonectl.core.zone_model: ChangeKind, ZoneChange, ZoneModel`
 - `zonectl.ui.dialogs: CursesDialogs`
+- `zonectl.ui.function_keys: decode_function_key`
 - `zonectl.ui.records.editor: RecordEditor`
 - `zonectl.ui.records.new_record: NewRecordDialog`
 - `zonectl.ui.records.renderer: RecordRenderer`
@@ -324,14 +359,27 @@ Brak docstringa.
 - `threading`
 - `concurrent.futures: ThreadPoolExecutor, as_completed`
 - `dataclasses: dataclass`
+- `pathlib: Path`
 - `: __version__`
 - `core.bind: BindService`
 - `core.config: ToolkitConfig`
+- `core.edit_lock: ZoneEditLockedError`
 - `core.models: Health, Zone, ZoneStatus`
+- `core.paths: EDIT_LOCK_DIR`
 - `core.transaction: TransactionEngine, TransactionResult`
 - `core.zone_edit_session: ZoneEditSession, ZoneEditSessionError`
+- `presentation: transaction_lines, transaction_title`
 
 ## `src/zonectl/ui/dialogs.py`
+
+Brak docstringa.
+
+**Importy:**
+
+- `__future__: annotations`
+- `curses`
+
+## `src/zonectl/ui/function_keys.py`
 
 Brak docstringa.
 
@@ -372,6 +420,7 @@ Formularz edycji rekordów DNS w interfejsie curses.
 - `curses`
 - `core.models: Zone`
 - `core.zone_parser: DNSRecord`
+- `function_keys: decode_function_key`
 
 ## `src/zonectl/ui/records/keybindings.py`
 
