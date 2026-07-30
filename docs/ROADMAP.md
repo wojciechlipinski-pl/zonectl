@@ -38,3 +38,11 @@ Dokumentacja
  Instrukcja odtwarzania po awarii.
  Procedura wydania nowej wersji.
  Lista wspieranych wersji Pythona, BIND i systemów.
+ Dokumentacja publiczna w języku polskim i angielskim.
+ Angielska wersja README, instrukcji instalacji, CLI i opisu architektury.
+Internationalization (i18n)
+ Oddzielenie komunikatów użytkownika od kodu programu.
+ Polski jako język domyślny i angielski jako drugi język.
+ Obsługa tłumaczeń CLI, TUI, ostrzeżeń i komunikatów błędów przez gettext.
+ Wybór języka w konfiguracji oraz opcjonalne wykrywanie locale systemu.
+ Test kompletności katalogów tłumaczeń i zachowania interfejsu w obu językach.

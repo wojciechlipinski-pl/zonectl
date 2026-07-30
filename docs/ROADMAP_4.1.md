@@ -70,3 +70,27 @@ np. `PASS RPZ AGE 03m`, zamiast fałszywego `FAIL DNSSEC`.
 
 Architektura profili powinna umożliwić późniejsze dodanie kolejnych
 rodzajów kontroli bez wpisywania wyjątków zależnych od nazwy domeny.
+
+### Dokumentacja PL/EN i internacjonalizacja
+
+Status: **przyszłe rozszerzenie — poza zakresem 4.1.2**
+
+ZoneCTL pozostaje obecnie projektem niepublikowanym, dlatego zmiana nie
+jest wymagana w bieżącym wydaniu. Architektura powinna jednak umożliwić
+późniejsze udostępnienie programu użytkownikom polsko- i anglojęzycznym.
+
+Plan dokumentacji:
+
+- polski pozostaje podstawowym językiem dokumentacji operacyjnej,
+- powstaje `README.en.md` oraz angielskie instrukcje instalacji i użycia,
+- publiczna dokumentacja CLI i architektury jest dostępna w wersji PL/EN,
+- dokumentacja generowana automatycznie nie jest dublowana bez potrzeby.
+
+Plan internacjonalizacji programu:
+
+- teksty CLI i TUI zostają oddzielone od logiki programu,
+- tłumaczenia korzystają ze standardowego mechanizmu `gettext`,
+- język można wybrać w konfiguracji, np. `language = pl`,
+- domyślnie używany jest język polski, a drugim językiem jest angielski,
+- opcjonalnie język może być wykrywany z locale systemu,
+- testy sprawdzają kompletność tłumaczeń i brak tekstów zaszytych w UI.
