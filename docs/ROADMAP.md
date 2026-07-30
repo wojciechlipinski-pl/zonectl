@@ -39,7 +39,7 @@ zrealizowane, a `[ ]` pozostają do wykonania.
 - [x] Dodać walidację wartości zależną od typu rekordu.
 - [x] Dodać operacje masowe `SELECT`, `SET` i `DELETE`.
 - [x] Zapisywać operację masową jako jedną transakcję.
-- [ ] Dodać obsługę wielu stref w jednej sesji.
+- [x] Dodać obsługę wielu stref w jednej sesji.
 - [ ] Rozważyć integrację z repozytorium Git przechowującym strefy.
 
 ## Jakość techniczna

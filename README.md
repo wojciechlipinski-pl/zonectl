@@ -76,6 +76,16 @@ Operacje obsługują filtry opisane wyżej. `SET` zmienia obecnie `ttl` lub
 strefy i wymaga późniejszego, osobnego COMMIT. Jedno `u` cofa całą
 operację masową.
 
+## Sesja wielu stref
+
+Na głównej liście zaznacz co najmniej dwie strefy klawiszem `Spacja`,
+a następnie naciśnij `m`. `Enter` otwiera edycję wskazanej strefy bez
+zamykania pozostałych sesji. Powrót zachowuje jej robocze zmiany.
+
+Klawisz `F2` w widoku wielostrefowym najpierw waliduje wszystkie
+zmienione strefy. Dopiero poprawna walidacja całego zestawu rozpoczyna
+osobne, bezpieczne transakcje. Błąd zatrzymuje dalsze zapisy.
+
 ## Testy
 
 ```bash

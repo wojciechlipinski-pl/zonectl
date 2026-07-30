@@ -38,6 +38,17 @@ bezpiecznie nadpisany przez następną sesję. Sesje uruchomione z
 `read_only = yes` nie zakładają blokad edycyjnych i mogą działać
 równolegle.
 
+## Sesja wielu stref
+
+Koordynator sesji wielostrefowej utrzymuje osobny model, blokadę edycji
+i kandydat dla każdej otwartej strefy. Przed pierwszym zapisem wszystkie
+zmienione strefy przechodzą walidację bez COMMIT. Dopiero poprawny wynik
+całego zestawu pozwala rozpocząć kolejne, niezależne transakcje.
+
+Każda strefa otrzymuje własny backup i manifest. Błąd zapisu zatrzymuje
+dalsze transakcje, a wynik wskazuje strefy zapisane i niezapisane.
+Mechanizm nie deklaruje atomowości pomiędzy różnymi strefami.
+
 ## Kontrola instalacji
 
 ```bash

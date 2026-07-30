@@ -21,6 +21,10 @@ from ..core.bulk_operations import BulkOperation, BulkOperationError
 from ..core.config import ToolkitConfig
 from ..core.edit_lock import ZoneEditLockedError
 from ..core.models import Health, Zone, ZoneStatus
+from ..core.multi_zone_session import (
+    MultiZoneEditSession,
+    MultiZoneSessionError,
+)
 from ..core.paths import EDIT_LOCK_DIR
 from ..core.record_filter import RecordFilter, RecordFilterError
 from ..core.record_validation import (
@@ -85,6 +89,7 @@ class CursesApp:
         self.collapsed: set[str] = set()
         self.sort_index = 0
         self.rows: list[Row] = []
+        self.multi_selected: set[str] = set()
         self.messages: queue.Queue[tuple[str, ZoneStatus]] = queue.Queue()
         self.stop_event = threading.Event()
         self._rebuild_rows()
@@ -113,8 +118,12 @@ class CursesApp:
                 self.selected = min(self.selected + 1, max(0, len(self.rows) - 1))
             elif key in (curses.KEY_UP, ord("k")):
                 self.selected = max(0, self.selected - 1)
-            elif key in (10, 13, curses.KEY_ENTER, ord(" ")):
+            elif key in (10, 13, curses.KEY_ENTER):
                 self._activate(stdscr)
+            elif key == ord(" "):
+                self._toggle_multi_selection()
+            elif key in (ord("m"), ord("M")):
+                self._multi_zone_view(stdscr)
             elif key == ord("/"):
                 self._search(stdscr)
             elif key in (curses.KEY_F7, ord("s")):
@@ -245,6 +254,7 @@ class CursesApp:
         checked = len(self.statuses)
         subtitle = (
             f" Domeny: {len(self.all_zones)}  Sprawdzone: {checked}/{len(self.all_zones)}  "
+            f"Zaznaczone: {len(self.multi_selected)}  "
             f"Widok: {'grupy' if self.grouped else 'lista'}  Sort: {self.SORTS[self.sort_index]}  "
             f"Szukaj: {self.query or '-'}"
         )
@@ -268,6 +278,11 @@ class CursesApp:
                 assert row.zone is not None
                 status = self.statuses.get(row.zone.name, ZoneStatus(zone=row.zone))
                 marker = self._symbol(status.health)
+                selected_marker = (
+                    "[x]"
+                    if row.zone.name in self.multi_selected
+                    else "[ ]"
+                )
                 if row.zone.health_profile == "rpz":
                     age = (
                         f"{status.file_age_seconds // 60:02d}m"
@@ -275,19 +290,19 @@ class CursesApp:
                         else "-"
                     )
                     line = (
-                        f"   {marker} {row.zone.name:<38} "
+                        f" {selected_marker} {marker} {row.zone.name:<38} "
                         f"{status.health.value:<7} RPZ  AGE {age}"
                     )
                 else:
                     dnssec = "✔" if status.dnssec is True else "✘" if status.dnssec is False else "?"
                     serial = status.local_serial or "-"
-                    line = f"   {marker} {row.zone.name:<38} {status.health.value:<7} DNSSEC {dnssec}  SOA {serial}"
+                    line = f" {selected_marker} {marker} {row.zone.name:<38} {status.health.value:<7} DNSSEC {dnssec}  SOA {serial}"
                 attr = self._color(status.health)
             if idx == self.selected:
                 attr |= curses.A_REVERSE
             win.addnstr(screen_row, 0, line.ljust(width), max(0, width - 1), attr)
 
-        footer = " Enter/Spacja otwórz-zwiń  / szukaj  g grupy  F7/s sortuj  r odśwież  q/Esc/F10 wyjście "
+        footer = " Enter otwórz  Spacja zaznacz  m wiele stref  / szukaj  g grupy  F7/s sortuj  r odśwież  q/Esc/F10 wyjście "
         win.addnstr(height - 2, 0, footer.ljust(width), max(0, width - 1), curses.A_REVERSE)
         draw_project_credits(win)
         win.refresh()
@@ -305,6 +320,32 @@ class CursesApp:
         elif row.zone:
             self._domain_view(win, row.zone)
 
+    def _toggle_multi_selection(self) -> None:
+        """Dodaj lub usuń bieżącą strefę z zestawu wielostrefowego."""
+        if not self.rows:
+            return
+        zone = self.rows[self.selected].zone
+        if zone is None:
+            self._activate_group_selection()
+            return
+        if zone.name in self.multi_selected:
+            self.multi_selected.remove(zone.name)
+        else:
+            self.multi_selected.add(zone.name)
+
+    def _activate_group_selection(self) -> None:
+        """Zachowaj dotychczasowe działanie Spacji dla nagłówka grupy."""
+        if not self.rows:
+            return
+        row = self.rows[self.selected]
+        if row.kind != "group":
+            return
+        if row.label in self.collapsed:
+            self.collapsed.remove(row.label)
+        else:
+            self.collapsed.add(row.label)
+        self._rebuild_rows()
+
     def _search(self, stdscr: curses.window) -> None:
         """Filtruje domeny na głównej liście."""
         query = CursesDialogs.search(
@@ -321,7 +362,14 @@ class CursesApp:
         self.offset = 0
         self._rebuild_rows()
 
-    def _records_view(self, win: curses.window, zone: Zone) -> None:
+    def _records_view(
+        self,
+        win: curses.window,
+        zone: Zone,
+        *,
+        existing_session: ZoneEditSession | None = None,
+        keep_open: bool = False,
+    ) -> None:
         """Wyświetla i edytuje źródłowy dokument strefy."""
         if self.transaction_engine is None:
             self._message_view(
@@ -336,7 +384,7 @@ class CursesApp:
             return
 
         try:
-            session = ZoneEditSession(
+            session = existing_session or ZoneEditSession(
                 zone,
                 self.transaction_engine,
                 read_only=self.read_only,
@@ -525,7 +573,8 @@ class CursesApp:
                     127,
                     8,
                 ):
-                    session.close()
+                    if not keep_open:
+                        session.close()
                     return
 
                 continue
@@ -537,6 +586,8 @@ class CursesApp:
                 127,
                 8,
             ):
+                if keep_open:
+                    return
                 if model.dirty:
                     discard = CursesDialogs.confirm(
                         win,
@@ -1646,6 +1697,217 @@ class CursesApp:
             )
 
         return True
+
+    def _multi_zone_view(self, win: curses.window) -> None:
+        """Edytuj kilka zaznaczonych stref w jednej sesji TUI."""
+        selected_zones = [
+            zone
+            for zone in self.all_zones
+            if zone.name in self.multi_selected
+        ]
+        if len(selected_zones) < 2:
+            self._message_view(
+                win,
+                title="Sesja wielu stref",
+                lines=[
+                    "Zaznacz co najmniej dwie strefy klawiszem Spacja.",
+                ],
+            )
+            return
+        if self.transaction_engine is None:
+            self._message_view(
+                win,
+                title="Sesja wielu stref",
+                lines=["Brak TransactionEngine."],
+                error=True,
+            )
+            return
+
+        def factory(zone: Zone) -> ZoneEditSession:
+            return ZoneEditSession(
+                zone,
+                self.transaction_engine,
+                read_only=self.read_only,
+                edit_lock_directory=self.edit_lock_directory,
+            )
+
+        multi = MultiZoneEditSession(selected_zones, factory)
+        try:
+            for zone in selected_zones:
+                multi.open(zone.name)
+        except Exception as exc:
+            multi.close(discard=True)
+            self._message_view(
+                win,
+                title="Nie można otworzyć sesji wielu stref",
+                lines=[f"{type(exc).__name__}: {exc}"],
+                error=True,
+            )
+            return
+
+        selected = 0
+        try:
+            while True:
+                win.erase()
+                height, width = win.getmaxyx()
+                win.addnstr(
+                    0,
+                    0,
+                    " Sesja wielu stref ".ljust(width),
+                    max(0, width - 1),
+                    curses.A_REVERSE | curses.A_BOLD,
+                )
+                dirty = set(multi.dirty_zone_names)
+                summary = (
+                    f" Strefy: {len(selected_zones)}  "
+                    f"Ze zmianami: {len(dirty)}"
+                )
+                win.addnstr(
+                    2,
+                    0,
+                    summary,
+                    max(0, width - 1),
+                    curses.A_BOLD,
+                )
+                visible = max(1, height - 7)
+                offset = max(
+                    0,
+                    min(
+                        selected,
+                        max(0, len(selected_zones) - visible),
+                    ),
+                )
+                for row_number, zone in enumerate(
+                    selected_zones[offset : offset + visible],
+                    start=4,
+                ):
+                    index = offset + row_number - 4
+                    session = multi.open(zone.name)
+                    state = (
+                        f"ZMIANY: {session.change_count}"
+                        if session.dirty
+                        else "bez zmian"
+                    )
+                    line = f" {zone.name:<42} {state}"
+                    attr = (
+                        curses.A_REVERSE
+                        if index == selected
+                        else curses.A_NORMAL
+                    )
+                    win.addnstr(
+                        row_number,
+                        0,
+                        line.ljust(width),
+                        max(0, width - 1),
+                        attr,
+                    )
+                footer = (
+                    " Enter edytuj  F2 waliduj i zapisz wszystkie  "
+                    "q/Esc zakończ "
+                )
+                win.addnstr(
+                    height - 2,
+                    0,
+                    footer.ljust(width),
+                    max(0, width - 1),
+                    curses.A_REVERSE,
+                )
+                win.refresh()
+                key = self._get_key(win)
+
+                if key in (curses.KEY_DOWN, ord("j")):
+                    selected = min(
+                        selected + 1,
+                        len(selected_zones) - 1,
+                    )
+                    continue
+                if key in (curses.KEY_UP, ord("k")):
+                    selected = max(0, selected - 1)
+                    continue
+                if key in (10, 13, curses.KEY_ENTER):
+                    zone = selected_zones[selected]
+                    self._records_view(
+                        win,
+                        zone,
+                        existing_session=multi.open(zone.name),
+                        keep_open=True,
+                    )
+                    continue
+                if key in (curses.KEY_F2, 19):
+                    if self.read_only:
+                        self._read_only_message(
+                            win,
+                            selected_zones[selected],
+                        )
+                        continue
+                    if not dirty:
+                        self._message_view(
+                            win,
+                            title="Sesja wielu stref",
+                            lines=["Brak zmian do zapisania."],
+                        )
+                        continue
+                    if not CursesDialogs.confirm(
+                        win,
+                        (
+                            f"Zweryfikować i zapisać "
+                            f"{len(dirty)} stref?"
+                        ),
+                        key_reader=self._get_key,
+                    ):
+                        continue
+                    result = multi.save_all()
+                    for saved in result.validated:
+                        if not saved.ok:
+                            self._transaction_result_view(
+                                win,
+                                saved.transaction,
+                            )
+                    for saved in result.committed:
+                        self._transaction_result_view(
+                            win,
+                            saved.transaction,
+                        )
+                    if result.failed is not None:
+                        self._transaction_result_view(
+                            win,
+                            result.failed.transaction,
+                        )
+                    else:
+                        self._message_view(
+                            win,
+                            title="Sesja wielu stref",
+                            lines=[
+                                "Wszystkie zmienione strefy zapisano.",
+                                f"Transakcje: {len(result.committed)}",
+                            ],
+                        )
+                        self._start_refresh(force=True)
+                    continue
+                if key in (ord("q"), ord("Q"), 27, curses.KEY_F10):
+                    if dirty and not CursesDialogs.confirm(
+                        win,
+                        (
+                            f"Porzucić zmiany w "
+                            f"{len(dirty)} strefach?"
+                        ),
+                        key_reader=self._get_key,
+                    ):
+                        continue
+                    multi.close(discard=True)
+                    return
+        except MultiZoneSessionError as exc:
+            self._message_view(
+                win,
+                title="Błąd sesji wielu stref",
+                lines=[str(exc)],
+                error=True,
+            )
+        finally:
+            try:
+                multi.close(discard=True)
+            except Exception:
+                pass
 
     def _domain_view(self, win: curses.window, zone: Zone) -> None:
         """
