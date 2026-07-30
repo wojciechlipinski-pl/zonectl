@@ -4,18 +4,18 @@
 
 ## Stan projektu
 - Projekt: **zonectl**
-- Wersja: **4.1.0**
+- Wersja: **4.1.1**
 - Katalog: `/root/elkman-dns`
 - Gałąź: `feature/4.1-zonectl`
-- Commit: `ad5c510`
-- Ostatni commit: `ad5c510 | 2026-07-30 14:52:33 +0200 | Wojciech Lipiński | refactor: move implementation to zonectl package`
-- Wygenerowano: `2026-07-30T14:55:22+02:00`
+- Commit: `68ed0b9`
+- Ostatni commit: `68ed0b9 | 2026-07-30 15:27:28 +0200 | Wojciech Lipiński | release: prepare ZoneCTL 4.1.1`
+- Wygenerowano: `2026-07-30T15:27:55+02:00`
 
 ## Statystyki
 - Moduły Python: **33**
 - Klasy: **58**
 - Funkcje: **68**
-- Metody: **217**
+- Metody: **218**
 - TODO/FIXME/HACK/XXX: **0**
 
 ## Start nowej sesji
@@ -37,7 +37,7 @@ czyste drzewo robocze
 
 ## Wynik testów
 ```text
-........................................................................ [ 60%]
-................................................                         [100%]
-120 passed in 0.21s
+........................................................................ [ 59%]
+..................................................                       [100%]
+122 passed in 0.20s
 ```

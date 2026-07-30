@@ -1,6 +1,6 @@
 # Dokumentacja modułów
 
-> Wygenerowano z AST: `2026-07-30T14:55:22+02:00`.
+> Wygenerowano z AST: `2026-07-30T15:27:55+02:00`.
 
 ## `src/elkman_dns/__init__.py`
 
@@ -95,18 +95,19 @@ Brak docstringa.
 
 ### `class BindService`
 
-Linia: `9`
+Linia: `11`
 
 Read-only BIND status service used by the Sprint 1 dashboard.
 
 **Metody:**
 
-- `__init__` — linia 12; brak docstringa.
-- `serial` — linia 20; brak docstringa.
-- `dnssec_enabled` — linia 30; brak docstringa.
-- `zone_records` — linia 38; zwraca kanoniczną listę rekordów z aktywnego pliku strefy.
-- `parsed_zone_records` — linia 84; zwraca rekordy strefy przekształcone do modelu dnsrecord.
-- `quick_status` — linia 112; brak docstringa.
+- `__init__` — linia 14; brak docstringa.
+- `serial` — linia 22; brak docstringa.
+- `dnssec_enabled` — linia 32; brak docstringa.
+- `rpz_status` — linia 39; brak docstringa.
+- `zone_records` — linia 91; zwraca kanoniczną listę rekordów z aktywnego pliku strefy.
+- `parsed_zone_records` — linia 137; zwraca rekordy strefy przekształcone do modelu dnsrecord.
+- `quick_status` — linia 165; brak docstringa.
 
 ## `src/zonectl/core/bind_config.py`
 
@@ -177,9 +178,9 @@ Konfiguracja ZoneCTL. Konfiguracja BIND jest źródłem prawdy dla: - nazw stref
 - `_zone_override` — linia 230; brak docstringa.
 - `_group_for` — linia 242; brak docstringa.
 - `_zone_from_discovery` — linia 258; brak docstringa.
-- `_zones_from_discovery` — linia 313; brak docstringa.
-- `_zones_from_legacy_config` — linia 327; tryb zgodności ze starym zones.conf. używany wyłącznie, gdy auto_discover_zones = no.
-- `zones` — linia 392; brak docstringa.
+- `_zones_from_discovery` — linia 323; brak docstringa.
+- `_zones_from_legacy_config` — linia 337; tryb zgodności ze starym zones.conf. używany wyłącznie, gdy auto_discover_zones = no.
+- `zones` — linia 409; brak docstringa.
 
 ## `src/zonectl/core/discovery.py`
 
@@ -260,7 +261,7 @@ Brak docstringa.
 
 ### `class ZoneStatus`
 
-Linia: `28`
+Linia: `30`
 
 Brak docstringa.
 
@@ -1076,16 +1077,16 @@ Brak docstringa.
 - `_rebuild_rows` — linia 182; brak docstringa.
 - `_selected_zone_name` — linia 206; brak docstringa.
 - `_draw` — linia 211; brak docstringa.
-- `_activate` — linia 255; brak docstringa.
-- `_search` — linia 268; filtruje domeny na głównej liście.
-- `_records_view` — linia 284; wyświetla i edytuje źródłowy dokument strefy.
-- `_message_view` — linia 789; wyświetla prosty modalny komunikat.
-- `_get_key` — linia 847; odczytuje klawisz i rozpoznaje f2 wysyłane jako esc [ 12 ~.
-- `_transaction_result_view` — linia 890; wyświetla wynik zapisu lub rollbacku transakcji.
-- `_pending_changes_view` — linia 933; wyświetla oczekujące zmiany w rekordach strefy.
-- `_domain_view` — linia 1130; wyświetla szczegóły wybranej strefy. klawisze: - r: ponowne sprawdzenie strefy, - q / esc / backspace: powrót do listy.
-- `_serial_ok` — linia 1399; brak docstringa.
-- `_bool_text` — linia 1409; brak docstringa.
+- `_activate` — linia 266; brak docstringa.
+- `_search` — linia 279; filtruje domeny na głównej liście.
+- `_records_view` — linia 295; wyświetla i edytuje źródłowy dokument strefy.
+- `_message_view` — linia 800; wyświetla prosty modalny komunikat.
+- `_get_key` — linia 858; odczytuje klawisz i rozpoznaje f2 wysyłane jako esc [ 12 ~.
+- `_transaction_result_view` — linia 901; wyświetla wynik zapisu lub rollbacku transakcji.
+- `_pending_changes_view` — linia 944; wyświetla oczekujące zmiany w rekordach strefy.
+- `_domain_view` — linia 1141; wyświetla szczegóły wybranej strefy. klawisze: - r: ponowne sprawdzenie strefy, - q / esc / backspace: powrót do listy.
+- `_serial_ok` — linia 1410; brak docstringa.
+- `_bool_text` — linia 1420; brak docstringa.
 
 ## `src/zonectl/ui/dialogs.py`
 

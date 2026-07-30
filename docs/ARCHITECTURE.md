@@ -1,6 +1,6 @@
 # Architektura
 
-> Wygenerowano z importów AST: `2026-07-30T14:55:22+02:00`.
+> Wygenerowano z importów AST: `2026-07-30T15:27:55+02:00`.
 
 ## `src/elkman_dns/__init__.py`
 
@@ -59,6 +59,7 @@ Brak docstringa.
 **Importy:**
 
 - `__future__: annotations`
+- `time`
 - `config: ToolkitConfig`
 - `models: Health, Zone, ZoneStatus`
 - `runner: run`

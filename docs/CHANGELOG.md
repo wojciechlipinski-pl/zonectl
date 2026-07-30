@@ -1,7 +1,11 @@
 # Historia zmian
 
-> Wygenerowano z Git: `2026-07-30T14:55:22+02:00`.
+> Wygenerowano z Git: `2026-07-30T15:27:55+02:00`.
 
+- `2026-07-30` — `68ed0b9` — release: prepare ZoneCTL 4.1.1
+- `2026-07-30` — `a140553` — feat: add RPZ health profile
+- `2026-07-30` — `1f6ea27` — docs: add RPZ health profile to roadmap
+- `2026-07-30` — `aee3cee` — docs: regenerate documentation for zonectl namespace
 - `2026-07-30` — `ad5c510` — refactor: move implementation to zonectl package
 - `2026-07-30` — `185907c` — feat: introduce zonectl Python namespace
 - `2026-07-30` — `50a15c6` — feat: migrate system directories to ZoneCTL paths
