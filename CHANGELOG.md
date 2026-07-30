@@ -1,5 +1,13 @@
 # Changelog
 
+## 4.1.2 - 2026-07-30
+
+### Fixed
+
+- function keys no longer close the main TUI unexpectedly
+- F1-F5 sequences used by PuTTY's Linux terminal mode are recognized
+- F10 now exits the main TUI intentionally; `q` and `Esc` remain available
+
 ## 4.1.1 - 2026-07-30
 
 ### Added
