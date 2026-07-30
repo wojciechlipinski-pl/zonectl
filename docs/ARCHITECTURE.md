@@ -1,12 +1,21 @@
 # Architektura
 
-> Wygenerowano z importów AST: `2026-07-29T18:55:06+02:00`.
+> Wygenerowano z importów AST: `2026-07-30T14:55:22+02:00`.
 
 ## `src/elkman_dns/__init__.py`
 
-elkman DNS Toolkit.
+Zgodna nazwa historyczna; nowy kod powinien używać pakietu zonectl.
 
-## `src/elkman_dns/cli.py`
+**Importy:**
+
+- `__future__: annotations`
+- `zonectl: __path__, __version__`
+
+## `src/zonectl/__init__.py`
+
+ZoneCTL — Transactional DNS Management Toolkit.
+
+## `src/zonectl/cli.py`
 
 Brak docstringa.
 
@@ -23,11 +32,11 @@ Brak docstringa.
 - `core.transaction: TransactionEngine, TransactionResult`
 - `ui.curses_app: CursesApp`
 
-## `src/elkman_dns/core/__init__.py`
+## `src/zonectl/core/__init__.py`
 
-Core services for elkman DNS Toolkit.
+Core services for ZoneCTL.
 
-## `src/elkman_dns/core/audit.py`
+## `src/zonectl/core/audit.py`
 
 Brak docstringa.
 
@@ -43,7 +52,7 @@ Brak docstringa.
 - `pathlib: Path`
 - `typing: Any`
 
-## `src/elkman_dns/core/bind.py`
+## `src/zonectl/core/bind.py`
 
 Brak docstringa.
 
@@ -55,7 +64,7 @@ Brak docstringa.
 - `runner: run`
 - `zone_parser: DNSRecord, ZoneRecordParser`
 
-## `src/elkman_dns/core/bind_config.py`
+## `src/zonectl/core/bind_config.py`
 
 Brak docstringa.
 
@@ -66,7 +75,7 @@ Brak docstringa.
 - `pathlib: Path`
 - `models: Zone`
 
-## `src/elkman_dns/core/config.py`
+## `src/zonectl/core/config.py`
 
 Brak docstringa.
 
@@ -77,8 +86,9 @@ Brak docstringa.
 - `pathlib: Path`
 - `discovery: BindConfigDiscovery, BindDiscoveryError, DEFAULT_NAMED_CONF, ZoneConfig`
 - `models: Zone`
+- `paths: DEFAULT_CONFIG, DEFAULT_GROUPS, DEFAULT_ZONES`
 
-## `src/elkman_dns/core/discovery.py`
+## `src/zonectl/core/discovery.py`
 
 Automatyczne wykrywanie stref i plików źródłowych BIND.
 
@@ -90,7 +100,7 @@ Automatyczne wykrywanie stref i plików źródłowych BIND.
 - `dataclasses: dataclass`
 - `pathlib: Path`
 
-## `src/elkman_dns/core/models.py`
+## `src/zonectl/core/models.py`
 
 Brak docstringa.
 
@@ -101,7 +111,15 @@ Brak docstringa.
 - `enum: Enum`
 - `pathlib: Path`
 
-## `src/elkman_dns/core/runner.py`
+## `src/zonectl/core/paths.py`
+
+Centralne ścieżki systemowe ZoneCTL. Ten moduł jest jedynym źródłem domyślnych ścieżek używanych przez kod Pythona. Na tym etapie zachowujemy dotychczasowe katalogi systemowe. Ich migracja do przestrzeni nazw ZoneCTL zostanie wykonana osobno, z backupem i możliwością wycofania.
+
+**Importy:**
+
+- `pathlib: Path`
+
+## `src/zonectl/core/runner.py`
 
 Brak docstringa.
 
@@ -111,7 +129,7 @@ Brak docstringa.
 - `subprocess`
 - `dataclasses: dataclass`
 
-## `src/elkman_dns/core/soa_serial.py`
+## `src/zonectl/core/soa_serial.py`
 
 Brak docstringa.
 
@@ -124,7 +142,7 @@ Brak docstringa.
 - `zone_document: RawLine, RecordNode, ZoneDocument`
 - `zone_parser: DNSRecord`
 
-## `src/elkman_dns/core/transaction.py`
+## `src/zonectl/core/transaction.py`
 
 Brak docstringa.
 
@@ -146,9 +164,10 @@ Brak docstringa.
 - `audit: AuditLog`
 - `config: ToolkitConfig`
 - `models: Zone`
+- `paths: AUDIT_LOG, LOCK_DIR, STATE_DIR, TRANSACTION_BACKUP_DIR, TRANSACTION_DIR`
 - `runner: CommandResult, run`
 
-## `src/elkman_dns/core/zone_document.py`
+## `src/zonectl/core/zone_document.py`
 
 Brak docstringa.
 
@@ -160,7 +179,7 @@ Brak docstringa.
 - `typing: Iterable`
 - `zone_parser: DNSRecord`
 
-## `src/elkman_dns/core/zone_document_adapter.py`
+## `src/zonectl/core/zone_document_adapter.py`
 
 Brak docstringa.
 
@@ -171,7 +190,7 @@ Brak docstringa.
 - `zone_document: RecordNode, ZoneDocument`
 - `zone_model: ChangeKind, ZoneModel`
 
-## `src/elkman_dns/core/zone_edit_session.py`
+## `src/zonectl/core/zone_edit_session.py`
 
 Brak docstringa.
 
@@ -191,7 +210,7 @@ Brak docstringa.
 - `zone_model: ZoneModel`
 - `zone_writer: ZoneWriter`
 
-## `src/elkman_dns/core/zone_file_parser.py`
+## `src/zonectl/core/zone_file_parser.py`
 
 Brak docstringa.
 
@@ -203,7 +222,7 @@ Brak docstringa.
 - `zone_document: BlankLine, Comment, Directive, RawLine, RecordNode, ZoneDocument`
 - `zone_parser: DNSRecord`
 
-## `src/elkman_dns/core/zone_model.py`
+## `src/zonectl/core/zone_model.py`
 
 Brak docstringa.
 
@@ -215,7 +234,7 @@ Brak docstringa.
 - `typing: Iterable`
 - `zone_parser: DNSRecord`
 
-## `src/elkman_dns/core/zone_parser.py`
+## `src/zonectl/core/zone_parser.py`
 
 Brak docstringa.
 
@@ -224,7 +243,7 @@ Brak docstringa.
 - `__future__: annotations`
 - `dataclasses: dataclass`
 
-## `src/elkman_dns/core/zone_serializer.py`
+## `src/zonectl/core/zone_serializer.py`
 
 Serializacja modelu strefy DNS do pliku kandydata.
 
@@ -237,7 +256,7 @@ Serializacja modelu strefy DNS do pliku kandydata.
 - `typing: Iterable, Protocol`
 - `zone_parser: DNSRecord`
 
-## `src/elkman_dns/core/zone_writer.py`
+## `src/zonectl/core/zone_writer.py`
 
 Brak docstringa.
 
@@ -250,7 +269,7 @@ Brak docstringa.
 - `zone_document: BlankLine, Comment, Directive, RawLine, RecordNode, ZoneDocument, ZoneNode`
 - `zone_parser: DNSRecord`
 
-## `src/elkman_dns/legacy_v220.py`
+## `src/zonectl/legacy_v220.py`
 
 Brak docstringa.
 
@@ -271,12 +290,13 @@ Brak docstringa.
 - `time`
 - `concurrent.futures: ThreadPoolExecutor, as_completed`
 - `pathlib: Path`
+- `core.paths: BACKUP_DIR, DEFAULT_CONFIG, DEFAULT_ZONES, DNSSEC_DS_DIR`
 
-## `src/elkman_dns/ui/__init__.py`
+## `src/zonectl/ui/__init__.py`
 
-Terminal UI for elkman DNS Toolkit.
+Terminal UI for ZoneCTL.
 
-## `src/elkman_dns/ui/credits.py`
+## `src/zonectl/ui/credits.py`
 
 Dyskretny podpis twórców projektu w głównym widoku TUI.
 
@@ -285,19 +305,19 @@ Dyskretny podpis twórców projektu w głównym widoku TUI.
 - `__future__: annotations`
 - `curses`
 
-## `src/elkman_dns/ui/curses_app.py`
+## `src/zonectl/ui/curses_app.py`
 
 Brak docstringa.
 
 **Importy:**
 
 - `__future__: annotations`
-- `elkman_dns.ui.credits: draw_project_credits`
-- `elkman_dns.core.zone_model: ChangeKind, ZoneChange, ZoneModel`
-- `elkman_dns.ui.dialogs: CursesDialogs`
-- `elkman_dns.ui.records.editor: RecordEditor`
-- `elkman_dns.ui.records.new_record: NewRecordDialog`
-- `elkman_dns.ui.records.renderer: RecordRenderer`
+- `zonectl.ui.credits: draw_project_credits`
+- `zonectl.core.zone_model: ChangeKind, ZoneChange, ZoneModel`
+- `zonectl.ui.dialogs: CursesDialogs`
+- `zonectl.ui.records.editor: RecordEditor`
+- `zonectl.ui.records.new_record: NewRecordDialog`
+- `zonectl.ui.records.renderer: RecordRenderer`
 - `curses`
 - `queue`
 - `threading`
@@ -310,7 +330,7 @@ Brak docstringa.
 - `core.transaction: TransactionEngine, TransactionResult`
 - `core.zone_edit_session: ZoneEditSession, ZoneEditSessionError`
 
-## `src/elkman_dns/ui/dialogs.py`
+## `src/zonectl/ui/dialogs.py`
 
 Brak docstringa.
 
@@ -319,7 +339,7 @@ Brak docstringa.
 - `__future__: annotations`
 - `curses`
 
-## `src/elkman_dns/ui/records/__init__.py`
+## `src/zonectl/ui/records/__init__.py`
 
 Widoki i komponenty obsługi rekordów DNS.
 
@@ -330,7 +350,7 @@ Widoki i komponenty obsługi rekordów DNS.
 - `new_record: NewRecordDialog, RECORD_TYPES`
 - `controller: RecordController`
 
-## `src/elkman_dns/ui/records/controller.py`
+## `src/zonectl/ui/records/controller.py`
 
 Stan, sortowanie i filtrowanie widoku rekordów DNS.
 
@@ -338,9 +358,9 @@ Stan, sortowanie i filtrowanie widoku rekordów DNS.
 
 - `__future__: annotations`
 - `collections.abc: Sequence`
-- `elkman_dns.core.zone_model: ZoneModel, ZoneRecordView`
+- `zonectl.core.zone_model: ZoneModel, ZoneRecordView`
 
-## `src/elkman_dns/ui/records/editor.py`
+## `src/zonectl/ui/records/editor.py`
 
 Formularz edycji rekordów DNS w interfejsie curses.
 
@@ -352,7 +372,7 @@ Formularz edycji rekordów DNS w interfejsie curses.
 - `core.models: Zone`
 - `core.zone_parser: DNSRecord`
 
-## `src/elkman_dns/ui/records/keybindings.py`
+## `src/zonectl/ui/records/keybindings.py`
 
 Brak docstringa.
 
@@ -362,7 +382,7 @@ Brak docstringa.
 - `dataclasses: dataclass`
 - `typing: Sequence`
 
-## `src/elkman_dns/ui/records/new_record.py`
+## `src/zonectl/ui/records/new_record.py`
 
 Interaktywny kreator nowych rekordów DNS.
 
@@ -375,7 +395,7 @@ Interaktywny kreator nowych rekordów DNS.
 - `core.models: Zone`
 - `core.zone_parser: DNSRecord`
 
-## `src/elkman_dns/ui/records/renderer.py`
+## `src/zonectl/ui/records/renderer.py`
 
 Brak docstringa.
 
@@ -384,5 +404,5 @@ Brak docstringa.
 - `__future__: annotations`
 - `curses`
 - `collections.abc: Sequence`
-- `elkman_dns.core.zone_model: ChangeKind, ZoneRecordView`
-- `elkman_dns.ui.records.keybindings: render_footer`
+- `zonectl.core.zone_model: ChangeKind, ZoneRecordView`
+- `zonectl.ui.records.keybindings: render_footer`

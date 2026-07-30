@@ -1,20 +1,20 @@
-# AI_CONTEXT — elkman-dns-toolkit
+# AI_CONTEXT — zonectl
 
 > Ten plik służy do wznowienia pracy w nowej sesji bez pamięci wcześniejszych rozmów.
 
 ## Stan projektu
-- Projekt: **elkman-dns-toolkit**
-- Wersja: **3.2.3**
+- Projekt: **zonectl**
+- Wersja: **4.1.0**
 - Katalog: `/root/elkman-dns`
-- Gałąź: `master`
-- Commit: `aec45de`
-- Ostatni commit: `aec45de | 2026-07-29 18:37:46 +0200 | Wojciech Lipiński | docs: add automatic project documentation generator`
-- Wygenerowano: `2026-07-29T18:55:06+02:00`
+- Gałąź: `feature/4.1-zonectl`
+- Commit: `ad5c510`
+- Ostatni commit: `ad5c510 | 2026-07-30 14:52:33 +0200 | Wojciech Lipiński | refactor: move implementation to zonectl package`
+- Wygenerowano: `2026-07-30T14:55:22+02:00`
 
 ## Statystyki
-- Moduły Python: **31**
+- Moduły Python: **33**
 - Klasy: **58**
-- Funkcje: **67**
+- Funkcje: **68**
 - Metody: **217**
 - TODO/FIXME/HACK/XXX: **0**
 
@@ -32,20 +32,12 @@ Nie zgaduj działania kodu. Potwierdzaj je w implementacji, testach i Git.
 
 ## Stan Git
 ```text
-M .gitignore
-D  AI_CONTEXT.md
- M docs/AI_CONTEXT.md
- M docs/ARCHITECTURE.md
- M docs/CHANGELOG.md
- M docs/MODULE_REFERENCE.md
- M docs/PROJECT_CONTEXT.md
- M docs/SESSION_HANDOFF.md
- M scripts/update_project_docs.py
+czyste drzewo robocze
 ```
 
 ## Wynik testów
 ```text
-........................................................................ [ 64%]
-.......................................                                  [100%]
-111 passed in 0.16s
+........................................................................ [ 60%]
+................................................                         [100%]
+120 passed in 0.21s
 ```

@@ -1,14 +1,20 @@
 # Dokumentacja modułów
 
-> Wygenerowano z AST: `2026-07-29T18:55:06+02:00`.
+> Wygenerowano z AST: `2026-07-30T14:55:22+02:00`.
 
 ## `src/elkman_dns/__init__.py`
 
-elkman DNS Toolkit.
+Zgodna nazwa historyczna; nowy kod powinien używać pakietu zonectl.
 
 Brak klas i funkcji na poziomie modułu.
 
-## `src/elkman_dns/cli.py`
+## `src/zonectl/__init__.py`
+
+ZoneCTL — Transactional DNS Management Toolkit.
+
+Brak klas i funkcji na poziomie modułu.
+
+## `src/zonectl/cli.py`
 
 Brak docstringa.
 
@@ -20,41 +26,47 @@ Brak docstringa.
 
 ### `def legacy_main`
 
-Linia: `61`
+Linia: `64`
 
 Brak docstringa.
 
 ### `def grouped_lines`
 
-Linia: `71`
+Linia: `74`
 
 Brak docstringa.
 
 ### `def print_transaction`
 
-Linia: `85`
+Linia: `88`
 
 Brak docstringa.
 
 ### `def transaction_main`
 
-Linia: `110`
+Linia: `113`
 
 Brak docstringa.
 
 ### `def main`
 
-Linia: `139`
+Linia: `142`
 
 Brak docstringa.
 
-## `src/elkman_dns/core/__init__.py`
+### `def deprecated_main`
 
-Core services for elkman DNS Toolkit.
+Linia: `176`
+
+Brak docstringa.
+
+## `src/zonectl/core/__init__.py`
+
+Core services for ZoneCTL.
 
 Brak klas i funkcji na poziomie modułu.
 
-## `src/elkman_dns/core/audit.py`
+## `src/zonectl/core/audit.py`
 
 Brak docstringa.
 
@@ -77,7 +89,7 @@ Brak docstringa.
 - `append` — linia 40; brak docstringa.
 - `read` — linia 63; brak docstringa.
 
-## `src/elkman_dns/core/bind.py`
+## `src/zonectl/core/bind.py`
 
 Brak docstringa.
 
@@ -96,7 +108,7 @@ Read-only BIND status service used by the Sprint 1 dashboard.
 - `parsed_zone_records` — linia 84; zwraca rekordy strefy przekształcone do modelu dnsrecord.
 - `quick_status` — linia 112; brak docstringa.
 
-## `src/elkman_dns/core/bind_config.py`
+## `src/zonectl/core/bind_config.py`
 
 Brak docstringa.
 
@@ -124,52 +136,52 @@ Odczytuje strefy bezpośrednio z konfiguracji BIND. Obsługuje: - zone "example.
 - `_group_for` — linia 242; brak docstringa.
 - `_strip_comments` — linia 266; usuń komentarze //, # i /* ... */ bez niszczenia tekstu znajdującego się wewnątrz cudzysłowów.
 
-## `src/elkman_dns/core/config.py`
+## `src/zonectl/core/config.py`
 
 Brak docstringa.
 
 ### `def _yes`
 
-Linia: `20`
+Linia: `16`
 
 Brak docstringa.
 
 ### `def _unquote`
 
-Linia: `33`
+Linia: `29`
 
 Brak docstringa.
 
 ### `def load_groups_yaml`
 
-Linia: `46`
+Linia: `42`
 
 Odczytaj uproszczony format groups.yaml bez PyYAML.
 
 ### `class ToolkitConfig`
 
-Linia: `120`
+Linia: `116`
 
-Konfiguracja elkman DNS Toolkit. Konfiguracja BIND jest źródłem prawdy dla: - nazw stref, - typów stref, - aktywnych plików źródłowych. zones.conf może nadpisywać wyłącznie ustawienia Toolkitu, np. grupę, obsługę serwerów wtórnych i widoczność strefy.
+Konfiguracja ZoneCTL. Konfiguracja BIND jest źródłem prawdy dla: - nazw stref, - typów stref, - aktywnych plików źródłowych. zones.conf może nadpisywać wyłącznie ustawienia Toolkitu, np. grupę, obsługę serwerów wtórnych i widoczność strefy.
 
 **Metody:**
 
-- `__init__` — linia 134; brak docstringa.
-- `load` — linia 153; brak docstringa.
-- `toolkit` — linia 186; brak docstringa.
-- `auto_discover_zones` — linia 190; brak docstringa.
-- `bind_config_path` — linia 197; brak docstringa.
-- `_normalise_zone_name` — linia 206; brak docstringa.
-- `_discover_bind_zones` — linia 209; brak docstringa.
-- `discovered_zone` — linia 226; brak docstringa.
-- `_zone_override` — linia 234; brak docstringa.
-- `_group_for` — linia 246; brak docstringa.
-- `_zone_from_discovery` — linia 262; brak docstringa.
-- `_zones_from_discovery` — linia 317; brak docstringa.
-- `_zones_from_legacy_config` — linia 331; tryb zgodności ze starym zones.conf. używany wyłącznie, gdy auto_discover_zones = no.
-- `zones` — linia 396; brak docstringa.
+- `__init__` — linia 130; brak docstringa.
+- `load` — linia 149; brak docstringa.
+- `toolkit` — linia 182; brak docstringa.
+- `auto_discover_zones` — linia 186; brak docstringa.
+- `bind_config_path` — linia 193; brak docstringa.
+- `_normalise_zone_name` — linia 202; brak docstringa.
+- `_discover_bind_zones` — linia 205; brak docstringa.
+- `discovered_zone` — linia 222; brak docstringa.
+- `_zone_override` — linia 230; brak docstringa.
+- `_group_for` — linia 242; brak docstringa.
+- `_zone_from_discovery` — linia 258; brak docstringa.
+- `_zones_from_discovery` — linia 313; brak docstringa.
+- `_zones_from_legacy_config` — linia 327; tryb zgodności ze starym zones.conf. używany wyłącznie, gdy auto_discover_zones = no.
+- `zones` — linia 392; brak docstringa.
 
-## `src/elkman_dns/core/discovery.py`
+## `src/zonectl/core/discovery.py`
 
 Automatyczne wykrywanie stref i plików źródłowych BIND.
 
@@ -230,7 +242,7 @@ Czyta konfigurację BIND, rozwija include i wykrywa strefy.
 - `_find_block_end` — linia 470; brak docstringa.
 - `_strip_comments` — linia 509; usuwa komentarze //, # i /* ... */, ale zachowuje tekst wewnątrz cudzysłowów.
 
-## `src/elkman_dns/core/models.py`
+## `src/zonectl/core/models.py`
 
 Brak docstringa.
 
@@ -252,7 +264,13 @@ Linia: `28`
 
 Brak docstringa.
 
-## `src/elkman_dns/core/runner.py`
+## `src/zonectl/core/paths.py`
+
+Centralne ścieżki systemowe ZoneCTL. Ten moduł jest jedynym źródłem domyślnych ścieżek używanych przez kod Pythona. Na tym etapie zachowujemy dotychczasowe katalogi systemowe. Ich migracja do przestrzeni nazw ZoneCTL zostanie wykonana osobno, z backupem i możliwością wycofania.
+
+Brak klas i funkcji na poziomie modułu.
+
+## `src/zonectl/core/runner.py`
 
 Brak docstringa.
 
@@ -268,7 +286,7 @@ Linia: `14`
 
 Brak docstringa.
 
-## `src/elkman_dns/core/soa_serial.py`
+## `src/zonectl/core/soa_serial.py`
 
 Brak docstringa.
 
@@ -302,70 +320,70 @@ Linia: `100`
 
 Podbija serial pierwszego rekordu SOA w ZoneDocument. Obsługiwane są: - wielowierszowe SOA zachowane jako RawLine, - jednowierszowe SOA zapisane jako RecordNode. Komentarze i wcięcia wielowierszowego SOA pozostają bez zmian.
 
-## `src/elkman_dns/core/transaction.py`
+## `src/zonectl/core/transaction.py`
 
 Brak docstringa.
 
 ### `class StepResult`
 
-Linia: `23`
+Linia: `30`
 
 Brak docstringa.
 
 ### `class TransactionResult`
 
-Linia: `33`
+Linia: `40`
 
 Brak docstringa.
 
 **Metody:**
 
-- `ok` — linia 43; brak docstringa.
+- `ok` — linia 50; brak docstringa.
 
 ### `class ZoneLock`
 
-Linia: `47`
+Linia: `54`
 
 Brak docstringa.
 
 **Metody:**
 
-- `__init__` — linia 48; brak docstringa.
-- `__enter__` — linia 52; brak docstringa.
-- `__exit__` — linia 66; brak docstringa.
+- `__init__` — linia 55; brak docstringa.
+- `__enter__` — linia 59; brak docstringa.
+- `__exit__` — linia 73; brak docstringa.
 
 ### `class TransactionEngine`
 
-Linia: `76`
+Linia: `83`
 
 Atomic zone-file replacement with validation, backup, reload and rollback.
 
 **Metody:**
 
-- `__init__` — linia 79; brak docstringa.
-- `find_zone` — linia 90; brak docstringa.
-- `_safe_zone_name` — linia 98; brak docstringa.
-- `_digest` — linia 102; brak docstringa.
-- `_step_command` — linia 109; brak docstringa.
-- `_zone_validation` — linia 114; brak docstringa.
-- `_config_validation` — linia 117; brak docstringa.
-- `_zone_serial` — linia 120; brak docstringa.
-- `_serial` — linia 130; brak docstringa.
-- `_loaded_serial` — linia 137; brak docstringa.
-- `_verify_loaded_zone` — linia 146; brak docstringa.
-- `validate` — linia 166; brak docstringa.
-- `verify` — linia 184; brak docstringa.
-- `apply` — linia 277; brak docstringa.
-- `rollback` — linia 379; brak docstringa.
-- `backups` — linia 404; brak docstringa.
-- `_new_id` — linia 411; brak docstringa.
-- `_backup` — linia 415; brak docstringa.
-- `_atomic_install` — linia 436; brak docstringa.
-- `_rollback` — linia 463; brak docstringa.
-- `_save_manifest` — linia 473; brak docstringa.
-- `_finish` — linia 480; brak docstringa.
+- `__init__` — linia 86; brak docstringa.
+- `find_zone` — linia 126; brak docstringa.
+- `_safe_zone_name` — linia 134; brak docstringa.
+- `_digest` — linia 138; brak docstringa.
+- `_step_command` — linia 145; brak docstringa.
+- `_zone_validation` — linia 150; brak docstringa.
+- `_config_validation` — linia 153; brak docstringa.
+- `_zone_serial` — linia 156; brak docstringa.
+- `_serial` — linia 166; brak docstringa.
+- `_loaded_serial` — linia 173; brak docstringa.
+- `_verify_loaded_zone` — linia 182; brak docstringa.
+- `validate` — linia 202; brak docstringa.
+- `verify` — linia 220; brak docstringa.
+- `apply` — linia 313; brak docstringa.
+- `rollback` — linia 415; brak docstringa.
+- `backups` — linia 440; brak docstringa.
+- `_new_id` — linia 447; brak docstringa.
+- `_backup` — linia 451; brak docstringa.
+- `_atomic_install` — linia 472; brak docstringa.
+- `_rollback` — linia 499; brak docstringa.
+- `_save_manifest` — linia 509; brak docstringa.
+- `_finish` — linia 516; brak docstringa.
 
-## `src/elkman_dns/core/zone_document.py`
+## `src/zonectl/core/zone_document.py`
 
 Brak docstringa.
 
@@ -421,7 +439,7 @@ Brak docstringa.
 - `iter_record_nodes` — linia 71; brak docstringa.
 - `find_record` — linia 76; brak docstringa.
 
-## `src/elkman_dns/core/zone_document_adapter.py`
+## `src/zonectl/core/zone_document_adapter.py`
 
 Brak docstringa.
 
@@ -452,7 +470,7 @@ Linia: `19`
 - `_remove_abandoned_added_nodes` — linia 140; brak docstringa.
 - `discard` — linia 158; przywróć dokument do stanu sprzed zmian modelu. powinno być wywołane razem z zonemodel.discard().
 
-## `src/elkman_dns/core/zone_edit_session.py`
+## `src/zonectl/core/zone_edit_session.py`
 
 Brak docstringa.
 
@@ -504,7 +522,7 @@ Pełna sesja edycji źródłowego pliku strefy. Pipeline: ZoneFileParser -> Zone
 - `discard` — linia 227; porzuć wszystkie niezapisane zmiany.
 - `reload` — linia 235; ponownie odczytaj aktywny plik strefy. niezapisane zmiany są tracone.
 
-## `src/elkman_dns/core/zone_file_parser.py`
+## `src/zonectl/core/zone_file_parser.py`
 
 Brak docstringa.
 
@@ -539,7 +557,7 @@ Zachowujący formatowanie parser źródłowego pliku strefy. Parser interpretuje
 - `_tokenise` — linia 372; podziel linię według białych znaków, zachowując tekst w cudzysłowach.
 - `_parenthesis_delta` — linia 425; policz nawiasy poza cudzysłowami. nie interpretuje rekordów wielowierszowych, lecz pozwala zachować cały blok jako rawline.
 
-## `src/elkman_dns/core/zone_model.py`
+## `src/zonectl/core/zone_model.py`
 
 Brak docstringa.
 
@@ -603,7 +621,7 @@ Bufor edycji rekordów pojedynczej strefy. Model nie zapisuje plików i nie wyko
 - `discard` — linia 303; brak docstringa.
 - `accept` — linia 315; uznaje aktualny stan za nowy stan bazowy. metoda będzie używana dopiero po udanym zapisie transakcji.
 
-## `src/elkman_dns/core/zone_parser.py`
+## `src/zonectl/core/zone_parser.py`
 
 Brak docstringa.
 
@@ -628,7 +646,7 @@ Parser kanonicznego wyjścia `named-checkzone -D`.
 - `parse_output` — linia 39; brak docstringa.
 - `parse_line` — linia 67; oczekiwany format kanoniczny: owner ttl class type rdata rdata pozostaje tekstem, dzięki czemu zachowujemy składnię rekordów txt, soa, mx, srv, caa i innych typów.
 
-## `src/elkman_dns/core/zone_serializer.py`
+## `src/zonectl/core/zone_serializer.py`
 
 Serializacja modelu strefy DNS do pliku kandydata.
 
@@ -670,7 +688,7 @@ Serializuje rekordy DNS do tekstowego pliku strefy. Serializer: - nie wykonuje w
 - `render_model` — linia 235; brak docstringa.
 - `write_candidate` — linia 248; brak docstringa.
 
-## `src/elkman_dns/core/zone_writer.py`
+## `src/zonectl/core/zone_writer.py`
 
 Brak docstringa.
 
@@ -694,323 +712,323 @@ Bezstratny zapis źródłowego dokumentu strefy. Zasady: - niezmienione węzły 
 - `render_record` — linia 90; brak docstringa.
 - `write_candidate` — linia 129; brak docstringa.
 
-## `src/elkman_dns/legacy_v220.py`
+## `src/zonectl/legacy_v220.py`
 
 Brak docstringa.
 
 ### `def c`
 
-Linia: `24`
+Linia: `29`
 
 Brak docstringa.
 
 ### `def run`
 
-Linia: `26`
+Linia: `31`
 
 Brak docstringa.
 
 ### `def yes`
 
-Linia: `32`
+Linia: `37`
 
 Brak docstringa.
 
 ### `def require_root`
 
-Linia: `39`
+Linia: `44`
 
 Brak docstringa.
 
 ### `def load_config`
 
-Linia: `42`
+Linia: `47`
 
 Brak docstringa.
 
 ### `def zone_items`
 
-Linia: `50`
+Linia: `55`
 
 Brak docstringa.
 
 ### `def sync_zone_items`
 
-Linia: `55`
+Linia: `60`
 
 Brak docstringa.
 
 ### `def selected`
 
-Linia: `59`
+Linia: `64`
 
 Brak docstringa.
 
 ### `def dig_lines`
 
-Linia: `66`
+Linia: `71`
 
 Brak docstringa.
 
 ### `def dig_serial`
 
-Linia: `72`
+Linia: `77`
 
 Brak docstringa.
 
 ### `def authoritative_servers`
 
-Linia: `77`
+Linia: `82`
 
 Brak docstringa.
 
 ### `def parent_ds`
 
-Linia: `78`
+Linia: `83`
 
 Brak docstringa.
 
 ### `def local_dnskeys`
 
-Linia: `79`
+Linia: `84`
 
 Brak docstringa.
 
 ### `def has_rrsig`
 
-Linia: `81`
+Linia: `86`
 
 Brak docstringa.
 
 ### `def delv_validate`
 
-Linia: `94`
+Linia: `99`
 
 Brak docstringa.
 
 ### `def validation_targets`
 
-Linia: `104`
+Linia: `109`
 
 Zwróć walidatory DNSSEC używane do ustalenia wyniku konsensusu. Konfiguracja opcjonalna w [toolkit]: dnssec_validators = 1.1.1.1, 8.8.8.8, 9.9.9.9 dnssec_validation_quorum = 2
 
 ### `def dnssec_validation_consensus`
 
-Linia: `118`
+Linia: `123`
 
 Brak docstringa.
 
 ### `def cmd_check`
 
-Linia: `140`
+Linia: `145`
 
 Brak docstringa.
 
 ### `def cmd_sync`
 
-Linia: `156`
+Linia: `161`
 
 Brak docstringa.
 
 ### `def cmd_notify`
 
-Linia: `178`
+Linia: `183`
 
 Brak docstringa.
 
 ### `def cmd_reload`
 
-Linia: `187`
+Linia: `192`
 
 Brak docstringa.
 
 ### `def cmd_backup`
 
-Linia: `199`
+Linia: `204`
 
 Brak docstringa.
 
 ### `def dnssec_zone_result`
 
-Linia: `214`
+Linia: `219`
 
 Brak docstringa.
 
 ### `def cmd_dnssec_status`
 
-Linia: `236`
+Linia: `241`
 
 Brak docstringa.
 
 ### `def explain_dnssec_result`
 
-Linia: `251`
+Linia: `256`
 
 Brak docstringa.
 
 ### `def cmd_dnssec_check`
 
-Linia: `279`
+Linia: `284`
 
 Brak docstringa.
 
 ### `def cmd_dnssec_report`
 
-Linia: `304`
+Linia: `309`
 
 Brak docstringa.
 
 ### `def cmd_health`
 
-Linia: `313`
+Linia: `318`
 
 Brak docstringa.
 
 ### `def cmd_doctor`
 
-Linia: `327`
+Linia: `332`
 
 Brak docstringa.
 
 ### `def confirm`
 
-Linia: `348`
+Linia: `353`
 
 Brak docstringa.
 
 ### `def update_ini_zone`
 
-Linia: `356`
+Linia: `361`
 
 Brak docstringa.
 
 ### `def find_zone_config`
 
-Linia: `380`
+Linia: `385`
 
 Znajdź aktywny plik zawierający deklarację zone. Nie ograniczamy wyszukiwania do ``*.conf``, ponieważ typowy plik BIND ``named.conf.local`` nie pasuje do tego wzorca. Pomijamy kopie zapasowe i pliki robocze, aby nie wykrywać tej samej strefy wielokrotnie.
 
 ### `def zone_block_bounds`
 
-Linia: `415`
+Linia: `420`
 
 Brak docstringa.
 
 ### `def patch_zone_declaration`
 
-Linia: `434`
+Linia: `439`
 
 Brak docstringa.
 
 ### `def generate_ds`
 
-Linia: `451`
+Linia: `456`
 
 Brak docstringa.
 
 ### `def cmd_dnssec_enable`
 
-Linia: `469`
+Linia: `474`
 
 Brak docstringa.
 
 ### `def tui_select`
 
-Linia: `543`
+Linia: `548`
 
 Brak docstringa.
 
 ### `def human_age`
 
-Linia: `572`
+Linia: `577`
 
 Brak docstringa.
 
 ### `def latest_backup`
 
-Linia: `581`
+Linia: `586`
 
 Brak docstringa.
 
 ### `def zone_quick_status`
 
-Linia: `587`
+Linia: `592`
 
 Brak docstringa.
 
 ### `def domain_status_lines`
 
-Linia: `605`
+Linia: `610`
 
 Brak docstringa.
 
 ### `def cmd_zone_serial`
 
-Linia: `619`
+Linia: `624`
 
 Brak docstringa.
 
 ### `def cmd_zone_edit`
 
-Linia: `642`
+Linia: `647`
 
 Brak docstringa.
 
 ### `def cmd_zone_report`
 
-Linia: `656`
+Linia: `661`
 
 Brak docstringa.
 
 ### `def cmd_backups`
 
-Linia: `667`
+Linia: `672`
 
 Brak docstringa.
 
 ### `def domain_menu`
 
-Linia: `675`
+Linia: `680`
 
 Brak docstringa.
 
 ### `def cmd_domains`
 
-Linia: `697`
+Linia: `702`
 
 Brak docstringa.
 
 ### `def cmd_menu`
 
-Linia: `721`
+Linia: `726`
 
 Brak docstringa.
 
 ### `def cmd_update`
 
-Linia: `739`
+Linia: `744`
 
 Brak docstringa.
 
 ### `def parser`
 
-Linia: `745`
+Linia: `750`
 
 Brak docstringa.
 
 ### `def main`
 
-Linia: `766`
+Linia: `771`
 
 Brak docstringa.
 
-## `src/elkman_dns/ui/__init__.py`
+## `src/zonectl/ui/__init__.py`
 
-Terminal UI for elkman DNS Toolkit.
+Terminal UI for ZoneCTL.
 
 Brak klas i funkcji na poziomie modułu.
 
-## `src/elkman_dns/ui/credits.py`
+## `src/zonectl/ui/credits.py`
 
 Dyskretny podpis twórców projektu w głównym widoku TUI.
 
@@ -1026,7 +1044,7 @@ Linia: `44`
 
 Wyświetla dane twórców w prawym dolnym rogu głównego widoku. Podpis jest pomijany, gdy terminal jest zbyt mały, dzięki czemu nie nachodzi na listę domen ani dolny pasek klawiszy.
 
-## `src/elkman_dns/ui/curses_app.py`
+## `src/zonectl/ui/curses_app.py`
 
 Brak docstringa.
 
@@ -1069,7 +1087,7 @@ Brak docstringa.
 - `_serial_ok` — linia 1399; brak docstringa.
 - `_bool_text` — linia 1409; brak docstringa.
 
-## `src/elkman_dns/ui/dialogs.py`
+## `src/zonectl/ui/dialogs.py`
 
 Brak docstringa.
 
@@ -1086,13 +1104,13 @@ Wspólne dialogi tekstowe interfejsu curses.
 - `search` — linia 131; brak docstringa.
 - `confirm` — linia 152; wyświetla potwierdzenie [t/n].
 
-## `src/elkman_dns/ui/records/__init__.py`
+## `src/zonectl/ui/records/__init__.py`
 
 Widoki i komponenty obsługi rekordów DNS.
 
 Brak klas i funkcji na poziomie modułu.
 
-## `src/elkman_dns/ui/records/controller.py`
+## `src/zonectl/ui/records/controller.py`
 
 Stan, sortowanie i filtrowanie widoku rekordów DNS.
 
@@ -1118,7 +1136,7 @@ Zarządza prezentacją rekordów bez zależności od curses.
 - `current` — linia 181; brak docstringa.
 - `select_identifier` — linia 193; brak docstringa.
 
-## `src/elkman_dns/ui/records/editor.py`
+## `src/zonectl/ui/records/editor.py`
 
 Formularz edycji rekordów DNS w interfejsie curses.
 
@@ -1136,7 +1154,7 @@ Obsługuje formularz edycji pojedynczego rekordu DNS.
 - `create_record_dialog` — linia 182; tworzy nowy rekord, wykorzystując formularz edycji.
 - `edit_record_dialog` — linia 203; edytuje rekord w pamięci. zwraca nowy rekord albo none.
 
-## `src/elkman_dns/ui/records/keybindings.py`
+## `src/zonectl/ui/records/keybindings.py`
 
 Brak docstringa.
 
@@ -1156,7 +1174,7 @@ Linia: `31`
 
 Brak docstringa.
 
-## `src/elkman_dns/ui/records/new_record.py`
+## `src/zonectl/ui/records/new_record.py`
 
 Interaktywny kreator nowych rekordów DNS.
 
@@ -1178,7 +1196,7 @@ Tworzy rekord DNS bez modyfikowania pliku strefy.
 - `_type_window` — linia 309; brak docstringa.
 - `create_record_dialog` — linia 320; brak docstringa.
 
-## `src/elkman_dns/ui/records/renderer.py`
+## `src/zonectl/ui/records/renderer.py`
 
 Brak docstringa.
 

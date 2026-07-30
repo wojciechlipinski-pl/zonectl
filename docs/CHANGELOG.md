@@ -1,17 +1,14 @@
-# Changelog
-
-## 4.1.0 — ZoneCTL Identity Layer
-
-- rebranding produktu na **ZoneCTL**,
-- nowe polecenie `zctl`,
-- zgodne polecenie `elkman-dns` z ostrzeżeniem,
-- aktualizacja TUI, README i skryptów wdrożeniowych,
-- zachowanie starych ścieżek danych i pakietu Python do następnej migracji.
-
 # Historia zmian
 
-> Wygenerowano z Git: `2026-07-29T18:55:06+02:00`.
+> Wygenerowano z Git: `2026-07-30T14:55:22+02:00`.
 
+- `2026-07-30` — `ad5c510` — refactor: move implementation to zonectl package
+- `2026-07-30` — `185907c` — feat: introduce zonectl Python namespace
+- `2026-07-30` — `50a15c6` — feat: migrate system directories to ZoneCTL paths
+- `2026-07-30` — `e4e6609` — refactor: centralize system paths
+- `2026-07-30` — `7e97e78` — feat: introduce ZoneCTL identity layer
+- `2026-07-30` — `a25f173` — build: initialize ZoneCTL migration framework
+- `2026-07-29` — `e6eb4eb` — docs: finalize automatic project documentation generator
 - `2026-07-29` — `aec45de` — docs: add automatic project documentation generator
 - `2026-07-29` — `6efd150` — docs: add project memory and technical documentation set
 - `2026-07-29` — `66802d0` — Release 3.2.3: add F2 save support
