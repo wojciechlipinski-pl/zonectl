@@ -1,5 +1,37 @@
 # Changelog
 
+## 4.3.0 - 2026-07-31
+
+### Added
+
+- advanced record filters with field matching, negation, regular expressions
+  and TTL comparisons
+- strict type-aware validation for IPv4, IPv6 and supported DNS record data
+- zone-level consistency checks for SOA, NS, CNAME conflicts, loops,
+  duplicates and missing local targets
+- session-scoped bulk `SELECT`, `SET` and `DELETE` operations
+- unified bulk-operation preview, confirmation and single-step undo
+- transaction metadata describing bulk filters, actions and record counts
+- multi-zone TUI sessions with persistent per-zone editing buffers
+- validate-all workflow before committing changed zones in a multi-zone session
+
+### Changed
+
+- bulk changes are recorded as one transaction and presented by `zctl tx show`
+- the main TUI supports selecting zones with Space and opening a multi-zone
+  session with `m`
+- record edits preserve relative owner notation and inline comments
+- validation errors block changes while warnings require explicit confirmation
+
+### Safety
+
+- invalid record values and inconsistent zone structures are rejected before
+  candidate installation
+- all changed zones are validated before the first multi-zone COMMIT
+- each zone retains its own lock, backup, manifest and rollback boundary
+- multi-zone processing stops after the first failed transaction
+- multi-zone sessions never claim cross-zone atomicity
+
 ## 4.2.0 - 2026-07-30
 
 ### Added
