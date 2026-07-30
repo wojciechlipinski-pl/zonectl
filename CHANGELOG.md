@@ -1,5 +1,24 @@
 # Changelog
 
+## 4.1.1 - 2026-07-30
+
+### Added
+
+- configurable health profiles for zones
+- RPZ health checks based on syntax, BIND load status and file age
+- RPZ-specific status presentation in the TUI
+
+### Changed
+
+- `cert-rpz.local` no longer requires public SOA or DNSSEC checks
+- package implementation moved to the `zonectl` namespace
+- system paths migrated to the ZoneCTL directory layout
+
+### Compatibility
+
+- the `elkman-dns` command remains available with a deprecation warning
+- the `elkman_dns` Python namespace remains as a compatibility shim
+
 ## 3.2.0 - 2026-07-29
 
 ### Added
