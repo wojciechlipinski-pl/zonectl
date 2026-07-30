@@ -33,8 +33,10 @@ echo "CLI: $VERSION"
 
 "$PYTHON" - <<'PY'
 import elkman_dns
+import zonectl
 
-print("Pakiet:", elkman_dns.__version__)
+print("Pakiet:", zonectl.__version__)
+print("Zgodność elkman_dns:", elkman_dns.__version__)
 PY
 
 ok "Import pakietu"

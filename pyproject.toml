@@ -13,7 +13,7 @@ authors = [
 ]
 
 [project.scripts]
-zctl = "elkman_dns.cli:main"
+zctl = "zonectl.cli:main"
 elkman-dns = "elkman_dns.cli:deprecated_main"
 
 [tool.setuptools]

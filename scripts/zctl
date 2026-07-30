@@ -1,4 +1,4 @@
 #!/bin/sh
 set -eu
 export PYTHONPATH="/usr/local/lib${PYTHONPATH:+:$PYTHONPATH}"
-exec /usr/bin/python3 -m elkman_dns.cli "$@"
+exec /usr/bin/python3 -m zonectl.cli "$@"
