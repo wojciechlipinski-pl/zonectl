@@ -10,11 +10,7 @@ from .discovery import (
     ZoneConfig,
 )
 from .models import Zone
-
-
-DEFAULT_CONFIG = Path("/etc/elkman-dns-toolkit/toolkit.conf")
-DEFAULT_ZONES = Path("/etc/elkman-dns-toolkit/zones.conf")
-DEFAULT_GROUPS = Path("/etc/elkman-dns-toolkit/groups.yaml")
+from .paths import DEFAULT_CONFIG, DEFAULT_GROUPS, DEFAULT_ZONES
 
 
 def _yes(value: str | None, default: bool) -> bool:

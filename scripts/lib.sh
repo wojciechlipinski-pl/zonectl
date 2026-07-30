@@ -14,6 +14,8 @@ LEGACY_BIN_LINK="/usr/local/bin/elkman-dns"
 CONFIG_DIR="/etc/elkman-dns-toolkit"
 STATE_DIR="/var/lib/elkman-dns-toolkit"
 LOG_DIR="/var/log/elkman-dns-toolkit"
+BACKUP_DIR="/var/backups/elkman-dns"
+DNSSEC_DS_DIR="${STATE_DIR}/ds"
 
 log() {
     printf '\n==> %s\n' "$*"
@@ -67,6 +69,8 @@ prepare_system_directories() {
         "$STATE_DIR/backups" \
         "$STATE_DIR/transactions" \
         "$STATE_DIR/locks" \
+        "$DNSSEC_DS_DIR" \
+        "$BACKUP_DIR" \
         "$LOG_DIR"
 
     chmod 0755 \
@@ -79,6 +83,8 @@ prepare_system_directories() {
         "$STATE_DIR/backups" \
         "$STATE_DIR/transactions" \
         "$STATE_DIR/locks" \
+        "$DNSSEC_DS_DIR" \
+        "$BACKUP_DIR" \
         "$LOG_DIR"
 
     touch "$LOG_DIR/audit.jsonl"

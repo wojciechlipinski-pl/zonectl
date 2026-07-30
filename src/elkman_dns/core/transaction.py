@@ -16,6 +16,13 @@ from pathlib import Path
 from .audit import AuditLog
 from .config import ToolkitConfig
 from .models import Zone
+from .paths import (
+    AUDIT_LOG,
+    LOCK_DIR,
+    STATE_DIR,
+    TRANSACTION_BACKUP_DIR,
+    TRANSACTION_DIR,
+)
 from .runner import CommandResult, run
 
 
@@ -79,11 +86,40 @@ class TransactionEngine:
     def __init__(self, config: ToolkitConfig):
         self.config = config
         t = config.toolkit
-        self.state_dir = Path(t.get("state_dir", "/var/lib/elkman-dns-toolkit"))
-        self.backup_dir = Path(t.get("transaction_backup_dir", str(self.state_dir / "backups")))
-        self.transaction_dir = Path(t.get("transaction_dir", str(self.state_dir / "transactions")))
-        self.lock_dir = Path(t.get("lock_dir", str(self.state_dir / "locks")))
-        self.audit = AuditLog(Path(t.get("audit_log", "/var/log/elkman-dns-toolkit/audit.jsonl")))
+        self.state_dir = Path(t.get("state_dir", str(STATE_DIR)))
+        self.backup_dir = Path(
+            t.get(
+                "transaction_backup_dir",
+                str(
+                    self.state_dir / "backups"
+                    if self.state_dir != STATE_DIR
+                    else TRANSACTION_BACKUP_DIR
+                ),
+            )
+        )
+        self.transaction_dir = Path(
+            t.get(
+                "transaction_dir",
+                str(
+                    self.state_dir / "transactions"
+                    if self.state_dir != STATE_DIR
+                    else TRANSACTION_DIR
+                ),
+            )
+        )
+        self.lock_dir = Path(
+            t.get(
+                "lock_dir",
+                str(
+                    self.state_dir / "locks"
+                    if self.state_dir != STATE_DIR
+                    else LOCK_DIR
+                ),
+            )
+        )
+        self.audit = AuditLog(
+            Path(t.get("audit_log", str(AUDIT_LOG)))
+        )
         self.timeout = int(t.get("command_timeout", "20"))
         self.local_server = t.get("local_server", "127.0.0.1")
 

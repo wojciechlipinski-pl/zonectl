@@ -16,9 +16,14 @@ import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
+from .core.paths import (
+    BACKUP_DIR,
+    DEFAULT_CONFIG,
+    DEFAULT_ZONES,
+    DNSSEC_DS_DIR,
+)
+
 VERSION = "2.2.0"
-DEFAULT_CONFIG = Path("/etc/elkman-dns-toolkit/toolkit.conf")
-DEFAULT_ZONES = Path("/etc/elkman-dns-toolkit/zones.conf")
 GREEN='\033[32m'; RED='\033[31m'; YELLOW='\033[33m'; BOLD='\033[1m'; RESET='\033[0m'
 
 def c(text, code, enabled=True): return f"{code}{text}{RESET}" if enabled else text
@@ -197,7 +202,7 @@ def cmd_reload(cfg,zones,args):
     return 1 if failures else 0
 
 def cmd_backup(cfg,zones,args):
-    require_root('backup'); t=cfg['toolkit']; backup_dir=Path(t.get('backup_dir','/var/backups/elkman-dns')); bind_dir=Path(t.get('bind_dir','/etc/bind'))
+    require_root('backup'); t=cfg['toolkit']; backup_dir=Path(t.get('backup_dir',str(BACKUP_DIR))); bind_dir=Path(t.get('bind_dir','/etc/bind'))
     if not bind_dir.exists(): raise RuntimeError(f'Nie istnieje katalog BIND: {bind_dir}')
     backup_dir.mkdir(parents=True,exist_ok=True); dest=backup_dir/f"bind-{dt.datetime.now().strftime('%Y%m%d-%H%M%S')}.tar.gz"
     with tarfile.open(dest,'w:gz') as tar:
@@ -524,7 +529,7 @@ def cmd_dnssec_enable(cfg,zones,args):
         print(c('Rekord DS do opublikowania w strefie nadrzędnej:',BOLD,not no_color))
         if ds:
             for line in ds: print('  '+line)
-            ds_dir=Path(t.get('dnssec_ds_directory','/var/lib/elkman-dns-toolkit/ds')); ds_dir.mkdir(parents=True,exist_ok=True)
+            ds_dir=Path(t.get('dnssec_ds_directory',str(DNSSEC_DS_DIR))); ds_dir.mkdir(parents=True,exist_ok=True)
             ds_file=ds_dir/f'{zone}.ds'; ds_file.write_text('\n'.join(ds)+'\n'); print(f'Zapisano: {ds_file}')
         else: print(c('Nie udało się wygenerować DS.',RED,not no_color)); return 1
         print(c('UWAGA: dla subdomeny DS publikuje się w strefie nadrzędnej, niekoniecznie u rejestratora.',YELLOW,not no_color))
@@ -579,7 +584,7 @@ def human_age(path):
 
 
 def latest_backup(cfg):
-    bdir=Path(cfg['toolkit'].get('backup_dir','/var/backups/elkman-dns'))
+    bdir=Path(cfg['toolkit'].get('backup_dir',str(BACKUP_DIR)))
     files=sorted(bdir.glob('bind-*.tar.gz'),key=lambda p:p.stat().st_mtime,reverse=True) if bdir.exists() else []
     return files[0] if files else None
 
@@ -665,7 +670,7 @@ def cmd_zone_report(cfg,zones,args):
 
 
 def cmd_backups(cfg,zones,args):
-    bdir=Path(cfg['toolkit'].get('backup_dir','/var/backups/elkman-dns'))
+    bdir=Path(cfg['toolkit'].get('backup_dir',str(BACKUP_DIR)))
     files=sorted(bdir.glob('bind-*.tar.gz'),key=lambda p:p.stat().st_mtime,reverse=True) if bdir.exists() else []
     if not files: print('Brak backupów.'); return 0
     for p in files[:30]: print(f'{dt.datetime.fromtimestamp(p.stat().st_mtime):%Y-%m-%d %H:%M:%S}  {p.stat().st_size//1024:>8} KiB  {p}')
