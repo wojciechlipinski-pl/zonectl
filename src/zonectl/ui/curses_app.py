@@ -22,6 +22,10 @@ from ..core.edit_lock import ZoneEditLockedError
 from ..core.models import Health, Zone, ZoneStatus
 from ..core.paths import EDIT_LOCK_DIR
 from ..core.record_filter import RecordFilter, RecordFilterError
+from ..core.record_validation import (
+    ValidationSeverity,
+    validate_zone,
+)
 from ..core.transaction import TransactionEngine, TransactionResult
 from ..core.zone_edit_session import (
     ZoneEditSession,
@@ -689,6 +693,18 @@ class CursesApp:
                 )
 
                 if new_record is not None:
+                    proposed_records = [
+                        *model.records,
+                        new_record,
+                    ]
+                    if not self._approve_zone_change(
+                        win,
+                        zone,
+                        model.records,
+                        proposed_records,
+                    ):
+                        continue
+
                     identifiers_before = {
                         view.identifier
                         for view in model.record_views
@@ -759,6 +775,24 @@ class CursesApp:
                 )
 
                 if edited_record is not None:
+                    proposed_records = [
+                        (
+                            edited_record
+                            if view.identifier
+                            == current_view.identifier
+                            else view.record
+                        )
+                        for view in model.record_views
+                        if not view.deleted
+                    ]
+                    if not self._approve_zone_change(
+                        win,
+                        zone,
+                        model.records,
+                        proposed_records,
+                    ):
+                        continue
+
                     model.replace_by_identifier(
                         current_view.identifier,
                         edited_record,
@@ -1372,6 +1406,68 @@ class CursesApp:
                 "Ustawienie: [toolkit] read_only = yes",
             ],
         )
+
+    def _approve_zone_change(
+        self,
+        win: curses.window,
+        zone: Zone,
+        current_records,
+        proposed_records,
+    ) -> bool:
+        """Odrzuć nowe błędy i wymagaj potwierdzenia nowych ostrzeżeń."""
+        existing = {
+            issue.key
+            for issue in validate_zone(
+                zone.name,
+                current_records,
+            )
+        }
+        introduced = [
+            issue
+            for issue in validate_zone(
+                zone.name,
+                proposed_records,
+            )
+            if issue.key not in existing
+        ]
+        errors = [
+            issue
+            for issue in introduced
+            if issue.severity is ValidationSeverity.ERROR
+        ]
+        warnings = [
+            issue
+            for issue in introduced
+            if issue.severity is ValidationSeverity.WARN
+        ]
+
+        if errors:
+            self._message_view(
+                win,
+                title=f"Błąd spójności: {zone.name}",
+                lines=[
+                    f"[{issue.code}] {issue.message}"
+                    for issue in errors[:8]
+                ],
+                error=True,
+            )
+            return False
+
+        if warnings:
+            self._message_view(
+                win,
+                title=f"Ostrzeżenie: {zone.name}",
+                lines=[
+                    f"[{issue.code}] {issue.message}"
+                    for issue in warnings[:8]
+                ],
+            )
+            return CursesDialogs.confirm(
+                win,
+                "Kontynuować mimo ostrzeżeń?",
+            )
+
+        return True
 
     def _domain_view(self, win: curses.window, zone: Zone) -> None:
         """

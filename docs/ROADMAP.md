@@ -36,7 +36,7 @@ zrealizowane, a `[ ]` pozostają do wykonania.
 ## Etap 3 — operacje masowe i wiele stref
 
 - [x] Dodać rozbudowane filtrowanie rekordów.
-- [ ] Dodać walidację wartości zależną od typu rekordu.
+- [x] Dodać walidację wartości zależną od typu rekordu.
 - [ ] Dodać operacje masowe `SELECT`, `SET` i `DELETE`.
 - [ ] Zapisywać operację masową jako jedną transakcję.
 - [ ] Dodać obsługę wielu stref w jednej sesji.

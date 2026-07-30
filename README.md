@@ -37,6 +37,19 @@ Obsługiwane pola to `name`, `type`, `ttl`, `value` i `status`. Operator
 w cudzysłowie może zawierać spacje. Status przyjmuje wartości `added`,
 `modified`, `deleted` i `unchanged`.
 
+## Walidacja rekordów
+
+Formularze dodawania i edycji sprawdzają składnię RDATA zależnie od typu
+rekordu, między innymi adresy IPv4/IPv6 oraz strukturę rekordów `MX`,
+`SRV`, `CAA`, `DS`, `DNSKEY`, `SSHFP`, `TLSA`, `SOA`, `NAPTR`,
+`SVCB/HTTPS` i `TXT`.
+
+Przed dodaniem zmiany sprawdzana jest również spójność całej strefy:
+obecność `SOA` i `NS` w apexie, konflikty i pętle `CNAME`, duplikaty,
+lokalne cele rekordów oraz glue dla serwerów nazw. Nowe błędy blokują
+zmianę, natomiast nowe ostrzeżenia wymagają świadomego potwierdzenia.
+Kandydat nadal przechodzi przez `named-checkzone` przed COMMIT.
+
 ## Transakcje
 
 ```bash

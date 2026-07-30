@@ -175,6 +175,10 @@ class CursesDialogs:
             )
             win.refresh()
 
+            # Okno główne pracuje z krótkim timeoutem na potrzeby
+            # odświeżania statusów. Potwierdzenie musi jednak czekać
+            # na świadomą odpowiedź operatora.
+            win.timeout(-1)
             key = win.getch()
 
             return key in (
@@ -188,6 +192,11 @@ class CursesDialogs:
             return False
 
         finally:
+            try:
+                win.timeout(150)
+            except curses.error:
+                pass
+
             try:
                 win.move(row, 0)
                 win.clrtoeol()

@@ -7,6 +7,10 @@ from typing import Any
 import curses
 
 from ...core.models import Zone
+from ...core.record_validation import (
+    SUPPORTED_RECORD_TYPES,
+    validate_rdata,
+)
 from ...core.zone_parser import DNSRecord
 from ..function_keys import decode_function_key
 
@@ -264,16 +268,23 @@ class RecordEditor:
             if not rtype_value:
                 return None, "Typ rekordu nie może być pusty."
 
-            if not rdata_value:
-                return None, "Dane rekordu nie mogą być puste."
+            if rtype_value not in SUPPORTED_RECORD_TYPES:
+                return None, "Nieobsługiwany typ rekordu."
 
             try:
                 ttl = None if not ttl_value else int(ttl_value)
             except ValueError:
                 return None, "TTL musi być liczbą całkowitą."
 
-            if ttl is not None and ttl < 0:
-                return None, "TTL nie może być ujemny."
+            if ttl is not None and not 0 <= ttl <= 2147483647:
+                return None, "TTL musi mieć zakres 0–2147483647."
+
+            validation_error = validate_rdata(
+                rtype_value,
+                rdata_value,
+            )
+            if validation_error:
+                return None, validation_error
 
             try:
                 updated_record = replace(

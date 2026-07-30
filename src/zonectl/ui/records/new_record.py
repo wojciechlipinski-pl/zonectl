@@ -8,28 +8,14 @@ from ipaddress import IPv4Address, IPv6Address
 import curses
 
 from ...core.models import Zone
+from ...core.record_validation import (
+    SUPPORTED_RECORD_TYPES,
+    validate_rdata as validate_record_rdata,
+)
 from ...core.zone_parser import DNSRecord
 
 
-RECORD_TYPES: tuple[str, ...] = (
-    "A",
-    "AAAA",
-    "CAA",
-    "CNAME",
-    "DNSKEY",
-    "DS",
-    "HTTPS",
-    "MX",
-    "NAPTR",
-    "NS",
-    "PTR",
-    "SOA",
-    "SRV",
-    "SSHFP",
-    "SVCB",
-    "TLSA",
-    "TXT",
-)
+RECORD_TYPES = SUPPORTED_RECORD_TYPES
 
 
 class NewRecordDialog:
@@ -245,7 +231,7 @@ class NewRecordDialog:
         if not 0 <= ttl <= 2147483647:
             return None, "TTL musi mieć zakres 0–2147483647."
 
-        error = cls.validate_rdata(
+        error = validate_record_rdata(
             normalized_type,
             rdata,
         )
