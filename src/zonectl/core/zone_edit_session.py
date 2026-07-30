@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Callable, Protocol
 
 from .models import Zone
+from .edit_lock import ZoneEditLock
 from .paths import CHANGE_EXPORT_DIR
 from .soa_serial import (
     SoaSerialChange,
@@ -80,6 +81,7 @@ class ZoneEditSession:
         auto_bump_serial: bool = True,
         today_provider: Callable[[], date] = date.today,
         read_only: bool = False,
+        edit_lock_directory: Path | None = None,
     ) -> None:
         if zone.file is None:
             raise ZoneEditSessionError(
@@ -93,6 +95,11 @@ class ZoneEditSession:
         self.auto_bump_serial = auto_bump_serial
         self.today_provider = today_provider
         self.read_only = read_only
+        self.edit_lock = (
+            ZoneEditLock(edit_lock_directory, zone.name)
+            if edit_lock_directory is not None and not read_only
+            else None
+        )
 
         self.serial_change: SoaSerialChange | None = None
         self._serial_prepared = False
@@ -101,7 +108,19 @@ class ZoneEditSession:
         self.model: ZoneModel
         self.adapter: ZoneDocumentAdapter
 
-        self._load()
+        if self.edit_lock is not None:
+            self.edit_lock.acquire()
+
+        try:
+            self._load()
+        except Exception:
+            self.close()
+            raise
+
+    def close(self) -> None:
+        """Zwolnij blokadę sesji edycyjnej, jeśli została założona."""
+        if self.edit_lock is not None:
+            self.edit_lock.release()
 
     @property
     def source_path(self) -> Path:

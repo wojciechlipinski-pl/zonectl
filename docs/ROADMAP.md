@@ -31,7 +31,7 @@ zrealizowane, a `[ ]` pozostają do wykonania.
 - [x] Rozbudować historię zmian i transakcji.
 - [x] Dodać cofanie ostatniej zmiany w bieżącej sesji.
 - [x] Dodać tryb tylko do odczytu.
-- [ ] Dodać mechanizm blokowania równoległej edycji.
+- [x] Dodać mechanizm blokowania równoległej edycji.
 
 ## Etap 3 — operacje masowe i wiele stref
 

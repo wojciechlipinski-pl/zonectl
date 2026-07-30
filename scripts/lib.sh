@@ -69,6 +69,7 @@ prepare_system_directories() {
         "$STATE_DIR/backups" \
         "$STATE_DIR/transactions" \
         "$STATE_DIR/locks" \
+        "$STATE_DIR/edit-locks" \
         "$STATE_DIR/exports" \
         "$DNSSEC_DS_DIR" \
         "$BACKUP_DIR" \
@@ -84,6 +85,7 @@ prepare_system_directories() {
         "$STATE_DIR/backups" \
         "$STATE_DIR/transactions" \
         "$STATE_DIR/locks" \
+        "$STATE_DIR/edit-locks" \
         "$STATE_DIR/exports" \
         "$DNSSEC_DS_DIR" \
         "$BACKUP_DIR" \

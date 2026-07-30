@@ -13,11 +13,14 @@ import queue
 import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
+from pathlib import Path
 
 from .. import __version__
 from ..core.bind import BindService
 from ..core.config import ToolkitConfig
+from ..core.edit_lock import ZoneEditLockedError
 from ..core.models import Health, Zone, ZoneStatus
+from ..core.paths import EDIT_LOCK_DIR
 from ..core.transaction import TransactionEngine, TransactionResult
 from ..core.zone_edit_session import (
     ZoneEditSession,
@@ -57,6 +60,16 @@ class CursesApp:
             config.read_only
             if config is not None
             else False
+        )
+        self.edit_lock_directory = (
+            Path(
+                config.toolkit.get(
+                    "edit_lock_dir",
+                    str(EDIT_LOCK_DIR),
+                )
+            )
+            if config is not None
+            else None
         )
         self.statuses: dict[str, ZoneStatus] = {}
         self.selected = 0
@@ -321,7 +334,21 @@ class CursesApp:
                 zone,
                 self.transaction_engine,
                 read_only=self.read_only,
+                edit_lock_directory=self.edit_lock_directory,
             )
+        except ZoneEditLockedError as exc:
+            self._message_view(
+                win,
+                title=f"Strefa jest już edytowana: {zone.name}",
+                lines=[
+                    str(exc),
+                    "",
+                    "Druga sesja może nadal otworzyć strefę",
+                    "w trybie tylko do odczytu.",
+                ],
+                error=True,
+            )
+            return
         except ZoneEditSessionError as exc:
             self._message_view(
                 win,
@@ -514,6 +541,7 @@ class CursesApp:
                     127,
                     8,
                 ):
+                    session.close()
                     return
 
                 continue
@@ -536,6 +564,7 @@ class CursesApp:
 
                     session.discard()
 
+                session.close()
                 return
 
             # F2 / Ctrl+S

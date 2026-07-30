@@ -24,6 +24,20 @@ cofania oraz zapisu. Silnik transakcyjny niezależnie blokuje także
 `apply --commit` i `rollback --commit`, zwracając status `READ-ONLY`.
 Tryby walidacyjne bez `--commit` pozostają dostępne.
 
+## Blokada równoległej edycji
+
+Po otwarciu strefy do edycji ZoneCTL zakłada blokadę `flock` w katalogu
+`/var/lib/zonectl/edit-locks`. Plik blokady zawiera nazwę strefy, PID,
+użytkownika, host i czas rozpoczęcia sesji. Próba otwarcia tej samej
+strefy do zapisu w drugim procesie kończy się czytelnym komunikatem
+wskazującym właściciela blokady.
+
+Blokada jest zwalniana przy normalnym wyjściu. Po awarii procesu blokada
+jądra jest zwalniana automatycznie, a pozostały plik metadanych zostanie
+bezpiecznie nadpisany przez następną sesję. Sesje uruchomione z
+`read_only = yes` nie zakładają blokad edycyjnych i mogą działać
+równolegle.
+
 ## Kontrola instalacji
 
 ```bash
