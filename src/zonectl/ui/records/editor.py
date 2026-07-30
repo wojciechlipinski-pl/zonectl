@@ -8,6 +8,7 @@ import curses
 
 from ...core.models import Zone
 from ...core.zone_parser import DNSRecord
+from ..function_keys import decode_function_key
 
 
 class RecordEditor:
@@ -44,8 +45,10 @@ class RecordEditor:
             except curses.error:
                 pass
 
-        if sequence == [ord("["), ord("1"), ord("2"), ord("~")]:
-            return curses.KEY_F2
+        function_key = decode_function_key(sequence)
+
+        if function_key is not None:
+            return function_key
 
         # To nie było F2. Odtwarzamy pobrane znaki,
         # a samo ESC zwracamy jako anulowanie.

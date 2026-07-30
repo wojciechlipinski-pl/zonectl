@@ -44,6 +44,7 @@ class RecordRendererTests(unittest.TestCase):
         self.assertIn("c wyczyść", footer)
         self.assertIn("s sortuj", footer)
         self.assertIn("p zmiany", footer)
+        self.assertIn("d diff", footer)
 
 
 if __name__ == "__main__":

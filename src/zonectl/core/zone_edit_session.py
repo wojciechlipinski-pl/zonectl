@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import difflib
 from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
@@ -165,6 +166,29 @@ class ZoneEditSession:
         """
         self._prepare_document()
         return self.writer.render_document(self.document)
+
+    def unified_diff(
+        self,
+        *,
+        context: int = 3,
+    ) -> str:
+        """
+        Pokaż różnice między aktywnym plikiem a kandydatem.
+
+        Metoda nie tworzy pliku tymczasowego i nie wykonuje transakcji.
+        """
+        active = self.source_path.read_text(encoding="utf-8")
+        candidate = self.render_candidate()
+
+        return "".join(
+            difflib.unified_diff(
+                active.splitlines(keepends=True),
+                candidate.splitlines(keepends=True),
+                fromfile=str(self.source_path),
+                tofile=f"{self.source_path} (kandydat)",
+                n=max(0, context),
+            )
+        )
 
     def create_candidate(self) -> Path:
         """

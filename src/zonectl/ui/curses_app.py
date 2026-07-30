@@ -3,6 +3,7 @@ from __future__ import annotations
 from zonectl.ui.credits import draw_project_credits
 from zonectl.core.zone_model import ChangeKind, ZoneChange, ZoneModel
 from zonectl.ui.dialogs import CursesDialogs
+from zonectl.ui.function_keys import decode_function_key
 from zonectl.ui.records.editor import RecordEditor
 from zonectl.ui.records.new_record import NewRecordDialog
 from zonectl.ui.records.renderer import RecordRenderer
@@ -614,6 +615,10 @@ class CursesApp:
                 search_query = ""
                 continue
 
+            if key in (ord("d"), ord("D")):
+                self._diff_view(win, session)
+                continue
+
             if key in (ord("a"), ord("A")):
                 new_record = NewRecordDialog(
                     error_attr=self._color(Health.FAIL),
@@ -862,31 +867,7 @@ class CursesApp:
     def _function_key_sequence(
         sequence: list[int],
     ) -> int | None:
-        text = bytes(sequence)
-        mapping = {
-            b"OP": curses.KEY_F1,
-            b"OQ": curses.KEY_F2,
-            b"OR": curses.KEY_F3,
-            b"OS": curses.KEY_F4,
-            b"[[A": curses.KEY_F1,
-            b"[[B": curses.KEY_F2,
-            b"[[C": curses.KEY_F3,
-            b"[[D": curses.KEY_F4,
-            b"[[E": curses.KEY_F5,
-            b"[11~": curses.KEY_F1,
-            b"[12~": curses.KEY_F2,
-            b"[13~": curses.KEY_F3,
-            b"[14~": curses.KEY_F4,
-            b"[15~": curses.KEY_F5,
-            b"[17~": curses.KEY_F6,
-            b"[18~": curses.KEY_F7,
-            b"[19~": curses.KEY_F8,
-            b"[20~": curses.KEY_F9,
-            b"[21~": curses.KEY_F10,
-            b"[23~": curses.KEY_F11,
-            b"[24~": curses.KEY_F12,
-        }
-        return mapping.get(text)
+        return decode_function_key(sequence)
 
     @classmethod
     def _get_key(
@@ -1061,6 +1042,7 @@ class CursesApp:
 
             footer = (
                 " ↑/↓ wybór"
+                "   d diff"
                 "   F2/Ctrl+S zapisz"
                 "   PgUp/PgDn"
                 "   Home/End"
@@ -1119,6 +1101,10 @@ class CursesApp:
                         session.reload()
                     return
 
+            if key in (ord("d"), ord("D")):
+                self._diff_view(win, session)
+                continue
+
             if not changes:
                 continue
 
@@ -1142,6 +1128,107 @@ class CursesApp:
                 selected = 0
             elif key == curses.KEY_END:
                 selected = len(changes) - 1
+
+    def _diff_view(
+        self,
+        win: curses.window,
+        session: ZoneEditSession,
+    ) -> None:
+        """Wyświetl przewijany unified diff bez zapisywania strefy."""
+        text = session.unified_diff()
+        lines = (
+            text.splitlines()
+            if text
+            else ["Brak różnic względem aktywnego pliku."]
+        )
+        offset = 0
+
+        while True:
+            win.erase()
+            height, width = win.getmaxyx()
+            visible = max(1, height - 4)
+            offset = min(
+                offset,
+                max(0, len(lines) - visible),
+            )
+
+            try:
+                win.addnstr(
+                    0,
+                    0,
+                    f" Podgląd zmian: {session.zone.name} ".ljust(width),
+                    max(0, width - 1),
+                    curses.A_REVERSE | curses.A_BOLD,
+                )
+
+                for row, line in enumerate(
+                    lines[offset:offset + visible],
+                    start=2,
+                ):
+                    attr = curses.A_NORMAL
+
+                    if line.startswith("+") and not line.startswith("+++"):
+                        attr = self._color(Health.PASS)
+                    elif line.startswith("-") and not line.startswith("---"):
+                        attr = self._color(Health.FAIL)
+                    elif line.startswith("@@"):
+                        attr = curses.A_BOLD
+
+                    win.addnstr(
+                        row,
+                        1,
+                        line,
+                        max(0, width - 2),
+                        attr,
+                    )
+
+                footer = (
+                    f" Linie {offset + 1}-"
+                    f"{min(len(lines), offset + visible)}/{len(lines)}"
+                    "   ↑/↓ PgUp/PgDn Home/End"
+                    "   q/Esc powrót "
+                )
+                win.addnstr(
+                    height - 1,
+                    0,
+                    footer.ljust(width),
+                    max(0, width - 1),
+                    curses.A_REVERSE,
+                )
+                win.refresh()
+            except curses.error:
+                pass
+
+            key = self._get_key(win)
+
+            if key in (
+                ord("q"),
+                ord("Q"),
+                27,
+                curses.KEY_BACKSPACE,
+                127,
+                8,
+            ):
+                return
+
+            if key in (curses.KEY_DOWN, ord("j")):
+                offset = min(
+                    offset + 1,
+                    max(0, len(lines) - visible),
+                )
+            elif key in (curses.KEY_UP, ord("k")):
+                offset = max(0, offset - 1)
+            elif key == curses.KEY_NPAGE:
+                offset = min(
+                    offset + visible,
+                    max(0, len(lines) - visible),
+                )
+            elif key == curses.KEY_PPAGE:
+                offset = max(0, offset - visible)
+            elif key == curses.KEY_HOME:
+                offset = 0
+            elif key == curses.KEY_END:
+                offset = max(0, len(lines) - visible)
 
     def _domain_view(self, win: curses.window, zone: Zone) -> None:
         """
