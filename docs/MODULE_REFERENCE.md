@@ -1,6 +1,6 @@
 # Dokumentacja modułów
 
-> Wygenerowano z AST: `2026-07-30T23:09:24+02:00`.
+> Wygenerowano z AST: `2026-07-31T01:36:32+02:00`.
 
 ## `src/elkman_dns/__init__.py`
 
@@ -136,6 +136,43 @@ Odczytuje strefy bezpośrednio z konfiguracji BIND. Obsługuje: - zone "example.
 - `_zone_from_block` — linia 177; brak docstringa.
 - `_group_for` — linia 242; brak docstringa.
 - `_strip_comments` — linia 266; usuń komentarze //, # i /* ... */ bez niszczenia tekstu znajdującego się wewnątrz cudzysłowów.
+
+## `src/zonectl/core/bulk_operations.py`
+
+Brak docstringa.
+
+### `class BulkOperationError`
+
+Linia: `14`
+
+Nieprawidłowa lub niemożliwa operacja masowa.
+
+### `class BulkAction`
+
+Linia: `18`
+
+Brak docstringa.
+
+### `class BulkMatch`
+
+Linia: `24`
+
+Brak docstringa.
+
+### `class BulkOperation`
+
+Linia: `31`
+
+Brak docstringa.
+
+**Metody:**
+
+- `parse` — linia 43; brak docstringa.
+- `selected` — linia 111; brak docstringa.
+- `_replacement` — linia 125; brak docstringa.
+- `matches` — linia 150; brak docstringa.
+- `proposed_records` — linia 167; brak docstringa.
+- `apply` — linia 183; brak docstringa.
 
 ## `src/zonectl/core/config.py`
 
@@ -297,11 +334,156 @@ Linia: `30`
 
 Brak docstringa.
 
+## `src/zonectl/core/multi_zone_session.py`
+
+Brak docstringa.
+
+### `class MultiZoneSessionError`
+
+Linia: `10`
+
+Błąd koordynacji sesji obejmującej wiele stref.
+
+### `class MultiZoneSaveResult`
+
+Linia: `15`
+
+Wynik walidacji lub zapisu zestawu stref.
+
+**Metody:**
+
+- `ok` — linia 23; brak docstringa.
+
+### `class MultiZoneEditSession`
+
+Linia: `27`
+
+Przechowuj niezależne sesje edycji wielu stref. Każda strefa zachowuje własną blokadę, kandydat, backup i manifest transakcji. Przed pierwszym COMMIT wszystkie zmienione strefy są walidowane w trybie dry-run.
+
+**Metody:**
+
+- `__init__` — linia 36; brak docstringa.
+- `open_zone_names` — linia 46; brak docstringa.
+- `dirty_zone_names` — linia 50; brak docstringa.
+- `open` — linia 57; otwórz strefę lub zwróć już istniejącą sesję roboczą.
+- `close_zone` — linia 71; zamknij jedną strefę, opcjonalnie porzucając jej zmiany.
+- `validate_all` — linia 90; zweryfikuj wszystkie zmienione strefy bez commit.
+- `save_all` — linia 101; zweryfikuj wszystkie strefy, a potem zapisuj je kolejno. po pierwszym nieudanym commit dalsze strefy nie są zapisywane. wynik nie udaje atomowości pomiędzy niezależnymi strefami.
+- `close` — linia 121; zamknij wszystkie sesje i zwolnij ich blokady.
+- `__enter__` — linia 131; brak docstringa.
+- `__exit__` — linia 134; brak docstringa.
+
 ## `src/zonectl/core/paths.py`
 
 Centralne ścieżki systemowe ZoneCTL. Ten moduł jest jedynym źródłem domyślnych ścieżek używanych przez kod Pythona. Na tym etapie zachowujemy dotychczasowe katalogi systemowe. Ich migracja do przestrzeni nazw ZoneCTL zostanie wykonana osobno, z backupem i możliwością wycofania.
 
 Brak klas i funkcji na poziomie modułu.
+
+## `src/zonectl/core/record_filter.py`
+
+Brak docstringa.
+
+### `class RecordFilterError`
+
+Linia: `11`
+
+Nieprawidłowe wyrażenie filtrowania rekordów.
+
+### `class FilterTerm`
+
+Linia: `43`
+
+Brak docstringa.
+
+### `def _status`
+
+Linia: `51`
+
+Brak docstringa.
+
+### `class RecordFilter`
+
+Linia: `60`
+
+Skompilowany filtr rekordów. Oddzielone spacjami warunki są łączone operatorem AND. Zwykły tekst zachowuje dotychczasowe wyszukiwanie we wszystkich widocznych polach.
+
+**Metody:**
+
+- `__init__` — linia 68; brak docstringa.
+- `_parse` — linia 73; brak docstringa.
+- `_text_value` — linia 172; brak docstringa.
+- `_match_ttl` — linia 191; brak docstringa.
+- `_match_term` — linia 214; brak docstringa.
+- `matches` — linia 259; brak docstringa.
+- `apply` — linia 269; brak docstringa.
+
+## `src/zonectl/core/record_validation.py`
+
+Brak docstringa.
+
+### `class ValidationSeverity`
+
+Linia: `15`
+
+Brak docstringa.
+
+### `class ValidationIssue`
+
+Linia: `22`
+
+Brak docstringa.
+
+**Metody:**
+
+- `key` — linia 29; brak docstringa.
+
+### `def is_valid_dns_name`
+
+Linia: `57`
+
+Brak docstringa.
+
+### `def _integer`
+
+Linia: `78`
+
+Brak docstringa.
+
+### `def _hex_error`
+
+Linia: `93`
+
+Brak docstringa.
+
+### `def validate_rdata`
+
+Linia: `102`
+
+Brak docstringa.
+
+### `def validate_record`
+
+Linia: `278`
+
+Brak docstringa.
+
+### `def _absolute_name`
+
+Linia: `313`
+
+Brak docstringa.
+
+### `def _target`
+
+Linia: `325`
+
+Brak docstringa.
+
+### `def validate_zone`
+
+Linia: `337`
+
+Brak docstringa.
 
 ## `src/zonectl/core/runner.py`
 
@@ -371,52 +553,52 @@ Brak docstringa.
 
 **Metody:**
 
-- `ok` — linia 50; brak docstringa.
+- `ok` — linia 51; brak docstringa.
 
 ### `class ZoneLock`
 
-Linia: `54`
+Linia: `55`
 
 Brak docstringa.
 
 **Metody:**
 
-- `__init__` — linia 55; brak docstringa.
-- `__enter__` — linia 59; brak docstringa.
-- `__exit__` — linia 73; brak docstringa.
+- `__init__` — linia 56; brak docstringa.
+- `__enter__` — linia 60; brak docstringa.
+- `__exit__` — linia 74; brak docstringa.
 
 ### `class TransactionEngine`
 
-Linia: `83`
+Linia: `84`
 
 Atomic zone-file replacement with validation, backup, reload and rollback.
 
 **Metody:**
 
-- `__init__` — linia 86; brak docstringa.
-- `find_zone` — linia 129; brak docstringa.
-- `_safe_zone_name` — linia 137; brak docstringa.
-- `_digest` — linia 141; brak docstringa.
-- `_step_command` — linia 148; brak docstringa.
-- `_zone_validation` — linia 153; brak docstringa.
-- `_config_validation` — linia 156; brak docstringa.
-- `_zone_serial` — linia 159; brak docstringa.
-- `_serial` — linia 169; brak docstringa.
-- `_loaded_serial` — linia 176; brak docstringa.
-- `_verify_loaded_zone` — linia 185; brak docstringa.
-- `validate` — linia 205; brak docstringa.
-- `verify` — linia 223; brak docstringa.
-- `apply` — linia 316; brak docstringa.
-- `rollback` — linia 432; brak docstringa.
-- `backups` — linia 470; brak docstringa.
-- `history` — linia 477; odczytaj ostatnie manifesty transakcji.
-- `load_transaction` — linia 528; odtwórz wynik transakcji z manifestu.
-- `_new_id` — linia 593; brak docstringa.
-- `_backup` — linia 597; brak docstringa.
-- `_atomic_install` — linia 618; brak docstringa.
-- `_rollback` — linia 645; brak docstringa.
-- `_save_manifest` — linia 655; brak docstringa.
-- `_finish` — linia 667; brak docstringa.
+- `__init__` — linia 87; brak docstringa.
+- `find_zone` — linia 130; brak docstringa.
+- `_safe_zone_name` — linia 138; brak docstringa.
+- `_digest` — linia 142; brak docstringa.
+- `_step_command` — linia 149; brak docstringa.
+- `_zone_validation` — linia 154; brak docstringa.
+- `_config_validation` — linia 157; brak docstringa.
+- `_zone_serial` — linia 160; brak docstringa.
+- `_serial` — linia 170; brak docstringa.
+- `_loaded_serial` — linia 177; brak docstringa.
+- `_verify_loaded_zone` — linia 186; brak docstringa.
+- `validate` — linia 206; brak docstringa.
+- `verify` — linia 224; brak docstringa.
+- `apply` — linia 317; brak docstringa.
+- `rollback` — linia 453; brak docstringa.
+- `backups` — linia 491; brak docstringa.
+- `history` — linia 498; odczytaj ostatnie manifesty transakcji.
+- `load_transaction` — linia 549; odtwórz wynik transakcji z manifestu.
+- `_new_id` — linia 615; brak docstringa.
+- `_backup` — linia 619; brak docstringa.
+- `_atomic_install` — linia 640; brak docstringa.
+- `_rollback` — linia 667; brak docstringa.
+- `_save_manifest` — linia 677; brak docstringa.
+- `_finish` — linia 689; brak docstringa.
 
 ## `src/zonectl/core/zone_document.py`
 
@@ -521,45 +703,45 @@ Brak docstringa.
 
 ### `class ZoneEditSessionError`
 
-Linia: `38`
+Linia: `39`
 
 Błąd sesji edycji strefy.
 
 ### `class ZoneSaveResult`
 
-Linia: `43`
+Linia: `44`
 
 Brak docstringa.
 
 **Metody:**
 
-- `committed` — linia 48; brak docstringa.
-- `ok` — linia 52; brak docstringa.
-- `status` — linia 56; brak docstringa.
+- `committed` — linia 49; brak docstringa.
+- `ok` — linia 53; brak docstringa.
+- `status` — linia 57; brak docstringa.
 
 ### `class ZoneEditSession`
 
-Linia: `60`
+Linia: `61`
 
 Pełna sesja edycji źródłowego pliku strefy. Pipeline: ZoneFileParser -> ZoneDocument -> ZoneModel -> ZoneDocumentAdapter -> ZoneWriter -> TransactionEngine
 
 **Metody:**
 
-- `__init__` — linia 74; brak docstringa.
-- `close` — linia 120; zwolnij blokadę sesji edycyjnej, jeśli została założona.
-- `source_path` — linia 126; brak docstringa.
-- `dirty` — linia 135; brak docstringa.
-- `change_count` — linia 139; brak docstringa.
-- `_load` — linia 142; brak docstringa.
-- `_prepare_document` — linia 164; brak docstringa.
-- `render_candidate` — linia 189; wygeneruj tekst kandydata bez tworzenia pliku.
-- `unified_diff` — linia 196; pokaż różnice między aktywnym plikiem a kandydatem. metoda nie tworzy pliku tymczasowego i nie wykonuje transakcji.
-- `export_diff` — linia 219; atomowo zapisz unified diff bez wykonywania commit.
-- `create_candidate` — linia 279; utwórz bezpieczny plik tymczasowy z bieżącymi zmianami.
-- `save` — linia 296; waliduj albo zapisz zmiany przez transactionengine. commit=false: dry-run, aktywny plik nie jest zmieniany. commit=true: backup, atomic install, reload, weryfikacja i rollback.
-- `discard` — linia 337; porzuć wszystkie niezapisane zmiany.
-- `undo` — linia 345; cofnij ostatnią zmianę bieżącej sesji.
-- `reload` — linia 355; ponownie odczytaj aktywny plik strefy. niezapisane zmiany są tracone.
+- `__init__` — linia 75; brak docstringa.
+- `close` — linia 121; zwolnij blokadę sesji edycyjnej, jeśli została założona.
+- `source_path` — linia 127; brak docstringa.
+- `dirty` — linia 136; brak docstringa.
+- `change_count` — linia 140; brak docstringa.
+- `_load` — linia 143; brak docstringa.
+- `_prepare_document` — linia 165; brak docstringa.
+- `render_candidate` — linia 190; wygeneruj tekst kandydata bez tworzenia pliku.
+- `unified_diff` — linia 197; pokaż różnice między aktywnym plikiem a kandydatem. metoda nie tworzy pliku tymczasowego i nie wykonuje transakcji.
+- `export_diff` — linia 220; atomowo zapisz unified diff bez wykonywania commit.
+- `create_candidate` — linia 280; utwórz bezpieczny plik tymczasowy z bieżącymi zmianami.
+- `save` — linia 297; waliduj albo zapisz zmiany przez transactionengine. commit=false: dry-run, aktywny plik nie jest zmieniany. commit=true: backup, atomic install, reload, weryfikacja i rollback.
+- `discard` — linia 339; porzuć wszystkie niezapisane zmiany.
+- `undo` — linia 347; cofnij ostatnią zmianę bieżącej sesji.
+- `reload` — linia 357; ponownie odczytaj aktywny plik strefy. niezapisane zmiany są tracone.
 
 ## `src/zonectl/core/zone_file_parser.py`
 
@@ -647,35 +829,39 @@ Brak docstringa.
 
 ### `class ZoneModel`
 
-Linia: `72`
+Linia: `73`
 
 Bufor edycji rekordów pojedynczej strefy. Model nie zapisuje plików i nie wykonuje poleceń systemowych. Przechowuje jedynie stan początkowy, bieżący i wyliczony diff.
 
 **Metody:**
 
-- `__init__` — linia 80; brak docstringa.
-- `_allocate_identifier` — linia 103; brak docstringa.
-- `_snapshot` — linia 108; brak docstringa.
-- `_remember` — linia 121; brak docstringa.
-- `_ensure_writable` — linia 124; brak docstringa.
-- `_visible_entries` — linia 130; brak docstringa.
-- `_entry_at` — linia 137; brak docstringa.
-- `records` — linia 148; brak docstringa.
-- `original_records` — linia 156; brak docstringa.
-- `record_views` — linia 164; zwraca rekordy widoczne w edytorze, również usuwane.
-- `pending_changes` — linia 202; brak docstringa.
-- `dirty` — linia 244; brak docstringa.
-- `change_count` — linia 248; brak docstringa.
-- `can_undo` — linia 252; brak docstringa.
-- `add` — linia 255; brak docstringa.
-- `_entry_by_identifier` — linia 268; brak docstringa.
-- `replace_by_identifier` — linia 277; brak docstringa.
-- `delete_by_identifier` — linia 298; brak docstringa.
-- `replace` — linia 316; brak docstringa.
-- `delete` — linia 338; brak docstringa.
-- `undo` — linia 359; cofnij ostatnią operację wykonaną w modelu.
-- `discard` — linia 369; brak docstringa.
-- `accept` — linia 382; uznaje aktualny stan za nowy stan bazowy. metoda będzie używana dopiero po udanym zapisie transakcji.
+- `__init__` — linia 81; brak docstringa.
+- `_allocate_identifier` — linia 105; brak docstringa.
+- `_snapshot` — linia 110; brak docstringa.
+- `_remember` — linia 127; brak docstringa.
+- `_ensure_writable` — linia 130; brak docstringa.
+- `_visible_entries` — linia 136; brak docstringa.
+- `_entry_at` — linia 143; brak docstringa.
+- `records` — linia 154; brak docstringa.
+- `original_records` — linia 162; brak docstringa.
+- `record_views` — linia 170; zwraca rekordy widoczne w edytorze, również usuwane.
+- `pending_changes` — linia 208; brak docstringa.
+- `dirty` — linia 250; brak docstringa.
+- `change_count` — linia 254; brak docstringa.
+- `can_undo` — linia 258; brak docstringa.
+- `transaction_metadata` — linia 262; zwróć opis zmian przekazywany do manifestu transakcji.
+- `describe_last_bulk_operation` — linia 273; przypisz opis do ostatniego atomowego kroku masowego.
+- `add` — linia 280; brak docstringa.
+- `_entry_by_identifier` — linia 293; brak docstringa.
+- `replace_by_identifier` — linia 302; brak docstringa.
+- `delete_by_identifier` — linia 323; brak docstringa.
+- `replace` — linia 341; brak docstringa.
+- `delete` — linia 363; brak docstringa.
+- `bulk_replace_by_identifiers` — linia 384; zastąp wiele rekordów jako jeden krok historii cofania.
+- `bulk_delete_by_identifiers` — linia 409; usuń wiele rekordów jako jeden krok historii cofania.
+- `undo` — linia 436; cofnij ostatnią operację wykonaną w modelu.
+- `discard` — linia 447; brak docstringa.
+- `accept` — linia 461; uznaje aktualny stan za nowy stan bazowy. metoda będzie używana dopiero po udanym zapisie transakcji.
 
 ## `src/zonectl/core/zone_parser.py`
 
@@ -1092,13 +1278,13 @@ Zbuduj wspólną prezentację wyniku transakcji dla CLI i TUI.
 
 ### `def transaction_title`
 
-Linia: `42`
+Linia: `63`
 
 Zwróć wspólny tytuł wyniku transakcji.
 
 ### `def transaction_exit_code`
 
-Linia: `49`
+Linia: `70`
 
 Przełóż wynik transakcji na kod procesu CLI.
 
@@ -1130,46 +1316,52 @@ Brak docstringa.
 
 ### `class Row`
 
-Linia: `33`
+Linia: `43`
 
 Brak docstringa.
 
 ### `class CursesApp`
 
-Linia: `40`
+Linia: `50`
 
 Brak docstringa.
 
 **Metody:**
 
-- `__init__` — linia 43; brak docstringa.
-- `run` — linia 86; brak docstringa.
-- `_main` — linia 89; brak docstringa.
-- `_init_colors` — linia 124; brak docstringa.
-- `_color` — linia 134; brak docstringa.
-- `_symbol` — linia 145; brak docstringa.
-- `_start_refresh` — linia 148; brak docstringa.
-- `_refresh_worker` — linia 156; brak docstringa.
-- `_consume_results` — linia 170; brak docstringa.
-- `_zone_key` — linia 181; brak docstringa.
-- `_ordered_groups` — linia 198; brak docstringa.
-- `_rebuild_rows` — linia 205; brak docstringa.
-- `_selected_zone_name` — linia 229; brak docstringa.
-- `_draw` — linia 234; brak docstringa.
-- `_activate` — linia 289; brak docstringa.
-- `_search` — linia 302; filtruje domeny na głównej liście.
-- `_records_view` — linia 318; wyświetla i edytuje źródłowy dokument strefy.
-- `_message_view` — linia 881; wyświetla prosty modalny komunikat.
-- `_function_key_sequence` — linia 946; brak docstringa.
-- `_get_key` — linia 952; odczytuje klawisz i rozpoznaje f2 wysyłane jako esc [ 12 ~.
-- `_transaction_result_view` — linia 996; wyświetla wynik zapisu lub rollbacku transakcji.
-- `_pending_changes_view` — linia 1009; wyświetla oczekujące zmiany w rekordach strefy.
-- `_diff_view` — linia 1239; wyświetl przewijany unified diff bez zapisywania strefy.
-- `_export_diff` — linia 1340; wyeksportuj oczekujące zmiany bez wykonywania commit.
-- `_read_only_message` — linia 1368; brak docstringa.
-- `_domain_view` — linia 1382; wyświetla szczegóły wybranej strefy. klawisze: - r: ponowne sprawdzenie strefy, - q / esc / backspace: powrót do listy.
-- `_serial_ok` — linia 1651; brak docstringa.
-- `_bool_text` — linia 1661; brak docstringa.
+- `__init__` — linia 53; brak docstringa.
+- `run` — linia 97; brak docstringa.
+- `_main` — linia 100; brak docstringa.
+- `_init_colors` — linia 139; brak docstringa.
+- `_color` — linia 149; brak docstringa.
+- `_symbol` — linia 160; brak docstringa.
+- `_start_refresh` — linia 163; brak docstringa.
+- `_refresh_worker` — linia 171; brak docstringa.
+- `_consume_results` — linia 185; brak docstringa.
+- `_zone_key` — linia 196; brak docstringa.
+- `_ordered_groups` — linia 213; brak docstringa.
+- `_rebuild_rows` — linia 220; brak docstringa.
+- `_selected_zone_name` — linia 244; brak docstringa.
+- `_draw` — linia 249; brak docstringa.
+- `_activate` — linia 310; brak docstringa.
+- `_toggle_multi_selection` — linia 323; dodaj lub usuń bieżącą strefę z zestawu wielostrefowego.
+- `_activate_group_selection` — linia 336; zachowaj dotychczasowe działanie spacji dla nagłówka grupy.
+- `_search` — linia 349; filtruje domeny na głównej liście.
+- `_records_view` — linia 365; wyświetla i edytuje źródłowy dokument strefy.
+- `_message_view` — linia 975; wyświetla prosty modalny komunikat.
+- `_function_key_sequence` — linia 1040; brak docstringa.
+- `_get_key` — linia 1046; odczytuje klawisz i rozpoznaje f2 wysyłane jako esc [ 12 ~.
+- `_transaction_result_view` — linia 1090; wyświetla wynik zapisu lub rollbacku transakcji.
+- `_pending_changes_view` — linia 1103; wyświetla oczekujące zmiany w rekordach strefy.
+- `_diff_view` — linia 1333; wyświetl przewijany unified diff bez zapisywania strefy.
+- `_export_diff` — linia 1434; wyeksportuj oczekujące zmiany bez wykonywania commit.
+- `_read_only_message` — linia 1462; brak docstringa.
+- `_bulk_operation_view` — linia 1476; brak docstringa.
+- `_bulk_preview_view` — linia 1579; pokaż podgląd; enter przechodzi do potwierdzenia.
+- `_approve_zone_change` — linia 1639; odrzuć nowe błędy i wymagaj potwierdzenia nowych ostrzeżeń.
+- `_multi_zone_view` — linia 1701; edytuj kilka zaznaczonych stref w jednej sesji tui.
+- `_domain_view` — linia 1912; wyświetla szczegóły wybranej strefy. klawisze: - r: ponowne sprawdzenie strefy, - q / esc / backspace: powrót do listy.
+- `_serial_ok` — linia 2181; brak docstringa.
+- `_bool_text` — linia 2191; brak docstringa.
 
 ## `src/zonectl/ui/dialogs.py`
 
@@ -1177,16 +1369,16 @@ Brak docstringa.
 
 ### `class CursesDialogs`
 
-Linia: `6`
+Linia: `7`
 
 Wspólne dialogi tekstowe interfejsu curses.
 
 **Metody:**
 
-- `normalize_query` — linia 10; normalizuje frazę wyszukiwania. wyszukiwanie działa jako dopasowanie fragmentu tekstu. gwiazdki na początku i końcu są traktowane jak opcjonalne symbole wildcard, np. *elk.pl oraz elk.pl*.
-- `text_input` — linia 29; wyświetla jednowierszowy dialog tekstowy. enter zatwierdza wartość. esc anuluje dialog.
-- `search` — linia 131; brak docstringa.
-- `confirm` — linia 152; wyświetla potwierdzenie [t/n].
+- `normalize_query` — linia 11; normalizuje frazę wyszukiwania. wyszukiwanie działa jako dopasowanie fragmentu tekstu. gwiazdki na początku i końcu są traktowane jak opcjonalne symbole wildcard, np. *elk.pl oraz elk.pl*.
+- `text_input` — linia 30; wyświetla jednowierszowy dialog tekstowy. enter zatwierdza wartość. esc anuluje dialog.
+- `search` — linia 132; brak docstringa.
+- `confirm` — linia 153; wyświetla potwierdzenie [t/n].
 
 ## `src/zonectl/ui/function_keys.py`
 
@@ -1236,18 +1428,18 @@ Formularz edycji rekordów DNS w interfejsie curses.
 
 ### `class RecordEditor`
 
-Linia: `14`
+Linia: `18`
 
 Obsługuje formularz edycji pojedynczego rekordu DNS.
 
 **Metody:**
 
-- `__init__` — linia 17; brak docstringa.
-- `_owner_from_form` — linia 22; zachowaj źródłową postać właściciela, jeśli jej nie zmieniono.
-- `_get_key` — linia 43; odczytuje klawisz i rozpoznaje f2 wysyłane jako esc [ 12 ~.
-- `_edit_line` — linia 84; prosty edytor pojedynczej linii dla formularzy curses.
-- `create_record_dialog` — linia 206; tworzy nowy rekord, wykorzystując formularz edycji.
-- `edit_record_dialog` — linia 227; edytuje rekord w pamięci. zwraca nowy rekord albo none.
+- `__init__` — linia 21; brak docstringa.
+- `_owner_from_form` — linia 26; zachowaj źródłową postać właściciela, jeśli jej nie zmieniono.
+- `_get_key` — linia 47; odczytuje klawisz i rozpoznaje f2 wysyłane jako esc [ 12 ~.
+- `_edit_line` — linia 88; prosty edytor pojedynczej linii dla formularzy curses.
+- `create_record_dialog` — linia 210; tworzy nowy rekord, wykorzystując formularz edycji.
+- `edit_record_dialog` — linia 231; edytuje rekord w pamięci. zwraca nowy rekord albo none.
 
 ## `src/zonectl/ui/records/keybindings.py`
 
@@ -1265,7 +1457,7 @@ Brak docstringa.
 
 ### `def render_footer`
 
-Linia: `34`
+Linia: `35`
 
 Brak docstringa.
 
@@ -1275,21 +1467,21 @@ Interaktywny kreator nowych rekordów DNS.
 
 ### `class NewRecordDialog`
 
-Linia: `35`
+Linia: `21`
 
 Tworzy rekord DNS bez modyfikowania pliku strefy.
 
 **Metody:**
 
-- `__init__` — linia 43; brak docstringa.
-- `default_ttl` — linia 50; pobiera ttl z głównego rekordu soa strefy.
-- `absolute_owner` — linia 80; brak docstringa.
-- `validate_hostname` — linia 96; brak docstringa.
-- `validate_rdata` — linia 120; brak docstringa.
-- `build_record` — linia 227; brak docstringa.
-- `_put` — linia 277; brak docstringa.
-- `_type_window` — linia 309; brak docstringa.
-- `create_record_dialog` — linia 320; brak docstringa.
+- `__init__` — linia 29; brak docstringa.
+- `default_ttl` — linia 36; pobiera ttl z głównego rekordu soa strefy.
+- `absolute_owner` — linia 66; brak docstringa.
+- `validate_hostname` — linia 82; brak docstringa.
+- `validate_rdata` — linia 106; brak docstringa.
+- `build_record` — linia 213; brak docstringa.
+- `_put` — linia 263; brak docstringa.
+- `_type_window` — linia 295; brak docstringa.
+- `create_record_dialog` — linia 306; brak docstringa.
 
 ## `src/zonectl/ui/records/renderer.py`
 

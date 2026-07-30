@@ -1,7 +1,14 @@
 # Historia zmian
 
-> Wygenerowano z Git: `2026-07-30T23:09:24+02:00`.
+> Wygenerowano z Git: `2026-07-31T01:36:32+02:00`.
 
+- `2026-07-31` — `6545089` — release: prepare ZoneCTL 4.3.0
+- `2026-07-31` — `728d7b3` — feat: add multi-zone editing sessions
+- `2026-07-31` — `e1c4ebb` — feat: record bulk changes as one transaction
+- `2026-07-31` — `0ee3907` — feat: add session-scoped bulk record operations
+- `2026-07-31` — `4721e80` — feat: validate DNS records and zone consistency
+- `2026-07-30` — `32737cb` — feat: add advanced record filtering
+- `2026-07-30` — `a4ccfc6` — docs: regenerate documentation for 4.2.0
 - `2026-07-30` — `0a481f3` — release: prepare ZoneCTL 4.2.0
 - `2026-07-30` — `a84faba` — feat: lock concurrent zone editing sessions
 - `2026-07-30` — `abeccdf` — feat: add read-only operating mode

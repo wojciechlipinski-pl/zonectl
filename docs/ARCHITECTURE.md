@@ -1,6 +1,6 @@
 # Architektura
 
-> Wygenerowano z importów AST: `2026-07-30T23:09:24+02:00`.
+> Wygenerowano z importów AST: `2026-07-31T01:36:32+02:00`.
 
 ## `src/elkman_dns/__init__.py`
 
@@ -77,6 +77,22 @@ Brak docstringa.
 - `pathlib: Path`
 - `models: Zone`
 
+## `src/zonectl/core/bulk_operations.py`
+
+Brak docstringa.
+
+**Importy:**
+
+- `__future__: annotations`
+- `re`
+- `shlex`
+- `dataclasses: dataclass, replace`
+- `enum: Enum`
+- `record_filter: RecordFilter, RecordFilterError`
+- `record_validation: validate_record`
+- `zone_model: ZoneModel, ZoneRecordView`
+- `zone_parser: DNSRecord`
+
 ## `src/zonectl/core/config.py`
 
 Brak docstringa.
@@ -131,6 +147,18 @@ Brak docstringa.
 - `enum: Enum`
 - `pathlib: Path`
 
+## `src/zonectl/core/multi_zone_session.py`
+
+Brak docstringa.
+
+**Importy:**
+
+- `__future__: annotations`
+- `collections.abc: Callable, Iterable`
+- `dataclasses: dataclass, field`
+- `models: Zone`
+- `zone_edit_session: ZoneEditSession, ZoneSaveResult`
+
 ## `src/zonectl/core/paths.py`
 
 Centralne ścieżki systemowe ZoneCTL. Ten moduł jest jedynym źródłem domyślnych ścieżek używanych przez kod Pythona. Na tym etapie zachowujemy dotychczasowe katalogi systemowe. Ich migracja do przestrzeni nazw ZoneCTL zostanie wykonana osobno, z backupem i możliwością wycofania.
@@ -138,6 +166,36 @@ Centralne ścieżki systemowe ZoneCTL. Ten moduł jest jedynym źródłem domyś
 **Importy:**
 
 - `pathlib: Path`
+
+## `src/zonectl/core/record_filter.py`
+
+Brak docstringa.
+
+**Importy:**
+
+- `__future__: annotations`
+- `re`
+- `shlex`
+- `dataclasses: dataclass`
+- `typing: Iterable`
+- `zone_model: ChangeKind, ZoneRecordView`
+
+## `src/zonectl/core/record_validation.py`
+
+Brak docstringa.
+
+**Importy:**
+
+- `__future__: annotations`
+- `base64`
+- `binascii`
+- `ipaddress`
+- `re`
+- `shlex`
+- `dataclasses: dataclass`
+- `enum: Enum`
+- `typing: Iterable`
+- `zone_parser: DNSRecord`
 
 ## `src/zonectl/core/runner.py`
 
@@ -362,10 +420,14 @@ Brak docstringa.
 - `pathlib: Path`
 - `: __version__`
 - `core.bind: BindService`
+- `core.bulk_operations: BulkOperation, BulkOperationError`
 - `core.config: ToolkitConfig`
 - `core.edit_lock: ZoneEditLockedError`
 - `core.models: Health, Zone, ZoneStatus`
+- `core.multi_zone_session: MultiZoneEditSession, MultiZoneSessionError`
 - `core.paths: EDIT_LOCK_DIR`
+- `core.record_filter: RecordFilter, RecordFilterError`
+- `core.record_validation: ValidationSeverity, validate_zone`
 - `core.transaction: TransactionEngine, TransactionResult`
 - `core.zone_edit_session: ZoneEditSession, ZoneEditSessionError`
 - `presentation: transaction_lines, transaction_title`
@@ -378,6 +440,7 @@ Brak docstringa.
 
 - `__future__: annotations`
 - `curses`
+- `collections.abc: Callable`
 
 ## `src/zonectl/ui/function_keys.py`
 
@@ -419,6 +482,7 @@ Formularz edycji rekordów DNS w interfejsie curses.
 - `typing: Any`
 - `curses`
 - `core.models: Zone`
+- `core.record_validation: SUPPORTED_RECORD_TYPES, validate_rdata`
 - `core.zone_parser: DNSRecord`
 - `function_keys: decode_function_key`
 
@@ -443,6 +507,7 @@ Interaktywny kreator nowych rekordów DNS.
 - `ipaddress: IPv4Address, IPv6Address`
 - `curses`
 - `core.models: Zone`
+- `core.record_validation: SUPPORTED_RECORD_TYPES, validate_rdata`
 - `core.zone_parser: DNSRecord`
 
 ## `src/zonectl/ui/records/renderer.py`
