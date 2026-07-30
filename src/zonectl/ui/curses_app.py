@@ -77,8 +77,11 @@ class CursesApp:
             if changed and self.SORTS[self.sort_index] != "A-Z":
                 self._rebuild_rows(keep_zone=self._selected_zone_name())
             self._draw(stdscr)
-            key = stdscr.getch()
-            if key in (ord("q"), 27):
+            key = self._get_key(
+                stdscr,
+                restore_timeout=150,
+            )
+            if key in (ord("q"), 27, curses.KEY_F10):
                 break
             if key in (curses.KEY_DOWN, ord("j")):
                 self.selected = min(self.selected + 1, max(0, len(self.rows) - 1))
@@ -258,7 +261,7 @@ class CursesApp:
                 attr |= curses.A_REVERSE
             win.addnstr(screen_row, 0, line.ljust(width), max(0, width - 1), attr)
 
-        footer = " Enter/Spacja otwórz-zwiń  / szukaj  g grupy  F7/s sortuj  r odśwież  q wyjście "
+        footer = " Enter/Spacja otwórz-zwiń  / szukaj  g grupy  F7/s sortuj  r odśwież  q/Esc/F10 wyjście "
         win.addnstr(height - 2, 0, footer.ljust(width), max(0, width - 1), curses.A_REVERSE)
         draw_project_credits(win)
         win.refresh()
@@ -855,7 +858,41 @@ class CursesApp:
             pass
 
     @staticmethod
-    def _get_key(win: curses.window) -> int:
+    def _function_key_sequence(
+        sequence: list[int],
+    ) -> int | None:
+        text = bytes(sequence)
+        mapping = {
+            b"OP": curses.KEY_F1,
+            b"OQ": curses.KEY_F2,
+            b"OR": curses.KEY_F3,
+            b"OS": curses.KEY_F4,
+            b"[[A": curses.KEY_F1,
+            b"[[B": curses.KEY_F2,
+            b"[[C": curses.KEY_F3,
+            b"[[D": curses.KEY_F4,
+            b"[[E": curses.KEY_F5,
+            b"[11~": curses.KEY_F1,
+            b"[12~": curses.KEY_F2,
+            b"[13~": curses.KEY_F3,
+            b"[14~": curses.KEY_F4,
+            b"[15~": curses.KEY_F5,
+            b"[17~": curses.KEY_F6,
+            b"[18~": curses.KEY_F7,
+            b"[19~": curses.KEY_F8,
+            b"[20~": curses.KEY_F9,
+            b"[21~": curses.KEY_F10,
+            b"[23~": curses.KEY_F11,
+            b"[24~": curses.KEY_F12,
+        }
+        return mapping.get(text)
+
+    @classmethod
+    def _get_key(
+        cls,
+        win: curses.window,
+        restore_timeout: int = -1,
+    ) -> int:
         """
         Odczytuje klawisz i rozpoznaje F2 wysyłane jako ESC [ 12 ~.
         """
@@ -878,17 +915,14 @@ class CursesApp:
                 sequence.append(next_key)
         finally:
             try:
-                win.timeout(-1)
+                win.timeout(restore_timeout)
             except curses.error:
                 pass
 
-        if sequence == [
-            ord("["),
-            ord("1"),
-            ord("2"),
-            ord("~"),
-        ]:
-            return curses.KEY_F2
+        function_key = cls._function_key_sequence(sequence)
+
+        if function_key is not None:
+            return function_key
 
         for item in reversed(sequence):
             try:
