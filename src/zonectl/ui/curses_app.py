@@ -619,6 +619,10 @@ class CursesApp:
                 self._diff_view(win, session)
                 continue
 
+            if key in (ord("x"), ord("X")):
+                self._export_diff(win, session)
+                continue
+
             if key in (ord("a"), ord("A")):
                 new_record = NewRecordDialog(
                     error_attr=self._color(Health.FAIL),
@@ -1043,6 +1047,7 @@ class CursesApp:
             footer = (
                 " ↑/↓ wybór"
                 "   d diff"
+                "   x eksport"
                 "   F2/Ctrl+S zapisz"
                 "   PgUp/PgDn"
                 "   Home/End"
@@ -1103,6 +1108,10 @@ class CursesApp:
 
             if key in (ord("d"), ord("D")):
                 self._diff_view(win, session)
+                continue
+
+            if key in (ord("x"), ord("X")):
+                self._export_diff(win, session)
                 continue
 
             if not changes:
@@ -1229,6 +1238,34 @@ class CursesApp:
                 offset = 0
             elif key == curses.KEY_END:
                 offset = max(0, len(lines) - visible)
+
+    def _export_diff(
+        self,
+        win: curses.window,
+        session: ZoneEditSession,
+    ) -> None:
+        """Wyeksportuj oczekujące zmiany bez wykonywania COMMIT."""
+        try:
+            destination = session.export_diff()
+        except (OSError, ZoneEditSessionError) as exc:
+            self._message_view(
+                win,
+                title=f"Eksport zmian: {session.zone.name}",
+                lines=[str(exc)],
+                error=True,
+            )
+            return
+
+        self._message_view(
+            win,
+            title=f"Eksport zmian: {session.zone.name}",
+            lines=[
+                "Zapisano unified diff:",
+                str(destination),
+                "",
+                "Aktywny plik strefy nie został zmieniony.",
+            ],
+        )
 
     def _domain_view(self, win: curses.window, zone: Zone) -> None:
         """

@@ -1,12 +1,16 @@
 from __future__ import annotations
 
 import difflib
+import os
+import tempfile
+import uuid
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, datetime
 from pathlib import Path
 from typing import Callable, Protocol
 
 from .models import Zone
+from .paths import CHANGE_EXPORT_DIR
 from .soa_serial import (
     SoaSerialChange,
     SoaSerialError,
@@ -189,6 +193,66 @@ class ZoneEditSession:
                 n=max(0, context),
             )
         )
+
+    def export_diff(
+        self,
+        *,
+        directory: Path = CHANGE_EXPORT_DIR,
+        timestamp: datetime | None = None,
+    ) -> Path:
+        """Atomowo zapisz unified diff bez wykonywania COMMIT."""
+        content = self.unified_diff()
+
+        if not content:
+            raise ZoneEditSessionError(
+                "Brak zmian do wyeksportowania"
+            )
+
+        directory = directory.expanduser().resolve()
+        directory.mkdir(parents=True, exist_ok=True, mode=0o750)
+
+        safe_zone = "".join(
+            character
+            if character.isalnum() or character in ".-_"
+            else "_"
+            for character in self.zone.name
+        )
+        stamp = (timestamp or datetime.now()).strftime(
+            "%Y%m%d-%H%M%S"
+        )
+        filename = (
+            f"{stamp}-{safe_zone}-{uuid.uuid4().hex[:8]}.diff"
+        )
+        destination = directory / filename
+        fd, temporary_name = tempfile.mkstemp(
+            prefix=f".{filename}.",
+            dir=directory,
+        )
+        temporary = Path(temporary_name)
+
+        try:
+            os.fchmod(fd, 0o640)
+
+            with os.fdopen(fd, "w", encoding="utf-8") as handle:
+                handle.write(content)
+                handle.flush()
+                os.fsync(handle.fileno())
+
+            os.replace(temporary, destination)
+            directory_fd = os.open(directory, os.O_DIRECTORY)
+
+            try:
+                os.fsync(directory_fd)
+            finally:
+                os.close(directory_fd)
+
+            return destination
+
+        finally:
+            try:
+                temporary.unlink()
+            except FileNotFoundError:
+                pass
 
     def create_candidate(self) -> Path:
         """

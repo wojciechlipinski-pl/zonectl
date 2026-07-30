@@ -27,7 +27,7 @@ zrealizowane, a `[ ]` pozostają do wykonania.
 ## Etap 2 — kontrola i historia zmian
 
 - [x] Dodać podgląd różnic w formacie unified diff przed COMMIT.
-- [ ] Dodać eksport zmian przed COMMIT.
+- [x] Dodać eksport zmian przed COMMIT.
 - [ ] Rozbudować historię zmian i transakcji.
 - [ ] Dodać cofanie ostatniej zmiany w bieżącej sesji.
 - [ ] Dodać tryb tylko do odczytu.
