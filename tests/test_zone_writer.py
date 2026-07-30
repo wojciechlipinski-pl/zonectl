@@ -71,7 +71,7 @@ def test_modified_record_is_rendered_again() -> None:
     assert result == (
         "$TTL 3600\n"
         "\n"
-        "www\t300\tIN\tA\t192.0.2.20\n"
+        "www\t300\tIN\tA\t192.0.2.20 ; stary adres\n"
         "\n"
         "; komentarz końcowy\n"
     )

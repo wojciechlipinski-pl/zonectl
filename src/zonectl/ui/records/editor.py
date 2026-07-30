@@ -19,6 +19,27 @@ class RecordEditor:
         self._save_requested = False
 
     @staticmethod
+    def _owner_from_form(
+        value: str,
+        record: DNSRecord,
+        zone: Zone,
+    ) -> str:
+        """Zachowaj źródłową postać właściciela, jeśli jej nie zmieniono."""
+        value = value.strip()
+        original_relative = record.relative_owner(zone.name)
+
+        if value.casefold() == original_relative.casefold():
+            return record.owner
+
+        if value in ("", "@"):
+            return zone.name.rstrip(".") + "."
+
+        if value.endswith("."):
+            return value
+
+        return f"{value}.{zone.name.rstrip('.')}."
+
+    @staticmethod
     def _get_key(win: curses.window) -> int:
         """Odczytuje klawisz i rozpoznaje F2 wysyłane jako ESC [ 12 ~."""
         key = win.getch()
@@ -234,17 +255,6 @@ class RecordEditor:
         active = 0
         message = ""
 
-        def absolute_owner(value: str) -> str:
-            value = value.strip()
-
-            if value in ("", "@"):
-                return zone.name.rstrip(".") + "."
-
-            if value.endswith("."):
-                return value
-
-            return f"{value}.{zone.name.rstrip('.')}."
-
         def build_record():
             owner_value = values[0].strip()
             rtype_value = values[1].strip().upper()
@@ -268,7 +278,11 @@ class RecordEditor:
             try:
                 updated_record = replace(
                     record,
-                    owner=absolute_owner(owner_value),
+                    owner=self._owner_from_form(
+                        owner_value,
+                        record,
+                        zone,
+                    ),
                     rtype=rtype_value,
                     ttl=ttl,
                     rdata=rdata_value,

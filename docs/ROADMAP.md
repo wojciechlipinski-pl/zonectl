@@ -44,6 +44,7 @@ zrealizowane, a `[ ]` pozostają do wykonania.
 
 ## Jakość techniczna
 
+- [x] Zachować względną nazwę właściciela i komentarz inline po edycji.
 - [ ] Uzupełnić docstringi publicznych klas i metod.
 - [ ] Rozszerzyć pokrycie testami krytycznych ścieżek zapisu.
 - [ ] Dodać statyczną analizę typów.

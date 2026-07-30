@@ -68,7 +68,7 @@ class ZoneWriter:
                 return None
 
             if node.modified:
-                return self.render_record(node.record)
+                return self.render_modified_record(node)
 
             return node.raw
 
@@ -86,6 +86,44 @@ class ZoneWriter:
         raise ZoneWriteError(
             f"Nieobsługiwany typ węzła: {type(node).__name__}"
         )
+
+    def render_modified_record(
+        self,
+        node: RecordNode,
+    ) -> str:
+        """Renderuj rekord, zachowując jego komentarz końcowy."""
+        rendered = self.render_record(node.record)
+        suffix = self._inline_comment_suffix(node.raw)
+        return rendered + suffix
+
+    @staticmethod
+    def _inline_comment_suffix(raw: str) -> str:
+        """Zwróć komentarz poza cudzysłowem wraz z odstępem przed nim."""
+        in_quotes = False
+        escaped = False
+
+        for index, character in enumerate(raw):
+            if escaped:
+                escaped = False
+                continue
+
+            if character == "\\":
+                escaped = True
+                continue
+
+            if character == '"':
+                in_quotes = not in_quotes
+                continue
+
+            if character == ";" and not in_quotes:
+                start = index
+
+                while start > 0 and raw[start - 1].isspace():
+                    start -= 1
+
+                return raw[start:]
+
+        return ""
 
     def render_record(
         self,
