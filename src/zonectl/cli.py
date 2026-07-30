@@ -9,6 +9,7 @@ from . import __version__
 from .core.bind import BindService
 from .core.config import DEFAULT_CONFIG, DEFAULT_GROUPS, DEFAULT_ZONES, ToolkitConfig
 from .core.transaction import TransactionEngine, TransactionResult
+from .presentation import transaction_exit_code, transaction_lines
 from .ui.curses_app import CursesApp
 
 
@@ -90,24 +91,9 @@ def print_transaction(result: TransactionResult, as_json: bool = False) -> int:
         from dataclasses import asdict
         print(json.dumps(asdict(result), ensure_ascii=False, indent=2))
     else:
-        print(f"Transakcja: {result.transaction_id}")
-        print(f"Strefa:     {result.zone}")
-        print(f"Status:     {result.status}")
-        print(f"Commit:     {'TAK' if result.committed else 'NIE'}")
-        print(f"Rollback:   {'TAK' if result.rolled_back else 'NIE'}")
-        if result.backup:
-            print(f"Backup:     {result.backup}")
-        print()
-        for step in result.steps:
-            mark = "OK" if step.ok else "BŁĄD"
-            print(f"[{mark:<4}] {step.name}: {step.message}")
-            if not step.ok:
-                if step.stdout.strip():
-                    print("  stdout:", step.stdout.strip())
-                if step.stderr.strip():
-                    print("  stderr:", step.stderr.strip())
-    failed = any(not s.ok for s in result.steps)
-    return 1 if failed else 0
+        print("\n".join(transaction_lines(result)))
+
+    return transaction_exit_code(result)
 
 
 def transaction_main(args, config: ToolkitConfig) -> int:

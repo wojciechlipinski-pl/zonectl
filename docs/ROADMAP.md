@@ -22,7 +22,7 @@ zrealizowane, a `[ ]` pozostają do wykonania.
 - [x] Dodać test zachowania po nieudanym `rndc reload`.
 - [x] Potwierdzić automatyczny rollback pliku strefy po błędzie reloadu.
 - [x] Opisać procedurę ręcznego rollbacku po błędzie reloadu BIND.
-- [ ] Ujednolicić prezentację błędów warstwy UI i core.
+- [x] Ujednolicić prezentację błędów warstwy UI i core.
 
 ## Etap 2 — kontrola i historia zmian
 

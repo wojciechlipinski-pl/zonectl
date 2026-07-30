@@ -22,6 +22,7 @@ from ..core.zone_edit_session import (
     ZoneEditSession,
     ZoneEditSessionError,
 )
+from ..presentation import transaction_lines, transaction_title
 
 
 @dataclass(slots=True)
@@ -938,41 +939,11 @@ class CursesApp:
         result: TransactionResult,
     ) -> None:
         """Wyświetla wynik zapisu lub rollbacku transakcji."""
-        lines = [
-            f"Transakcja: {result.transaction_id}",
-            f"Strefa:      {result.zone}",
-            f"Status:      {result.status}",
-            f"Commit:      {'TAK' if result.committed else 'NIE'}",
-            f"Rollback:    {'TAK' if result.rolled_back else 'NIE'}",
-        ]
-
-        if result.backup:
-            lines.append(f"Backup:      {result.backup}")
-
-        lines.append("")
-        lines.append("Etapy:")
-
-        for step in result.steps:
-            marker = "OK" if step.ok else "BŁĄD"
-            lines.append(
-                f"{marker:<5} {step.name:<20} {step.message}"
-            )
-
-            if not step.ok:
-                if step.stderr.strip():
-                    lines.append(
-                        f"      stderr: {step.stderr.strip()}"
-                    )
-                elif step.stdout.strip():
-                    lines.append(
-                        f"      stdout: {step.stdout.strip()}"
-                    )
-
         self._message_view(
             win,
-            title=f"Wynik zapisu: {result.status}",
-            lines=lines,
-            error=not result.committed,
+            title=transaction_title(result),
+            lines=transaction_lines(result),
+            error=not result.ok,
         )
 
     def _pending_changes_view(
