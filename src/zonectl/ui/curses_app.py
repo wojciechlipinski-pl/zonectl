@@ -21,6 +21,7 @@ from ..core.config import ToolkitConfig
 from ..core.edit_lock import ZoneEditLockedError
 from ..core.models import Health, Zone, ZoneStatus
 from ..core.paths import EDIT_LOCK_DIR
+from ..core.record_filter import RecordFilter, RecordFilterError
 from ..core.transaction import TransactionEngine, TransactionResult
 from ..core.zone_edit_session import (
     ZoneEditSession,
@@ -413,32 +414,10 @@ class CursesApp:
             else:
                 result = sorted(views, key=name_key)
 
-            query = search_query.strip().casefold()
-
-            if not query:
-                return result
-
-            filtered = []
-
-            for view in result:
-                record = view.record
-                owner = record.relative_owner(zone.name)
-                ttl = "" if record.ttl is None else str(record.ttl)
-
-                searchable = " ".join(
-                    (
-                        view.marker,
-                        owner,
-                        record.rtype,
-                        ttl,
-                        record.rdata,
-                    )
-                ).casefold()
-
-                if query in searchable:
-                    filtered.append(view)
-
-            return filtered
+            return RecordFilter(search_query).apply(
+                result,
+                zone.name,
+            )
 
         def prompt_search() -> str | None:
             height, width = win.getmaxyx()
@@ -635,6 +614,21 @@ class CursesApp:
                 value = prompt_search()
 
                 if value is not None:
+                    try:
+                        RecordFilter(value)
+                    except RecordFilterError as exc:
+                        self._message_view(
+                            win,
+                            title="Nieprawidłowy filtr",
+                            lines=[
+                                str(exc),
+                                "",
+                                "Przykład: type:A ttl>=3600 -name:test",
+                            ],
+                            error=True,
+                        )
+                        continue
+
                     search_query = value
                     selected = 0
                     offset = 0

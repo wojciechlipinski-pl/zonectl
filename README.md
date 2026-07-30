@@ -19,6 +19,24 @@ zctl domains --grouped
 
 Stare polecenie `elkman-dns` pozostaje chwilowo dostępne i wyświetla ostrzeżenie.
 
+## Filtrowanie rekordów
+
+W widoku rekordów naciśnij `/`. Zwykły tekst nadal przeszukuje wszystkie
+widoczne pola. Filtry pól można łączyć spacjami (AND):
+
+```text
+type:A ttl>=3600
+name:www -value:192.0.2.10
+name~"^_acme" type:TXT
+status:modified
+ttl:-
+```
+
+Obsługiwane pola to `name`, `type`, `ttl`, `value` i `status`. Operator
+`~` oznacza wyrażenie regularne, początkowy `-` neguje warunek, a wartość
+w cudzysłowie może zawierać spacje. Status przyjmuje wartości `added`,
+`modified`, `deleted` i `unchanged`.
+
 ## Transakcje
 
 ```bash
