@@ -18,9 +18,9 @@ zrealizowane, a `[ ]` pozostają do wykonania.
 
 - [ ] Dodać test zapisu z widoku Pending Changes.
 - [ ] Dodać test odświeżenia modelu po COMMIT.
-- [ ] Dodać test zachowania po nieudanym `named-checkzone`.
-- [ ] Dodać test zachowania po nieudanym `rndc reload`.
-- [ ] Potwierdzić automatyczny rollback pliku strefy po błędzie reloadu.
+- [x] Dodać test zachowania po nieudanym `named-checkzone`.
+- [x] Dodać test zachowania po nieudanym `rndc reload`.
+- [x] Potwierdzić automatyczny rollback pliku strefy po błędzie reloadu.
 - [ ] Opisać procedurę ręcznego rollbacku po błędzie reloadu BIND.
 - [ ] Ujednolicić prezentację błędów warstwy UI i core.
 
