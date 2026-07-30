@@ -119,7 +119,7 @@ def load_groups_yaml(
 
 class ToolkitConfig:
     """
-    Konfiguracja elkman DNS Toolkit.
+    Konfiguracja ZoneCTL.
 
     Konfiguracja BIND jest źródłem prawdy dla:
 

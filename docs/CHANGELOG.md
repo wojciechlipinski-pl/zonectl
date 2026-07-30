@@ -1,3 +1,13 @@
+# Changelog
+
+## 4.1.0 — ZoneCTL Identity Layer
+
+- rebranding produktu na **ZoneCTL**,
+- nowe polecenie `zctl`,
+- zgodne polecenie `elkman-dns` z ostrzeżeniem,
+- aktualizacja TUI, README i skryptów wdrożeniowych,
+- zachowanie starych ścieżek danych i pakietu Python do następnej migracji.
+
 # Historia zmian
 
 > Wygenerowano z Git: `2026-07-29T18:55:06+02:00`.

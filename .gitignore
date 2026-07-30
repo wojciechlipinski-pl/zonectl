@@ -47,3 +47,5 @@ Thumbs.db
 # Dokumentacja — lokalne kopie generatora
 .docs-backup-*
 AI_CONTEXT.md.backup-*
+.migration-backups/
+.zonectl-migrations.json

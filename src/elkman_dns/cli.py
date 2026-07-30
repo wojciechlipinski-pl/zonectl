@@ -13,7 +13,10 @@ from .ui.curses_app import CursesApp
 
 
 def parser() -> argparse.ArgumentParser:
-    p = argparse.ArgumentParser(prog="elkman-dns", description=f"elkman DNS Toolkit {__version__}")
+    p = argparse.ArgumentParser(
+        prog="zctl",
+        description=f"ZoneCTL {__version__} — Transactional DNS Management Toolkit",
+    )
     p.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     p.add_argument("--config", type=Path, default=DEFAULT_CONFIG)
     p.add_argument("--zones", type=Path, default=DEFAULT_ZONES)
@@ -62,7 +65,7 @@ def legacy_main(arguments: list[str]) -> int:
     from . import legacy_v220
     old_argv = sys.argv
     try:
-        sys.argv = ["elkman-dns"] + arguments
+        sys.argv = ["zctl"] + arguments
         return int(legacy_v220.main() or 0)
     finally:
         sys.argv = old_argv
@@ -159,7 +162,7 @@ def main(argv: list[str] | None = None) -> int:
         print("\n".join(grouped_lines(config, zones)))
         return 0
     if not sys.stdin.isatty() or not sys.stdout.isatty():
-        print("BŁĄD: TUI wymaga interaktywnego terminala. Użyj: elkman-dns domains", file=sys.stderr)
+        print("BŁĄD: TUI wymaga interaktywnego terminala. Użyj: zctl domains", file=sys.stderr)
         return 2
     CursesApp(
         zones,
@@ -168,6 +171,14 @@ def main(argv: list[str] | None = None) -> int:
         config=config,
     ).run()
     return 0
+
+
+def deprecated_main(argv: list[str] | None = None) -> int:
+    print(
+        "UWAGA: polecenie 'elkman-dns' jest przestarzałe; użyj 'zctl'.",
+        file=sys.stderr,
+    )
+    return main(argv)
 
 
 if __name__ == "__main__":

@@ -211,7 +211,7 @@ class CursesApp:
     def _draw(self, win: curses.window) -> None:
         win.erase()
         height, width = win.getmaxyx()
-        title = f" elkman DNS Toolkit {__version__} "
+        title = f" ZoneCTL {__version__} "
         win.addnstr(0, 0, title.ljust(width), width, curses.A_REVERSE | curses.A_BOLD)
         checked = len(self.statuses)
         subtitle = (

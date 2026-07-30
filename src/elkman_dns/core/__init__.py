@@ -1,1 +1,1 @@
-"""Core services for elkman DNS Toolkit."""
+"""Core services for ZoneCTL."""

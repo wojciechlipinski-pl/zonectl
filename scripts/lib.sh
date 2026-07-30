@@ -1,14 +1,15 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-APP_NAME="elkman-dns"
+APP_NAME="zonectl"
 
-APP_ROOT="/opt/elkman-dns"
+APP_ROOT="/opt/zonectl"
 RELEASES_DIR="${APP_ROOT}/releases"
 CURRENT_LINK="${APP_ROOT}/current"
 PREVIOUS_LINK="${APP_ROOT}/previous"
 
-BIN_LINK="/usr/local/bin/elkman-dns"
+BIN_LINK="/usr/local/bin/zctl"
+LEGACY_BIN_LINK="/usr/local/bin/elkman-dns"
 
 CONFIG_DIR="/etc/elkman-dns-toolkit"
 STATE_DIR="/var/lib/elkman-dns-toolkit"
@@ -137,8 +138,11 @@ switch_release() {
         "$CURRENT_LINK"
 
     atomic_symlink \
-        "${CURRENT_LINK}/venv/bin/elkman-dns" \
+        "${CURRENT_LINK}/venv/bin/zctl" \
         "$BIN_LINK"
+    atomic_symlink \
+        "${CURRENT_LINK}/venv/bin/elkman-dns" \
+        "$LEGACY_BIN_LINK"
 }
 
 restore_release_links() {
@@ -163,10 +167,10 @@ restore_release_links() {
 
     if [ -L "$CURRENT_LINK" ]; then
         atomic_symlink \
-            "${CURRENT_LINK}/venv/bin/elkman-dns" \
+            "${CURRENT_LINK}/venv/bin/zctl" \
             "$BIN_LINK"
     else
-        rm -f "$BIN_LINK"
+        rm -f "$BIN_LINK" "$LEGACY_BIN_LINK"
     fi
 }
 
@@ -210,7 +214,7 @@ print_release_summary() {
 
     printf '\n'
     printf '%s\n' '----------------------------------------'
-    printf 'elkman DNS Toolkit %s\n' "$version"
+    printf 'ZoneCTL %s\n' "$version"
     printf '%s\n' '----------------------------------------'
     printf 'Wydanie:   %s\n' "$release_dir"
     printf 'Aktywne:   %s\n' "$CURRENT_LINK"

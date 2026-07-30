@@ -3,9 +3,9 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "elkman-dns-toolkit"
-version = "3.2.3"
-description = "Administrative toolkit for BIND DNS servers"
+name = "zonectl"
+version = "4.1.0"
+description = "Transactional DNS Management Toolkit"
 readme = "README.md"
 requires-python = ">=3.11"
 authors = [
@@ -13,7 +13,8 @@ authors = [
 ]
 
 [project.scripts]
-elkman-dns = "elkman_dns.cli:main"
+zctl = "elkman_dns.cli:main"
+elkman-dns = "elkman_dns.cli:deprecated_main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}

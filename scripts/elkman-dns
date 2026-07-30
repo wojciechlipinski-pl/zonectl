@@ -1,6 +1,4 @@
 #!/bin/sh
 set -eu
-
-export PYTHONPATH="/usr/local/lib${PYTHONPATH:+:$PYTHONPATH}"
-
-exec /usr/bin/python3 -m elkman_dns.cli "$@"
+printf '%s\n' "UWAGA: polecenie 'elkman-dns' jest przestarzałe; użyj 'zctl'." >&2
+exec "$(dirname "$0")/zctl" "$@"

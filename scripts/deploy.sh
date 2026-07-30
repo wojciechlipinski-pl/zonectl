@@ -18,7 +18,7 @@ SOURCE_DIR="$(realpath "${1:-$(pwd)}")"
 
 VERSION="$(read_project_version "$SOURCE_DIR")"
 
-log "Rozpoczynam wdrożenie elkman-dns ${VERSION}"
+log "Rozpoczynam wdrożenie ZoneCTL ${VERSION}"
 
 prepare_system_directories
 

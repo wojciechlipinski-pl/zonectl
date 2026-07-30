@@ -18,14 +18,14 @@ fi
 
 VENV="$RELEASE_PATH/venv"
 PYTHON="$VENV/bin/python"
-CLI="$VENV/bin/elkman-dns"
+CLI="$VENV/bin/zctl"
 
 log "Weryfikacja wydania"
 
 [ -x "$PYTHON" ] || die "Brak interpretera Python"
 ok "Python"
 
-[ -x "$CLI" ] || die "Brak programu elkman-dns"
+[ -x "$CLI" ] || die "Brak programu zctl"
 ok "CLI"
 
 VERSION="$("$CLI" --version)"

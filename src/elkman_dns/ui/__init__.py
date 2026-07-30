@@ -1,1 +1,1 @@
-"""Terminal UI for elkman DNS Toolkit."""
+"""Terminal UI for ZoneCTL."""
