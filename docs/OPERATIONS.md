@@ -262,6 +262,106 @@ named-checkzone example.pl /ścieżka/do/pliku.strefy
 
 Nazwy usługi mogą różnić się zależnie od systemu, np. `bind9` lub `named`.
 
+## Cykl życia stref DNS w ZoneCTL 4.4
+
+Każda operacja modyfikująca system wymaga jawnego `--commit`. Bez tej opcji
+polecenia wykonują dry-run. Strefy zarządzane przez ZoneCTL mają osobne
+deklaracje w `/etc/bind/zonectl-zones.d`, dołączane przez indeks
+`/etc/bind/zonectl-zones.conf`.
+
+### Utworzenie strefy
+
+```bash
+zctl zone create example.pl \
+  --primary-ns ns1.example.pl. \
+  --admin hostmaster.example.pl. \
+  --ns ns1.example.pl. \
+  --ns ns2.example.pl. \
+  --ipv4 192.0.2.10 \
+  --www
+
+# Po sprawdzeniu planu:
+zctl zone create example.pl \
+  --primary-ns ns1.example.pl. \
+  --admin hostmaster.example.pl. \
+  --ns ns1.example.pl. \
+  --ns ns2.example.pl. \
+  --ipv4 192.0.2.10 \
+  --www --commit
+```
+
+Transakcja wykonuje `named-checkzone`, `named-checkconf`, `rndc reconfig`
+i `rndc zonestatus`. Błąd aktywacji powoduje automatyczny rollback.
+
+### Wyłączenie i przywrócenie
+
+Wyłączenie zachowuje plik strefy, przenosi deklarację do
+`/var/lib/zonectl/disabled-zones` i usuwa include z aktywnego indeksu.
+
+```bash
+zctl zone disable example.pl --reason "koniec obsługi"
+zctl zone disable example.pl --reason "koniec obsługi" --commit
+
+zctl zone restore example.pl
+zctl zone restore example.pl --commit
+```
+
+### Kwarantanna
+
+Kwarantanna jest dostępna tylko dla uprzednio wyłączonej strefy. Wymaga
+jednocześnie `--commit` i wpisania pełnej nazwy strefy. Pakiet zawiera
+`zone.db`, `zone.conf`, `manifest.json` oraz sumy SHA-256.
+
+```bash
+zctl zone quarantine example.pl \
+  --reason "zakończenie retencji" \
+  --confirm example.pl \
+  --commit
+```
+
+Pakiety znajdują się w `/var/lib/zonectl/quarantine/NAZWA_STREFY/`.
+Nie należy usuwać ich ręcznie.
+
+### Odtworzenie z kwarantanny
+
+Należy jawnie wskazać konkretny katalog pakietu. Po odtworzeniu pakiet
+pozostaje niezmieniony jako trwały ślad i źródło kolejnego odtworzenia.
+
+```bash
+zctl zone quarantine-restore example.pl \
+  --package /var/lib/zonectl/quarantine/example.pl/TRANSAKCJA
+
+zctl zone quarantine-restore example.pl \
+  --package /var/lib/zonectl/quarantine/example.pl/TRANSAKCJA \
+  --commit
+```
+
+Po każdej operacji sprawdź `named-checkconf`, `rndc zonestatus` oraz manifest
+transakcji. Nie edytuj ręcznie indeksu ani deklaracji w trakcie transakcji.
+
+## Backup Veeam i backupy ZoneCTL
+
+Podstawowym zabezpieczeniem serwera `tanatos` jest backup całej maszyny
+wirtualnej VMware wykonywany przez Veeam. Pozwala on odtworzyć system,
+konfigurację BIND, pliki stref, dane ZoneCTL i historię operacji jako spójny
+punkt w czasie.
+
+Manifesty, snapshoty i pakiety kwarantanny ZoneCTL są zabezpieczeniem
+operacyjnym do szybkiego cofania pojedynczych zmian. Nie zastępują Veeam.
+Repozytorium Git przechowuje historię kodu aplikacji i również nie zastępuje
+backupu maszyny wirtualnej.
+
+Przed wydaniem, migracją lub większą zmianą konfiguracji należy potwierdzić,
+że ostatnie zadanie Veeam zakończyło się powodzeniem. Po odtworzeniu maszyny
+z Veeam trzeba wykonać co najmniej:
+
+```bash
+named-checkconf /etc/bind/named.conf
+rndc status
+zctl domains
+zctl tui
+```
+
 ## Wdrożenie nowego wydania
 
 Przed wdrożeniem:

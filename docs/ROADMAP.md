@@ -45,18 +45,19 @@ zrealizowane, a `[ ]` pozostają do wykonania.
 
 ### Tworzenie strefy
 
-- [ ] Dodać kreator nowej domeny w TUI i odpowiadające mu polecenie CLI.
+- [x] Dodać polecenie CLI tworzenia domeny z dry-run i jawnym `--commit`.
+- [ ] Dodać kreator nowej domeny w TUI.
 - [x] Walidować nazwę domeny i odrzucać strefy już istniejące.
 - [ ] Umożliwić wybór grupy, serwerów NS, administratora SOA i parametrów
   czasowych SOA.
 - [x] Generować minimalny plik strefy z SOA, NS i poprawnym serialem.
-- [ ] Opcjonalnie dodawać rekordy A/AAAA dla apexu i `www`.
-- [ ] Dodawać deklarację `primary` do zarządzanego fragmentu konfiguracji
+- [x] Opcjonalnie dodawać rekordy A/AAAA dla apexu i `www`.
+- [x] Dodawać deklarację `primary` do zarządzanego fragmentu konfiguracji
   BIND bez modyfikowania obcych sekcji.
 - [x] Przygotować transakcyjny bootstrap indeksu i katalogu deklaracji BIND,
   z backupem, walidacją i automatycznym rollbackiem.
 - [x] Przed aktywacją wykonywać `named-checkzone` i `named-checkconf`.
-- [ ] Aktywować strefę przez kontrolowane `rndc reconfig` i potwierdzać jej
+- [x] Aktywować strefę przez kontrolowane `rndc reconfig` i potwierdzać jej
   załadowanie.
 - [x] Zapisywać manifest utworzenia, backup konfiguracji i wynik każdego
   etapu.
@@ -66,17 +67,17 @@ zrealizowane, a `[ ]` pozostają do wykonania.
 
 - [x] Dodać rdzeń odwracalnej operacji wyłączenia strefy bez usuwania jej
   danych.
-- [ ] Przed wyłączeniem zapisywać plik strefy, konfigurację i manifest.
-- [ ] Usuwać deklarację strefy z aktywnej konfiguracji przez transakcję.
-- [ ] Potwierdzać przez BIND, że wyłączona strefa nie jest już obsługiwana.
+- [x] Zachowywać plik strefy i deklarację oraz zapisywać manifest wyłączenia.
+- [x] Usuwać deklarację strefy z aktywnej konfiguracji przez transakcję.
+- [x] Potwierdzać przez BIND, że wyłączona strefa nie jest już obsługiwana.
 - [ ] Prowadzić listę stref wyłączonych wraz z datą, operatorem i przyczyną.
 - [x] Dodać transakcyjny rdzeń przywracania wyłączonej strefy z pełną
   walidacją, aktywacją i rollbackiem.
 
 ### Kwarantanna i usuwanie
 
-- [ ] Wymagać wcześniejszego wyłączenia strefy przed jej usunięciem.
-- [ ] Wymagać podwójnego potwierdzenia, w tym wpisania pełnej nazwy domeny.
+- [x] Wymagać wcześniejszego wyłączenia strefy przed kwarantanną.
+- [x] Wymagać podwójnego potwierdzenia: `--commit` i pełnej nazwy domeny.
 - [x] Przenosić dane do chronionej kwarantanny zamiast wykonywać bezpośrednie
   i nieodwracalne usunięcie.
 - [x] Zapisywać sumy kontrolne, manifest i kompletny pakiet odtworzeniowy.
@@ -96,7 +97,7 @@ zrealizowane, a `[ ]` pozostają do wykonania.
 - [ ] Wykluczyć przypadkowe zarządzanie automatyczną strefą RPZ jak zwykłą
   domeną.
 - [ ] Uwzględnić strefy DNSSEC i `inline-signing`.
-- [ ] Udokumentować współpracę z backupem Veeam jako głównym zabezpieczeniem
+- [x] Udokumentować współpracę z backupem Veeam jako głównym zabezpieczeniem
   maszyny wirtualnej.
 
 ## Jakość techniczna
