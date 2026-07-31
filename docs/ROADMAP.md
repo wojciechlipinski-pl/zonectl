@@ -53,6 +53,8 @@ zrealizowane, a `[ ]` pozostają do wykonania.
 - [ ] Opcjonalnie dodawać rekordy A/AAAA dla apexu i `www`.
 - [ ] Dodawać deklarację `primary` do zarządzanego fragmentu konfiguracji
   BIND bez modyfikowania obcych sekcji.
+- [x] Przygotować transakcyjny bootstrap indeksu i katalogu deklaracji BIND,
+  z backupem, walidacją i automatycznym rollbackiem.
 - [x] Przed aktywacją wykonywać `named-checkzone` i `named-checkconf`.
 - [ ] Aktywować strefę przez kontrolowane `rndc reconfig` i potwierdzać jej
   załadowanie.
