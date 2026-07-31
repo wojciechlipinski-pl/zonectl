@@ -1,7 +1,31 @@
 # Historia zmian
 
-> Wygenerowano z Git: `2026-07-31T01:36:32+02:00`.
+> Wygenerowano z Git: `2026-07-31T14:08:34+02:00`.
 
+- `2026-07-31` — `681f2ce` — release: prepare ZoneCTL 4.4.0
+- `2026-07-31` — `4df1e1c` — test: integrate zone lifecycle with real BIND validators
+- `2026-07-31` — `acf2383` — feat: protect DNSSEC zones from lifecycle operations
+- `2026-07-31` — `d2afd39` — feat: protect RPZ from zone lifecycle operations
+- `2026-07-31` — `78477f9` — feat: inventory disabled and quarantined zones
+- `2026-07-31` — `5064e30` — docs: document ZoneCTL 4.4 lifecycle operations
+- `2026-07-31` — `0a20bfe` — feat: restore quarantined zones from CLI
+- `2026-07-31` — `dca5779` — feat: restore zones from quarantine packages
+- `2026-07-31` — `feaf53a` — feat: quarantine disabled zones from CLI
+- `2026-07-31` — `f60182b` — feat: quarantine disabled zones with recovery package
+- `2026-07-31` — `b39daec` — feat: restore disabled zones from CLI
+- `2026-07-31` — `9e0f4b1` — feat: add transactional zone restore engine
+- `2026-07-31` — `65e67b5` — feat: disable zones from CLI
+- `2026-07-31` — `1ed31ab` — feat: add reversible zone disable transaction
+- `2026-07-31` — `3614afa` — fix: inherit zone file ownership from parent directory
+- `2026-07-31` — `737f480` — feat: create and activate zones from CLI
+- `2026-07-31` — `044d3ca` — fix: preserve BIND configuration permissions
+- `2026-07-31` — `209d4a4` — feat: add transactional BIND bootstrap
+- `2026-07-31` — `a5242b8` — refactor: store each managed zone in a separate BIND file
+- `2026-07-31` — `4bb00cb` — test: validate zone creation with real BIND tools
+- `2026-07-31` — `d2c62f6` — feat: add transactional zone creation engine
+- `2026-07-31` — `016697f` — feat: add side-effect-free zone creation plans
+- `2026-07-31` — `19107cc` — docs: plan DNS zone lifecycle management
+- `2026-07-31` — `4b2cf0c` — docs: regenerate documentation for 4.3.0
 - `2026-07-31` — `6545089` — release: prepare ZoneCTL 4.3.0
 - `2026-07-31` — `728d7b3` — feat: add multi-zone editing sessions
 - `2026-07-31` — `e1c4ebb` — feat: record bulk changes as one transaction

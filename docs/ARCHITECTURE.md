@@ -1,6 +1,6 @@
 # Architektura
 
-> Wygenerowano z importów AST: `2026-07-31T01:36:32+02:00`.
+> Wygenerowano z importów AST: `2026-07-31T14:08:34+02:00`.
 
 ## `src/elkman_dns/__init__.py`
 
@@ -30,6 +30,13 @@ Brak docstringa.
 - `core.bind: BindService`
 - `core.config: DEFAULT_CONFIG, DEFAULT_GROUPS, DEFAULT_ZONES, ToolkitConfig`
 - `core.transaction: TransactionEngine, TransactionResult`
+- `core.zone_create_transaction: ZoneCreateTransaction`
+- `core.zone_disable_transaction: ZoneDisableError, ZoneDisableTransaction`
+- `core.zone_restore_transaction: ZoneRestoreError, ZoneRestoreTransaction`
+- `core.zone_quarantine: ZoneQuarantineError, ZoneQuarantineTransaction`
+- `core.zone_quarantine_restore: QuarantineRestoreError, QuarantineRestoreTransaction`
+- `core.zone_lifecycle: ZoneCreateRequest, ZoneLifecycleError, ZoneLifecyclePlanner`
+- `core.zone_inventory: ZoneInventory`
 - `presentation: transaction_exit_code, transaction_lines`
 - `ui.curses_app: CursesApp`
 
@@ -65,6 +72,24 @@ Brak docstringa.
 - `models: Health, Zone, ZoneStatus`
 - `runner: run`
 - `zone_parser: DNSRecord, ZoneRecordParser`
+
+## `src/zonectl/core/bind_bootstrap.py`
+
+Brak docstringa.
+
+**Importy:**
+
+- `__future__: annotations`
+- `json`
+- `os`
+- `stat`
+- `tempfile`
+- `uuid`
+- `dataclasses: asdict, dataclass, field`
+- `datetime: datetime, timezone`
+- `pathlib: Path`
+- `typing: Callable`
+- `runner: run`
 
 ## `src/zonectl/core/bind_config.py`
 
@@ -245,6 +270,44 @@ Brak docstringa.
 - `paths: AUDIT_LOG, LOCK_DIR, STATE_DIR, TRANSACTION_BACKUP_DIR, TRANSACTION_DIR`
 - `runner: CommandResult, run`
 
+## `src/zonectl/core/zone_create_transaction.py`
+
+Brak docstringa.
+
+**Importy:**
+
+- `__future__: annotations`
+- `json`
+- `os`
+- `tempfile`
+- `time`
+- `uuid`
+- `dataclasses: asdict, dataclass, field`
+- `datetime: datetime, timezone`
+- `pathlib: Path`
+- `typing: Callable`
+- `runner: run`
+- `zone_lifecycle: ZoneCreatePlan`
+
+## `src/zonectl/core/zone_disable_transaction.py`
+
+Brak docstringa.
+
+**Importy:**
+
+- `__future__: annotations`
+- `json`
+- `getpass`
+- `os`
+- `tempfile`
+- `time`
+- `uuid`
+- `dataclasses: asdict, dataclass, field`
+- `datetime: datetime, timezone`
+- `pathlib: Path`
+- `typing: Callable`
+- `runner: run`
+
 ## `src/zonectl/core/zone_document.py`
 
 Brak docstringa.
@@ -306,6 +369,33 @@ Brak docstringa.
 - `zone_document: BlankLine, Comment, Directive, RawLine, RecordNode, ZoneDocument`
 - `zone_parser: DNSRecord`
 
+## `src/zonectl/core/zone_inventory.py`
+
+Brak docstringa.
+
+**Importy:**
+
+- `__future__: annotations`
+- `json`
+- `dataclasses: asdict, dataclass`
+- `datetime: datetime, timezone`
+- `pathlib: Path`
+
+## `src/zonectl/core/zone_lifecycle.py`
+
+Brak docstringa.
+
+**Importy:**
+
+- `__future__: annotations`
+- `ipaddress`
+- `re`
+- `dataclasses: asdict, dataclass`
+- `datetime: date`
+- `pathlib: Path`
+- `typing: Iterable`
+- `models: Zone`
+
 ## `src/zonectl/core/zone_model.py`
 
 Brak docstringa.
@@ -326,6 +416,60 @@ Brak docstringa.
 
 - `__future__: annotations`
 - `dataclasses: dataclass`
+
+## `src/zonectl/core/zone_quarantine.py`
+
+Brak docstringa.
+
+**Importy:**
+
+- `__future__: annotations`
+- `getpass`
+- `hashlib`
+- `json`
+- `os`
+- `tempfile`
+- `uuid`
+- `dataclasses: dataclass, field`
+- `datetime: datetime, timezone`
+- `pathlib: Path`
+
+## `src/zonectl/core/zone_quarantine_restore.py`
+
+Brak docstringa.
+
+**Importy:**
+
+- `__future__: annotations`
+- `hashlib`
+- `json`
+- `os`
+- `tempfile`
+- `time`
+- `uuid`
+- `dataclasses: dataclass, field`
+- `datetime: datetime`
+- `pathlib: Path`
+- `typing: Callable`
+- `runner: run`
+
+## `src/zonectl/core/zone_restore_transaction.py`
+
+Brak docstringa.
+
+**Importy:**
+
+- `__future__: annotations`
+- `json`
+- `os`
+- `tempfile`
+- `time`
+- `uuid`
+- `dataclasses: asdict, dataclass, field`
+- `datetime: datetime, timezone`
+- `pathlib: Path`
+- `typing: Callable`
+- `runner: run`
 
 ## `src/zonectl/core/zone_serializer.py`
 

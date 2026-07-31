@@ -1,6 +1,6 @@
 # Dokumentacja modułów
 
-> Wygenerowano z AST: `2026-07-31T01:36:32+02:00`.
+> Wygenerowano z AST: `2026-07-31T14:08:34+02:00`.
 
 ## `src/elkman_dns/__init__.py`
 
@@ -20,43 +20,43 @@ Brak docstringa.
 
 ### `def parser`
 
-Linia: `16`
+Linia: `39`
 
 Brak docstringa.
 
 ### `def legacy_main`
 
-Linia: `76`
+Linia: `347`
 
 Brak docstringa.
 
 ### `def grouped_lines`
 
-Linia: `86`
+Linia: `357`
 
 Brak docstringa.
 
 ### `def print_transaction`
 
-Linia: `100`
+Linia: `371`
 
 Brak docstringa.
 
 ### `def transaction_main`
 
-Linia: `110`
+Linia: `381`
 
 Brak docstringa.
 
 ### `def main`
 
-Linia: `174`
+Linia: `445`
 
 Brak docstringa.
 
 ### `def deprecated_main`
 
-Linia: `208`
+Linia: `826`
 
 Brak docstringa.
 
@@ -108,6 +108,57 @@ Read-only BIND status service used by the Sprint 1 dashboard.
 - `zone_records` — linia 91; zwraca kanoniczną listę rekordów z aktywnego pliku strefy.
 - `parsed_zone_records` — linia 137; zwraca rekordy strefy przekształcone do modelu dnsrecord.
 - `quick_status` — linia 165; brak docstringa.
+
+## `src/zonectl/core/bind_bootstrap.py`
+
+Brak docstringa.
+
+### `class BindBootstrapPlan`
+
+Linia: `17`
+
+Brak docstringa.
+
+**Metody:**
+
+- `actions` — linia 26; brak docstringa.
+
+### `class BindBootstrapStep`
+
+Linia: `44`
+
+Brak docstringa.
+
+### `class BindBootstrapResult`
+
+Linia: `51`
+
+Brak docstringa.
+
+**Metody:**
+
+- `ok` — linia 61; brak docstringa.
+
+### `class BindBootstrapError`
+
+Linia: `68`
+
+Błąd planowania bezpiecznego fragmentu konfiguracji BIND.
+
+### `class BindBootstrapTransaction`
+
+Linia: `72`
+
+Instaluje zarządzany include ZoneCTL z walidacją i rollbackiem.
+
+**Metody:**
+
+- `__init__` — linia 75; brak docstringa.
+- `plan` — linia 87; brak docstringa.
+- `apply` — linia 126; brak docstringa.
+- `_save_manifest` — linia 258; brak docstringa.
+- `_atomic_write` — linia 277; brak docstringa.
+- `_validate_config` — linia 299; brak docstringa.
 
 ## `src/zonectl/core/bind_config.py`
 
@@ -216,9 +267,9 @@ Konfiguracja ZoneCTL. Konfiguracja BIND jest źródłem prawdy dla: - nazw stref
 - `_zone_override` — linia 235; brak docstringa.
 - `_group_for` — linia 247; brak docstringa.
 - `_zone_from_discovery` — linia 263; brak docstringa.
-- `_zones_from_discovery` — linia 328; brak docstringa.
-- `_zones_from_legacy_config` — linia 342; tryb zgodności ze starym zones.conf. używany wyłącznie, gdy auto_discover_zones = no.
-- `zones` — linia 414; brak docstringa.
+- `_zones_from_discovery` — linia 330; brak docstringa.
+- `_zones_from_legacy_config` — linia 344; tryb zgodności ze starym zones.conf. używany wyłącznie, gdy auto_discover_zones = no.
+- `zones` — linia 422; brak docstringa.
 
 ## `src/zonectl/core/discovery.py`
 
@@ -330,7 +381,7 @@ Brak docstringa.
 
 ### `class ZoneStatus`
 
-Linia: `30`
+Linia: `32`
 
 Brak docstringa.
 
@@ -600,6 +651,92 @@ Atomic zone-file replacement with validation, backup, reload and rollback.
 - `_save_manifest` — linia 677; brak docstringa.
 - `_finish` — linia 689; brak docstringa.
 
+## `src/zonectl/core/zone_create_transaction.py`
+
+Brak docstringa.
+
+### `class ZoneCreateStep`
+
+Linia: `18`
+
+Brak docstringa.
+
+### `class ZoneCreateResult`
+
+Linia: `25`
+
+Brak docstringa.
+
+**Metody:**
+
+- `ok` — linia 35; brak docstringa.
+
+### `class ZoneCreateTransaction`
+
+Linia: `44`
+
+Atomowo zastosuj plan utworzenia strefy z rollbackiem.
+
+**Metody:**
+
+- `__init__` — linia 47; brak docstringa.
+- `apply` — linia 66; brak docstringa.
+- `_finish` — linia 259; brak docstringa.
+- `_atomic_write` — linia 294; brak docstringa.
+- `_validate_zone` — linia 319; brak docstringa.
+- `_validate_config` — linia 330; brak docstringa.
+- `_activate_bind` — linia 341; brak docstringa.
+- `_verify_loaded` — linia 351; brak docstringa.
+
+## `src/zonectl/core/zone_disable_transaction.py`
+
+Brak docstringa.
+
+### `class ZoneDisablePlan`
+
+Linia: `18`
+
+Brak docstringa.
+
+### `class ZoneDisableStep`
+
+Linia: `31`
+
+Brak docstringa.
+
+### `class ZoneDisableResult`
+
+Linia: `38`
+
+Brak docstringa.
+
+**Metody:**
+
+- `ok` — linia 49; brak docstringa.
+
+### `class ZoneDisableError`
+
+Linia: `57`
+
+Nie można bezpiecznie zaplanować wyłączenia strefy.
+
+### `class ZoneDisableTransaction`
+
+Linia: `61`
+
+Odwracalnie usuwa strefę z aktywnej konfiguracji BIND.
+
+**Metody:**
+
+- `__init__` — linia 64; brak docstringa.
+- `plan` — linia 80; brak docstringa.
+- `apply` — linia 125; brak docstringa.
+- `_save` — linia 250; brak docstringa.
+- `_atomic_write` — linia 265; brak docstringa.
+- `_validate_config` — linia 283; brak docstringa.
+- `_activate_bind` — linia 292; brak docstringa.
+- `_verify_unavailable` — linia 301; brak docstringa.
+
 ## `src/zonectl/core/zone_document.py`
 
 Brak docstringa.
@@ -778,6 +915,89 @@ Zachowujący formatowanie parser źródłowego pliku strefy. Parser interpretuje
 - `_tokenise` — linia 372; podziel linię według białych znaków, zachowując tekst w cudzysłowach.
 - `_parenthesis_delta` — linia 425; policz nawiasy poza cudzysłowami. nie interpretuje rekordów wielowierszowych, lecz pozwala zachować cały blok jako rawline.
 
+## `src/zonectl/core/zone_inventory.py`
+
+Brak docstringa.
+
+### `class InactiveZone`
+
+Linia: `10`
+
+Brak docstringa.
+
+**Metody:**
+
+- `to_dict` — linia 19; brak docstringa.
+
+### `class ZoneInventory`
+
+Linia: `23`
+
+Read-only inventory of disabled and quarantined zones.
+
+**Metody:**
+
+- `__init__` — linia 26; brak docstringa.
+- `records` — linia 38; brak docstringa.
+- `_disabled` — linia 46; brak docstringa.
+- `_quarantined` — linia 69; brak docstringa.
+- `_latest_disable_manifest` — linia 91; brak docstringa.
+- `_record` — linia 107; brak docstringa.
+- `_load_json` — linia 130; brak docstringa.
+- `_mtime` — linia 138; brak docstringa.
+
+## `src/zonectl/core/zone_lifecycle.py`
+
+Brak docstringa.
+
+### `class ZoneLifecycleError`
+
+Linia: `13`
+
+Nieprawidłowy lub kolidujący plan cyklu życia strefy.
+
+### `def normalize_zone_name`
+
+Linia: `20`
+
+Znormalizuj i zwaliduj nazwę strefy DNS.
+
+### `def normalize_fqdn`
+
+Linia: `35`
+
+Zwróć bezpieczną absolutną nazwę DNS zakończoną kropką.
+
+### `class ZoneCreateRequest`
+
+Linia: `47`
+
+Brak docstringa.
+
+### `class ZoneCreatePlan`
+
+Linia: `68`
+
+Brak docstringa.
+
+**Metody:**
+
+- `to_dict` — linia 78; brak docstringa.
+
+### `class ZoneLifecyclePlanner`
+
+Linia: `88`
+
+Twórz pozbawione skutków ubocznych plany zarządzania strefami.
+
+**Metody:**
+
+- `__init__` — linia 91; brak docstringa.
+- `ensure_lifecycle_allowed` — linia 104; reject lifecycle mutations for automatically managed rpz zones.
+- `plan_create` — linia 137; zbuduj plan utworzenia strefy bez zapisywania plików.
+- `_address` — linia 219; brak docstringa.
+- `_zone_text` — linia 235; brak docstringa.
+
 ## `src/zonectl/core/zone_model.py`
 
 Brak docstringa.
@@ -887,6 +1107,151 @@ Parser kanonicznego wyjścia `named-checkzone -D`.
 
 - `parse_output` — linia 39; brak docstringa.
 - `parse_line` — linia 67; oczekiwany format kanoniczny: owner ttl class type rdata rdata pozostaje tekstem, dzięki czemu zachowujemy składnię rekordów txt, soa, mx, srv, caa i innych typów.
+
+## `src/zonectl/core/zone_quarantine.py`
+
+Brak docstringa.
+
+### `class ZoneQuarantinePlan`
+
+Linia: `15`
+
+Brak docstringa.
+
+### `class ZoneQuarantineStep`
+
+Linia: `25`
+
+Brak docstringa.
+
+### `class ZoneQuarantineResult`
+
+Linia: `32`
+
+Brak docstringa.
+
+**Metody:**
+
+- `ok` — linia 43; brak docstringa.
+
+### `class ZoneQuarantineError`
+
+Linia: `47`
+
+Strefa nie spełnia warunków bezpiecznej kwarantanny.
+
+### `class ZoneQuarantineTransaction`
+
+Linia: `51`
+
+Przenosi uprzednio wyłączoną strefę do pakietu odtworzeniowego.
+
+**Metody:**
+
+- `plan` — linia 55; brak docstringa.
+- `apply` — linia 96; brak docstringa.
+- `_sha256` — linia 226; brak docstringa.
+- `_atomic_write` — linia 234; brak docstringa.
+
+## `src/zonectl/core/zone_quarantine_restore.py`
+
+Brak docstringa.
+
+### `class QuarantineRestorePlan`
+
+Linia: `18`
+
+Brak docstringa.
+
+### `class QuarantineRestoreStep`
+
+Linia: `32`
+
+Brak docstringa.
+
+### `class QuarantineRestoreResult`
+
+Linia: `39`
+
+Brak docstringa.
+
+**Metody:**
+
+- `ok` — linia 49; brak docstringa.
+
+### `class QuarantineRestoreError`
+
+Linia: `58`
+
+Pakiet kwarantanny nie pozwala na bezpieczne odtworzenie.
+
+### `class QuarantineRestoreTransaction`
+
+Linia: `62`
+
+Odtwarza i aktywuje strefę ze zweryfikowanego pakietu kwarantanny.
+
+**Metody:**
+
+- `__init__` — linia 65; brak docstringa.
+- `plan` — linia 79; brak docstringa.
+- `apply` — linia 125; brak docstringa.
+- `_sha256` — linia 241; brak docstringa.
+- `_atomic_write` — linia 245; brak docstringa.
+- `_validate_zone` — linia 261; brak docstringa.
+- `_validate_config` — linia 266; brak docstringa.
+- `_activate_bind` — linia 271; brak docstringa.
+- `_verify_loaded` — linia 276; brak docstringa.
+
+## `src/zonectl/core/zone_restore_transaction.py`
+
+Brak docstringa.
+
+### `class ZoneRestorePlan`
+
+Linia: `17`
+
+Brak docstringa.
+
+### `class ZoneRestoreStep`
+
+Linia: `28`
+
+Brak docstringa.
+
+### `class ZoneRestoreResult`
+
+Linia: `35`
+
+Brak docstringa.
+
+**Metody:**
+
+- `ok` — linia 45; brak docstringa.
+
+### `class ZoneRestoreError`
+
+Linia: `54`
+
+Nie można bezpiecznie zaplanować przywrócenia strefy.
+
+### `class ZoneRestoreTransaction`
+
+Linia: `58`
+
+Przywraca wyłączoną strefę do aktywnej konfiguracji BIND.
+
+**Metody:**
+
+- `__init__` — linia 61; brak docstringa.
+- `plan` — linia 77; brak docstringa.
+- `apply` — linia 117; brak docstringa.
+- `_save` — linia 247; brak docstringa.
+- `_atomic_write` — linia 261; brak docstringa.
+- `_validate_zone` — linia 279; brak docstringa.
+- `_validate_config` — linia 288; brak docstringa.
+- `_activate_bind` — linia 297; brak docstringa.
+- `_verify_loaded` — linia 306; brak docstringa.
 
 ## `src/zonectl/core/zone_serializer.py`
 
