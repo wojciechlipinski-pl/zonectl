@@ -18,6 +18,10 @@ from .core.zone_restore_transaction import (
     ZoneRestoreError,
     ZoneRestoreTransaction,
 )
+from .core.zone_quarantine import (
+    ZoneQuarantineError,
+    ZoneQuarantineTransaction,
+)
 from .core.zone_lifecycle import (
     ZoneCreateRequest,
     ZoneLifecycleError,
@@ -199,6 +203,40 @@ def parser() -> argparse.ArgumentParser:
     )
     restore.add_argument("--commit", action="store_true")
     restore.add_argument("--json", action="store_true")
+    quarantine = lifecycle_sub.add_parser(
+        "quarantine",
+        help="przenieś wyłączoną strefę do pakietu odtworzeniowego",
+    )
+    quarantine.add_argument("name")
+    quarantine.add_argument("--reason", required=True)
+    quarantine.add_argument("--confirm")
+    quarantine.add_argument(
+        "--zone-directory",
+        type=Path,
+        default=Path("/var/lib/bind/Primary"),
+    )
+    quarantine.add_argument(
+        "--managed-config",
+        type=Path,
+        default=Path("/etc/bind/zonectl-zones.conf"),
+    )
+    quarantine.add_argument(
+        "--managed-zone-directory",
+        type=Path,
+        default=Path("/etc/bind/zonectl-zones.d"),
+    )
+    quarantine.add_argument(
+        "--disabled-root",
+        type=Path,
+        default=Path("/var/lib/zonectl/disabled-zones"),
+    )
+    quarantine.add_argument(
+        "--quarantine-root",
+        type=Path,
+        default=Path("/var/lib/zonectl/quarantine"),
+    )
+    quarantine.add_argument("--commit", action="store_true")
+    quarantine.add_argument("--json", action="store_true")
 
     tx = sub.add_parser("transaction", aliases=["tx"], help="bezpieczne transakcje na plikach stref")
     txsub = tx.add_subparsers(dest="tx_command", required=True)
@@ -356,6 +394,57 @@ def main(argv: list[str] | None = None) -> int:
         return transaction_main(args, config)
     zones = config.zones()
     if args.command == "zone":
+        if args.zone_command == "quarantine":
+            name = args.name.strip().rstrip(".").casefold()
+            active_declaration = (
+                args.managed_zone_directory / f"{name}.conf"
+            )
+            try:
+                plan = ZoneQuarantineTransaction.plan(
+                    name,
+                    zone_file=args.zone_directory / name,
+                    archived_declaration=(
+                        args.disabled_root / name / f"{name}.conf"
+                    ),
+                    active_declaration=active_declaration,
+                    managed_index=args.managed_config,
+                    quarantine_root=args.quarantine_root,
+                    reason=args.reason,
+                )
+                result = ZoneQuarantineTransaction().apply(
+                    plan,
+                    commit=args.commit,
+                    confirmation=args.confirm,
+                )
+            except (ZoneQuarantineError, OSError) as exc:
+                print(f"BŁĄD: {exc}", file=sys.stderr)
+                return 2
+            if args.json:
+                from dataclasses import asdict
+
+                print(
+                    json.dumps(
+                        asdict(result), ensure_ascii=False, indent=2
+                    )
+                )
+            else:
+                print(f"Transakcja: {result.transaction_id}")
+                print(f"Strefa:     {result.zone}")
+                print(f"Status:     {result.status}")
+                print(f"Przyczyna:  {result.reason}")
+                print(f"Commit:     {'TAK' if result.committed else 'NIE'}")
+                if result.package_directory:
+                    print(f"Pakiet:     {result.package_directory}")
+                print("\nEtapy:")
+                for step in result.steps:
+                    marker = "OK" if step.ok else "BŁĄD"
+                    print(f"[{marker}] {step.name}: {step.message}")
+            return (
+                0
+                if result.ok
+                and result.status in {"DRY-RUN", "QUARANTINED"}
+                else 2
+            )
         if args.zone_command == "restore":
             name = args.name.strip().rstrip(".").casefold()
             try:

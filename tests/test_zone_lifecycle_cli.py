@@ -16,6 +16,10 @@ from zonectl.core.zone_restore_transaction import (
     ZoneRestoreResult,
     ZoneRestoreStep,
 )
+from zonectl.core.zone_quarantine import (
+    ZoneQuarantineResult,
+    ZoneQuarantineStep,
+)
 
 
 class FakeConfig:
@@ -268,3 +272,63 @@ def test_restore_cli_defaults_to_dry_run(
     assert code == 0
     assert calls == [(False, "example.invalid")]
     assert "Status:     DRY-RUN" in capsys.readouterr().out
+
+
+def test_quarantine_cli_passes_commit_and_confirmation(
+    monkeypatch,
+    capsys,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setattr(
+        cli.ToolkitConfig, "load", lambda self: FakeConfig()
+    )
+    zone = tmp_path / "zones/example.invalid"
+    active = tmp_path / "bind/zones.d/example.invalid.conf"
+    archived = tmp_path / "disabled/example.invalid/example.invalid.conf"
+    index = tmp_path / "bind/zones.conf"
+    zone.parent.mkdir(parents=True)
+    active.parent.mkdir(parents=True)
+    archived.parent.mkdir(parents=True)
+    zone.write_text("data\n")
+    archived.write_text("declaration\n")
+    index.write_text("# empty\n")
+    calls = []
+
+    def apply(self, plan, *, commit=False, confirmation=None):
+        calls.append((commit, confirmation, plan.reason))
+        return ZoneQuarantineResult(
+            "tx-quarantine",
+            plan.zone_name,
+            "QUARANTINED",
+            plan.reason,
+            package_directory=str(tmp_path / "package"),
+            committed=True,
+            steps=[ZoneQuarantineStep("package", True, "OK")],
+        )
+
+    monkeypatch.setattr(cli.ZoneQuarantineTransaction, "apply", apply)
+    code = cli.main(
+        [
+            "zone",
+            "quarantine",
+            "example.invalid",
+            "--reason",
+            "retired",
+            "--confirm",
+            "example.invalid",
+            "--commit",
+            "--zone-directory",
+            str(zone.parent),
+            "--managed-config",
+            str(index),
+            "--managed-zone-directory",
+            str(active.parent),
+            "--disabled-root",
+            str(tmp_path / "disabled"),
+            "--quarantine-root",
+            str(tmp_path / "quarantine"),
+        ]
+    )
+    assert code == 0
+    assert calls == [(True, "example.invalid", "retired")]
+    assert "Status:     QUARANTINED" in capsys.readouterr().out
