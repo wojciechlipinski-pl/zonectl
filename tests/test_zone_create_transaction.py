@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 from datetime import date
 from pathlib import Path
 
@@ -197,3 +198,26 @@ def test_failed_loaded_verification_rolls_back_and_reconfigures(
     ]
     assert not candidate.zone_file.exists()
     assert not candidate.zone_declaration_file.exists()
+
+
+def test_new_zone_file_inherits_parent_ownership(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    candidate = plan(tmp_path)
+    candidate.zone_file.parent.mkdir(parents=True)
+    parent = candidate.zone_file.parent.stat()
+    calls: list[tuple[int, int]] = []
+    real_chown = os.chown
+
+    def record_chown(path, uid, gid):
+        calls.append((uid, gid))
+        real_chown(path, uid, gid)
+
+    monkeypatch.setattr(os, "chown", record_chown)
+    result = transaction(tmp_path).apply(candidate, commit=True)
+    assert result.status == "COMMIT"
+    assert (parent.st_uid, parent.st_gid) in calls
+    zone_stat = candidate.zone_file.stat()
+    assert zone_stat.st_uid == parent.st_uid
+    assert zone_stat.st_gid == parent.st_gid

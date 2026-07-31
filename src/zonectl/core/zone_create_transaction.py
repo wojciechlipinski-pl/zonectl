@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 import tempfile
+import time
 import uuid
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
@@ -292,6 +293,12 @@ class ZoneCreateTransaction:
     @staticmethod
     def _atomic_write(path: Path, content: bytes) -> None:
         path.parent.mkdir(parents=True, exist_ok=True, mode=0o750)
+        if path.exists():
+            owner = path.stat()
+            uid, gid = owner.st_uid, owner.st_gid
+        else:
+            parent = path.parent.stat()
+            uid, gid = parent.st_uid, parent.st_gid
         fd, temporary_name = tempfile.mkstemp(
             prefix=f".{path.name}.",
             dir=path.parent,
@@ -303,6 +310,7 @@ class ZoneCreateTransaction:
                 handle.flush()
                 os.fsync(handle.fileno())
             os.chmod(temporary, 0o640)
+            os.chown(temporary, uid, gid)
             os.replace(temporary, path)
         finally:
             temporary.unlink(missing_ok=True)
@@ -341,7 +349,14 @@ class ZoneCreateTransaction:
 
     @staticmethod
     def _verify_loaded(name: str) -> ZoneCreateStep:
-        outcome = run(["rndc", "zonestatus", name], 30)
+        outcome = None
+        for attempt in range(10):
+            outcome = run(["rndc", "zonestatus", name], 30)
+            if outcome.returncode == 0:
+                break
+            if attempt < 9:
+                time.sleep(0.25)
+        assert outcome is not None
         return ZoneCreateStep(
             "rndc-zonestatus",
             outcome.returncode == 0,
