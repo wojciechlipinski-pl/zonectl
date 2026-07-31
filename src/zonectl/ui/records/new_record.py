@@ -13,6 +13,7 @@ from ...core.record_validation import (
     validate_rdata as validate_record_rdata,
 )
 from ...core.zone_parser import DNSRecord
+from ..form_style import active_field_attr, field_marker
 
 
 RECORD_TYPES = SUPPORTED_RECORD_TYPES
@@ -361,18 +362,17 @@ class NewRecordDialog:
 
                 for index, label in enumerate(labels):
                     row = 3 + index * 2
-                    attr = (
-                        curses.A_REVERSE
-                        if index == active
-                        else curses.A_NORMAL
-                    )
+                    is_active = index == active
+                    attr = active_field_attr() if is_active else curses.A_NORMAL
+
+                    self._put(win, row, 0, field_marker(is_active), attr)
 
                     self._put(
                         win,
                         row,
                         2,
                         f"{label:<8}: ",
-                        curses.A_BOLD,
+                        attr if is_active else curses.A_BOLD,
                     )
 
                     if index == self.FIELD_TYPE:
@@ -387,6 +387,14 @@ class NewRecordDialog:
                         text.ljust(max(1, width - 15)),
                         attr,
                     )
+
+                self._put(
+                    win,
+                    11,
+                    2,
+                    f"Aktywne pole: {labels[active]}",
+                    active_field_attr(),
+                )
 
                 # Lista typów rozwija się automatycznie,
                 # gdy aktywne jest pole Typ.

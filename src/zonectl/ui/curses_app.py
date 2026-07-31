@@ -7,6 +7,7 @@ from zonectl.ui.function_keys import decode_function_key
 from zonectl.ui.records.editor import RecordEditor
 from zonectl.ui.records.new_record import NewRecordDialog
 from zonectl.ui.records.renderer import RecordRenderer
+from zonectl.ui.zone_create_dialog import ZoneCreateDialog
 
 import curses
 import queue
@@ -35,6 +36,12 @@ from ..core.transaction import TransactionEngine, TransactionResult
 from ..core.zone_edit_session import (
     ZoneEditSession,
     ZoneEditSessionError,
+)
+from ..core.zone_create_transaction import ZoneCreateTransaction
+from ..core.zone_lifecycle import (
+    ZoneCreateRequest,
+    ZoneLifecycleError,
+    ZoneLifecyclePlanner,
 )
 from ..presentation import transaction_lines, transaction_title
 
@@ -66,6 +73,7 @@ class CursesApp:
             if config is not None
             else None
         )
+        self.config = config
         self.read_only = bool(
             config.read_only
             if config is not None
@@ -134,6 +142,8 @@ class CursesApp:
                 self._rebuild_rows(keep_zone=self._selected_zone_name())
             elif key == ord("r"):
                 self._start_refresh(force=True)
+            elif key in (ord("n"), ord("N")):
+                self._create_zone_wizard(stdscr)
         self.stop_event.set()
 
     def _init_colors(self) -> None:
@@ -145,6 +155,7 @@ class CursesApp:
         curses.init_pair(2, curses.COLOR_YELLOW, -1)
         curses.init_pair(3, curses.COLOR_RED, -1)
         curses.init_pair(4, curses.COLOR_CYAN, -1)
+        curses.init_pair(5, curses.COLOR_BLACK, curses.COLOR_CYAN)
 
     def _color(self, health: Health) -> int:
         if not curses.has_colors():
@@ -302,7 +313,7 @@ class CursesApp:
                 attr |= curses.A_REVERSE
             win.addnstr(screen_row, 0, line.ljust(width), max(0, width - 1), attr)
 
-        footer = " Enter otwórz  Spacja zaznacz  m wiele stref  / szukaj  g grupy  F7/s sortuj  r odśwież  q/Esc/F10 wyjście "
+        footer = " Enter otwórz  n nowa strefa  Spacja zaznacz  m wiele stref  / szukaj  g grupy  F7/s sortuj  r odśwież  q/Esc/F10 wyjście "
         win.addnstr(height - 2, 0, footer.ljust(width), max(0, width - 1), curses.A_REVERSE)
         draw_project_credits(win)
         win.refresh()
@@ -361,6 +372,110 @@ class CursesApp:
         self.selected = 0
         self.offset = 0
         self._rebuild_rows()
+
+    def _create_zone_wizard(self, win: curses.window) -> None:
+        """Collect, preview and transactionally create a primary zone."""
+        if self.read_only:
+            self._message_view(
+                win,
+                title="Tryb tylko do odczytu",
+                lines=[
+                    "Tworzenie stref jest zablokowane.",
+                    "Ustawienie: [toolkit] read_only = yes",
+                ],
+                error=True,
+            )
+            return
+
+        toolkit = self.config.toolkit if self.config is not None else {}
+        defaults = {
+            "primary_ns": toolkit.get("default_primary_ns", "ns1.elkman.pl."),
+            "admin": toolkit.get("default_soa_admin", "hostmaster.elkman.pl."),
+            "nameservers": toolkit.get(
+                "default_nameservers",
+                "ns1.elkman.pl., ns2.elkman.pl.",
+            ),
+        }
+
+        form = ZoneCreateDialog().collect(
+            win,
+            primary_ns=defaults["primary_ns"],
+            admin=defaults["admin"],
+            nameservers=defaults["nameservers"],
+        )
+        if form is None:
+            return
+
+        nameservers = tuple(
+            value.strip()
+            for value in form.nameservers.split(",")
+            if value.strip()
+        )
+        try:
+            plan = ZoneLifecyclePlanner(self.all_zones).plan_create(
+                ZoneCreateRequest(
+                    name=form.name,
+                    primary_ns=form.primary_ns,
+                    admin=form.admin,
+                    nameservers=nameservers,
+                    apex_ipv4=form.ipv4 or None,
+                    apex_ipv6=form.ipv6 or None,
+                    add_www=form.add_www,
+                )
+            )
+        except ZoneLifecycleError as exc:
+            self._message_view(
+                win,
+                title="Błąd planu nowej strefy",
+                lines=[str(exc)],
+                error=True,
+            )
+            return
+
+        preview = [
+            f"Strefa: {plan.zone_name}",
+            f"Plik: {plan.zone_file}",
+            f"Deklaracja: {plan.zone_declaration_file}",
+            f"Serial: {plan.serial}",
+            "",
+            *plan.zone_text.splitlines(),
+        ]
+        self._message_view(
+            win,
+            title=f"Plan utworzenia: {plan.zone_name}",
+            lines=preview,
+        )
+        if not CursesDialogs.confirm(
+            win,
+            f"Utworzyć i aktywować strefę {plan.zone_name}?",
+        ):
+            return
+
+        result = ZoneCreateTransaction(
+            Path("/var/backups/zonectl-zone-create/manifests")
+        ).apply(plan, commit=True, activate=True)
+        lines = [
+            f"Status: {result.status}",
+            f"Commit: {'TAK' if result.committed else 'NIE'}",
+            f"Rollback: {'TAK' if result.rolled_back else 'NIE'}",
+            "",
+            *(
+                f"[{'OK' if step.ok else 'BŁĄD'}] "
+                f"{step.name}: {step.message}"
+                for step in result.steps
+            ),
+        ]
+        self._message_view(
+            win,
+            title=f"Tworzenie strefy: {plan.zone_name}",
+            lines=lines,
+            error=not (result.ok and result.status == "COMMIT"),
+        )
+        if result.ok and result.status == "COMMIT":
+            self.all_zones.append(
+                Zone(name=plan.zone_name, file=plan.zone_file)
+            )
+            self._rebuild_rows(keep_zone=plan.zone_name)
 
     def _records_view(
         self,

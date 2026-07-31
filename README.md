@@ -35,6 +35,13 @@ zctl zone inventory
 zctl zone safety
 ```
 
+W głównym ekranie TUI klawisz `n` uruchamia kreator nowej strefy. Kreator
+zbiera parametry, pokazuje plan i wymaga jawnego potwierdzenia utworzenia
+oraz aktywacji strefy.
+
+Formularze stref i rekordów wyróżniają aktywne pole znacznikiem `▶`,
+kontrastowym tłem całego wiersza oraz podpisem bieżącego pola.
+
 Operacje cyklu życia są blokowane dla automatycznych stref RPZ oraz stref,
 w których BIND wykrył `dnssec-policy` lub `inline-signing`.
 

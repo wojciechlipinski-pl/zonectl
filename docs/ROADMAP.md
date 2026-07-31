@@ -46,7 +46,8 @@ zrealizowane, a `[ ]` pozostają do wykonania.
 ### Tworzenie strefy
 
 - [x] Dodać polecenie CLI tworzenia domeny z dry-run i jawnym `--commit`.
-- [ ] Dodać kreator nowej domeny w TUI.
+- [x] Dodać kreator nowej domeny w TUI, oparty na tym samym planie i
+  transakcji co polecenie CLI.
 - [x] Walidować nazwę domeny i odrzucać strefy już istniejące.
 - [ ] Umożliwić wybór grupy, serwerów NS, administratora SOA i parametrów
   czasowych SOA.

@@ -13,6 +13,7 @@ from ...core.record_validation import (
 )
 from ...core.zone_parser import DNSRecord
 from ..function_keys import decode_function_key
+from ..form_style import active_field_attr, field_marker
 
 
 class RecordEditor:
@@ -132,7 +133,7 @@ class RecordEditor:
                         column,
                         visible.ljust(visible_width),
                         visible_width,
-                        curses.A_REVERSE,
+                        active_field_attr(),
                     )
 
                     cursor_column = column + cursor - offset
@@ -345,13 +346,23 @@ class RecordEditor:
                 start=0,
             ):
                 row = 3 + index * 2
-                attr = (
-                    curses.A_REVERSE
-                    if index == active
-                    else curses.A_NORMAL
+                is_active = index == active
+                attr = active_field_attr() if is_active else curses.A_NORMAL
+                put(row, 0, field_marker(is_active), attr)
+                put(
+                    row,
+                    2,
+                    f"{label:<8}: ",
+                    attr if is_active else curses.A_BOLD,
                 )
-                put(row, 2, f"{label:<8}: ", curses.A_BOLD)
-                put(row, 13, value or "", attr)
+                put(row, 13, (value or "").ljust(max(1, width - 15)), attr)
+
+            put(
+                11,
+                2,
+                f"Aktywne pole: {fields[active][0]}",
+                active_field_attr(),
+            )
 
             if message:
                 put(12, 2, message, self._error_attr)
