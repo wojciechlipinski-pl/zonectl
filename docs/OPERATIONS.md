@@ -67,6 +67,13 @@ Weryfikacja wskazanego wydania:
 
 ## Kontrola strefy
 
+### Izolowany test tworzenia strefy
+
+Test integracyjny `test_zone_create_bind_integration.py` uruchamia prawdziwe
+`named-checkzone` i `named-checkconf`, ale wszystkie pliki zapisuje wyłącznie
+w katalogu tymczasowym pytest. Nie wykonuje `rndc reconfig`, nie dołącza
+pliku do aktywnego BIND i nie modyfikuje `/etc/bind`.
+
 W przykładach należy zastąpić `example.pl` właściwą nazwą strefy.
 
 ```bash
