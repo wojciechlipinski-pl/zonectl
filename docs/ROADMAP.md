@@ -77,9 +77,9 @@ zrealizowane, a `[ ]` pozostają do wykonania.
 
 - [ ] Wymagać wcześniejszego wyłączenia strefy przed jej usunięciem.
 - [ ] Wymagać podwójnego potwierdzenia, w tym wpisania pełnej nazwy domeny.
-- [ ] Przenosić dane do chronionej kwarantanny zamiast wykonywać bezpośrednie
+- [x] Przenosić dane do chronionej kwarantanny zamiast wykonywać bezpośrednie
   i nieodwracalne usunięcie.
-- [ ] Zapisywać sumy kontrolne, manifest i kompletny pakiet odtworzeniowy.
+- [x] Zapisywać sumy kontrolne, manifest i kompletny pakiet odtworzeniowy.
 - [ ] Umożliwić odtworzenie strefy z kwarantanny.
 - [ ] Dodać konfigurowalny okres retencji przed trwałym usunięciem.
 - [ ] Trwałe usunięcie udostępnić wyłącznie jako osobną operację
