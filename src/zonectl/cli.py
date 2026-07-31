@@ -22,6 +22,10 @@ from .core.zone_quarantine import (
     ZoneQuarantineError,
     ZoneQuarantineTransaction,
 )
+from .core.zone_quarantine_restore import (
+    QuarantineRestoreError,
+    QuarantineRestoreTransaction,
+)
 from .core.zone_lifecycle import (
     ZoneCreateRequest,
     ZoneLifecycleError,
@@ -237,6 +241,36 @@ def parser() -> argparse.ArgumentParser:
     )
     quarantine.add_argument("--commit", action="store_true")
     quarantine.add_argument("--json", action="store_true")
+    quarantine_restore = lifecycle_sub.add_parser(
+        "quarantine-restore",
+        help="odtwórz strefę ze wskazanego pakietu kwarantanny",
+    )
+    quarantine_restore.add_argument("name")
+    quarantine_restore.add_argument(
+        "--package", type=Path, required=True
+    )
+    quarantine_restore.add_argument(
+        "--zone-directory",
+        type=Path,
+        default=Path("/var/lib/bind/Primary"),
+    )
+    quarantine_restore.add_argument(
+        "--managed-config",
+        type=Path,
+        default=Path("/etc/bind/zonectl-zones.conf"),
+    )
+    quarantine_restore.add_argument(
+        "--managed-zone-directory",
+        type=Path,
+        default=Path("/etc/bind/zonectl-zones.d"),
+    )
+    quarantine_restore.add_argument(
+        "--root-config",
+        type=Path,
+        default=Path("/etc/bind/named.conf"),
+    )
+    quarantine_restore.add_argument("--commit", action="store_true")
+    quarantine_restore.add_argument("--json", action="store_true")
 
     tx = sub.add_parser("transaction", aliases=["tx"], help="bezpieczne transakcje na plikach stref")
     txsub = tx.add_subparsers(dest="tx_command", required=True)
@@ -394,6 +428,50 @@ def main(argv: list[str] | None = None) -> int:
         return transaction_main(args, config)
     zones = config.zones()
     if args.command == "zone":
+        if args.zone_command == "quarantine-restore":
+            name = args.name.strip().rstrip(".").casefold()
+            try:
+                plan = QuarantineRestoreTransaction.plan(
+                    name,
+                    package_directory=args.package,
+                    zone_file=args.zone_directory / name,
+                    active_declaration=(
+                        args.managed_zone_directory / f"{name}.conf"
+                    ),
+                    managed_index=args.managed_config,
+                    root_config=args.root_config,
+                )
+                result = QuarantineRestoreTransaction().apply(
+                    plan, commit=args.commit
+                )
+            except (QuarantineRestoreError, OSError, json.JSONDecodeError) as exc:
+                print(f"BŁĄD: {exc}", file=sys.stderr)
+                return 2
+            if args.json:
+                from dataclasses import asdict
+
+                print(
+                    json.dumps(
+                        asdict(result), ensure_ascii=False, indent=2
+                    )
+                )
+            else:
+                print(f"Transakcja: {result.transaction_id}")
+                print(f"Strefa:     {result.zone}")
+                print(f"Status:     {result.status}")
+                print(f"Pakiet:     {result.package_directory}")
+                print(f"Commit:     {'TAK' if result.committed else 'NIE'}")
+                print(f"Rollback:   {'TAK' if result.rolled_back else 'NIE'}")
+                print("\nEtapy:")
+                for step in result.steps:
+                    marker = "OK" if step.ok else "BŁĄD"
+                    print(f"[{marker}] {step.name}: {step.message}")
+            return (
+                0
+                if result.ok
+                and result.status in {"DRY-RUN", "RESTORED"}
+                else 2
+            )
         if args.zone_command == "quarantine":
             name = args.name.strip().rstrip(".").casefold()
             active_declaration = (

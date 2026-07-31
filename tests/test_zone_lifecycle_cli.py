@@ -20,6 +20,10 @@ from zonectl.core.zone_quarantine import (
     ZoneQuarantineResult,
     ZoneQuarantineStep,
 )
+from zonectl.core.zone_quarantine_restore import (
+    QuarantineRestoreResult,
+    QuarantineRestoreStep,
+)
 
 
 class FakeConfig:
@@ -332,3 +336,59 @@ def test_quarantine_cli_passes_commit_and_confirmation(
     assert code == 0
     assert calls == [(True, "example.invalid", "retired")]
     assert "Status:     QUARANTINED" in capsys.readouterr().out
+
+
+def test_quarantine_restore_cli_uses_explicit_package(
+    monkeypatch,
+    capsys,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setattr(
+        cli.ToolkitConfig, "load", lambda self: FakeConfig()
+    )
+    package = tmp_path / "package"
+    package.mkdir()
+    (package / "zone.db").write_text("zone\n")
+    (package / "zone.conf").write_text("declaration\n")
+    import hashlib
+
+    files = {
+        name: hashlib.sha256((package / name).read_bytes()).hexdigest()
+        for name in ("zone.db", "zone.conf")
+    }
+    (package / "manifest.json").write_text(
+        json.dumps({
+            "zone": "example.invalid",
+            "status": "QUARANTINED",
+            "files": files,
+        })
+    )
+    zones = tmp_path / "zones"
+    declarations = tmp_path / "bind/zones.d"
+    index = tmp_path / "bind/zones.conf"
+    zones.mkdir()
+    declarations.mkdir(parents=True)
+    index.write_text("# empty\n")
+    calls = []
+
+    def apply(self, plan, *, commit=False):
+        calls.append((commit, plan.package_directory))
+        return QuarantineRestoreResult(
+            "tx-qr",
+            plan.zone_name,
+            "DRY-RUN",
+            str(plan.package_directory),
+            steps=[QuarantineRestoreStep("dry-run", True, "OK")],
+        )
+
+    monkeypatch.setattr(cli.QuarantineRestoreTransaction, "apply", apply)
+    code = cli.main([
+        "zone", "quarantine-restore", "example.invalid",
+        "--package", str(package),
+        "--zone-directory", str(zones),
+        "--managed-config", str(index),
+        "--managed-zone-directory", str(declarations),
+    ])
+    assert code == 0
+    assert calls == [(False, package)]
+    assert "Status:     DRY-RUN" in capsys.readouterr().out
