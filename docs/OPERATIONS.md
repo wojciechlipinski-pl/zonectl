@@ -269,6 +269,10 @@ polecenia wykonują dry-run. Strefy zarządzane przez ZoneCTL mają osobne
 deklaracje w `/etc/bind/zonectl-zones.d`, dołączane przez indeks
 `/etc/bind/zonectl-zones.conf`.
 
+Strefy z `health_profile = rpz` są automatycznie zarządzanymi źródłami
+polityki i nie podlegają zwykłemu cyklowi życia domen. ZoneCTL blokuje dla
+nich wyłączenie, przywrócenie i kwarantannę; nadal je monitoruje.
+
 ### Utworzenie strefy
 
 ```bash

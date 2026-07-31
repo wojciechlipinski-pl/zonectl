@@ -95,7 +95,7 @@ zrealizowane, a `[ ]` pozostają do wykonania.
 - [ ] Testować awarie `named-checkzone`, `named-checkconf`, `rndc reconfig`
   i weryfikacji załadowania.
 - [ ] Potwierdzić rollback po awarii na każdym etapie cyklu życia strefy.
-- [ ] Wykluczyć przypadkowe zarządzanie automatyczną strefą RPZ jak zwykłą
+- [x] Wykluczyć przypadkowe zarządzanie automatyczną strefą RPZ jak zwykłą
   domeną.
 - [ ] Uwzględnić strefy DNSSEC i `inline-signing`.
 - [x] Udokumentować współpracę z backupem Veeam jako głównym zabezpieczeniem

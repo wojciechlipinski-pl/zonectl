@@ -478,6 +478,19 @@ def main(argv: list[str] | None = None) -> int:
                     )
                     print(f"  {record.location}")
             return 0
+        if args.zone_command in {
+            "disable",
+            "restore",
+            "quarantine",
+            "quarantine-restore",
+        }:
+            try:
+                ZoneLifecyclePlanner.ensure_lifecycle_allowed(
+                    args.name, zones, args.zone_command
+                )
+            except ZoneLifecycleError as exc:
+                print(f"BŁĄD: {exc}", file=sys.stderr)
+                return 2
         if args.zone_command == "quarantine-restore":
             name = args.name.strip().rstrip(".").casefold()
             try:

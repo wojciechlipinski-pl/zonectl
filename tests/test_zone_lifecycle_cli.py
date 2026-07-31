@@ -31,6 +31,41 @@ class FakeConfig:
         return []
 
 
+class FakeRpzConfig:
+    def zones(self):
+        from zonectl.core.models import Zone
+
+        return [
+            Zone(
+                name="cert-rpz.local",
+                file=Path("/etc/bind/domains_rpz.db"),
+                health_profile="rpz",
+            )
+        ]
+
+
+def test_rpz_disable_is_rejected_before_planning(
+    monkeypatch, capsys
+) -> None:
+    monkeypatch.setattr(
+        cli.ToolkitConfig, "load", lambda self: FakeRpzConfig()
+    )
+
+    code = cli.main(
+        [
+            "zone",
+            "disable",
+            "cert-rpz.local",
+            "--reason",
+            "nie wolno",
+            "--commit",
+        ]
+    )
+
+    assert code == 2
+    assert "strefy RPZ" in capsys.readouterr().err
+
+
 def test_create_plan_cli_outputs_json(
     monkeypatch,
     capsys,

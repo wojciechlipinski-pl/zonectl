@@ -46,6 +46,33 @@ def test_existing_zone_is_rejected_case_insensitively() -> None:
         planner("Example.PL").plan_create(request())
 
 
+@pytest.mark.parametrize(
+    "operation",
+    ["disable", "restore", "quarantine", "quarantine-restore"],
+)
+def test_rpz_zone_rejects_lifecycle_operations(operation: str) -> None:
+    zones = [
+        Zone(
+            name="cert-rpz.local",
+            file=Path("/etc/bind/domains_rpz.db"),
+            health_profile="rpz",
+        )
+    ]
+
+    with pytest.raises(ZoneLifecycleError, match="strefy RPZ"):
+        ZoneLifecyclePlanner.ensure_lifecycle_allowed(
+            "CERT-RPZ.LOCAL.", zones, operation
+        )
+
+
+def test_authoritative_zone_allows_lifecycle_operation() -> None:
+    zones = [Zone(name="example.pl", file=Path("/zones/example.pl"))]
+
+    ZoneLifecyclePlanner.ensure_lifecycle_allowed(
+        "example.pl", zones, "disable"
+    )
+
+
 def test_plan_is_deterministic_and_has_no_side_effects(
     tmp_path: Path,
 ) -> None:

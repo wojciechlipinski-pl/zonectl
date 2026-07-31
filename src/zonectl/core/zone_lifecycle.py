@@ -100,6 +100,28 @@ class ZoneLifecyclePlanner:
         }
         self._today_provider = today_provider
 
+    @staticmethod
+    def ensure_lifecycle_allowed(
+        zone_name: str,
+        existing_zones: Iterable[Zone],
+        operation: str,
+    ) -> None:
+        """Reject lifecycle mutations for automatically managed RPZ zones."""
+        name = zone_name.strip().rstrip(".").casefold()
+        zone = next(
+            (
+                candidate
+                for candidate in existing_zones
+                if candidate.name.rstrip(".").casefold() == name
+            ),
+            None,
+        )
+        if zone is not None and zone.health_profile.casefold() == "rpz":
+            raise ZoneLifecycleError(
+                f"Operacja {operation} jest zablokowana dla automatycznej "
+                f"strefy RPZ: {zone.name}"
+            )
+
     def plan_create(self, request: ZoneCreateRequest) -> ZoneCreatePlan:
         """Zbuduj plan utworzenia strefy bez zapisywania plików."""
         zone_name = normalize_zone_name(request.name)
