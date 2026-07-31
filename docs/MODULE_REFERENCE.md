@@ -1,6 +1,6 @@
 # Dokumentacja modułów
 
-> Wygenerowano z AST: `2026-07-31T14:08:34+02:00`.
+> Wygenerowano z AST: `2026-07-31T14:40:09+02:00`.
 
 ## `src/elkman_dns/__init__.py`
 
@@ -1681,52 +1681,53 @@ Brak docstringa.
 
 ### `class Row`
 
-Linia: `43`
+Linia: `50`
 
 Brak docstringa.
 
 ### `class CursesApp`
 
-Linia: `50`
+Linia: `57`
 
 Brak docstringa.
 
 **Metody:**
 
-- `__init__` — linia 53; brak docstringa.
-- `run` — linia 97; brak docstringa.
-- `_main` — linia 100; brak docstringa.
-- `_init_colors` — linia 139; brak docstringa.
-- `_color` — linia 149; brak docstringa.
-- `_symbol` — linia 160; brak docstringa.
-- `_start_refresh` — linia 163; brak docstringa.
-- `_refresh_worker` — linia 171; brak docstringa.
-- `_consume_results` — linia 185; brak docstringa.
-- `_zone_key` — linia 196; brak docstringa.
-- `_ordered_groups` — linia 213; brak docstringa.
-- `_rebuild_rows` — linia 220; brak docstringa.
-- `_selected_zone_name` — linia 244; brak docstringa.
-- `_draw` — linia 249; brak docstringa.
-- `_activate` — linia 310; brak docstringa.
-- `_toggle_multi_selection` — linia 323; dodaj lub usuń bieżącą strefę z zestawu wielostrefowego.
-- `_activate_group_selection` — linia 336; zachowaj dotychczasowe działanie spacji dla nagłówka grupy.
-- `_search` — linia 349; filtruje domeny na głównej liście.
-- `_records_view` — linia 365; wyświetla i edytuje źródłowy dokument strefy.
-- `_message_view` — linia 975; wyświetla prosty modalny komunikat.
-- `_function_key_sequence` — linia 1040; brak docstringa.
-- `_get_key` — linia 1046; odczytuje klawisz i rozpoznaje f2 wysyłane jako esc [ 12 ~.
-- `_transaction_result_view` — linia 1090; wyświetla wynik zapisu lub rollbacku transakcji.
-- `_pending_changes_view` — linia 1103; wyświetla oczekujące zmiany w rekordach strefy.
-- `_diff_view` — linia 1333; wyświetl przewijany unified diff bez zapisywania strefy.
-- `_export_diff` — linia 1434; wyeksportuj oczekujące zmiany bez wykonywania commit.
-- `_read_only_message` — linia 1462; brak docstringa.
-- `_bulk_operation_view` — linia 1476; brak docstringa.
-- `_bulk_preview_view` — linia 1579; pokaż podgląd; enter przechodzi do potwierdzenia.
-- `_approve_zone_change` — linia 1639; odrzuć nowe błędy i wymagaj potwierdzenia nowych ostrzeżeń.
-- `_multi_zone_view` — linia 1701; edytuj kilka zaznaczonych stref w jednej sesji tui.
-- `_domain_view` — linia 1912; wyświetla szczegóły wybranej strefy. klawisze: - r: ponowne sprawdzenie strefy, - q / esc / backspace: powrót do listy.
-- `_serial_ok` — linia 2181; brak docstringa.
-- `_bool_text` — linia 2191; brak docstringa.
+- `__init__` — linia 60; brak docstringa.
+- `run` — linia 105; brak docstringa.
+- `_main` — linia 108; brak docstringa.
+- `_init_colors` — linia 149; brak docstringa.
+- `_color` — linia 160; brak docstringa.
+- `_symbol` — linia 171; brak docstringa.
+- `_start_refresh` — linia 174; brak docstringa.
+- `_refresh_worker` — linia 182; brak docstringa.
+- `_consume_results` — linia 196; brak docstringa.
+- `_zone_key` — linia 207; brak docstringa.
+- `_ordered_groups` — linia 224; brak docstringa.
+- `_rebuild_rows` — linia 231; brak docstringa.
+- `_selected_zone_name` — linia 255; brak docstringa.
+- `_draw` — linia 260; brak docstringa.
+- `_activate` — linia 321; brak docstringa.
+- `_toggle_multi_selection` — linia 334; dodaj lub usuń bieżącą strefę z zestawu wielostrefowego.
+- `_activate_group_selection` — linia 347; zachowaj dotychczasowe działanie spacji dla nagłówka grupy.
+- `_search` — linia 360; filtruje domeny na głównej liście.
+- `_create_zone_wizard` — linia 376; collect, preview and transactionally create a primary zone.
+- `_records_view` — linia 480; wyświetla i edytuje źródłowy dokument strefy.
+- `_message_view` — linia 1090; wyświetla prosty modalny komunikat.
+- `_function_key_sequence` — linia 1155; brak docstringa.
+- `_get_key` — linia 1161; odczytuje klawisz i rozpoznaje f2 wysyłane jako esc [ 12 ~.
+- `_transaction_result_view` — linia 1205; wyświetla wynik zapisu lub rollbacku transakcji.
+- `_pending_changes_view` — linia 1218; wyświetla oczekujące zmiany w rekordach strefy.
+- `_diff_view` — linia 1448; wyświetl przewijany unified diff bez zapisywania strefy.
+- `_export_diff` — linia 1549; wyeksportuj oczekujące zmiany bez wykonywania commit.
+- `_read_only_message` — linia 1577; brak docstringa.
+- `_bulk_operation_view` — linia 1591; brak docstringa.
+- `_bulk_preview_view` — linia 1694; pokaż podgląd; enter przechodzi do potwierdzenia.
+- `_approve_zone_change` — linia 1754; odrzuć nowe błędy i wymagaj potwierdzenia nowych ostrzeżeń.
+- `_multi_zone_view` — linia 1816; edytuj kilka zaznaczonych stref w jednej sesji tui.
+- `_domain_view` — linia 2027; wyświetla szczegóły wybranej strefy. klawisze: - r: ponowne sprawdzenie strefy, - q / esc / backspace: powrót do listy.
+- `_serial_ok` — linia 2296; brak docstringa.
+- `_bool_text` — linia 2306; brak docstringa.
 
 ## `src/zonectl/ui/dialogs.py`
 
@@ -1744,6 +1745,22 @@ Wspólne dialogi tekstowe interfejsu curses.
 - `text_input` — linia 30; wyświetla jednowierszowy dialog tekstowy. enter zatwierdza wartość. esc anuluje dialog.
 - `search` — linia 132; brak docstringa.
 - `confirm` — linia 153; wyświetla potwierdzenie [t/n].
+
+## `src/zonectl/ui/form_style.py`
+
+Brak docstringa.
+
+### `def active_field_attr`
+
+Linia: `9`
+
+Return a high-contrast attribute, with a monochrome fallback.
+
+### `def field_marker`
+
+Linia: `19`
+
+Brak docstringa.
 
 ## `src/zonectl/ui/function_keys.py`
 
@@ -1793,18 +1810,18 @@ Formularz edycji rekordów DNS w interfejsie curses.
 
 ### `class RecordEditor`
 
-Linia: `18`
+Linia: `19`
 
 Obsługuje formularz edycji pojedynczego rekordu DNS.
 
 **Metody:**
 
-- `__init__` — linia 21; brak docstringa.
-- `_owner_from_form` — linia 26; zachowaj źródłową postać właściciela, jeśli jej nie zmieniono.
-- `_get_key` — linia 47; odczytuje klawisz i rozpoznaje f2 wysyłane jako esc [ 12 ~.
-- `_edit_line` — linia 88; prosty edytor pojedynczej linii dla formularzy curses.
-- `create_record_dialog` — linia 210; tworzy nowy rekord, wykorzystując formularz edycji.
-- `edit_record_dialog` — linia 231; edytuje rekord w pamięci. zwraca nowy rekord albo none.
+- `__init__` — linia 22; brak docstringa.
+- `_owner_from_form` — linia 27; zachowaj źródłową postać właściciela, jeśli jej nie zmieniono.
+- `_get_key` — linia 48; odczytuje klawisz i rozpoznaje f2 wysyłane jako esc [ 12 ~.
+- `_edit_line` — linia 89; prosty edytor pojedynczej linii dla formularzy curses.
+- `create_record_dialog` — linia 211; tworzy nowy rekord, wykorzystując formularz edycji.
+- `edit_record_dialog` — linia 232; edytuje rekord w pamięci. zwraca nowy rekord albo none.
 
 ## `src/zonectl/ui/records/keybindings.py`
 
@@ -1832,21 +1849,21 @@ Interaktywny kreator nowych rekordów DNS.
 
 ### `class NewRecordDialog`
 
-Linia: `21`
+Linia: `22`
 
 Tworzy rekord DNS bez modyfikowania pliku strefy.
 
 **Metody:**
 
-- `__init__` — linia 29; brak docstringa.
-- `default_ttl` — linia 36; pobiera ttl z głównego rekordu soa strefy.
-- `absolute_owner` — linia 66; brak docstringa.
-- `validate_hostname` — linia 82; brak docstringa.
-- `validate_rdata` — linia 106; brak docstringa.
-- `build_record` — linia 213; brak docstringa.
-- `_put` — linia 263; brak docstringa.
-- `_type_window` — linia 295; brak docstringa.
-- `create_record_dialog` — linia 306; brak docstringa.
+- `__init__` — linia 30; brak docstringa.
+- `default_ttl` — linia 37; pobiera ttl z głównego rekordu soa strefy.
+- `absolute_owner` — linia 67; brak docstringa.
+- `validate_hostname` — linia 83; brak docstringa.
+- `validate_rdata` — linia 107; brak docstringa.
+- `build_record` — linia 214; brak docstringa.
+- `_put` — linia 264; brak docstringa.
+- `_type_window` — linia 296; brak docstringa.
+- `create_record_dialog` — linia 307; brak docstringa.
 
 ## `src/zonectl/ui/records/renderer.py`
 
@@ -1866,3 +1883,26 @@ Renderuje ekran rekordów DNS bez obsługi klawiatury.
 - `_put` — linia 49; brak docstringa.
 - `_change_attr` — linia 78; brak docstringa.
 - `draw` — linia 91; brak docstringa.
+
+## `src/zonectl/ui/zone_create_dialog.py`
+
+Brak docstringa.
+
+### `class ZoneCreateForm`
+
+Linia: `11`
+
+Brak docstringa.
+
+### `class ZoneCreateDialog`
+
+Linia: `21`
+
+Pełnoekranowy formularz parametrów nowej strefy DNS.
+
+**Metody:**
+
+- `_get_key` — linia 35; brak docstringa.
+- `_put` — linia 60; brak docstringa.
+- `_edit_line` — linia 69; brak docstringa.
+- `collect` — linia 117; brak docstringa.

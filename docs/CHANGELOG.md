@@ -1,7 +1,10 @@
 # Historia zmian
 
-> Wygenerowano z Git: `2026-07-31T14:08:34+02:00`.
+> Wygenerowano z Git: `2026-07-31T14:40:09+02:00`.
 
+- `2026-07-31` — `77baf93` — release: prepare ZoneCTL 4.5.0
+- `2026-07-31` — `ad3c54b` — feat: add TUI zone creation wizard
+- `2026-07-31` — `adb4609` — docs: regenerate documentation for 4.4.0
 - `2026-07-31` — `681f2ce` — release: prepare ZoneCTL 4.4.0
 - `2026-07-31` — `4df1e1c` — test: integrate zone lifecycle with real BIND validators
 - `2026-07-31` — `acf2383` — feat: protect DNSSEC zones from lifecycle operations

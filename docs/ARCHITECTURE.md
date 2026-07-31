@@ -1,6 +1,6 @@
 # Architektura
 
-> Wygenerowano z importów AST: `2026-07-31T14:08:34+02:00`.
+> Wygenerowano z importów AST: `2026-07-31T14:40:09+02:00`.
 
 ## `src/elkman_dns/__init__.py`
 
@@ -556,6 +556,7 @@ Brak docstringa.
 - `zonectl.ui.records.editor: RecordEditor`
 - `zonectl.ui.records.new_record: NewRecordDialog`
 - `zonectl.ui.records.renderer: RecordRenderer`
+- `zonectl.ui.zone_create_dialog: ZoneCreateDialog`
 - `curses`
 - `queue`
 - `threading`
@@ -574,6 +575,8 @@ Brak docstringa.
 - `core.record_validation: ValidationSeverity, validate_zone`
 - `core.transaction: TransactionEngine, TransactionResult`
 - `core.zone_edit_session: ZoneEditSession, ZoneEditSessionError`
+- `core.zone_create_transaction: ZoneCreateTransaction`
+- `core.zone_lifecycle: ZoneCreateRequest, ZoneLifecycleError, ZoneLifecyclePlanner`
 - `presentation: transaction_lines, transaction_title`
 
 ## `src/zonectl/ui/dialogs.py`
@@ -585,6 +588,15 @@ Brak docstringa.
 - `__future__: annotations`
 - `curses`
 - `collections.abc: Callable`
+
+## `src/zonectl/ui/form_style.py`
+
+Brak docstringa.
+
+**Importy:**
+
+- `__future__: annotations`
+- `curses`
 
 ## `src/zonectl/ui/function_keys.py`
 
@@ -629,6 +641,7 @@ Formularz edycji rekordów DNS w interfejsie curses.
 - `core.record_validation: SUPPORTED_RECORD_TYPES, validate_rdata`
 - `core.zone_parser: DNSRecord`
 - `function_keys: decode_function_key`
+- `form_style: active_field_attr, field_marker`
 
 ## `src/zonectl/ui/records/keybindings.py`
 
@@ -653,6 +666,7 @@ Interaktywny kreator nowych rekordów DNS.
 - `core.models: Zone`
 - `core.record_validation: SUPPORTED_RECORD_TYPES, validate_rdata`
 - `core.zone_parser: DNSRecord`
+- `form_style: active_field_attr, field_marker`
 
 ## `src/zonectl/ui/records/renderer.py`
 
@@ -665,3 +679,15 @@ Brak docstringa.
 - `collections.abc: Sequence`
 - `zonectl.core.zone_model: ChangeKind, ZoneRecordView`
 - `zonectl.ui.records.keybindings: render_footer`
+
+## `src/zonectl/ui/zone_create_dialog.py`
+
+Brak docstringa.
+
+**Importy:**
+
+- `__future__: annotations`
+- `curses`
+- `dataclasses: dataclass`
+- `function_keys: decode_function_key`
+- `form_style: active_field_attr, field_marker`
