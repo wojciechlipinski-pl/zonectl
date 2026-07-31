@@ -6,7 +6,7 @@ ZoneCTL jest terminalowym narzędziem do bezpiecznego zarządzania strefami DNS 
 
 ## Wersja
 
-**4.3.0 — Validated bulk and multi-zone editing**
+**4.4.0 — Transactional DNS zone lifecycle**
 
 ## Uruchomienie
 
@@ -18,6 +18,25 @@ zctl domains --grouped
 ```
 
 Stare polecenie `elkman-dns` pozostaje chwilowo dostępne i wyświetla ostrzeżenie.
+
+## Cykl życia stref
+
+ZoneCTL potrafi transakcyjnie tworzyć i aktywować strefy, odwracalnie je
+wyłączać, przywracać oraz przenosić do chronionej kwarantanny. Polecenia bez
+`--commit` wykonują wyłącznie dry-run:
+
+```bash
+zctl zone create --help
+zctl zone disable --help
+zctl zone restore --help
+zctl zone quarantine --help
+zctl zone quarantine-restore --help
+zctl zone inventory
+zctl zone safety
+```
+
+Operacje cyklu życia są blokowane dla automatycznych stref RPZ oraz stref,
+w których BIND wykrył `dnssec-policy` lub `inline-signing`.
 
 ## Filtrowanie rekordów
 

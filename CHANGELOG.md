@@ -1,5 +1,45 @@
 # Changelog
 
+## 4.4.0 - 2026-07-31
+
+### Added
+
+- side-effect-free plans and transactional CLI creation of primary zones
+- one managed BIND declaration file per ZoneCTL-created zone
+- transactional bootstrap of the managed BIND include structure
+- reversible zone disable and restore operations with manifests and rollback
+- protected quarantine packages containing zone data, declarations, metadata
+  and SHA-256 checksums
+- non-destructive restore from an explicitly selected quarantine package
+- read-only inventory of disabled zones and every retained quarantine package
+- zone safety report for RPZ, DNSSEC policy and inline-signing profiles
+
+### Changed
+
+- zone files inherit owner and group from the parent BIND zone directory
+- lifecycle operations use explicit dry-run by default and require `--commit`
+- production recovery guidance documents the role of Veeam VM backups
+- the development branch now reflects the 4.4 zone-lifecycle scope
+
+### Safety
+
+- creation validates with `named-checkzone` and `named-checkconf` before BIND
+  activation, then confirms the loaded zone with `rndc zonestatus`
+- failures restore files and configuration to the pre-transaction state
+- quarantine requires prior disablement, `--commit` and the full zone name
+- automatic RPZ zones cannot enter ordinary lifecycle operations
+- DNSSEC-policy and inline-signing zones are reported and conservatively
+  blocked from ordinary lifecycle operations
+- integration tests use real BIND validators in isolated temporary
+  configurations without contacting the production `rndc`
+
+### Verified
+
+- the complete create, activate, disable, restore, quarantine and
+  quarantine-restore sequence was exercised against BIND on `tanatos`
+- recovery packages remain intact after restoration
+- 325 automated tests pass before release preparation
+
 ## 4.3.0 - 2026-07-31
 
 ### Added
