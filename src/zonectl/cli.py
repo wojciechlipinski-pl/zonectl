@@ -31,6 +31,7 @@ from .core.zone_lifecycle import (
     ZoneLifecycleError,
     ZoneLifecyclePlanner,
 )
+from .core.zone_inventory import ZoneInventory
 from .presentation import transaction_exit_code, transaction_lines
 from .ui.curses_app import CursesApp
 
@@ -271,6 +272,26 @@ def parser() -> argparse.ArgumentParser:
     )
     quarantine_restore.add_argument("--commit", action="store_true")
     quarantine_restore.add_argument("--json", action="store_true")
+    inventory = lifecycle_sub.add_parser(
+        "inventory",
+        help="pokaż wyłączone strefy i pakiety kwarantanny",
+    )
+    inventory.add_argument(
+        "--disabled-root",
+        type=Path,
+        default=Path("/var/lib/zonectl/disabled-zones"),
+    )
+    inventory.add_argument(
+        "--quarantine-root",
+        type=Path,
+        default=Path("/var/lib/zonectl/quarantine"),
+    )
+    inventory.add_argument(
+        "--disable-manifest-directory",
+        type=Path,
+        default=Path("/var/backups/zonectl-zone-disable/manifests"),
+    )
+    inventory.add_argument("--json", action="store_true")
 
     tx = sub.add_parser("transaction", aliases=["tx"], help="bezpieczne transakcje na plikach stref")
     txsub = tx.add_subparsers(dest="tx_command", required=True)
@@ -428,6 +449,35 @@ def main(argv: list[str] | None = None) -> int:
         return transaction_main(args, config)
     zones = config.zones()
     if args.command == "zone":
+        if args.zone_command == "inventory":
+            records = ZoneInventory(
+                disabled_root=args.disabled_root,
+                quarantine_root=args.quarantine_root,
+                disable_manifest_directory=args.disable_manifest_directory,
+            ).records()
+            if args.json:
+                print(
+                    json.dumps(
+                        [record.to_dict() for record in records],
+                        ensure_ascii=False,
+                        indent=2,
+                    )
+                )
+            elif not records:
+                print("Brak wyłączonych i skarantannowanych stref.")
+            else:
+                print(
+                    f"{'STAN':<13} {'STREFA':<32} {'DATA':<25} "
+                    "OPERATOR  PRZYCZYNA"
+                )
+                for record in records:
+                    print(
+                        f"{record.state:<13} {record.zone:<32} "
+                        f"{record.timestamp:<25} {record.operator:<9} "
+                        f"{record.reason}"
+                    )
+                    print(f"  {record.location}")
+            return 0
         if args.zone_command == "quarantine-restore":
             name = args.name.strip().rstrip(".").casefold()
             try:

@@ -392,3 +392,43 @@ def test_quarantine_restore_cli_uses_explicit_package(
     assert code == 0
     assert calls == [(False, package)]
     assert "Status:     DRY-RUN" in capsys.readouterr().out
+
+
+def test_inventory_cli_outputs_json(monkeypatch, capsys, tmp_path: Path) -> None:
+    monkeypatch.setattr(
+        cli.ToolkitConfig, "load", lambda self: FakeConfig()
+    )
+    package = tmp_path / "quarantine/example.invalid/tx-1"
+    package.mkdir(parents=True)
+    (package / "manifest.json").write_text(
+        json.dumps(
+            {
+                "transaction_id": "tx-1",
+                "zone": "example.invalid",
+                "status": "QUARANTINED",
+                "reason": "test",
+                "operator": "root",
+                "created_at": "2026-07-31T12:00:00+02:00",
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    code = cli.main(
+        [
+            "zone",
+            "inventory",
+            "--disabled-root",
+            str(tmp_path / "disabled"),
+            "--quarantine-root",
+            str(tmp_path / "quarantine"),
+            "--disable-manifest-directory",
+            str(tmp_path / "manifests"),
+            "--json",
+        ]
+    )
+
+    assert code == 0
+    payload = json.loads(capsys.readouterr().out)
+    assert payload[0]["zone"] == "example.invalid"
+    assert payload[0]["state"] == "QUARANTINED"

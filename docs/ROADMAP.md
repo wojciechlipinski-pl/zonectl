@@ -70,7 +70,8 @@ zrealizowane, a `[ ]` pozostają do wykonania.
 - [x] Zachowywać plik strefy i deklarację oraz zapisywać manifest wyłączenia.
 - [x] Usuwać deklarację strefy z aktywnej konfiguracji przez transakcję.
 - [x] Potwierdzać przez BIND, że wyłączona strefa nie jest już obsługiwana.
-- [ ] Prowadzić listę stref wyłączonych wraz z datą, operatorem i przyczyną.
+- [x] Prowadzić listę stref wyłączonych i pakietów kwarantanny wraz z datą,
+  operatorem i przyczyną.
 - [x] Dodać transakcyjny rdzeń przywracania wyłączonej strefy z pełną
   walidacją, aktywacją i rollbackiem.
 

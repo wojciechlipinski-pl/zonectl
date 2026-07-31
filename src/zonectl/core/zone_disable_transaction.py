@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import getpass
 import os
 import tempfile
 import time
@@ -251,6 +252,7 @@ class ZoneDisableTransaction:
         path = self.manifest_directory / f"{result.transaction_id}.json"
         result.manifest = str(path)
         payload = asdict(result)
+        payload["operator"] = getpass.getuser()
         payload["saved_at"] = datetime.now(timezone.utc).astimezone().isoformat(
             timespec="seconds"
         )
