@@ -97,7 +97,8 @@ zrealizowane, a `[ ]` pozostają do wykonania.
 - [ ] Potwierdzić rollback po awarii na każdym etapie cyklu życia strefy.
 - [x] Wykluczyć przypadkowe zarządzanie automatyczną strefą RPZ jak zwykłą
   domeną.
-- [ ] Uwzględnić strefy DNSSEC i `inline-signing`.
+- [x] Wykrywać strefy DNSSEC i `inline-signing`, raportować ich profil oraz
+  blokować dla nich zwykłe operacje cyklu życia.
 - [x] Udokumentować współpracę z backupem Veeam jako głównym zabezpieczeniem
   maszyny wirtualnej.
 

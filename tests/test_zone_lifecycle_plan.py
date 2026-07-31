@@ -73,6 +73,28 @@ def test_authoritative_zone_allows_lifecycle_operation() -> None:
     )
 
 
+@pytest.mark.parametrize(
+    "zone",
+    [
+        Zone(
+            name="signed.example",
+            file=Path("/zones/signed.example"),
+            dnssec_policy="default",
+        ),
+        Zone(
+            name="signed.example",
+            file=Path("/zones/signed.example"),
+            inline_signing=True,
+        ),
+    ],
+)
+def test_dnssec_zone_rejects_lifecycle_operations(zone: Zone) -> None:
+    with pytest.raises(ZoneLifecycleError, match="strefy DNSSEC"):
+        ZoneLifecyclePlanner.ensure_lifecycle_allowed(
+            zone.name, [zone], "disable"
+        )
+
+
 def test_plan_is_deterministic_and_has_no_side_effects(
     tmp_path: Path,
 ) -> None:

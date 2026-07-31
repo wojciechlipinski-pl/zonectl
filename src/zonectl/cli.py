@@ -292,6 +292,12 @@ def parser() -> argparse.ArgumentParser:
         default=Path("/var/backups/zonectl-zone-disable/manifests"),
     )
     inventory.add_argument("--json", action="store_true")
+    safety = lifecycle_sub.add_parser(
+        "safety",
+        help="pokaż profile bezpieczeństwa stref cyklu życia",
+    )
+    safety.add_argument("name", nargs="?")
+    safety.add_argument("--json", action="store_true")
 
     tx = sub.add_parser("transaction", aliases=["tx"], help="bezpieczne transakcje na plikach stref")
     txsub = tx.add_subparsers(dest="tx_command", required=True)
@@ -449,6 +455,47 @@ def main(argv: list[str] | None = None) -> int:
         return transaction_main(args, config)
     zones = config.zones()
     if args.command == "zone":
+        if args.zone_command == "safety":
+            selected = zones
+            if args.name:
+                wanted = args.name.strip().rstrip(".").casefold()
+                selected = [
+                    zone
+                    for zone in zones
+                    if zone.name.rstrip(".").casefold() == wanted
+                ]
+                if not selected:
+                    print(f"BŁĄD: Nie znaleziono strefy: {args.name}", file=sys.stderr)
+                    return 2
+            payload = [
+                {
+                    "zone": zone.name,
+                    "health_profile": zone.health_profile,
+                    "dnssec_policy": zone.dnssec_policy,
+                    "inline_signing": zone.inline_signing,
+                    "lifecycle_allowed": not (
+                        zone.health_profile.casefold() == "rpz"
+                        or zone.dnssec_policy
+                        or zone.inline_signing
+                    ),
+                }
+                for zone in selected
+            ]
+            if args.json:
+                print(json.dumps(payload, ensure_ascii=False, indent=2))
+            else:
+                print(
+                    f"{'STREFA':<32} {'PROFIL':<14} {'DNSSEC-POLICY':<18} "
+                    "INLINE  CYKL ŻYCIA"
+                )
+                for item in payload:
+                    print(
+                        f"{item['zone']:<32} {item['health_profile']:<14} "
+                        f"{(item['dnssec_policy'] or '-'):<18} "
+                        f"{('TAK' if item['inline_signing'] else 'NIE'):<7} "
+                        f"{'DOZWOLONY' if item['lifecycle_allowed'] else 'BLOKADA'}"
+                    )
+            return 0
         if args.zone_command == "inventory":
             records = ZoneInventory(
                 disabled_root=args.disabled_root,

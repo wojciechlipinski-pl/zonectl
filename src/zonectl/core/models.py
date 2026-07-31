@@ -24,6 +24,8 @@ class Zone:
     group: str = "Pozostałe"
     health_profile: str = "authoritative"
     rpz_max_age: int = 600
+    dnssec_policy: str | None = None
+    inline_signing: bool = False
 
 
 @dataclass(slots=True)

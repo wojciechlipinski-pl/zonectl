@@ -273,6 +273,15 @@ Strefy z `health_profile = rpz` są automatycznie zarządzanymi źródłami
 polityki i nie podlegają zwykłemu cyklowi życia domen. ZoneCTL blokuje dla
 nich wyłączenie, przywrócenie i kwarantannę; nadal je monitoruje.
 
+Tak samo blokowane są operacje na strefach, dla których autodetekcja BIND
+wykryła `dnssec-policy` albo `inline-signing yes`. Raport ochrony jest
+dostępny bez modyfikowania systemu:
+
+```bash
+zctl zone safety
+zctl zone safety example.pl --json
+```
+
 ### Utworzenie strefy
 
 ```bash

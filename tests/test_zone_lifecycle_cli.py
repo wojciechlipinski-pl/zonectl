@@ -44,6 +44,58 @@ class FakeRpzConfig:
         ]
 
 
+class FakeSafetyConfig:
+    def zones(self):
+        from zonectl.core.models import Zone
+
+        return [
+            Zone(name="plain.example", file=Path("/zones/plain.example")),
+            Zone(
+                name="signed.example",
+                file=Path("/zones/signed.example"),
+                dnssec_policy="default",
+                inline_signing=True,
+            ),
+        ]
+
+
+def test_zone_safety_json_reports_dnssec_block(monkeypatch, capsys) -> None:
+    monkeypatch.setattr(
+        cli.ToolkitConfig, "load", lambda self: FakeSafetyConfig()
+    )
+
+    code = cli.main(["zone", "safety", "--json"])
+
+    assert code == 0
+    payload = json.loads(capsys.readouterr().out)
+    signed = next(item for item in payload if item["zone"] == "signed.example")
+    assert signed["dnssec_policy"] == "default"
+    assert signed["inline_signing"] is True
+    assert signed["lifecycle_allowed"] is False
+
+
+def test_dnssec_disable_is_rejected_before_planning(
+    monkeypatch, capsys
+) -> None:
+    monkeypatch.setattr(
+        cli.ToolkitConfig, "load", lambda self: FakeSafetyConfig()
+    )
+
+    code = cli.main(
+        [
+            "zone",
+            "disable",
+            "signed.example",
+            "--reason",
+            "nie wolno",
+            "--commit",
+        ]
+    )
+
+    assert code == 2
+    assert "strefy DNSSEC" in capsys.readouterr().err
+
+
 def test_rpz_disable_is_rejected_before_planning(
     monkeypatch, capsys
 ) -> None:

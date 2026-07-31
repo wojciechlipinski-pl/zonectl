@@ -323,6 +323,8 @@ class ToolkitConfig:
                 if override
                 else "600"
             ),
+            dnssec_policy=discovered.dnssec_policy,
+            inline_signing=discovered.inline_signing,
         )
 
     def _zones_from_discovery(self) -> list[Zone]:
@@ -405,6 +407,12 @@ class ToolkitConfig:
                     ).strip().casefold(),
                     rpz_max_age=int(
                         item.get("rpz_max_age", "600")
+                    ),
+                    dnssec_policy=(
+                        item.get("dnssec_policy", "").strip() or None
+                    ),
+                    inline_signing=_yes(
+                        item.get("inline_signing"), False
                     ),
                 )
             )

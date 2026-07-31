@@ -121,6 +121,18 @@ class ZoneLifecyclePlanner:
                 f"Operacja {operation} jest zablokowana dla automatycznej "
                 f"strefy RPZ: {zone.name}"
             )
+        if zone is not None and (
+            zone.dnssec_policy or zone.inline_signing
+        ):
+            details = []
+            if zone.dnssec_policy:
+                details.append(f"dnssec-policy={zone.dnssec_policy}")
+            if zone.inline_signing:
+                details.append("inline-signing=yes")
+            raise ZoneLifecycleError(
+                f"Operacja {operation} jest zablokowana dla strefy DNSSEC "
+                f"{zone.name} ({', '.join(details)})"
+            )
 
     def plan_create(self, request: ZoneCreateRequest) -> ZoneCreatePlan:
         """Zbuduj plan utworzenia strefy bez zapisywania plików."""
