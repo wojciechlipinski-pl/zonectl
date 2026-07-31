@@ -56,9 +56,9 @@ zrealizowane, a `[ ]` pozostają do wykonania.
 - [ ] Przed aktywacją wykonywać `named-checkzone` i `named-checkconf`.
 - [ ] Aktywować strefę przez kontrolowane `rndc reconfig` i potwierdzać jej
   załadowanie.
-- [ ] Zapisywać manifest utworzenia, backup konfiguracji i wynik każdego
+- [x] Zapisywać manifest utworzenia, backup konfiguracji i wynik każdego
   etapu.
-- [ ] Automatycznie wycofywać plik oraz konfigurację po błędzie aktywacji.
+- [x] Automatycznie wycofywać plik oraz konfigurację po błędzie aktywacji.
 
 ### Wyłączanie i przywracanie
 
