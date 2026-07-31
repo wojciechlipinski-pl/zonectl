@@ -1,5 +1,26 @@
 # Changelog
 
+## 4.5.0 - 2026-07-31
+
+### Added
+
+- full-screen TUI wizard for creating and activating primary DNS zones
+- shared high-contrast active-field styling for zone and record forms
+- visible `▶` marker and current-field label with a monochrome fallback
+
+### Changed
+
+- the main TUI exposes zone creation under the `n` shortcut
+- zone creation reuses the validated 4.4 lifecycle planner and transaction
+- zone, add-record and edit-record forms now share consistent navigation cues
+
+### Safety
+
+- the wizard validates all values and displays the generated zone plan before
+  asking for an explicit COMMIT confirmation
+- cancellation leaves BIND configuration and zone files unchanged
+- 330 automated tests pass before release preparation
+
 ## 4.4.0 - 2026-07-31
 
 ### Added
