@@ -64,7 +64,8 @@ zrealizowane, a `[ ]` pozostają do wykonania.
 
 ### Wyłączanie i przywracanie
 
-- [ ] Dodać odwracalną operację wyłączenia strefy bez usuwania jej danych.
+- [x] Dodać rdzeń odwracalnej operacji wyłączenia strefy bez usuwania jej
+  danych.
 - [ ] Przed wyłączeniem zapisywać plik strefy, konfigurację i manifest.
 - [ ] Usuwać deklarację strefy z aktywnej konfiguracji przez transakcję.
 - [ ] Potwierdzać przez BIND, że wyłączona strefa nie jest już obsługiwana.
