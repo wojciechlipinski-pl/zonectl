@@ -12,6 +12,10 @@ from zonectl.core.zone_disable_transaction import (
     ZoneDisableResult,
     ZoneDisableStep,
 )
+from zonectl.core.zone_restore_transaction import (
+    ZoneRestoreResult,
+    ZoneRestoreStep,
+)
 
 
 class FakeConfig:
@@ -213,4 +217,54 @@ def test_disable_cli_defaults_to_dry_run(
     )
     assert code == 0
     assert calls == [(False, "example.invalid", "test CLI")]
+    assert "Status:     DRY-RUN" in capsys.readouterr().out
+
+
+def test_restore_cli_defaults_to_dry_run(
+    monkeypatch,
+    capsys,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setattr(
+        cli.ToolkitConfig, "load", lambda self: FakeConfig()
+    )
+    zone = tmp_path / "zones/example.invalid"
+    declaration = tmp_path / "bind/zones.d/example.invalid.conf"
+    archived = tmp_path / "disabled/example.invalid/example.invalid.conf"
+    index = tmp_path / "bind/zones.conf"
+    zone.parent.mkdir(parents=True)
+    declaration.parent.mkdir(parents=True)
+    archived.parent.mkdir(parents=True)
+    zone.write_text("data\n")
+    archived.write_text("zone declaration\n")
+    index.write_text("# empty\n")
+    calls = []
+
+    def apply(self, plan, *, commit=False):
+        calls.append((commit, plan.zone_name))
+        return ZoneRestoreResult(
+            "tx-restore",
+            plan.zone_name,
+            "DRY-RUN",
+            steps=[ZoneRestoreStep("dry-run", True, "bez zmian")],
+        )
+
+    monkeypatch.setattr(cli.ZoneRestoreTransaction, "apply", apply)
+    code = cli.main(
+        [
+            "zone",
+            "restore",
+            "example.invalid",
+            "--zone-directory",
+            str(zone.parent),
+            "--managed-config",
+            str(index),
+            "--managed-zone-directory",
+            str(declaration.parent),
+            "--disabled-root",
+            str(tmp_path / "disabled"),
+        ]
+    )
+    assert code == 0
+    assert calls == [(False, "example.invalid")]
     assert "Status:     DRY-RUN" in capsys.readouterr().out
