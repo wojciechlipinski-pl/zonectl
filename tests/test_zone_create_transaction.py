@@ -139,3 +139,61 @@ def test_existing_zone_file_is_never_overwritten(tmp_path: Path) -> None:
 
     assert result.status == "CONFLICT"
     assert candidate.zone_file.read_text() == "keep me\n"
+
+
+def test_activation_and_loaded_verification_are_explicit(
+    tmp_path: Path,
+) -> None:
+    calls: list[str] = []
+
+    def activate(name: str) -> ZoneCreateStep:
+        calls.append(f"activate:{name}")
+        return ZoneCreateStep("rndc-reconfig", True, "OK")
+
+    def verify(name: str) -> ZoneCreateStep:
+        calls.append(f"verify:{name}")
+        return ZoneCreateStep("rndc-zonestatus", True, "OK")
+
+    candidate = plan(tmp_path)
+    engine = ZoneCreateTransaction(
+        tmp_path / "manifests",
+        zone_validator=valid_zone,
+        config_validator=valid_config,
+        activator=activate,
+        loaded_verifier=verify,
+    )
+    result = engine.apply(candidate, commit=True, activate=True)
+    assert result.status == "COMMIT"
+    assert calls == ["activate:example.pl", "verify:example.pl"]
+
+
+def test_failed_loaded_verification_rolls_back_and_reconfigures(
+    tmp_path: Path,
+) -> None:
+    calls: list[str] = []
+
+    def activate(name: str) -> ZoneCreateStep:
+        calls.append(f"activate:{name}")
+        return ZoneCreateStep("rndc-reconfig", True, "OK")
+
+    def verify(name: str) -> ZoneCreateStep:
+        calls.append(f"verify:{name}")
+        return ZoneCreateStep("rndc-zonestatus", False, "not loaded")
+
+    candidate = plan(tmp_path)
+    engine = ZoneCreateTransaction(
+        tmp_path / "manifests",
+        zone_validator=valid_zone,
+        config_validator=valid_config,
+        activator=activate,
+        loaded_verifier=verify,
+    )
+    result = engine.apply(candidate, commit=True, activate=True)
+    assert result.status == "ROLLED-BACK"
+    assert calls == [
+        "activate:example.pl",
+        "verify:example.pl",
+        "activate:example.pl",
+    ]
+    assert not candidate.zone_file.exists()
+    assert not candidate.zone_declaration_file.exists()

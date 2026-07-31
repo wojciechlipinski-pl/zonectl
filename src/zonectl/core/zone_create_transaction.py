@@ -37,6 +37,7 @@ class ZoneCreateResult:
 
 Validator = Callable[[str, Path], ZoneCreateStep]
 ConfigValidator = Callable[[Path], ZoneCreateStep]
+ZoneAction = Callable[[str], ZoneCreateStep]
 
 
 class ZoneCreateTransaction:
@@ -48,11 +49,17 @@ class ZoneCreateTransaction:
         *,
         zone_validator: Validator | None = None,
         config_validator: ConfigValidator | None = None,
+        activator: ZoneAction | None = None,
+        loaded_verifier: ZoneAction | None = None,
     ) -> None:
         self.manifest_directory = manifest_directory
         self.zone_validator = zone_validator or self._validate_zone
         self.config_validator = (
             config_validator or self._validate_config
+        )
+        self.activator = activator or self._activate_bind
+        self.loaded_verifier = (
+            loaded_verifier or self._verify_loaded
         )
 
     def apply(
@@ -60,6 +67,7 @@ class ZoneCreateTransaction:
         plan: ZoneCreatePlan,
         *,
         commit: bool = False,
+        activate: bool = False,
     ) -> ZoneCreateResult:
         txid = (
             datetime.now().strftime("%Y%m%d-%H%M%S")
@@ -111,6 +119,7 @@ class ZoneCreateTransaction:
         zone_created = False
         config_written = False
         declaration_created = False
+        activation_attempted = False
         try:
             self._atomic_write(
                 plan.zone_file,
@@ -177,6 +186,18 @@ class ZoneCreateTransaction:
             if not config_step.ok:
                 raise RuntimeError(config_step.message)
 
+            if activate:
+                activation_attempted = True
+                activation_step = self.activator(plan.zone_name)
+                result.steps.append(activation_step)
+                if not activation_step.ok:
+                    raise RuntimeError(activation_step.message)
+
+                loaded_step = self.loaded_verifier(plan.zone_name)
+                result.steps.append(loaded_step)
+                if not loaded_step.ok:
+                    raise RuntimeError(loaded_step.message)
+
             result.committed = True
             return self._finish(result, "COMMIT")
 
@@ -200,6 +221,17 @@ class ZoneCreateTransaction:
                     plan.zone_declaration_file.unlink(
                         missing_ok=True
                     )
+                if activation_attempted:
+                    restore_step = self.activator(plan.zone_name)
+                    result.steps.append(
+                        ZoneCreateStep(
+                            "rndc-reconfig-rollback",
+                            restore_step.ok,
+                            restore_step.message,
+                        )
+                    )
+                    if not restore_step.ok:
+                        raise RuntimeError(restore_step.message)
             except OSError as rollback_error:
                 rollback_ok = False
                 result.steps.append(
@@ -292,6 +324,26 @@ class ZoneCreateTransaction:
         outcome = run(command, 30)
         return ZoneCreateStep(
             "named-checkconf",
+            outcome.returncode == 0,
+            (outcome.stdout or outcome.stderr).strip()
+            or f"kod {outcome.returncode}",
+        )
+
+    @staticmethod
+    def _activate_bind(_name: str) -> ZoneCreateStep:
+        outcome = run(["rndc", "reconfig"], 30)
+        return ZoneCreateStep(
+            "rndc-reconfig",
+            outcome.returncode == 0,
+            (outcome.stdout or outcome.stderr).strip()
+            or f"kod {outcome.returncode}",
+        )
+
+    @staticmethod
+    def _verify_loaded(name: str) -> ZoneCreateStep:
+        outcome = run(["rndc", "zonestatus", name], 30)
+        return ZoneCreateStep(
+            "rndc-zonestatus",
             outcome.returncode == 0,
             (outcome.stdout or outcome.stderr).strip()
             or f"kod {outcome.returncode}",

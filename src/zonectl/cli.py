@@ -9,6 +9,7 @@ from . import __version__
 from .core.bind import BindService
 from .core.config import DEFAULT_CONFIG, DEFAULT_GROUPS, DEFAULT_ZONES, ToolkitConfig
 from .core.transaction import TransactionEngine, TransactionResult
+from .core.zone_create_transaction import ZoneCreateTransaction
 from .core.zone_lifecycle import (
     ZoneCreateRequest,
     ZoneLifecycleError,
@@ -73,6 +74,48 @@ def parser() -> argparse.ArgumentParser:
         default=Path("/etc/bind/zonectl-zones.d"),
     )
     create_plan.add_argument("--json", action="store_true")
+    create = lifecycle_sub.add_parser(
+        "create",
+        help="utwórz i aktywuj strefę; bez --commit działa jako dry-run",
+    )
+    create.add_argument("name")
+    create.add_argument("--primary-ns", required=True)
+    create.add_argument("--admin", required=True)
+    create.add_argument(
+        "--ns",
+        action="append",
+        required=True,
+        dest="nameservers",
+    )
+    create.add_argument("--ipv4")
+    create.add_argument("--ipv6")
+    create.add_argument("--www", action="store_true")
+    create.add_argument(
+        "--zone-directory",
+        type=Path,
+        default=Path("/var/lib/bind/Primary"),
+    )
+    create.add_argument(
+        "--managed-config",
+        type=Path,
+        default=Path("/etc/bind/zonectl-zones.conf"),
+    )
+    create.add_argument(
+        "--managed-zone-directory",
+        type=Path,
+        default=Path("/etc/bind/zonectl-zones.d"),
+    )
+    create.add_argument(
+        "--manifest-directory",
+        type=Path,
+        default=Path("/var/backups/zonectl-zone-create/manifests"),
+    )
+    create.add_argument(
+        "--commit",
+        action="store_true",
+        help="zapisz pliki, przeładuj BIND i potwierdź strefę",
+    )
+    create.add_argument("--json", action="store_true")
 
     tx = sub.add_parser("transaction", aliases=["tx"], help="bezpieczne transakcje na plikach stref")
     txsub = tx.add_subparsers(dest="tx_command", required=True)
@@ -248,6 +291,41 @@ def main(argv: list[str] | None = None) -> int:
         except ZoneLifecycleError as exc:
             print(f"BŁĄD: {exc}", file=sys.stderr)
             return 2
+        if args.zone_command == "create":
+            result = ZoneCreateTransaction(
+                args.manifest_directory,
+            ).apply(
+                plan,
+                commit=args.commit,
+                activate=args.commit,
+            )
+            if args.json:
+                from dataclasses import asdict
+
+                print(
+                    json.dumps(
+                        asdict(result),
+                        ensure_ascii=False,
+                        indent=2,
+                    )
+                )
+            else:
+                print(f"Transakcja: {result.transaction_id}")
+                print(f"Strefa:     {result.zone}")
+                print(f"Status:     {result.status}")
+                print(f"Commit:     {'TAK' if result.committed else 'NIE'}")
+                print(f"Rollback:   {'TAK' if result.rolled_back else 'NIE'}")
+                if result.manifest:
+                    print(f"Manifest:   {result.manifest}")
+                print("\nEtapy:")
+                for step in result.steps:
+                    marker = "OK" if step.ok else "BŁĄD"
+                    print(f"[{marker}] {step.name}: {step.message}")
+            return (
+                0
+                if result.ok and result.status in {"DRY-RUN", "COMMIT"}
+                else 2
+            )
         if args.json:
             print(
                 json.dumps(
