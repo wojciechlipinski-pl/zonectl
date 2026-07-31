@@ -90,7 +90,7 @@ zrealizowane, a `[ ]` pozostają do wykonania.
 
 ### Wymagania bezpieczeństwa 4.4
 
-- [ ] Dodać testy integracyjne tworzenia, wyłączania i przywracania z
+- [x] Dodać testy integracyjne tworzenia, wyłączania i przywracania z
   odseparowaną instancją BIND.
 - [ ] Testować awarie `named-checkzone`, `named-checkconf`, `rndc reconfig`
   i weryfikacji załadowania.
@@ -109,7 +109,8 @@ zrealizowane, a `[ ]` pozostają do wykonania.
 - [ ] Rozszerzyć pokrycie testami krytycznych ścieżek zapisu.
 - [ ] Dodać statyczną analizę typów.
 - [ ] Dodać automatyczne formatowanie i lint.
-- [ ] Dodać testy integracyjne z odseparowaną instancją BIND.
+- [x] Dodać testy integracyjne z odseparowaną konfiguracją i prawdziwymi
+  narzędziami walidacyjnymi BIND, bez kontaktu z produkcyjnym `rndc`.
 - [ ] Dodać testy stref `inline-signing`.
 - [ ] Zweryfikować skróty klawiszowe w kolejnych typach terminali.
 

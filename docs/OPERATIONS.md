@@ -352,6 +352,10 @@ zctl zone quarantine-restore example.pl \
 Po każdej operacji sprawdź `named-checkconf`, `rndc zonestatus` oraz manifest
 transakcji. Nie edytuj ręcznie indeksu ani deklaracji w trakcie transakcji.
 
+Testy integracyjne cyklu życia budują własne pliki stref i konfigurację pod
+`/tmp`, uruchamiają prawdziwe `named-checkzone` oraz `named-checkconf`, ale
+zastępują `rndc` kontrolowaną atrapą. Nie przeładowują produkcyjnego BIND-a.
+
 ## Backup Veeam i backupy ZoneCTL
 
 Podstawowym zabezpieczeniem serwera `tanatos` jest backup całej maszyny
