@@ -70,7 +70,8 @@ zrealizowane, a `[ ]` pozostają do wykonania.
 - [ ] Usuwać deklarację strefy z aktywnej konfiguracji przez transakcję.
 - [ ] Potwierdzać przez BIND, że wyłączona strefa nie jest już obsługiwana.
 - [ ] Prowadzić listę stref wyłączonych wraz z datą, operatorem i przyczyną.
-- [ ] Umożliwić przywrócenie wyłączonej strefy po pełnej walidacji.
+- [x] Dodać transakcyjny rdzeń przywracania wyłączonej strefy z pełną
+  walidacją, aktywacją i rollbackiem.
 
 ### Kwarantanna i usuwanie
 
