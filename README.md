@@ -86,6 +86,23 @@ Klawisz `F2` w widoku wielostrefowym najpierw waliduje wszystkie
 zmienione strefy. Dopiero poprawna walidacja całego zestawu rozpoczyna
 osobne, bezpieczne transakcje. Błąd zatrzymuje dalsze zapisy.
 
+## Plan utworzenia strefy
+
+Wersja rozwojowa 4.4 udostępnia pozbawiony skutków ubocznych plan:
+
+```bash
+zctl zone create-plan example.pl \
+  --primary-ns ns1.elkman.pl. \
+  --admin hostmaster.elkman.pl. \
+  --ns ns1.elkman.pl. \
+  --ns ns2.elkman.pl. \
+  --ipv4 192.0.2.10 \
+  --www
+```
+
+Polecenie jedynie prezentuje kandydat pliku strefy, deklarację BIND oraz
+planowane etapy. Nie tworzy plików i nie wykonuje `rndc reconfig`.
+
 ## Testy
 
 ```bash

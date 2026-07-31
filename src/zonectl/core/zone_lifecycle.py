@@ -1,0 +1,220 @@
+from __future__ import annotations
+
+import ipaddress
+import re
+from dataclasses import asdict, dataclass
+from datetime import date
+from pathlib import Path
+from typing import Iterable
+
+from .models import Zone
+
+
+class ZoneLifecycleError(ValueError):
+    """Nieprawidłowy lub kolidujący plan cyklu życia strefy."""
+
+
+_LABEL = re.compile(r"^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$")
+
+
+def normalize_zone_name(value: str) -> str:
+    """Znormalizuj i zwaliduj nazwę strefy DNS."""
+    name = value.strip().rstrip(".").casefold()
+    if not name or len(name) > 253 or "." not in name:
+        raise ZoneLifecycleError(
+            "Nazwa strefy musi być pełną nazwą domenową"
+        )
+    labels = name.split(".")
+    if any(not _LABEL.fullmatch(label) for label in labels):
+        raise ZoneLifecycleError(
+            f"Nieprawidłowa nazwa strefy: {value}"
+        )
+    return name
+
+
+def normalize_fqdn(value: str, field: str) -> str:
+    """Zwróć bezpieczną absolutną nazwę DNS zakończoną kropką."""
+    try:
+        name = normalize_zone_name(value)
+    except ZoneLifecycleError as exc:
+        raise ZoneLifecycleError(
+            f"Nieprawidłowe pole {field}: {value}"
+        ) from exc
+    return f"{name}."
+
+
+@dataclass(frozen=True, slots=True)
+class ZoneCreateRequest:
+    name: str
+    primary_ns: str
+    admin: str
+    nameservers: tuple[str, ...]
+    zone_directory: Path = Path("/var/lib/bind/Primary")
+    managed_config: Path = Path("/etc/bind/zonectl-zones.conf")
+    default_ttl: int = 3600
+    refresh: int = 3600
+    retry: int = 900
+    expire: int = 1209600
+    negative_ttl: int = 3600
+    apex_ipv4: str | None = None
+    apex_ipv6: str | None = None
+    add_www: bool = False
+
+
+@dataclass(frozen=True, slots=True)
+class ZoneCreatePlan:
+    zone_name: str
+    zone_file: Path
+    managed_config: Path
+    serial: int
+    zone_text: str
+    bind_declaration: str
+    actions: tuple[str, ...]
+
+    def to_dict(self) -> dict[str, object]:
+        payload = asdict(self)
+        payload["zone_file"] = str(self.zone_file)
+        payload["managed_config"] = str(self.managed_config)
+        return payload
+
+
+class ZoneLifecyclePlanner:
+    """Twórz pozbawione skutków ubocznych plany zarządzania strefami."""
+
+    def __init__(
+        self,
+        existing_zones: Iterable[Zone],
+        *,
+        today_provider=date.today,
+    ) -> None:
+        self._existing = {
+            zone.name.rstrip(".").casefold()
+            for zone in existing_zones
+        }
+        self._today_provider = today_provider
+
+    def plan_create(self, request: ZoneCreateRequest) -> ZoneCreatePlan:
+        """Zbuduj plan utworzenia strefy bez zapisywania plików."""
+        zone_name = normalize_zone_name(request.name)
+        if zone_name in self._existing:
+            raise ZoneLifecycleError(
+                f"Strefa już istnieje: {zone_name}"
+            )
+        if not 0 < request.default_ttl <= 2147483647:
+            raise ZoneLifecycleError("TTL musi być dodatnią liczbą")
+
+        primary_ns = normalize_fqdn(
+            request.primary_ns,
+            "primary_ns",
+        )
+        admin = normalize_fqdn(request.admin, "admin")
+        nameservers = tuple(
+            dict.fromkeys(
+                normalize_fqdn(value, "nameserver")
+                for value in request.nameservers
+            )
+        )
+        if not nameservers:
+            raise ZoneLifecycleError(
+                "Wymagany jest co najmniej jeden serwer NS"
+            )
+        if primary_ns not in nameservers:
+            raise ZoneLifecycleError(
+                "primary_ns musi znajdować się na liście nameservers"
+            )
+
+        ipv4 = self._address(request.apex_ipv4, 4)
+        ipv6 = self._address(request.apex_ipv6, 6)
+        if request.add_www and not (ipv4 or ipv6):
+            raise ZoneLifecycleError(
+                "Rekord www wymaga adresu apex IPv4 lub IPv6"
+            )
+
+        serial = int(self._today_provider().strftime("%Y%m%d") + "00")
+        zone_file = (
+            request.zone_directory.expanduser().resolve()
+            / zone_name
+        )
+        managed_config = request.managed_config.expanduser().resolve()
+        zone_text = self._zone_text(
+            request,
+            primary_ns,
+            admin,
+            nameservers,
+            serial,
+            ipv4,
+            ipv6,
+        )
+        bind_declaration = (
+            f'zone "{zone_name}" IN {{\n'
+            "    type primary;\n"
+            f'    file "{zone_file}";\n'
+            "};\n"
+        )
+        return ZoneCreatePlan(
+            zone_name=zone_name,
+            zone_file=zone_file,
+            managed_config=managed_config,
+            serial=serial,
+            zone_text=zone_text,
+            bind_declaration=bind_declaration,
+            actions=(
+                f"utwórz plik strefy {zone_file}",
+                f"dodaj deklarację do {managed_config}",
+                f"wykonaj named-checkzone {zone_name}",
+                "wykonaj named-checkconf",
+                "wykonaj rndc reconfig",
+                f"potwierdź załadowanie strefy {zone_name}",
+            ),
+        )
+
+    @staticmethod
+    def _address(value: str | None, version: int) -> str | None:
+        if value is None:
+            return None
+        try:
+            address = ipaddress.ip_address(value)
+        except ValueError as exc:
+            raise ZoneLifecycleError(
+                f"Nieprawidłowy adres IPv{version}: {value}"
+            ) from exc
+        if address.version != version:
+            raise ZoneLifecycleError(
+                f"Oczekiwano adresu IPv{version}: {value}"
+            )
+        return str(address)
+
+    @staticmethod
+    def _zone_text(
+        request: ZoneCreateRequest,
+        primary_ns: str,
+        admin: str,
+        nameservers: tuple[str, ...],
+        serial: int,
+        ipv4: str | None,
+        ipv6: str | None,
+    ) -> str:
+        lines = [
+            f"$TTL {request.default_ttl}",
+            "",
+            f"@ IN SOA {primary_ns} {admin} (",
+            f"    {serial} ; serial",
+            f"    {request.refresh} ; refresh",
+            f"    {request.retry} ; retry",
+            f"    {request.expire} ; expire",
+            f"    {request.negative_ttl} ; negative TTL",
+            ")",
+            "",
+        ]
+        lines.extend(f"@ IN NS {server}" for server in nameservers)
+        if ipv4:
+            lines.append(f"@ IN A {ipv4}")
+        if ipv6:
+            lines.append(f"@ IN AAAA {ipv6}")
+        if request.add_www:
+            lines.append("@ IN TXT \"ZoneCTL: www records below\"")
+            if ipv4:
+                lines.append(f"www IN A {ipv4}")
+            if ipv6:
+                lines.append(f"www IN AAAA {ipv6}")
+        return "\n".join(lines) + "\n"

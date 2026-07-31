@@ -46,10 +46,10 @@ zrealizowane, a `[ ]` pozostają do wykonania.
 ### Tworzenie strefy
 
 - [ ] Dodać kreator nowej domeny w TUI i odpowiadające mu polecenie CLI.
-- [ ] Walidować nazwę domeny i odrzucać strefy już istniejące.
+- [x] Walidować nazwę domeny i odrzucać strefy już istniejące.
 - [ ] Umożliwić wybór grupy, serwerów NS, administratora SOA i parametrów
   czasowych SOA.
-- [ ] Generować minimalny plik strefy z SOA, NS i poprawnym serialem.
+- [x] Generować minimalny plik strefy z SOA, NS i poprawnym serialem.
 - [ ] Opcjonalnie dodawać rekordy A/AAAA dla apexu i `www`.
 - [ ] Dodawać deklarację `primary` do zarządzanego fragmentu konfiguracji
   BIND bez modyfikowania obcych sekcji.

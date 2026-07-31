@@ -9,6 +9,11 @@ from . import __version__
 from .core.bind import BindService
 from .core.config import DEFAULT_CONFIG, DEFAULT_GROUPS, DEFAULT_ZONES, ToolkitConfig
 from .core.transaction import TransactionEngine, TransactionResult
+from .core.zone_lifecycle import (
+    ZoneCreateRequest,
+    ZoneLifecycleError,
+    ZoneLifecyclePlanner,
+)
 from .presentation import transaction_exit_code, transaction_lines
 from .ui.curses_app import CursesApp
 
@@ -27,6 +32,42 @@ def parser() -> argparse.ArgumentParser:
     domains = sub.add_parser("domains", help="wyświetl listę domen")
     domains.add_argument("--grouped", action="store_true", help="pokaż domeny w grupach")
     sub.add_parser("groups", help="wyświetl przypisanie domen do grup")
+
+    lifecycle = sub.add_parser(
+        "zone",
+        help="zarządzaj cyklem życia stref DNS",
+    )
+    lifecycle_sub = lifecycle.add_subparsers(
+        dest="zone_command",
+        required=True,
+    )
+    create_plan = lifecycle_sub.add_parser(
+        "create-plan",
+        help="pokaż plan utworzenia strefy bez zmian w systemie",
+    )
+    create_plan.add_argument("name")
+    create_plan.add_argument("--primary-ns", required=True)
+    create_plan.add_argument("--admin", required=True)
+    create_plan.add_argument(
+        "--ns",
+        action="append",
+        required=True,
+        dest="nameservers",
+    )
+    create_plan.add_argument("--ipv4")
+    create_plan.add_argument("--ipv6")
+    create_plan.add_argument("--www", action="store_true")
+    create_plan.add_argument(
+        "--zone-directory",
+        type=Path,
+        default=Path("/var/lib/bind/Primary"),
+    )
+    create_plan.add_argument(
+        "--managed-config",
+        type=Path,
+        default=Path("/etc/bind/zonectl-zones.conf"),
+    )
+    create_plan.add_argument("--json", action="store_true")
 
     tx = sub.add_parser("transaction", aliases=["tx"], help="bezpieczne transakcje na plikach stref")
     txsub = tx.add_subparsers(dest="tx_command", required=True)
@@ -183,6 +224,46 @@ def main(argv: list[str] | None = None) -> int:
     if args.command in {"transaction", "tx"}:
         return transaction_main(args, config)
     zones = config.zones()
+    if args.command == "zone":
+        try:
+            plan = ZoneLifecyclePlanner(zones).plan_create(
+                ZoneCreateRequest(
+                    name=args.name,
+                    primary_ns=args.primary_ns,
+                    admin=args.admin,
+                    nameservers=tuple(args.nameservers),
+                    zone_directory=args.zone_directory,
+                    managed_config=args.managed_config,
+                    apex_ipv4=args.ipv4,
+                    apex_ipv6=args.ipv6,
+                    add_www=args.www,
+                )
+            )
+        except ZoneLifecycleError as exc:
+            print(f"BŁĄD: {exc}", file=sys.stderr)
+            return 2
+        if args.json:
+            print(
+                json.dumps(
+                    plan.to_dict(),
+                    ensure_ascii=False,
+                    indent=2,
+                )
+            )
+        else:
+            print("PLAN UTWORZENIA STREFY — BEZ ZMIAN W SYSTEMIE")
+            print(f"Strefa:       {plan.zone_name}")
+            print(f"Plik:         {plan.zone_file}")
+            print(f"Konfiguracja: {plan.managed_config}")
+            print(f"Serial:       {plan.serial}")
+            print("\nPlik strefy:\n")
+            print(plan.zone_text, end="")
+            print("\nDeklaracja BIND:\n")
+            print(plan.bind_declaration, end="")
+            print("\nPlanowane etapy:")
+            for action in plan.actions:
+                print(f"- {action}")
+        return 0
     if args.command == "domains":
         if args.grouped:
             print("\n".join(grouped_lines(config, zones)))
