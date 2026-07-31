@@ -80,7 +80,8 @@ zrealizowane, a `[ ]` pozostają do wykonania.
 - [x] Przenosić dane do chronionej kwarantanny zamiast wykonywać bezpośrednie
   i nieodwracalne usunięcie.
 - [x] Zapisywać sumy kontrolne, manifest i kompletny pakiet odtworzeniowy.
-- [ ] Umożliwić odtworzenie strefy z kwarantanny.
+- [x] Umożliwić odtworzenie strefy z kwarantanny z weryfikacją manifestu
+  i sum SHA-256, bez usuwania pakietu odtworzeniowego.
 - [ ] Dodać konfigurowalny okres retencji przed trwałym usunięciem.
 - [ ] Trwałe usunięcie udostępnić wyłącznie jako osobną operację
   administracyjną.
