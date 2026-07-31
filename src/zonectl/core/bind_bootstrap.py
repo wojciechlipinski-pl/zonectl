@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import stat
 import tempfile
 import uuid
 from dataclasses import asdict, dataclass, field
@@ -141,6 +142,7 @@ class BindBootstrapTransaction:
             return result
 
         local_original = plan.local_config.read_bytes()
+        local_mode = stat.S_IMODE(plan.local_config.stat().st_mode)
         index_existed = plan.managed_index.exists()
         directory_existed = plan.managed_zone_directory.exists()
         include_added = False
@@ -196,7 +198,11 @@ class BindBootstrapTransaction:
                     + b"\n// ZoneCTL managed zones\n"
                     + (plan.include_line + "\n").encode("utf-8")
                 )
-                self._atomic_write(plan.local_config, updated)
+                self._atomic_write(
+                    plan.local_config,
+                    updated,
+                    mode=local_mode,
+                )
                 include_added = True
                 result.steps.append(
                     BindBootstrapStep(
@@ -221,7 +227,11 @@ class BindBootstrapTransaction:
             rollback_ok = True
             try:
                 if include_added:
-                    self._atomic_write(plan.local_config, local_original)
+                    self._atomic_write(
+                        plan.local_config,
+                        local_original,
+                        mode=local_mode,
+                    )
                 if index_created:
                     plan.managed_index.unlink(missing_ok=True)
                 if directory_created:
@@ -264,7 +274,12 @@ class BindBootstrapTransaction:
         return result
 
     @staticmethod
-    def _atomic_write(path: Path, content: bytes) -> None:
+    def _atomic_write(
+        path: Path,
+        content: bytes,
+        *,
+        mode: int = 0o640,
+    ) -> None:
         path.parent.mkdir(parents=True, exist_ok=True, mode=0o750)
         fd, temporary_name = tempfile.mkstemp(
             prefix=f".{path.name}.", dir=path.parent
@@ -275,7 +290,7 @@ class BindBootstrapTransaction:
                 handle.write(content)
                 handle.flush()
                 os.fsync(handle.fileno())
-            os.chmod(temporary, 0o640)
+            os.chmod(temporary, mode)
             os.replace(temporary, path)
         finally:
             temporary.unlink(missing_ok=True)

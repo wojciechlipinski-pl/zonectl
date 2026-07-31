@@ -47,6 +47,7 @@ def test_commit_creates_index_directory_include_backup_and_manifest(
     tmp_path: Path,
 ) -> None:
     local, root, index, declarations, manifests = layout(tmp_path)
+    local.chmod(0o644)
     original = local.read_bytes()
     plan = BindBootstrapTransaction.plan(
         local_config=local,
@@ -61,6 +62,7 @@ def test_commit_creates_index_directory_include_backup_and_manifest(
     assert index.read_text().startswith("# ZoneCTL")
     assert declarations.is_dir()
     assert local.read_text().count(f'include "{index}";') == 1
+    assert local.stat().st_mode & 0o777 == 0o644
     assert Path(result.backup).read_bytes() == original
     assert Path(result.manifest).is_file()
 
@@ -99,6 +101,7 @@ def test_existing_index_is_preserved_and_bootstrap_is_idempotent(
 
 def test_validation_failure_restores_original_state(tmp_path: Path) -> None:
     local, root, index, declarations, manifests = layout(tmp_path)
+    local.chmod(0o644)
     original = local.read_bytes()
 
     def invalid(_path: Path) -> BindBootstrapStep:
@@ -119,6 +122,7 @@ def test_validation_failure_restores_original_state(tmp_path: Path) -> None:
     assert result.status == "ROLLED-BACK"
     assert result.rolled_back
     assert local.read_bytes() == original
+    assert local.stat().st_mode & 0o777 == 0o644
     assert not index.exists()
     assert not declarations.exists()
 
