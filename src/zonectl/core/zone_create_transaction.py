@@ -80,6 +80,16 @@ class ZoneCreateTransaction:
                     f"Plik już istnieje: {plan.zone_file}",
                 ),
             )
+        if plan.zone_declaration_file.exists():
+            return self._finish(
+                result,
+                "CONFLICT",
+                ZoneCreateStep(
+                    "zone-declaration",
+                    False,
+                    f"Plik już istnieje: {plan.zone_declaration_file}",
+                ),
+            )
         if not commit:
             return self._finish(
                 result,
@@ -100,6 +110,7 @@ class ZoneCreateTransaction:
         )
         zone_created = False
         config_written = False
+        declaration_created = False
         try:
             self._atomic_write(
                 plan.zone_file,
@@ -114,12 +125,32 @@ class ZoneCreateTransaction:
                 )
             )
 
+            self._atomic_write(
+                plan.zone_declaration_file,
+                plan.bind_declaration.encode("utf-8"),
+            )
+            declaration_created = True
+            result.steps.append(
+                ZoneCreateStep(
+                    "zone-declaration",
+                    True,
+                    f"Utworzono {plan.zone_declaration_file}",
+                )
+            )
+
             current = original_config or b""
             separator = b"" if not current or current.endswith(b"\n") else b"\n"
+            include_line = (
+                f'include "{plan.zone_declaration_file}";\n'
+            ).encode("utf-8")
+            if include_line in current.splitlines(keepends=True):
+                raise RuntimeError(
+                    "Indeks już zawiera deklarację strefy"
+                )
             updated = (
                 current
                 + separator
-                + plan.bind_declaration.encode("utf-8")
+                + include_line
             )
             self._atomic_write(plan.managed_config, updated)
             config_written = True
@@ -165,6 +196,10 @@ class ZoneCreateTransaction:
                         )
                 if zone_created:
                     plan.zone_file.unlink(missing_ok=True)
+                if declaration_created:
+                    plan.zone_declaration_file.unlink(
+                        missing_ok=True
+                    )
             except OSError as rollback_error:
                 rollback_ok = False
                 result.steps.append(

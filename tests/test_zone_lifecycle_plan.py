@@ -56,6 +56,7 @@ def test_plan_is_deterministic_and_has_no_side_effects(
         request(
             zone_directory=zone_directory,
             managed_config=managed_config,
+            managed_zone_directory=tmp_path / "zonectl-zones.d",
             apex_ipv4="192.0.2.10",
             apex_ipv6="2001:db8::10",
             add_www=True,
@@ -70,6 +71,9 @@ def test_plan_is_deterministic_and_has_no_side_effects(
     assert "www IN A 192.0.2.10" in plan.zone_text
     assert "www IN AAAA 2001:db8::10" in plan.zone_text
     assert 'zone "example.pl" IN {' in plan.bind_declaration
+    assert plan.zone_declaration_file == (
+        tmp_path / "zonectl-zones.d" / "example.pl.conf"
+    ).resolve()
     assert not zone_directory.exists()
     assert not managed_config.exists()
 

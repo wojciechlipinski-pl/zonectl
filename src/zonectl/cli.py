@@ -67,6 +67,11 @@ def parser() -> argparse.ArgumentParser:
         type=Path,
         default=Path("/etc/bind/zonectl-zones.conf"),
     )
+    create_plan.add_argument(
+        "--managed-zone-directory",
+        type=Path,
+        default=Path("/etc/bind/zonectl-zones.d"),
+    )
     create_plan.add_argument("--json", action="store_true")
 
     tx = sub.add_parser("transaction", aliases=["tx"], help="bezpieczne transakcje na plikach stref")
@@ -234,6 +239,7 @@ def main(argv: list[str] | None = None) -> int:
                     nameservers=tuple(args.nameservers),
                     zone_directory=args.zone_directory,
                     managed_config=args.managed_config,
+                    managed_zone_directory=args.managed_zone_directory,
                     apex_ipv4=args.ipv4,
                     apex_ipv6=args.ipv6,
                     add_www=args.www,
@@ -255,6 +261,7 @@ def main(argv: list[str] | None = None) -> int:
             print(f"Strefa:       {plan.zone_name}")
             print(f"Plik:         {plan.zone_file}")
             print(f"Konfiguracja: {plan.managed_config}")
+            print(f"Deklaracja:   {plan.zone_declaration_file}")
             print(f"Serial:       {plan.serial}")
             print("\nPlik strefy:\n")
             print(plan.zone_text, end="")

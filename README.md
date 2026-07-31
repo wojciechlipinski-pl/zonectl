@@ -102,6 +102,9 @@ zctl zone create-plan example.pl \
 
 Polecenie jedynie prezentuje kandydat pliku strefy, deklarację BIND oraz
 planowane etapy. Nie tworzy plików i nie wykonuje `rndc reconfig`.
+Docelowo każda strefa otrzymuje osobny plik
+`/etc/bind/zonectl-zones.d/NAZWA.conf`, a indeks
+`/etc/bind/zonectl-zones.conf` zawiera wyłącznie dyrektywy `include`.
 
 ## Testy
 

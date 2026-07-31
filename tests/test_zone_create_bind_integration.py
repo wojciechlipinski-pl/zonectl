@@ -38,6 +38,7 @@ def plan(tmp_path: Path):
             ),
             zone_directory=tmp_path / "zones",
             managed_config=tmp_path / "bind" / "zones.conf",
+            managed_zone_directory=tmp_path / "bind" / "zones.d",
             apex_ipv4="192.0.2.44",
         )
     )
@@ -56,12 +57,14 @@ def test_real_bind_tools_accept_generated_zone(
     assert result.committed is True
     assert [step.name for step in result.steps] == [
         "zone-file",
+        "zone-declaration",
         "managed-config",
         "named-checkzone",
         "named-checkconf",
     ]
     assert candidate.zone_file.is_file()
     assert candidate.managed_config.is_file()
+    assert candidate.zone_declaration_file.is_file()
 
 
 def test_real_named_checkzone_failure_rolls_back(
@@ -82,6 +85,7 @@ def test_real_named_checkzone_failure_rolls_back(
     assert result.rolled_back is True
     assert not broken.zone_file.exists()
     assert not broken.managed_config.exists()
+    assert not broken.zone_declaration_file.exists()
     assert any(
         step.name == "named-checkzone" and not step.ok
         for step in result.steps

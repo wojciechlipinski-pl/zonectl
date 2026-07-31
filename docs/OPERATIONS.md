@@ -74,6 +74,10 @@ Test integracyjny `test_zone_create_bind_integration.py` uruchamia prawdziwe
 w katalogu tymczasowym pytest. Nie wykonuje `rndc reconfig`, nie dołącza
 pliku do aktywnego BIND i nie modyfikuje `/etc/bind`.
 
+Konfiguracja zarządzana używa jednego pliku deklaracji na strefę w
+`/etc/bind/zonectl-zones.d`. Plik `/etc/bind/zonectl-zones.conf` jest
+wyłącznie indeksem zawierającym dyrektywy `include` tych deklaracji.
+
 W przykładach należy zastąpić `example.pl` właściwą nazwą strefy.
 
 ```bash

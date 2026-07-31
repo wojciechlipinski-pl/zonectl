@@ -26,6 +26,7 @@ def plan(tmp_path: Path):
             nameservers=("ns1.elkman.pl.",),
             zone_directory=tmp_path / "zones",
             managed_config=tmp_path / "bind" / "zones.conf",
+            managed_zone_directory=tmp_path / "bind" / "zones.d",
         )
     )
 
@@ -64,7 +65,14 @@ def test_commit_creates_files_and_manifest(tmp_path: Path) -> None:
     assert result.status == "COMMIT"
     assert result.committed is True
     assert candidate.zone_file.read_text() == candidate.zone_text
-    assert candidate.bind_declaration in candidate.managed_config.read_text()
+    assert (
+        candidate.zone_declaration_file.read_text()
+        == candidate.bind_declaration
+    )
+    assert (
+        f'include "{candidate.zone_declaration_file}";'
+        in candidate.managed_config.read_text()
+    )
     manifest = Path(result.manifest or "")
     assert manifest.is_file()
     assert json.loads(manifest.read_text())["status"] == "COMMIT"
@@ -99,6 +107,7 @@ def test_zone_validation_failure_rolls_back_both_files(
     assert result.status == "ROLLED-BACK"
     assert result.rolled_back is True
     assert not candidate.zone_file.exists()
+    assert not candidate.zone_declaration_file.exists()
     assert candidate.managed_config.read_text() == "// original\n"
 
 
@@ -117,6 +126,7 @@ def test_config_validation_failure_removes_new_files(
 
     assert result.status == "ROLLED-BACK"
     assert not candidate.zone_file.exists()
+    assert not candidate.zone_declaration_file.exists()
     assert not candidate.managed_config.exists()
 
 

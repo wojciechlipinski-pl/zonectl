@@ -51,6 +51,9 @@ class ZoneCreateRequest:
     nameservers: tuple[str, ...]
     zone_directory: Path = Path("/var/lib/bind/Primary")
     managed_config: Path = Path("/etc/bind/zonectl-zones.conf")
+    managed_zone_directory: Path = Path(
+        "/etc/bind/zonectl-zones.d"
+    )
     default_ttl: int = 3600
     refresh: int = 3600
     retry: int = 900
@@ -66,6 +69,7 @@ class ZoneCreatePlan:
     zone_name: str
     zone_file: Path
     managed_config: Path
+    zone_declaration_file: Path
     serial: int
     zone_text: str
     bind_declaration: str
@@ -75,6 +79,9 @@ class ZoneCreatePlan:
         payload = asdict(self)
         payload["zone_file"] = str(self.zone_file)
         payload["managed_config"] = str(self.managed_config)
+        payload["zone_declaration_file"] = str(
+            self.zone_declaration_file
+        )
         return payload
 
 
@@ -136,6 +143,10 @@ class ZoneLifecyclePlanner:
             / zone_name
         )
         managed_config = request.managed_config.expanduser().resolve()
+        declaration_file = (
+            request.managed_zone_directory.expanduser().resolve()
+            / f"{zone_name}.conf"
+        )
         zone_text = self._zone_text(
             request,
             primary_ns,
@@ -155,12 +166,14 @@ class ZoneLifecyclePlanner:
             zone_name=zone_name,
             zone_file=zone_file,
             managed_config=managed_config,
+            zone_declaration_file=declaration_file,
             serial=serial,
             zone_text=zone_text,
             bind_declaration=bind_declaration,
             actions=(
                 f"utwórz plik strefy {zone_file}",
-                f"dodaj deklarację do {managed_config}",
+                f"utwórz deklarację {declaration_file}",
+                f"dodaj include do {managed_config}",
                 f"wykonaj named-checkzone {zone_name}",
                 "wykonaj named-checkconf",
                 "wykonaj rndc reconfig",
