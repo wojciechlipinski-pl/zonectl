@@ -8,6 +8,7 @@ from pathlib import Path
 from . import __version__
 from .core.bind import BindService
 from .core.config import DEFAULT_CONFIG, DEFAULT_GROUPS, DEFAULT_ZONES, ToolkitConfig
+from .core.dnssec_report import DnssecReporter
 from .core.transaction import TransactionEngine, TransactionResult
 from .core.zone_create_transaction import ZoneCreateTransaction
 from .core.zone_disable_transaction import (
@@ -50,6 +51,20 @@ def parser() -> argparse.ArgumentParser:
     domains = sub.add_parser("domains", help="wyświetl listę domen")
     domains.add_argument("--grouped", action="store_true", help="pokaż domeny w grupach")
     sub.add_parser("groups", help="wyświetl przypisanie domen do grup")
+
+    dnssec = sub.add_parser(
+        "dnssec",
+        help="odczytowy raport i przyszłe operacje DNSSEC",
+    )
+    dnssec_sub = dnssec.add_subparsers(dest="dnssec_command", required=True)
+    dnssec_report = dnssec_sub.add_parser(
+        "report",
+        help="pokaż konfigurację, DNSKEY, RRSIG i DS bez wykonywania zmian",
+    )
+    dnssec_report.add_argument("name")
+    dnssec_report.add_argument("--server")
+    dnssec_report.add_argument("--resolver", default="1.1.1.1")
+    dnssec_report.add_argument("--json", action="store_true")
 
     lifecycle = sub.add_parser(
         "zone",
@@ -454,6 +469,80 @@ def main(argv: list[str] | None = None) -> int:
     if args.command in {"transaction", "tx"}:
         return transaction_main(args, config)
     zones = config.zones()
+    if args.command == "dnssec" and args.dnssec_command == "report":
+        wanted = args.name.strip().rstrip(".").casefold()
+        matches = [
+            zone
+            for zone in zones
+            if zone.name.rstrip(".").casefold() == wanted
+        ]
+        if not matches:
+            print(f"BŁĄD: Nie znaleziono strefy: {args.name}", file=sys.stderr)
+            return 2
+
+        zone = matches[0]
+        local_server = args.server or config.toolkit.get(
+            "local_server", "127.0.0.1"
+        )
+        key_directory = zone.key_directory
+        if key_directory is None:
+            configured_directory = config.toolkit.get(
+                "dnssec_key_directory", "/var/lib/bind/keys"
+            ).strip()
+            key_directory = (
+                Path(configured_directory)
+                if configured_directory
+                else None
+            )
+
+        report = DnssecReporter(
+            local_server=local_server,
+            resolver=args.resolver,
+            timeout=int(config.toolkit.get("dig_timeout", "3")),
+        ).collect(zone, key_directory)
+
+        if args.json:
+            print(json.dumps(report.to_dict(), ensure_ascii=False, indent=2))
+        else:
+            def yes_no(value: bool | None) -> str:
+                if value is True:
+                    return "TAK"
+                if value is False:
+                    return "NIE"
+                return "NIEZNANY"
+
+            print(f"DNSSEC REPORT — {report.zone}")
+            print(f"Status:             {report.status}")
+            print(f"Skonfigurowany:     {yes_no(report.configured)}")
+            print(f"dnssec-policy:      {report.dnssec_policy or '-'}")
+            print(f"inline-signing:     {yes_no(report.inline_signing)}")
+            print(f"Strefa załadowana:  {yes_no(report.loaded)}")
+            print(f"Podpisywanie BIND:  {yes_no(report.signing)}")
+            if report.rndc_status:
+                print("Stan KASP z rndc:")
+                for line in report.rndc_status:
+                    print(f"  {line}")
+            print(f"Katalog kluczy:     {report.key_directory or '-'}")
+            print(f"Pliki kluczy:       {len(report.key_files)}")
+            for path in report.key_files:
+                print(f"  {path}")
+            print(f"DNSKEY:             {len(report.dnskey_records)}")
+            for record in report.dnskey_records:
+                print(f"  {record}")
+            print(f"RRSIG DNSKEY:       {len(report.rrsig_records)}")
+            print("DS obliczony lokalnie:")
+            for record in report.calculated_ds or ("-",):
+                print(f"  {record}")
+            print("DS widoczny publicznie:")
+            for record in report.parent_ds_records or ("-",):
+                print(f"  {record}")
+            print(f"Zgodność DS:        {yes_no(report.parent_ds_matches)}")
+            for warning in report.warnings:
+                print(f"OSTRZEŻENIE: {warning}")
+            for error in report.errors:
+                print(f"BŁĄD: {error}")
+
+        return 1 if report.status == "FAIL" else 0
     if args.command == "zone":
         if args.zone_command == "safety":
             selected = zones

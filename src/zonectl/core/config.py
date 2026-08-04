@@ -325,6 +325,7 @@ class ToolkitConfig:
             ),
             dnssec_policy=discovered.dnssec_policy,
             inline_signing=discovered.inline_signing,
+            key_directory=discovered.key_directory,
         )
 
     def _zones_from_discovery(self) -> list[Zone]:
@@ -413,6 +414,11 @@ class ToolkitConfig:
                     ),
                     inline_signing=_yes(
                         item.get("inline_signing"), False
+                    ),
+                    key_directory=(
+                        Path(item.get("key_directory", "").strip())
+                        if item.get("key_directory", "").strip()
+                        else None
                     ),
                 )
             )

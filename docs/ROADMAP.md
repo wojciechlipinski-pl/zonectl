@@ -114,14 +114,16 @@ zrealizowane, a `[ ]` pozostają do wykonania.
   narzędziami walidacyjnymi BIND, bez kontaktu z produkcyjnym `rndc`.
 - [ ] Dodać testy stref `inline-signing`.
 - [ ] Zweryfikować skróty klawiszowe w kolejnych typach terminali.
-- [ ] Dodać obsługę klawiszy `Home` i `End` we wszystkich polach tekstowych
+- [x] Dodać obsługę klawiszy `Home` i `End` we wszystkich polach tekstowych
   formularzy TUI, szczególnie podczas edycji długich rekordów TXT.
-- [ ] Dodać naturalne sortowanie nazw rekordów, aby etykiety numeryczne
+- [x] Dodać naturalne sortowanie nazw rekordów, aby etykiety numeryczne
   (szczególnie w strefach odwrotnych `in-addr.arpa`) były prezentowane jako
   `1, 2, 3, ..., 10, 11`, zamiast leksykograficznie jako `1, 10, 100, ...`.
 
 ## ZoneCTL 4.6 — zarządzanie DNSSEC
 
+- [x] Dodać odczytowy raport konfiguracji KASP, kluczy, DNSKEY, RRSIG,
+  lokalnie obliczonego DS i DS widocznego przez publiczny resolver.
 - [ ] Dodać plan oraz dry-run bezpiecznego włączenia DNSSEC dla strefy.
 - [ ] Wykonać backup konfiguracji BIND i materiału kluczowego przed zmianą.
 - [ ] Aktywować `dnssec-policy default` oraz `inline-signing` transakcyjnie,

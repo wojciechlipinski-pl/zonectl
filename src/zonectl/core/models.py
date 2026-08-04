@@ -26,6 +26,7 @@ class Zone:
     rpz_max_age: int = 600
     dnssec_policy: str | None = None
     inline_signing: bool = False
+    key_directory: Path | None = None
 
 
 @dataclass(slots=True)

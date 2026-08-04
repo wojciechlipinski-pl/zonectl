@@ -45,6 +45,20 @@ kontrastowym tłem całego wiersza oraz podpisem bieżącego pola.
 Operacje cyklu życia są blokowane dla automatycznych stref RPZ oraz stref,
 w których BIND wykrył `dnssec-policy` lub `inline-signing`.
 
+## Raport DNSSEC
+
+Wersja rozwojowa 4.6 udostępnia raport DNSSEC działający wyłącznie do odczytu:
+
+```bash
+zctl dnssec report example.pl
+zctl dnssec report example.pl --json
+```
+
+Raport pokazuje konfigurację `dnssec-policy` i `inline-signing`, stan KASP
+z `rndc`, pliki kluczy, lokalne DNSKEY i RRSIG, DS obliczony z DNSKEY metodą
+SHA-256 oraz DS widoczny przez publiczny resolver. Polecenie nie modyfikuje
+konfiguracji BIND, plików stref ani materiału kluczowego.
+
 ## Filtrowanie rekordów
 
 W widoku rekordów naciśnij `/`. Zwykły tekst nadal przeszukuje wszystkie

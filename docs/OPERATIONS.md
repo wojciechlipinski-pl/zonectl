@@ -282,6 +282,25 @@ zctl zone safety
 zctl zone safety example.pl --json
 ```
 
+### Odczytowy raport DNSSEC 4.6
+
+Przed planowaniem włączenia DNSSEC należy zebrać stan początkowy strefy:
+
+```bash
+zctl dnssec report example.pl
+zctl dnssec report example.pl --json
+```
+
+Raport odpytuje lokalny BIND o `zonestatus`, stan KASP, DNSKEY i RRSIG.
+Następnie oblicza DS typu 2 (SHA-256) z kluczy DNSKEY oznaczonych flagą SEP
+i porównuje go z DS widocznym przez publiczny resolver. Domyślnie używany
+jest resolver `1.1.1.1`; można wskazać inny przez `--resolver`.
+
+Status `WARN` przy braku publicznego DS jest prawidłowy dla strefy podpisanej,
+której DS nie został jeszcze przekazany do strefy nadrzędnej. Status `FAIL`
+oznacza między innymi brak DNSKEY/RRSIG albo niezgodność opublikowanego DS.
+Polecenie jest bezpieczne i nie wykonuje żadnych zapisów ani przeładowań BIND.
+
 ### Utworzenie strefy
 
 ```bash
