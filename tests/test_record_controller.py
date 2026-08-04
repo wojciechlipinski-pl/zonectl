@@ -59,6 +59,24 @@ def test_default_sort_uses_owner_name() -> None:
     assert owners == ["@", "api", "www"]
 
 
+def test_default_sort_uses_natural_order_for_numeric_owners() -> None:
+    model = ZoneModel(
+        "188.172.5.in-addr.arpa",
+        [
+            make_record(f"{owner}.188.172.5.in-addr.arpa.", rtype="PTR")
+            for owner in ("100", "11", "2", "10", "1", "host10", "host2")
+        ],
+    )
+    controller = RecordController(model, "188.172.5.in-addr.arpa")
+
+    owners = [
+        view.record.relative_owner("188.172.5.in-addr.arpa")
+        for view in controller.ordered_views()
+    ]
+
+    assert owners == ["1", "2", "10", "11", "100", "host2", "host10"]
+
+
 def test_sort_by_type() -> None:
     controller = make_controller()
     controller.cycle_sort()

@@ -4,6 +4,14 @@ import curses
 
 
 FUNCTION_KEY_SEQUENCES: dict[bytes, int] = {
+    b"[H": curses.KEY_HOME,
+    b"[F": curses.KEY_END,
+    b"OH": curses.KEY_HOME,
+    b"OF": curses.KEY_END,
+    b"[1~": curses.KEY_HOME,
+    b"[4~": curses.KEY_END,
+    b"[7~": curses.KEY_HOME,
+    b"[8~": curses.KEY_END,
     b"OP": curses.KEY_F1,
     b"OQ": curses.KEY_F2,
     b"OR": curses.KEY_F3,

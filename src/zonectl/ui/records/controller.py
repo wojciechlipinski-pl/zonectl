@@ -3,8 +3,21 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+import re
 
 from zonectl.core.zone_model import ZoneModel, ZoneRecordView
+
+
+def natural_name_key(value: str) -> tuple[tuple[int, object], ...]:
+    """Sortuj cyfry według wartości, a tekst bez rozróżniania liter."""
+    if value == "@":
+        return ((-1, ""),)
+
+    return tuple(
+        (0, int(part)) if part.isdigit() else (1, part.casefold())
+        for part in re.split(r"(\d+)", value)
+        if part
+    )
 
 
 class RecordController:
@@ -54,11 +67,11 @@ class RecordController:
     def _name_key(
         self,
         view: ZoneRecordView,
-    ) -> tuple[str, str, str, int]:
+    ) -> tuple[tuple[tuple[int, object], ...], str, str, int]:
         record = view.record
 
         return (
-            record.relative_owner(self.zone_name).casefold(),
+            natural_name_key(record.relative_owner(self.zone_name)),
             record.rtype.casefold(),
             record.rdata.casefold(),
             view.identifier,
@@ -67,12 +80,12 @@ class RecordController:
     def _type_key(
         self,
         view: ZoneRecordView,
-    ) -> tuple[str, str, str, int]:
+    ) -> tuple[str, tuple[tuple[int, object], ...], str, int]:
         record = view.record
 
         return (
             record.rtype.casefold(),
-            record.relative_owner(self.zone_name).casefold(),
+            natural_name_key(record.relative_owner(self.zone_name)),
             record.rdata.casefold(),
             view.identifier,
         )
@@ -80,13 +93,13 @@ class RecordController:
     def _ttl_key(
         self,
         view: ZoneRecordView,
-    ) -> tuple[bool, int, str, str, int]:
+    ) -> tuple[bool, int, tuple[tuple[int, object], ...], str, int]:
         record = view.record
 
         return (
             record.ttl is None,
             record.ttl or 0,
-            record.relative_owner(self.zone_name).casefold(),
+            natural_name_key(record.relative_owner(self.zone_name)),
             record.rtype.casefold(),
             view.identifier,
         )

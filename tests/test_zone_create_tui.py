@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import curses
 from pathlib import Path
 
 from zonectl.core.zone_create_transaction import (
@@ -14,6 +15,22 @@ from zonectl.ui.zone_create_dialog import ZoneCreateDialog, ZoneCreateForm
 class FakeWindow:
     def getmaxyx(self):
         return (30, 120)
+
+
+class KeyWindow:
+    def __init__(self, keys: list[int]):
+        self.keys = list(keys)
+
+    def getch(self):
+        return self.keys.pop(0) if self.keys else -1
+
+    def timeout(self, value):
+        pass
+
+
+def test_zone_create_dialog_decodes_home_and_end() -> None:
+    assert ZoneCreateDialog._get_key(KeyWindow([27, *b"[H"])) == curses.KEY_HOME
+    assert ZoneCreateDialog._get_key(KeyWindow([27, *b"[F"])) == curses.KEY_END
 
 
 def test_tui_wizard_creates_and_adds_zone(monkeypatch) -> None:

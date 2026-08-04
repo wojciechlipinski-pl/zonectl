@@ -98,6 +98,10 @@ class ZoneCreateDialog:
                     cursor = max(0, cursor - 1)
                 elif key == curses.KEY_RIGHT:
                     cursor = min(len(value), cursor + 1)
+                elif key == curses.KEY_HOME:
+                    cursor = 0
+                elif key == curses.KEY_END:
+                    cursor = len(value)
                 elif key in (curses.KEY_BACKSPACE, 8, 127):
                     if cursor:
                         del value[cursor - 1]

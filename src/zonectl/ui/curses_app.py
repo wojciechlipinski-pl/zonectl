@@ -6,6 +6,7 @@ from zonectl.ui.dialogs import CursesDialogs
 from zonectl.ui.function_keys import decode_function_key
 from zonectl.ui.records.editor import RecordEditor
 from zonectl.ui.records.new_record import NewRecordDialog
+from zonectl.ui.records.controller import natural_name_key
 from zonectl.ui.records.renderer import RecordRenderer
 from zonectl.ui.zone_create_dialog import ZoneCreateDialog
 
@@ -550,7 +551,7 @@ class CursesApp:
             def name_key(view):
                 record = view.record
                 return (
-                    record.relative_owner(zone.name).casefold(),
+                    natural_name_key(record.relative_owner(zone.name)),
                     record.rtype.casefold(),
                     record.rdata.casefold(),
                     view.identifier,
@@ -560,7 +561,7 @@ class CursesApp:
                 record = view.record
                 return (
                     record.rtype.casefold(),
-                    record.relative_owner(zone.name).casefold(),
+                    natural_name_key(record.relative_owner(zone.name)),
                     record.rdata.casefold(),
                     view.identifier,
                 )
@@ -570,7 +571,7 @@ class CursesApp:
                 return (
                     record.ttl is None,
                     record.ttl or 0,
-                    record.relative_owner(zone.name).casefold(),
+                    natural_name_key(record.relative_owner(zone.name)),
                     record.rtype.casefold(),
                     view.identifier,
                 )

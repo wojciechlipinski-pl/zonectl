@@ -33,6 +33,14 @@ def test_editor_decodes_xterm_f2() -> None:
     assert read_sequence(b"[12~") == curses.KEY_F2
 
 
+def test_editor_decodes_home_and_end_sequences() -> None:
+    for sequence in (b"[H", b"OH", b"[1~", b"[7~"):
+        assert read_sequence(sequence) == curses.KEY_HOME
+
+    for sequence in (b"[F", b"OF", b"[4~", b"[8~"):
+        assert read_sequence(sequence) == curses.KEY_END
+
+
 def test_editor_keeps_escape_for_unknown_sequence(
     monkeypatch,
 ) -> None:
