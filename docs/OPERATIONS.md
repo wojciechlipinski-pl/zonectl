@@ -311,6 +311,10 @@ Jeżeli źródłowy plik strefy znajduje się poza `/var/lib/bind/Primary`, plan
 obejmuje jego bezpieczne skopiowanie, zmianę dyrektywy `file` i zachowanie
 oryginału do czasu zakończenia całej transakcji.
 
+Rdzeń przyszłej transakcji jest sprawdzany również na izolowanej konfiguracji
+przez prawdziwe `named-checkzone` i `named-checkconf`. Testy nie wywołują
+`rndc`, nie przeładowują usługi i nie korzystają z produkcyjnego `/etc/bind`.
+
 ### Utworzenie strefy
 
 ```bash

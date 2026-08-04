@@ -126,6 +126,8 @@ zrealizowane, a `[ ]` pozostają do wykonania.
   lokalnie obliczonego DS i DS widocznego przez publiczny resolver.
 - [x] Dodać plan oraz dry-run bezpiecznego włączenia DNSSEC dla strefy.
 - [ ] Wykonać backup konfiguracji BIND i materiału kluczowego przed zmianą.
+- [x] Przetestować rdzeń transakcji i rollback na izolowanej konfiguracji
+  przy użyciu prawdziwych walidatorów BIND.
 - [ ] Aktywować `dnssec-policy default` oraz `inline-signing` transakcyjnie,
   z walidacją `named-checkconf`, kontrolowanym `rndc reconfig` i rollbackiem.
 - [ ] Monitorować utworzenie kluczy, podpisanie strefy i stan rekordów DNSKEY.
