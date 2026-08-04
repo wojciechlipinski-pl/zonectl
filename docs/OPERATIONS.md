@@ -291,6 +291,7 @@ zctl dnssec report example.pl
 zctl dnssec report example.pl --json
 zctl dnssec enable-plan example.pl
 zctl dnssec enable-plan example.pl --json
+zctl dnssec enable example.pl
 ```
 
 Raport odpytuje lokalny BIND o `zonestatus`, stan KASP, DNSKEY i RRSIG.
@@ -314,6 +315,9 @@ oryginału do czasu zakończenia całej transakcji.
 Rdzeń przyszłej transakcji jest sprawdzany również na izolowanej konfiguracji
 przez prawdziwe `named-checkzone` i `named-checkconf`. Testy nie wywołują
 `rndc`, nie przeładowują usługi i nie korzystają z produkcyjnego `/etc/bind`.
+Polecenie `dnssec enable` pozostaje dry-runem bez flag. Zmiana i aktywacja
+wymagają równoczesnego, jawnego `--commit --activate`; podanie tylko jednej
+z tych flag kończy się błędem bez zapisów.
 
 ### Utworzenie strefy
 

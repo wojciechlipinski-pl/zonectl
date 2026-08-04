@@ -2,12 +2,14 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import zonectl.core.dnssec_enable_transaction as transaction_module
 from zonectl.core.discovery import ZoneConfig
 from zonectl.core.dnssec_enable_plan import DnssecEnablePlanner
 from zonectl.core.dnssec_enable_transaction import (
     DnssecEnableStep,
     DnssecEnableTransaction,
 )
+from zonectl.core.runner import CommandResult
 
 
 def setup_plan(tmp_path: Path):
@@ -141,6 +143,62 @@ def test_existing_signing_artifact_is_rejected(tmp_path: Path) -> None:
 
     assert result.status == "CONFLICT"
     assert not (tmp_path / "backups").exists()
+
+
+def test_default_activation_uses_expected_rndc_sequence(
+    monkeypatch, tmp_path: Path
+) -> None:
+    plan, _declaration, _source = setup_plan(tmp_path)
+    commands: list[list[str]] = []
+
+    def fake_run(command: list[str], _timeout: int) -> CommandResult:
+        commands.append(command)
+        if command[:3] == ["rndc", "dnssec", "-status"]:
+            return CommandResult(0, "zone signing: yes\n", "")
+        return CommandResult(0, "OK\n", "")
+
+    monkeypatch.setattr(transaction_module, "run", fake_run)
+    transaction = DnssecEnableTransaction(
+        tmp_path / "backups",
+        tmp_path / "manifests",
+        root_config=tmp_path / "named.conf",
+    )
+
+    result = transaction.apply(plan, commit=True, activate=True)
+
+    assert result.status == "COMMIT"
+    assert ["rndc", "reconfig"] in commands
+    assert ["rndc", "zonestatus", "example.pl"] in commands
+    assert ["rndc", "dnssec", "-status", "example.pl"] in commands
+
+
+def test_failed_fake_dnssec_status_rolls_back(monkeypatch, tmp_path: Path) -> None:
+    plan, declaration, _source = setup_plan(tmp_path)
+    original = declaration.read_bytes()
+    reconfig_calls = 0
+
+    def fake_run(command: list[str], _timeout: int) -> CommandResult:
+        nonlocal reconfig_calls
+        if command == ["rndc", "reconfig"]:
+            reconfig_calls += 1
+            return CommandResult(0, "OK\n", "")
+        if command[:3] == ["rndc", "dnssec", "-status"]:
+            return CommandResult(1, "", "not ready")
+        return CommandResult(0, "OK\n", "")
+
+    monkeypatch.setattr(transaction_module, "run", fake_run)
+    transaction = DnssecEnableTransaction(
+        tmp_path / "backups",
+        tmp_path / "manifests",
+        root_config=tmp_path / "named.conf",
+    )
+
+    result = transaction.apply(plan, commit=True, activate=True)
+
+    assert result.status == "ROLLED-BACK"
+    assert reconfig_calls == 2
+    assert declaration.read_bytes() == original
+    assert not plan.target_zone_file.exists()
 
 
 def test_changed_declaration_is_rejected_before_writes(tmp_path: Path) -> None:
