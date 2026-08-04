@@ -52,12 +52,17 @@ Wersja rozwojowa 4.6 udostępnia raport DNSSEC działający wyłącznie do odczy
 ```bash
 zctl dnssec report example.pl
 zctl dnssec report example.pl --json
+zctl dnssec enable-plan example.pl
 ```
 
 Raport pokazuje konfigurację `dnssec-policy` i `inline-signing`, stan KASP
 z `rndc`, pliki kluczy, lokalne DNSKEY i RRSIG, DS obliczony z DNSKEY metodą
 SHA-256 oraz DS widoczny przez publiczny resolver. Polecenie nie modyfikuje
 konfiguracji BIND, plików stref ani materiału kluczowego.
+
+`enable-plan` pokazuje kandydacki unified diff deklaracji strefy oraz pełną
+listę przyszłych kroków transakcji. Nie zapisuje konfiguracji, nie tworzy
+kluczy i nie wykonuje `rndc reconfig`.
 
 ## Filtrowanie rekordów
 

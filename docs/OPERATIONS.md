@@ -289,6 +289,8 @@ Przed planowaniem włączenia DNSSEC należy zebrać stan początkowy strefy:
 ```bash
 zctl dnssec report example.pl
 zctl dnssec report example.pl --json
+zctl dnssec enable-plan example.pl
+zctl dnssec enable-plan example.pl --json
 ```
 
 Raport odpytuje lokalny BIND o `zonestatus`, stan KASP, DNSKEY i RRSIG.
@@ -300,6 +302,14 @@ Status `WARN` przy braku publicznego DS jest prawidłowy dla strefy podpisanej,
 której DS nie został jeszcze przekazany do strefy nadrzędnej. Status `FAIL`
 oznacza między innymi brak DNSKEY/RRSIG albo niezgodność opublikowanego DS.
 Polecenie jest bezpieczne i nie wykonuje żadnych zapisów ani przeładowań BIND.
+
+`enable-plan` wymaga autodetekcji deklaracji BIND. Odrzuca strefy secondary,
+RPZ i strefy posiadające już pełną lub częściową konfigurację DNSSEC. Wynik
+zawiera dokładny unified diff, ścieżkę katalogu kluczy i kolejność przyszłych
+walidacji. Sam plan nie tworzy katalogów i nie zapisuje żadnego pliku.
+Jeżeli źródłowy plik strefy znajduje się poza `/var/lib/bind/Primary`, plan
+obejmuje jego bezpieczne skopiowanie, zmianę dyrektywy `file` i zachowanie
+oryginału do czasu zakończenia całej transakcji.
 
 ### Utworzenie strefy
 

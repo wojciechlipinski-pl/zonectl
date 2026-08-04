@@ -124,7 +124,7 @@ zrealizowane, a `[ ]` pozostają do wykonania.
 
 - [x] Dodać odczytowy raport konfiguracji KASP, kluczy, DNSKEY, RRSIG,
   lokalnie obliczonego DS i DS widocznego przez publiczny resolver.
-- [ ] Dodać plan oraz dry-run bezpiecznego włączenia DNSSEC dla strefy.
+- [x] Dodać plan oraz dry-run bezpiecznego włączenia DNSSEC dla strefy.
 - [ ] Wykonać backup konfiguracji BIND i materiału kluczowego przed zmianą.
 - [ ] Aktywować `dnssec-policy default` oraz `inline-signing` transakcyjnie,
   z walidacją `named-checkconf`, kontrolowanym `rndc reconfig` i rollbackiem.

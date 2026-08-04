@@ -8,6 +8,10 @@ from pathlib import Path
 from . import __version__
 from .core.bind import BindService
 from .core.config import DEFAULT_CONFIG, DEFAULT_GROUPS, DEFAULT_ZONES, ToolkitConfig
+from .core.dnssec_enable_plan import (
+    DnssecEnablePlanError,
+    DnssecEnablePlanner,
+)
 from .core.dnssec_report import DnssecReporter
 from .core.transaction import TransactionEngine, TransactionResult
 from .core.zone_create_transaction import ZoneCreateTransaction
@@ -65,6 +69,23 @@ def parser() -> argparse.ArgumentParser:
     dnssec_report.add_argument("--server")
     dnssec_report.add_argument("--resolver", default="1.1.1.1")
     dnssec_report.add_argument("--json", action="store_true")
+    dnssec_enable_plan = dnssec_sub.add_parser(
+        "enable-plan",
+        help="pokaż plan włączenia DNSSEC bez wykonywania zmian",
+    )
+    dnssec_enable_plan.add_argument("name")
+    dnssec_enable_plan.add_argument("--policy", default="default")
+    dnssec_enable_plan.add_argument(
+        "--key-directory",
+        type=Path,
+        default=Path("/var/lib/bind/keys"),
+    )
+    dnssec_enable_plan.add_argument(
+        "--zone-directory",
+        type=Path,
+        default=Path("/var/lib/bind/Primary"),
+    )
+    dnssec_enable_plan.add_argument("--json", action="store_true")
 
     lifecycle = sub.add_parser(
         "zone",
@@ -469,6 +490,63 @@ def main(argv: list[str] | None = None) -> int:
     if args.command in {"transaction", "tx"}:
         return transaction_main(args, config)
     zones = config.zones()
+    if args.command == "dnssec" and args.dnssec_command == "enable-plan":
+        wanted = args.name.strip().rstrip(".").casefold()
+        display_zone = next(
+            (
+                zone
+                for zone in zones
+                if zone.name.rstrip(".").casefold() == wanted
+            ),
+            None,
+        )
+        if display_zone is None:
+            print(f"BŁĄD: Nie znaleziono strefy: {args.name}", file=sys.stderr)
+            return 2
+        if display_zone.health_profile.casefold() == "rpz":
+            print(
+                f"BŁĄD: Włączenie DNSSEC jest zablokowane dla RPZ: {display_zone.name}",
+                file=sys.stderr,
+            )
+            return 2
+        discovered = config.discovered_zone(args.name)
+        if discovered is None:
+            print(
+                "BŁĄD: Plan DNSSEC wymaga autodetekcji deklaracji strefy BIND.",
+                file=sys.stderr,
+            )
+            return 2
+        try:
+            plan = DnssecEnablePlanner().plan(
+                discovered,
+                policy=args.policy,
+                key_directory=args.key_directory,
+                zone_directory=args.zone_directory,
+            )
+        except (DnssecEnablePlanError, OSError) as exc:
+            print(f"BŁĄD: {exc}", file=sys.stderr)
+            return 2
+        if args.json:
+            print(json.dumps(plan.to_dict(), ensure_ascii=False, indent=2))
+        else:
+            print("PLAN WŁĄCZENIA DNSSEC — BEZ ZMIAN W SYSTEMIE")
+            print(f"Strefa:       {plan.zone}")
+            print(f"Plik źródłowy: {plan.source_zone_file}")
+            print(f"Plik docelowy: {plan.target_zone_file}")
+            print(
+                "Migracja pliku: "
+                + ("TAK" if plan.migration_required else "NIE")
+            )
+            print(f"Deklaracja:   {plan.declaration_file}")
+            print(f"Polityka:     {plan.policy}")
+            print(f"Katalog kluczy: {plan.key_directory}")
+            print("\nPlanowany diff:\n")
+            print(plan.unified_diff, end="")
+            print("\nPlanowane etapy:")
+            for action in plan.actions:
+                print(f"- {action}")
+            print("\nWynik: DRY-RUN — niczego nie zmieniono")
+        return 0
     if args.command == "dnssec" and args.dnssec_command == "report":
         wanted = args.name.strip().rstrip(".").casefold()
         matches = [
