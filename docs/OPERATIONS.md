@@ -319,6 +319,16 @@ Polecenie `dnssec enable` pozostaje dry-runem bez flag. Zmiana i aktywacja
 wymagają równoczesnego, jawnego `--commit --activate`; podanie tylko jednej
 z tych flag kończy się błędem bez zapisów.
 
+Kontrolowany test rollbacku jest ograniczony w kodzie do strefy
+`zonectl-test.invalid`. Narzędzie `tools/dnssec_rollback_drill.py` domyślnie
+wykonuje dry-run, a rzeczywisty drill wymaga dwóch jawnych parametrów:
+`--execute --confirm zonectl-test.invalid`. Weryfikator celowo zgłasza błąd
+dopiero po zaobserwowaniu podpisywania, aby sprawdzić produkcyjną ścieżkę
+przywrócenia konfiguracji i sprzątania nowych artefaktów.
+Backup deklaracji zachowuje tryb, UID i GID oryginału. Rollback odtwarza te
+metadane również z zapamiętanego stanu początkowego, aby BIND nie utracił
+prawa odczytu pliku po przywróceniu.
+
 ### Utworzenie strefy
 
 ```bash

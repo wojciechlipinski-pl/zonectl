@@ -148,7 +148,13 @@ class DnssecEnableTransaction:
             rollback_ok = True
             try:
                 if config_written:
-                    self._atomic_copy_exact(backup_directory / "bind-declaration.conf", plan.declaration_file)
+                    self._atomic_write(
+                        plan.declaration_file,
+                        (backup_directory / "bind-declaration.conf").read_bytes(),
+                        declaration_stat.st_mode & 0o777,
+                        declaration_stat.st_uid,
+                        declaration_stat.st_gid,
+                    )
                 if activation_attempted:
                     restore = self.activator(plan.zone)
                     result.steps.append(DnssecEnableStep("rndc-reconfig-rollback", restore.ok, restore.message))
@@ -222,6 +228,9 @@ class DnssecEnableTransaction:
     @staticmethod
     def _copy_backup(source: Path, target: Path) -> None:
         shutil.copy2(source, target)
+        if hasattr(os, "chown"):
+            owner = source.stat()
+            os.chown(target, owner.st_uid, owner.st_gid)
 
     @staticmethod
     def _atomic_write(path: Path, content: bytes, mode: int, uid: int, gid: int) -> None:

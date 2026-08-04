@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
+import pytest
 import zonectl.core.dnssec_enable_transaction as transaction_module
 from zonectl.core.discovery import ZoneConfig
 from zonectl.core.dnssec_enable_plan import DnssecEnablePlanner
@@ -104,6 +106,26 @@ def test_validation_failure_restores_configuration_and_removes_target(tmp_path: 
     assert declaration.read_bytes() == before
     assert source.exists()
     assert not plan.target_zone_file.exists()
+
+
+@pytest.mark.skipif(os.name == "nt", reason="Test metadanych POSIX")
+def test_rollback_preserves_original_configuration_owner(
+    tmp_path: Path,
+) -> None:
+    plan, declaration, _source = setup_plan(tmp_path)
+    original = declaration.stat()
+    test_gid = original.st_gid + 1000
+    os.chown(declaration, original.st_uid, test_gid)
+    bad = lambda *_args: DnssecEnableStep("named-checkconf", False, "invalid")
+
+    result = engine(tmp_path, config_validator=bad).apply(plan, commit=True)
+
+    assert result.status == "ROLLED-BACK"
+    restored = declaration.stat()
+    assert restored.st_uid == original.st_uid
+    assert restored.st_gid == test_gid
+    backup = Path(result.backup_directory) / "bind-declaration.conf"
+    assert backup.stat().st_gid == test_gid
 
 
 def test_activation_failure_removes_new_bind_artifacts(tmp_path: Path) -> None:
