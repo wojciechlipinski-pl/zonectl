@@ -137,6 +137,8 @@ zrealizowane, a `[ ]` pozostają do wykonania.
 - [ ] Sprawdzać publikację DS oraz pełny łańcuch zaufania DNSSEC.
 - [x] Dodać odczytową kontrolę DS przez wiele resolverów oraz zgodności DNSKEY
   i RRSIG na wszystkich serwerach autorytatywnych.
+- [x] Dodać kontrolowane potwierdzenie publikacji DS w KASP, blokowane bez
+  wyniku `PASS` z pełnej kontroli delegacji.
 - [ ] Dodać osobną, wieloetapową i bezpieczną procedurę wyłączenia DNSSEC.
 - [ ] Chronić operatora przed przedwczesnym dodaniem lub usunięciem DS.
 - [ ] Pokryć włączanie, rotację, awarie i rollback testami integracyjnymi BIND.

@@ -15,6 +15,7 @@ from .core.dnssec_enable_plan import (
 )
 from .core.dnssec_enable_transaction import DnssecEnableTransaction
 from .core.dnssec_ds_check import DnssecDsChecker
+from .core.dnssec_confirm_ds import DnssecConfirmDsTransaction
 from .core.dnssec_guidance import build_dnssec_guidance
 from .core.dnssec_report import DnssecReporter
 from .core.transaction import TransactionEngine, TransactionResult
@@ -86,6 +87,25 @@ def parser() -> argparse.ArgumentParser:
         help="resolver do kontroli DS; opcję można podać wielokrotnie",
     )
     dnssec_check_ds.add_argument("--json", action="store_true")
+    dnssec_confirm_ds = dnssec_sub.add_parser(
+        "confirm-ds",
+        help="potwierdź w KASP zweryfikowaną publikację DS; domyślnie dry-run",
+    )
+    dnssec_confirm_ds.add_argument("name")
+    dnssec_confirm_ds.add_argument("--server")
+    dnssec_confirm_ds.add_argument(
+        "--resolver", action="append", dest="resolvers"
+    )
+    dnssec_confirm_ds.add_argument(
+        "--manifest-directory",
+        type=Path,
+        default=Path("/var/backups/zonectl-dnssec-confirm-ds/manifests"),
+    )
+    dnssec_confirm_ds.add_argument("--commit", action="store_true")
+    dnssec_confirm_ds.add_argument(
+        "--acknowledge-published", action="store_true"
+    )
+    dnssec_confirm_ds.add_argument("--json", action="store_true")
     dnssec_enable_plan = dnssec_sub.add_parser(
         "enable-plan",
         help="pokaż plan włączenia DNSSEC bez wykonywania zmian",
@@ -534,6 +554,58 @@ def main(argv: list[str] | None = None) -> int:
     if args.command in {"transaction", "tx"}:
         return transaction_main(args, config)
     zones = config.zones()
+    if args.command == "dnssec" and args.dnssec_command == "confirm-ds":
+        if args.commit != args.acknowledge_published:
+            print(
+                "BŁĄD: właściwe potwierdzenie wymaga jednocześnie "
+                "--commit i --acknowledge-published.",
+                file=sys.stderr,
+            )
+            return 2
+        wanted = args.name.strip().rstrip(".").casefold()
+        zone = next(
+            (
+                item
+                for item in zones
+                if item.name.rstrip(".").casefold() == wanted
+            ),
+            None,
+        )
+        if zone is None:
+            print(f"BŁĄD: Nie znaleziono strefy: {args.name}", file=sys.stderr)
+            return 2
+        resolvers = tuple(
+            args.resolvers or ("1.1.1.1", "8.8.8.8", "9.9.9.9")
+        )
+        local_server = args.server or config.toolkit.get(
+            "local_server", "127.0.0.1"
+        )
+        checker = DnssecDsChecker(
+            local_server=local_server,
+            timeout=int(config.toolkit.get("dig_timeout", "3")),
+        )
+        result = DnssecConfirmDsTransaction(
+            args.manifest_directory,
+            checker=checker.collect,
+        ).apply(
+            zone.name,
+            resolvers,
+            commit=args.commit,
+            acknowledge_published=args.acknowledge_published,
+        )
+        if args.json:
+            print(json.dumps(asdict(result), ensure_ascii=False, indent=2))
+        else:
+            print(f"Transakcja: {result.transaction_id}")
+            print(f"Strefa:     {result.zone}")
+            print(f"Status:     {result.status}")
+            print(f"Commit:     {'TAK' if result.committed else 'NIE'}")
+            if result.manifest:
+                print(f"Manifest:   {result.manifest}")
+            print("\nEtapy:")
+            for step in result.steps:
+                print(f"[{'OK' if step.ok else 'BŁĄD'}] {step.name}: {step.message}")
+        return 0 if result.status in {"DRY-RUN", "CONFIRMED"} else 1
     if args.command == "dnssec" and args.dnssec_command in {"enable-plan", "enable"}:
         if args.dnssec_command == "enable" and args.commit != args.activate:
             print(

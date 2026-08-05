@@ -475,3 +475,20 @@ zctl dnssec check-ds example.pl \
   --resolver 8.8.8.8 \
   --resolver 9.9.9.9
 ```
+
+Po uzyskaniu `PASS` można najpierw wykonać dry-run potwierdzenia:
+
+```bash
+zctl dnssec confirm-ds example.pl
+```
+
+Właściwa operacja wymaga dwóch jawnych flag i ponownie wykonuje pełne
+`check-ds` bezpośrednio przed zmianą stanu KASP:
+
+```bash
+zctl dnssec confirm-ds example.pl --commit --acknowledge-published
+```
+
+ZoneCTL nie wywołuje automatycznie stanu `withdrawn`, jeżeli późniejsza
+weryfikacja KASP zawiedzie. Opublikowany DS pozostaje wtedy nadrzędnym faktem,
+a program zapisuje manifest i nakazuje ręczną diagnostykę.
