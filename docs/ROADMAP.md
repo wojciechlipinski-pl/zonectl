@@ -135,6 +135,8 @@ zrealizowane, a `[ ]` pozostają do wykonania.
 - [x] Dodać do raportu CLI etap procesu, postęp, lokalny termin następnej
   kontroli i jednoznaczną blokadę publikacji DS do osiągnięcia gotowości KASP.
 - [ ] Sprawdzać publikację DS oraz pełny łańcuch zaufania DNSSEC.
+- [x] Dodać odczytową kontrolę DS przez wiele resolverów oraz zgodności DNSKEY
+  i RRSIG na wszystkich serwerach autorytatywnych.
 - [ ] Dodać osobną, wieloetapową i bezpieczną procedurę wyłączenia DNSSEC.
 - [ ] Chronić operatora przed przedwczesnym dodaniem lub usunięciem DS.
 - [ ] Pokryć włączanie, rotację, awarie i rollback testami integracyjnymi BIND.

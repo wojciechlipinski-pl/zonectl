@@ -451,3 +451,27 @@ readlink -f /opt/zonectl/current
 readlink -f /opt/zonectl/previous
 zctl domains
 ```
+
+## Kontrola publikacji DS
+
+Po przekazaniu rekordu DS rejestratorowi kontroluj jego propagację poleceniem:
+
+```bash
+zctl dnssec check-ds example.pl
+```
+
+Polecenie jest wyłącznie odczytowe. Porównuje lokalnie obliczony DS z
+odpowiedziami kilku publicznych resolverów, ustala delegowane serwery NS oraz
+sprawdza na każdym z nich flagę `AA`, DNSKEY i RRSIG DNSKEY. Status `PASS`
+oznacza, że DS jest wszędzie zgodny, a serwery autorytatywne udostępniają ten
+sam materiał kluczowy. Statusy `NOT_READY`, `NOT_PUBLISHED`, `PROPAGATING`
+i `INDETERMINATE` nie upoważniają do potwierdzenia publikacji DS w KASP.
+
+Listę kontrolowanych resolverów można określić jawnie:
+
+```bash
+zctl dnssec check-ds example.pl \
+  --resolver 1.1.1.1 \
+  --resolver 8.8.8.8 \
+  --resolver 9.9.9.9
+```

@@ -14,6 +14,7 @@ from .core.dnssec_enable_plan import (
     DnssecEnablePlanner,
 )
 from .core.dnssec_enable_transaction import DnssecEnableTransaction
+from .core.dnssec_ds_check import DnssecDsChecker
 from .core.dnssec_guidance import build_dnssec_guidance
 from .core.dnssec_report import DnssecReporter
 from .core.transaction import TransactionEngine, TransactionResult
@@ -72,6 +73,19 @@ def parser() -> argparse.ArgumentParser:
     dnssec_report.add_argument("--server")
     dnssec_report.add_argument("--resolver", default="1.1.1.1")
     dnssec_report.add_argument("--json", action="store_true")
+    dnssec_check_ds = dnssec_sub.add_parser(
+        "check-ds",
+        help="sprawdź DS i zgodność serwerów autorytatywnych bez zmian",
+    )
+    dnssec_check_ds.add_argument("name")
+    dnssec_check_ds.add_argument("--server")
+    dnssec_check_ds.add_argument(
+        "--resolver",
+        action="append",
+        dest="resolvers",
+        help="resolver do kontroli DS; opcję można podać wielokrotnie",
+    )
+    dnssec_check_ds.add_argument("--json", action="store_true")
     dnssec_enable_plan = dnssec_sub.add_parser(
         "enable-plan",
         help="pokaż plan włączenia DNSSEC bez wykonywania zmian",
@@ -609,6 +623,50 @@ def main(argv: list[str] | None = None) -> int:
                 print(f"- {action}")
             print("\nWynik: DRY-RUN — niczego nie zmieniono")
         return 0
+    if args.command == "dnssec" and args.dnssec_command == "check-ds":
+        wanted = args.name.strip().rstrip(".").casefold()
+        zone = next(
+            (
+                item
+                for item in zones
+                if item.name.rstrip(".").casefold() == wanted
+            ),
+            None,
+        )
+        if zone is None:
+            print(f"BŁĄD: Nie znaleziono strefy: {args.name}", file=sys.stderr)
+            return 2
+        resolvers = tuple(
+            args.resolvers or ("1.1.1.1", "8.8.8.8", "9.9.9.9")
+        )
+        local_server = args.server or config.toolkit.get(
+            "local_server", "127.0.0.1"
+        )
+        result = DnssecDsChecker(
+            local_server=local_server,
+            timeout=int(config.toolkit.get("dig_timeout", "3")),
+        ).collect(zone.name, resolvers)
+        if args.json:
+            print(json.dumps(result.to_dict(), ensure_ascii=False, indent=2))
+        else:
+            print(f"KONTROLA DS — {result.zone}")
+            print(f"Status:             {result.status}")
+            print(f"Gotowość KASP:      {'TAK' if result.kasp_ready else 'NIE'}")
+            print("DS oczekiwany:")
+            for record in result.expected_ds or ("-",):
+                print(f"  {record}")
+            print("\nResolvery:")
+            for check in result.resolver_checks:
+                print(f"  [{check.status:<10}] {check.resolver}: {check.message}")
+                for record in check.records:
+                    print(f"    {record}")
+            print("\nSerwery autorytatywne:")
+            for check in result.authority_checks:
+                print(f"  [{check.status:<10}] {check.server}: {check.message}")
+            for error in result.errors:
+                print(f"BŁĄD: {error}")
+            print(f"\nNastępny krok: {result.next_action}")
+        return 1 if result.status == "FAIL" else 0
     if args.command == "dnssec" and args.dnssec_command == "report":
         wanted = args.name.strip().rstrip(".").casefold()
         matches = [
