@@ -132,6 +132,8 @@ zrealizowane, a `[ ]` pozostają do wykonania.
   z walidacją `named-checkconf`, kontrolowanym `rndc reconfig` i rollbackiem.
 - [ ] Monitorować utworzenie kluczy, podpisanie strefy i stan rekordów DNSKEY.
 - [ ] Wyświetlać rekord DS przeznaczony do przekazania rejestratorowi.
+- [x] Dodać do raportu CLI etap procesu, postęp, lokalny termin następnej
+  kontroli i jednoznaczną blokadę publikacji DS do osiągnięcia gotowości KASP.
 - [ ] Sprawdzać publikację DS oraz pełny łańcuch zaufania DNSSEC.
 - [ ] Dodać osobną, wieloetapową i bezpieczną procedurę wyłączenia DNSSEC.
 - [ ] Chronić operatora przed przedwczesnym dodaniem lub usunięciem DS.

@@ -9,6 +9,7 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Callable
 
+from .dnssec_guidance import build_dnssec_guidance
 from .models import Zone
 from .runner import CommandResult, run
 
@@ -32,9 +33,12 @@ class DnssecReport:
     parent_ds_matches: bool | None
     warnings: tuple[str, ...]
     errors: tuple[str, ...]
+    next_key_event: str | None = None
 
     def to_dict(self) -> dict[str, object]:
-        return asdict(self)
+        payload = asdict(self)
+        payload["guidance"] = build_dnssec_guidance(self).to_dict()
+        return payload
 
 
 def _dns_name_wire(name: str) -> bytes:
@@ -193,6 +197,12 @@ class DnssecReporter:
 
         loaded_result = self._command(["rndc", "zonestatus", zone.name], 8)
         loaded = loaded_result.returncode == 0
+        next_key_match = re.search(
+            r"^next key event:\s*(.+?)\s*$",
+            loaded_result.stdout,
+            re.MULTILINE | re.IGNORECASE,
+        )
+        next_key_event = next_key_match.group(1) if next_key_match else None
         if not loaded:
             errors.append("Strefa nie jest załadowana przez BIND.")
 
@@ -279,4 +289,5 @@ class DnssecReporter:
             parent_ds_matches=parent_match,
             warnings=tuple(warnings),
             errors=tuple(errors),
+            next_key_event=next_key_event,
         )

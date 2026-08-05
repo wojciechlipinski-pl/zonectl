@@ -14,6 +14,7 @@ from .core.dnssec_enable_plan import (
     DnssecEnablePlanner,
 )
 from .core.dnssec_enable_transaction import DnssecEnableTransaction
+from .core.dnssec_guidance import build_dnssec_guidance
 from .core.dnssec_report import DnssecReporter
 from .core.transaction import TransactionEngine, TransactionResult
 from .core.zone_create_transaction import ZoneCreateTransaction
@@ -680,6 +681,22 @@ def main(argv: list[str] | None = None) -> int:
                 print(f"OSTRZEŻENIE: {warning}")
             for error in report.errors:
                 print(f"BŁĄD: {error}")
+            guidance = build_dnssec_guidance(report)
+            print("\nWSKAZÓWKI OPERATORA")
+            print(f"Etap:               {guidance.stage}")
+            print(f"Stan:               {guidance.title}")
+            print(f"Postęp:             {guidance.progress}")
+            if guidance.not_before:
+                print(f"Najwcześniej:       {guidance.not_before}")
+            print(f"Następny krok:      {guidance.next_action}")
+            print(
+                "Publikacja DS:      "
+                + (
+                    "DOZWOLONA"
+                    if guidance.ds_publication_allowed
+                    else "JESZCZE ZABLOKOWANA"
+                )
+            )
 
         return 1 if report.status == "FAIL" else 0
     if args.command == "zone":
