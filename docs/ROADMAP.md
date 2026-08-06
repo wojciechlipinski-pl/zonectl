@@ -128,16 +128,16 @@ zrealizowane, a `[ ]` pozostają do wykonania.
 - [x] Dodać odczytowy raport konfiguracji KASP, kluczy, DNSKEY, RRSIG,
   lokalnie obliczonego DS i DS widocznego przez publiczny resolver.
 - [x] Dodać plan oraz dry-run bezpiecznego włączenia DNSSEC dla strefy.
-- [ ] Wykonać backup konfiguracji BIND i materiału kluczowego przed zmianą.
+- [x] Wykonać backup konfiguracji BIND i materiału kluczowego przed zmianą.
 - [x] Przetestować rdzeń transakcji i rollback na izolowanej konfiguracji
   przy użyciu prawdziwych walidatorów BIND.
-- [ ] Aktywować `dnssec-policy default` oraz `inline-signing` transakcyjnie,
+- [x] Aktywować `dnssec-policy default` oraz `inline-signing` transakcyjnie,
   z walidacją `named-checkconf`, kontrolowanym `rndc reconfig` i rollbackiem.
-- [ ] Monitorować utworzenie kluczy, podpisanie strefy i stan rekordów DNSKEY.
-- [ ] Wyświetlać rekord DS przeznaczony do przekazania rejestratorowi.
+- [x] Monitorować utworzenie kluczy, podpisanie strefy i stan rekordów DNSKEY.
+- [x] Wyświetlać rekord DS przeznaczony do przekazania rejestratorowi.
 - [x] Dodać do raportu CLI etap procesu, postęp, lokalny termin następnej
   kontroli i jednoznaczną blokadę publikacji DS do osiągnięcia gotowości KASP.
-- [ ] Sprawdzać publikację DS oraz pełny łańcuch zaufania DNSSEC.
+- [x] Sprawdzać publikację DS oraz pełny łańcuch zaufania DNSSEC.
 - [x] Dodać odczytową kontrolę DS przez wiele resolverów oraz zgodności DNSKEY
   i RRSIG na wszystkich serwerach autorytatywnych.
 - [x] Dodać kontrolowane potwierdzenie publikacji DS w KASP, blokowane bez
@@ -145,6 +145,8 @@ zrealizowane, a `[ ]` pozostają do wykonania.
 - [x] Dodać w TUI odczytowy ekran etapu DNSSEC, KASP, propagacji DS oraz
   zgodności serwerów autorytatywnych.
 - [ ] Dodać osobną, wieloetapową i bezpieczną procedurę wyłączenia DNSSEC.
+- [x] Dodać pozbawiony skutków ubocznych plan wyłączenia DNSSEC z
+  obowiązkowymi bramkami DS, KASP, backupu i walidacji BIND.
 - [ ] Chronić operatora przed przedwczesnym dodaniem lub usunięciem DS.
 - [ ] Pokryć włączanie, rotację, awarie i rollback testami integracyjnymi BIND.
 

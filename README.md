@@ -54,6 +54,7 @@ zctl dnssec report example.pl
 zctl dnssec report example.pl --json
 zctl dnssec enable-plan example.pl
 zctl dnssec enable example.pl
+zctl dnssec disable-plan example.pl
 ```
 
 Raport pokazuje konfigurację `dnssec-policy` i `inline-signing`, stan KASP
@@ -68,6 +69,10 @@ kluczy i nie wykonuje `rndc reconfig`.
 `enable` również domyślnie wykonuje wyłącznie dry-run. Właściwa operacja jest
 dostępna dopiero po podaniu obu flag `--commit --activate`; pojedyncza flaga
 jest odrzucana jako niepełne potwierdzenie.
+
+`disable-plan` wyłącznie inwentaryzuje konfigurację, klucze i artefakty
+podpisywania oraz pokazuje bezpieczną kolejność wycofania DNSSEC. Nie usuwa DS,
+nie zmienia KASP ani BIND.
 
 ## Filtrowanie rekordów
 

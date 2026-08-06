@@ -14,6 +14,10 @@ from .core.dnssec_enable_plan import (
     DnssecEnablePlanner,
 )
 from .core.dnssec_enable_transaction import DnssecEnableTransaction
+from .core.dnssec_disable_plan import (
+    DnssecDisablePlanError,
+    DnssecDisablePlanner,
+)
 from .core.dnssec_ds_check import DnssecDsChecker
 from .core.dnssec_confirm_ds import DnssecConfirmDsTransaction
 from .core.dnssec_guidance import build_dnssec_guidance
@@ -151,6 +155,12 @@ def parser() -> argparse.ArgumentParser:
     dnssec_enable.add_argument("--commit", action="store_true")
     dnssec_enable.add_argument("--activate", action="store_true")
     dnssec_enable.add_argument("--json", action="store_true")
+    dnssec_disable_plan = dnssec_sub.add_parser(
+        "disable-plan",
+        help="pokaż wieloetapowy plan bezpiecznego wycofania DNSSEC bez zmian",
+    )
+    dnssec_disable_plan.add_argument("name")
+    dnssec_disable_plan.add_argument("--json", action="store_true")
 
     lifecycle = sub.add_parser(
         "zone",
@@ -606,6 +616,56 @@ def main(argv: list[str] | None = None) -> int:
             for step in result.steps:
                 print(f"[{'OK' if step.ok else 'BŁĄD'}] {step.name}: {step.message}")
         return 0 if result.status in {"DRY-RUN", "CONFIRMED"} else 1
+    if args.command == "dnssec" and args.dnssec_command == "disable-plan":
+        wanted = args.name.strip().rstrip(".").casefold()
+        display_zone = next(
+            (
+                zone
+                for zone in zones
+                if zone.name.rstrip(".").casefold() == wanted
+            ),
+            None,
+        )
+        if display_zone is None:
+            print(f"BŁĄD: Nie znaleziono strefy: {args.name}", file=sys.stderr)
+            return 2
+        if display_zone.health_profile.casefold() == "rpz":
+            print(
+                f"BŁĄD: Wycofanie DNSSEC jest zablokowane dla RPZ: "
+                f"{display_zone.name}",
+                file=sys.stderr,
+            )
+            return 2
+        discovered = config.discovered_zone(args.name)
+        if discovered is None:
+            print(
+                "BŁĄD: Plan wycofania DNSSEC wymaga autodetekcji deklaracji BIND.",
+                file=sys.stderr,
+            )
+            return 2
+        try:
+            plan = DnssecDisablePlanner().plan(discovered)
+        except (DnssecDisablePlanError, OSError) as exc:
+            print(f"BŁĄD: {exc}", file=sys.stderr)
+            return 2
+        if args.json:
+            print(json.dumps(plan.to_dict(), ensure_ascii=False, indent=2))
+        else:
+            print("PLAN WYCOFANIA DNSSEC — BEZ ZMIAN W SYSTEMIE")
+            print(f"Strefa:          {plan.zone}")
+            print(f"Plik strefy:     {plan.zone_file}")
+            print(f"Deklaracja:      {plan.declaration_file}")
+            print(f"Polityka:        {plan.policy}")
+            print(f"Katalog kluczy:  {plan.key_directory or '-'}")
+            print(f"Pliki kluczy:    {len(plan.key_files)}")
+            print(f"Artefakty BIND:  {len(plan.signing_artifacts)}")
+            print("\nKońcowy diff — wolno zastosować dopiero po wycofaniu DS:\n")
+            print(plan.unified_diff, end="")
+            print("\nObowiązkowe etapy:")
+            for index, action in enumerate(plan.actions, start=1):
+                print(f"{index}. {action}")
+            print("\nWynik: DRY-RUN — niczego nie zmieniono")
+        return 0
     if args.command == "dnssec" and args.dnssec_command in {"enable-plan", "enable"}:
         if args.dnssec_command == "enable" and args.commit != args.activate:
             print(

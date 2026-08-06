@@ -505,3 +505,17 @@ strefy.
 W pozostałych widokach TUI obowiązuje układ zgodny z Midnight Commanderem:
 `Insert` tworzy nową strefę albo rekord, `Delete` usuwa rekord, `F3` otwiera
 rekordy strefy lub podgląd diff, a `F4` edytuje zaznaczony rekord.
+
+## Plan bezpiecznego wycofania DNSSEC
+
+Pierwszy etap wycofania jest wyłącznie odczytowy:
+
+```bash
+zctl dnssec disable-plan example.pl
+```
+
+Polecenie pokazuje końcowy diff konfiguracji, inwentaryzuje klucze i artefakty
+podpisywania oraz drukuje obowiązkową kolejność operacji. Nie usuwa DS, nie
+zmienia KASP, nie zapisuje konfiguracji i nie przeładowuje BIND. Diff wolno
+zastosować dopiero po potwierdzonym zniknięciu DS z delegacji i zakończeniu
+kontrolowanej procedury `withdrawn`.
