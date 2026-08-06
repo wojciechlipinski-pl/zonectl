@@ -55,6 +55,7 @@ zctl dnssec report example.pl --json
 zctl dnssec enable-plan example.pl
 zctl dnssec enable example.pl
 zctl dnssec disable-plan example.pl
+zctl dnssec withdrawal-backup example.pl
 ```
 
 Raport pokazuje konfigurację `dnssec-policy` i `inline-signing`, stan KASP
@@ -73,6 +74,9 @@ jest odrzucana jako niepełne potwierdzenie.
 `disable-plan` wyłącznie inwentaryzuje konfigurację, klucze i artefakty
 podpisywania oraz pokazuje bezpieczną kolejność wycofania DNSSEC. Nie usuwa DS,
 nie zmienia KASP ani BIND.
+
+`withdrawal-backup` tworzy po jawnym `--commit` zweryfikowany pakiet
+odtworzeniowy wymagany przed usunięciem DS u rejestratora.
 
 ## Filtrowanie rekordów
 

@@ -147,6 +147,8 @@ zrealizowane, a `[ ]` pozostają do wykonania.
 - [ ] Dodać osobną, wieloetapową i bezpieczną procedurę wyłączenia DNSSEC.
 - [x] Dodać pozbawiony skutków ubocznych plan wyłączenia DNSSEC z
   obowiązkowymi bramkami DS, KASP, backupu i walidacji BIND.
+- [x] Dodać atomowy i zweryfikowany pakiet odtworzeniowy tworzony przed
+  rozpoczęciem wycofywania DS.
 - [ ] Chronić operatora przed przedwczesnym dodaniem lub usunięciem DS.
 - [ ] Pokryć włączanie, rotację, awarie i rollback testami integracyjnymi BIND.
 

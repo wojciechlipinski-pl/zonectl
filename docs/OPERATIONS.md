@@ -519,3 +519,15 @@ podpisywania oraz drukuje obowiązkową kolejność operacji. Nie usuwa DS, nie
 zmienia KASP, nie zapisuje konfiguracji i nie przeładowuje BIND. Diff wolno
 zastosować dopiero po potwierdzonym zniknięciu DS z delegacji i zakończeniu
 kontrolowanej procedury `withdrawn`.
+
+Przed usunięciem DS utwórz zweryfikowany pakiet odtworzeniowy. Bez flagi
+polecenie pozostaje dry-runem:
+
+```bash
+zctl dnssec withdrawal-backup example.pl
+zctl dnssec withdrawal-backup example.pl --commit
+```
+
+Pakiet zawiera deklarację BIND, plik strefy, klucze, artefakty podpisywania,
+sumy SHA-256, metadane właścicieli i uprawnień oraz bieżący raport DNSSEC i
+kontrolę DS. Utworzenie pakietu nie zmienia konfiguracji ani stanu BIND.

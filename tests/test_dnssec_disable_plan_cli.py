@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from types import SimpleNamespace
 
 from zonectl import cli
 from zonectl.core.discovery import ZoneConfig
@@ -18,6 +19,22 @@ class FakeConfig:
 
     def discovered_zone(self, name: str):
         return self.discovered
+
+
+class FakeReport:
+    def __init__(self, **kwargs):
+        pass
+
+    def collect(self, zone, key_directory):
+        return SimpleNamespace(to_dict=lambda: {"status": "PASS"})
+
+
+class FakeCheck:
+    def __init__(self, **kwargs):
+        pass
+
+    def collect(self, zone, resolvers):
+        return SimpleNamespace(to_dict=lambda: {"status": "PASS"})
 
 
 def discovered_zone(tmp_path: Path) -> ZoneConfig:
@@ -46,6 +63,14 @@ def discovered_zone(tmp_path: Path) -> ZoneConfig:
         key_directory=keys,
         source_exists=True,
     )
+
+
+def add_test_keys(zone: ZoneConfig) -> None:
+    assert zone.key_directory is not None
+    for suffix in ("key", "private", "state"):
+        (zone.key_directory / f"Kexample.pl.+013+1.{suffix}").write_text(
+            suffix
+        )
 
 
 def test_disable_plan_cli_prints_ordered_safety_gates(
@@ -93,3 +118,56 @@ def test_disable_plan_cli_rejects_missing_discovery(
 
     assert code == 2
     assert "autodetekcji" in capsys.readouterr().err
+
+
+def test_withdrawal_backup_cli_defaults_to_dry_run(
+    tmp_path: Path, monkeypatch, capsys
+) -> None:
+    config = FakeConfig(discovered_zone(tmp_path))
+    add_test_keys(config.discovered)
+    monkeypatch.setattr(cli.ToolkitConfig, "load", lambda self: config)
+    monkeypatch.setattr(cli, "DnssecReporter", FakeReport)
+    monkeypatch.setattr(cli, "DnssecDsChecker", FakeCheck)
+    backup_root = tmp_path / "backups"
+
+    code = cli.main(
+        [
+            "dnssec",
+            "withdrawal-backup",
+            "example.pl",
+            "--backup-root",
+            str(backup_root),
+        ]
+    )
+
+    assert code == 0
+    assert "DRY-RUN" in capsys.readouterr().out
+    assert not backup_root.exists()
+
+
+def test_withdrawal_backup_cli_creates_package_only_with_commit(
+    tmp_path: Path, monkeypatch, capsys
+) -> None:
+    config = FakeConfig(discovered_zone(tmp_path))
+    add_test_keys(config.discovered)
+    monkeypatch.setattr(cli.ToolkitConfig, "load", lambda self: config)
+    monkeypatch.setattr(cli, "DnssecReporter", FakeReport)
+    monkeypatch.setattr(cli, "DnssecDsChecker", FakeCheck)
+    backup_root = tmp_path / "backups"
+
+    code = cli.main(
+        [
+            "dnssec",
+            "withdrawal-backup",
+            "example.pl",
+            "--backup-root",
+            str(backup_root),
+            "--commit",
+            "--json",
+        ]
+    )
+    payload = json.loads(capsys.readouterr().out)
+
+    assert code == 0
+    assert payload["status"] == "BACKUP-CREATED"
+    assert Path(payload["manifest"]).is_file()

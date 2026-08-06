@@ -18,6 +18,7 @@ from .core.dnssec_disable_plan import (
     DnssecDisablePlanError,
     DnssecDisablePlanner,
 )
+from .core.dnssec_withdrawal_backup import DnssecWithdrawalBackup
 from .core.dnssec_ds_check import DnssecDsChecker
 from .core.dnssec_confirm_ds import DnssecConfirmDsTransaction
 from .core.dnssec_guidance import build_dnssec_guidance
@@ -161,6 +162,22 @@ def parser() -> argparse.ArgumentParser:
     )
     dnssec_disable_plan.add_argument("name")
     dnssec_disable_plan.add_argument("--json", action="store_true")
+    dnssec_withdrawal_backup = dnssec_sub.add_parser(
+        "withdrawal-backup",
+        help="utwórz zweryfikowany pakiet przed wycofaniem DNSSEC; domyślnie dry-run",
+    )
+    dnssec_withdrawal_backup.add_argument("name")
+    dnssec_withdrawal_backup.add_argument("--server")
+    dnssec_withdrawal_backup.add_argument(
+        "--resolver", action="append", dest="resolvers"
+    )
+    dnssec_withdrawal_backup.add_argument(
+        "--backup-root",
+        type=Path,
+        default=Path("/var/backups/zonectl-dnssec-withdrawal"),
+    )
+    dnssec_withdrawal_backup.add_argument("--commit", action="store_true")
+    dnssec_withdrawal_backup.add_argument("--json", action="store_true")
 
     lifecycle = sub.add_parser(
         "zone",
@@ -616,7 +633,10 @@ def main(argv: list[str] | None = None) -> int:
             for step in result.steps:
                 print(f"[{'OK' if step.ok else 'BŁĄD'}] {step.name}: {step.message}")
         return 0 if result.status in {"DRY-RUN", "CONFIRMED"} else 1
-    if args.command == "dnssec" and args.dnssec_command == "disable-plan":
+    if args.command == "dnssec" and args.dnssec_command in {
+        "disable-plan",
+        "withdrawal-backup",
+    }:
         wanted = args.name.strip().rstrip(".").casefold()
         display_zone = next(
             (
@@ -648,6 +668,50 @@ def main(argv: list[str] | None = None) -> int:
         except (DnssecDisablePlanError, OSError) as exc:
             print(f"BŁĄD: {exc}", file=sys.stderr)
             return 2
+        if args.dnssec_command == "withdrawal-backup":
+            local_server = args.server or config.toolkit.get(
+                "local_server", "127.0.0.1"
+            )
+            timeout = int(config.toolkit.get("dig_timeout", "3"))
+            resolvers = tuple(
+                args.resolvers or ("1.1.1.1", "8.8.8.8", "9.9.9.9")
+            )
+            try:
+                report_payload = DnssecReporter(
+                    local_server=local_server,
+                    resolver=resolvers[0],
+                    timeout=timeout,
+                ).collect(display_zone, plan.key_directory).to_dict()
+            except Exception as exc:
+                report_payload = {"status": "ERROR", "error": str(exc)}
+            try:
+                check_payload = DnssecDsChecker(
+                    local_server=local_server,
+                    timeout=timeout,
+                ).collect(plan.zone, resolvers).to_dict()
+            except Exception as exc:
+                check_payload = {"status": "ERROR", "error": str(exc)}
+            result = DnssecWithdrawalBackup(args.backup_root).create(
+                plan,
+                commit=args.commit,
+                dnssec_report=report_payload,
+                ds_check=check_payload,
+            )
+            if args.json:
+                print(json.dumps(asdict(result), ensure_ascii=False, indent=2))
+            else:
+                print(f"Transakcja: {result.transaction_id}")
+                print(f"Strefa:     {result.zone}")
+                print(f"Status:     {result.status}")
+                print(f"Commit:     {'TAK' if result.committed else 'NIE'}")
+                if result.package:
+                    print(f"Pakiet:     {result.package}")
+                if result.manifest:
+                    print(f"Manifest:   {result.manifest}")
+                print("\nEtapy:")
+                for step in result.steps:
+                    print(f"[{'OK' if step.ok else 'BŁĄD'}] {step.name}: {step.message}")
+            return 0 if result.status in {"DRY-RUN", "BACKUP-CREATED"} else 1
         if args.json:
             print(json.dumps(plan.to_dict(), ensure_ascii=False, indent=2))
         else:
