@@ -9,6 +9,7 @@ from zonectl.ui.records.new_record import NewRecordDialog
 from zonectl.ui.records.controller import natural_name_key
 from zonectl.ui.records.renderer import RecordRenderer
 from zonectl.ui.zone_create_dialog import ZoneCreateDialog
+from zonectl.ui.dnssec_status_view import DnssecStatusView
 
 import curses
 import queue
@@ -21,6 +22,8 @@ from .. import __version__
 from ..core.bind import BindService
 from ..core.bulk_operations import BulkOperation, BulkOperationError
 from ..core.config import ToolkitConfig
+from ..core.dnssec_ds_check import DnssecDsChecker
+from ..core.dnssec_report import DnssecReporter
 from ..core.edit_lock import ZoneEditLockedError
 from ..core.models import Health, Zone, ZoneStatus
 from ..core.multi_zone_session import (
@@ -143,7 +146,7 @@ class CursesApp:
                 self._rebuild_rows(keep_zone=self._selected_zone_name())
             elif key == ord("r"):
                 self._start_refresh(force=True)
-            elif key in (ord("n"), ord("N")):
+            elif key == curses.KEY_IC:
                 self._create_zone_wizard(stdscr)
         self.stop_event.set()
 
@@ -314,7 +317,7 @@ class CursesApp:
                 attr |= curses.A_REVERSE
             win.addnstr(screen_row, 0, line.ljust(width), max(0, width - 1), attr)
 
-        footer = " Enter otwórz  n nowa strefa  Spacja zaznacz  m wiele stref  / szukaj  g grupy  F7/s sortuj  r odśwież  q/Esc/F10 wyjście "
+        footer = " Enter otwórz  Ins nowa strefa  Spacja zaznacz  m wiele stref  / szukaj  g grupy  F7/s sortuj  r odśwież  q/Esc/F10 wyjście "
         win.addnstr(height - 2, 0, footer.ljust(width), max(0, width - 1), curses.A_REVERSE)
         draw_project_credits(win)
         win.refresh()
@@ -820,7 +823,7 @@ class CursesApp:
                 search_query = ""
                 continue
 
-            if key in (ord("d"), ord("D")):
+            if key == curses.KEY_F3:
                 self._diff_view(win, session)
                 continue
 
@@ -862,7 +865,7 @@ class CursesApp:
                     )
                 continue
 
-            if key in (ord("a"), ord("A")):
+            if key == curses.KEY_IC:
                 if self.read_only:
                     self._read_only_message(win, zone)
                     continue
@@ -934,7 +937,7 @@ class CursesApp:
 
                 continue
 
-            if key in (ord("e"), ord("E")):
+            if key == curses.KEY_F4:
                 if self.read_only:
                     self._read_only_message(win, zone)
                     continue
@@ -1331,7 +1334,7 @@ class CursesApp:
 
             footer = (
                 " ↑/↓ wybór"
-                "   d diff"
+                "   F3 diff"
                 "   x eksport"
                 "   u cofnij"
                 "   F2/Ctrl+S zapisz"
@@ -1342,7 +1345,7 @@ class CursesApp:
             if self.read_only:
                 footer = (
                     " TYLKO ODCZYT"
-                    "   d diff"
+                    "   F3 diff"
                     "   x eksport"
                     "   PgUp/PgDn"
                     "   Home/End"
@@ -1405,7 +1408,7 @@ class CursesApp:
                         session.reload()
                     return
 
-            if key in (ord("d"), ord("D")):
+            if key == curses.KEY_F3:
                 self._diff_view(win, session)
                 continue
 
@@ -2025,6 +2028,147 @@ class CursesApp:
             except Exception:
                 pass
 
+    def _collect_dnssec_status(self, zone: Zone) -> DnssecStatusView:
+        toolkit = self.config.toolkit if self.config is not None else {}
+        local_server = toolkit.get("local_server", "127.0.0.1")
+        timeout = int(toolkit.get("dig_timeout", "3"))
+        resolvers = tuple(
+            item.strip()
+            for item in toolkit.get(
+                "dnssec_resolvers",
+                "1.1.1.1,8.8.8.8,9.9.9.9",
+            ).split(",")
+            if item.strip()
+        )
+        key_directory = zone.key_directory
+        if key_directory is None:
+            configured = toolkit.get(
+                "dnssec_key_directory",
+                "/var/lib/bind/keys",
+            ).strip()
+            key_directory = Path(configured) if configured else None
+
+        report = DnssecReporter(
+            local_server=local_server,
+            resolver=resolvers[0],
+            timeout=timeout,
+        ).collect(zone, key_directory)
+        delegation = DnssecDsChecker(
+            local_server=local_server,
+            timeout=timeout,
+        ).collect(zone.name, resolvers)
+        return DnssecStatusView.build(report, delegation)
+
+    def _dnssec_status_view(self, win: curses.window, zone: Zone) -> None:
+        """Read-only DNSSEC workflow status with explicit operator guidance."""
+        offset = 0
+        view: DnssecStatusView | None = None
+        error: str | None = None
+        refresh = True
+
+        try:
+            win.timeout(-1)
+            while True:
+                if refresh:
+                    win.erase()
+                    height, width = win.getmaxyx()
+                    win.addnstr(
+                        0,
+                        0,
+                        f" DNSSEC: {zone.name} ".ljust(width),
+                        max(0, width - 1),
+                        curses.A_REVERSE | curses.A_BOLD,
+                    )
+                    win.addnstr(
+                        2,
+                        2,
+                        "Pobieranie stanu KASP, DS i serwerów autorytatywnych...",
+                        max(0, width - 4),
+                        curses.A_BOLD,
+                    )
+                    win.refresh()
+                    try:
+                        view = self._collect_dnssec_status(zone)
+                        error = None
+                    except Exception as exc:
+                        view = None
+                        error = str(exc)
+                    offset = 0
+                    refresh = False
+
+                win.erase()
+                height, width = win.getmaxyx()
+                title = f" DNSSEC: {zone.name} "
+                win.addnstr(
+                    0,
+                    0,
+                    title.ljust(width),
+                    max(0, width - 1),
+                    curses.A_REVERSE | curses.A_BOLD,
+                )
+
+                if error is not None:
+                    lines = ("BŁĄD ODCZYTU", error)
+                    stage = "ERROR"
+                elif view is not None:
+                    lines = view.lines
+                    stage = view.stage
+                    stage_attr = (
+                        self._color(Health.PASS)
+                        if stage in {"READY_FOR_DS", "ACTIVE"}
+                        else self._color(Health.FAIL)
+                        if stage == "ERROR"
+                        else self._color(Health.WARN)
+                    ) | curses.A_BOLD
+                    win.addnstr(
+                        1,
+                        2,
+                        f"Etap: {stage} — {view.title}",
+                        max(0, width - 4),
+                        stage_attr,
+                    )
+                else:
+                    lines = ("Brak danych.",)
+                    stage = "ERROR"
+
+                visible = max(1, height - 5)
+                offset = min(offset, max(0, len(lines) - visible))
+                for row, line in enumerate(lines[offset : offset + visible], start=3):
+                    attr = curses.A_NORMAL
+                    if "JESZCZE ZABLOKOWANA" in line or line.startswith("BŁĄD"):
+                        attr = self._color(Health.FAIL) | curses.A_BOLD
+                    elif "DOZWOLONA" in line or "[MATCH]" in line:
+                        attr = self._color(Health.PASS)
+                    win.addnstr(row, 2, line, max(0, width - 4), attr)
+
+                footer = " ↑/↓ przewiń  PgUp/PgDn strona  r odśwież  q/Esc powrót "
+                win.addnstr(
+                    height - 1,
+                    0,
+                    footer.ljust(width),
+                    max(0, width - 1),
+                    curses.A_REVERSE,
+                )
+                win.refresh()
+                key = self._get_key(win)
+                if key in (ord("q"), ord("Q"), 27, curses.KEY_BACKSPACE, 127, 8):
+                    return
+                if key in (ord("r"), ord("R")):
+                    refresh = True
+                elif key in (curses.KEY_DOWN, ord("j")):
+                    offset = min(offset + 1, max(0, len(lines) - visible))
+                elif key in (curses.KEY_UP, ord("k")):
+                    offset = max(0, offset - 1)
+                elif key == curses.KEY_NPAGE:
+                    offset = min(offset + visible, max(0, len(lines) - visible))
+                elif key == curses.KEY_PPAGE:
+                    offset = max(0, offset - visible)
+        finally:
+            try:
+                win.timeout(150)
+            except curses.error:
+                pass
+
     def _domain_view(self, win: curses.window, zone: Zone) -> None:
         """
         Wyświetla szczegóły wybranej strefy.
@@ -2098,7 +2242,7 @@ class CursesApp:
                 )
                 win.refresh()
 
-                key = win.getch()
+                key = self._get_key(win)
                 if key in (
                     ord("q"),
                     27,
@@ -2243,7 +2387,8 @@ class CursesApp:
                 )
 
             footer = (
-                " v rekordy"
+                " F3 rekordy"
+                "   d DNSSEC"
                 "   r odśwież strefę"
                 "   q/Esc/Backspace powrót "
             )
@@ -2255,7 +2400,7 @@ class CursesApp:
             )
 
             win.refresh()
-            key = win.getch()
+            key = self._get_key(win)
 
             if key in (
                 ord("q"),
@@ -2266,8 +2411,12 @@ class CursesApp:
             ):
                 return
 
-            if key in (ord("v"), ord("V")):
+            if key == curses.KEY_F3:
                 self._records_view(win, zone)
+                continue
+
+            if key in (ord("d"), ord("D")):
+                self._dnssec_status_view(win, zone)
                 continue
 
             if key in (ord("r"), ord("R")):

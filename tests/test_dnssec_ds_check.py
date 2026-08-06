@@ -10,14 +10,19 @@ ZONE = "example.pl"
 EXPECTED_DS = dnskey_to_ds(ZONE, DNSKEY)
 
 
-def runner_for(*, ds_by_server: dict[str, str], kasp_ready: bool = True):
+def runner_for(
+    *,
+    ds_by_server: dict[str, str],
+    kasp_ready: bool = True,
+    kasp_ds_state: str = "hidden",
+):
     def runner(command: list[str], timeout: int) -> CommandResult:
         if command[:3] == ["rndc", "dnssec", "-status"]:
             state = "omnipresent" if kasp_ready else "rumoured"
             return CommandResult(
                 0,
                 f"- dnskey: {state}\n- zone rrsig: {state}\n"
-                f"- key rrsig: {state}\n",
+                f"- key rrsig: {state}\n- ds: {kasp_ds_state}\n",
                 "",
             )
         server = command[1][1:]
@@ -56,6 +61,38 @@ def test_all_resolvers_and_authorities_pass() -> None:
     assert result.kasp_ready is True
     assert [check.status for check in result.resolver_checks] == ["MATCH", "MATCH"]
     assert [check.status for check in result.authority_checks] == ["MATCH", "MATCH"]
+    assert "można przejść" in result.next_action
+
+
+def test_pass_after_checkds_published_does_not_request_confirmation_again() -> None:
+    checker = DnssecDsChecker(
+        command_runner=runner_for(
+            ds_by_server={"r1": EXPECTED_DS, "r2": EXPECTED_DS},
+            kasp_ds_state="rumoured",
+        )
+    )
+
+    result = checker.collect(ZONE, ("r1", "r2"))
+
+    assert result.status == "PASS"
+    assert "już potwierdzony" in result.next_action
+    assert "nie wykonuj ponownie confirm-ds" in result.next_action
+    assert "ds: omnipresent" in result.next_action
+
+
+def test_pass_with_omnipresent_ds_reports_monitoring_only() -> None:
+    checker = DnssecDsChecker(
+        command_runner=runner_for(
+            ds_by_server={"r1": EXPECTED_DS},
+            kasp_ds_state="omnipresent",
+        )
+    )
+
+    result = checker.collect(ZONE, ("r1",))
+
+    assert result.status == "PASS"
+    assert "już potwierdzony" in result.next_action
+    assert "do osiągnięcia" not in result.next_action
 
 
 def test_partial_ds_visibility_is_propagating() -> None:

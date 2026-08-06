@@ -12,6 +12,8 @@ FUNCTION_KEY_SEQUENCES: dict[bytes, int] = {
     b"[4~": curses.KEY_END,
     b"[7~": curses.KEY_HOME,
     b"[8~": curses.KEY_END,
+    b"[2~": curses.KEY_IC,
+    b"[3~": curses.KEY_DC,
     b"OP": curses.KEY_F1,
     b"OQ": curses.KEY_F2,
     b"OR": curses.KEY_F3,

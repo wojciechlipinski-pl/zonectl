@@ -13,6 +13,9 @@ zrealizowane, a `[ ]` pozostają do wykonania.
 - [x] Kontrola składni, stanu załadowania i świeżości pliku RPZ.
 - [x] Testy dekodowania klawiszy funkcyjnych dla xterm i PuTTY/Linux.
 - [x] Wyjście z głównego TUI przez F10, `q` i Esc.
+- [x] Ujednolicić klawisze TUI w stylu Midnight Commandera: `Insert`
+  dodaje, `Delete` usuwa, `F3` otwiera podgląd, `F4` edytuje, a `d`
+  otwiera stan DNSSEC.
 
 ## Etap 1 — bezpieczeństwo zapisu i obsługa awarii
 
@@ -139,6 +142,8 @@ zrealizowane, a `[ ]` pozostają do wykonania.
   i RRSIG na wszystkich serwerach autorytatywnych.
 - [x] Dodać kontrolowane potwierdzenie publikacji DS w KASP, blokowane bez
   wyniku `PASS` z pełnej kontroli delegacji.
+- [x] Dodać w TUI odczytowy ekran etapu DNSSEC, KASP, propagacji DS oraz
+  zgodności serwerów autorytatywnych.
 - [ ] Dodać osobną, wieloetapową i bezpieczną procedurę wyłączenia DNSSEC.
 - [ ] Chronić operatora przed przedwczesnym dodaniem lub usunięciem DS.
 - [ ] Pokryć włączanie, rotację, awarie i rollback testami integracyjnymi BIND.

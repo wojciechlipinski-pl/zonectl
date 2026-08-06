@@ -99,14 +99,27 @@ class DnssecDsChecker:
             for name in ("dnskey", "zone rrsig", "key rrsig")
         )
 
+    @staticmethod
+    def _kasp_ds_state(output: str) -> str | None:
+        match = re.search(
+            r"^\s*-\s*ds:\s*([a-z-]+)\s*$",
+            output,
+            re.MULTILINE | re.IGNORECASE,
+        )
+        return match.group(1).casefold() if match else None
+
     def collect(self, zone: str, resolvers: tuple[str, ...]) -> DnssecDsCheck:
         if not resolvers:
             raise ValueError("Wymagany jest co najmniej jeden resolver")
 
         errors: list[str] = []
         kasp = self._command(["rndc", "dnssec", "-status", zone], 8)
-        kasp_ready = kasp.returncode == 0 and self._kasp_ready(
-            kasp.stdout + kasp.stderr
+        kasp_output = kasp.stdout + kasp.stderr
+        kasp_ready = kasp.returncode == 0 and self._kasp_ready(kasp_output)
+        kasp_ds_state = (
+            self._kasp_ds_state(kasp_output)
+            if kasp.returncode == 0
+            else None
         )
 
         local = self._dig(self.local_server, zone, "DNSKEY")
@@ -181,10 +194,21 @@ class DnssecDsChecker:
             next_action = "Usuń zgłoszone błędy; nie potwierdzaj publikacji DS w KASP."
         elif resolver_states == {"MATCH"} and authorities_ok:
             status = "PASS"
-            next_action = (
-                "DS jest zgodny i widoczny przez wszystkie resolvery; można przejść "
-                "do kontrolowanego potwierdzenia publikacji w KASP."
-            )
+            if kasp_ds_state in {"rumoured", "omnipresent"}:
+                next_action = (
+                    "DS został już potwierdzony w KASP; nie wykonuj ponownie "
+                    "confirm-ds. Monitoruj DNSSEC"
+                    + (
+                        " do osiągnięcia stanu ds: omnipresent."
+                        if kasp_ds_state == "rumoured"
+                        else "."
+                    )
+                )
+            else:
+                next_action = (
+                    "DS jest zgodny i widoczny przez wszystkie resolvery; można "
+                    "przejść do kontrolowanego potwierdzenia publikacji w KASP."
+                )
         elif "MATCH" in resolver_states:
             status = "PROPAGATING"
             next_action = "Poczekaj na pełną propagację DS i uruchom kontrolę ponownie."

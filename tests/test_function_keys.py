@@ -15,6 +15,11 @@ def test_xterm_function_keys_are_decoded() -> None:
     assert decode(b"[24~") == curses.KEY_F12
 
 
+def test_insert_and_delete_keys_are_decoded() -> None:
+    assert decode(b"[2~") == curses.KEY_IC
+    assert decode(b"[3~") == curses.KEY_DC
+
+
 def test_linux_console_function_keys_are_decoded() -> None:
     assert decode(b"[[A") == curses.KEY_F1
     assert decode(b"[[B") == curses.KEY_F2

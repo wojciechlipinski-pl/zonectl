@@ -19,11 +19,11 @@ RECORD_VIEW_BINDINGS: tuple[KeyBinding, ...] = (
     KeyBinding("n/N", "następny/poprzedni"),
     KeyBinding("c", "wyczyść"),
     KeyBinding("s", "sortuj"),
-    KeyBinding("a", "dodaj"),
-    KeyBinding("e", "edytuj"),
+    KeyBinding("Ins", "dodaj"),
+    KeyBinding("F4", "edytuj"),
     KeyBinding("Del", "usuń"),
     KeyBinding("p", "zmiany"),
-    KeyBinding("d", "diff"),
+    KeyBinding("F3", "diff"),
     KeyBinding("x", "eksport"),
     KeyBinding("b", "masowe"),
     KeyBinding("u", "cofnij"),
@@ -37,7 +37,7 @@ def render_footer(
     *,
     read_only: bool = False,
 ) -> str:
-    blocked = {"a", "e", "Del", "b", "u", "F2"} if read_only else set()
+    blocked = {"Ins", "F4", "Del", "b", "u", "F2"} if read_only else set()
     return " " + "   ".join(
         binding.render()
         for binding in bindings

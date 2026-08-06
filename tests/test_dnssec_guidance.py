@@ -77,6 +77,7 @@ def test_matching_parent_ds_finishes_deployment() -> None:
 
     assert guidance.stage == "ACTIVE"
     assert guidance.progress == "4/4 warunków gotowych"
+    assert guidance.ds_publication_allowed is True
 
 
 def test_unsigned_zone_points_to_enable_plan() -> None:

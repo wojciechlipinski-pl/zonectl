@@ -44,7 +44,10 @@ class RecordRendererTests(unittest.TestCase):
         self.assertIn("c wyczyść", footer)
         self.assertIn("s sortuj", footer)
         self.assertIn("p zmiany", footer)
-        self.assertIn("d diff", footer)
+        self.assertIn("F3 diff", footer)
+        self.assertIn("F4 edytuj", footer)
+        self.assertIn("Ins dodaj", footer)
+        self.assertIn("Del usuń", footer)
         self.assertIn("x eksport", footer)
         self.assertIn("b masowe", footer)
         self.assertIn("u cofnij", footer)
@@ -61,10 +64,10 @@ class RecordRendererTests(unittest.TestCase):
 
         self.assertIn("TYLKO ODCZYT", summary)
         self.assertIn("p zmiany", footer)
-        self.assertIn("d diff", footer)
+        self.assertIn("F3 diff", footer)
         for action in (
-            "a dodaj",
-            "e edytuj",
+            "Ins dodaj",
+            "F4 edytuj",
             "Del usuń",
             "b masowe",
             "u cofnij",

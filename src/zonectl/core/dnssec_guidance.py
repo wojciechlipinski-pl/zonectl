@@ -72,6 +72,7 @@ def build_dnssec_guidance(report: DnssecReport) -> DnssecGuidance:
             title="Łańcuch zaufania DNSSEC jest aktywny",
             progress="4/4 warunków gotowych",
             next_action="Monitoruj DNSSEC; nie zmieniaj ręcznie kluczy KASP.",
+            ds_publication_allowed=True,
         )
 
     states = _kasp_states(report.rndc_status)

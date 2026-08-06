@@ -489,6 +489,19 @@ Właściwa operacja wymaga dwóch jawnych flag i ponownie wykonuje pełne
 zctl dnssec confirm-ds example.pl --commit --acknowledge-published
 ```
 
+Po potwierdzeniu stan KASP `ds: rumoured` lub `ds: omnipresent` oznacza, że
+operacji `confirm-ds` nie wolno wykonywać ponownie; `check-ds` przechodzi wtedy
+w tryb monitorowania stabilizacji DNSSEC.
+
 ZoneCTL nie wywołuje automatycznie stanu `withdrawn`, jeżeli późniejsza
 weryfikacja KASP zawiedzie. Opublikowany DS pozostaje wtedy nadrzędnym faktem,
 a program zapisuje manifest i nakazuje ręczną diagnostykę.
+
+W TUI wybierz strefę, otwórz jej szczegóły klawiszem `Enter`, a następnie
+naciśnij `d`. Ekran DNSSEC jest odczytowy; `r` ponawia kontrolę, strzałki i
+`PgUp`/`PgDn` przewijają wynik, natomiast `q` lub `Esc` wraca do szczegółów
+strefy.
+
+W pozostałych widokach TUI obowiązuje układ zgodny z Midnight Commanderem:
+`Insert` tworzy nową strefę albo rekord, `Delete` usuwa rekord, `F3` otwiera
+rekordy strefy lub podgląd diff, a `F4` edytuje zaznaczony rekord.
