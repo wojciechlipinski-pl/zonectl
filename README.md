@@ -56,6 +56,7 @@ zctl dnssec enable-plan example.pl
 zctl dnssec enable example.pl
 zctl dnssec disable-plan example.pl
 zctl dnssec withdrawal-backup example.pl
+zctl dnssec withdrawal-check example.pl
 ```
 
 Raport pokazuje konfigurację `dnssec-policy` i `inline-signing`, stan KASP
@@ -77,6 +78,12 @@ nie zmienia KASP ani BIND.
 
 `withdrawal-backup` tworzy po jawnym `--commit` zweryfikowany pakiet
 odtworzeniowy wymagany przed usunięciem DS u rejestratora.
+
+`withdrawal-check` jest wyłącznie odczytowe i sprawdza, czy DS zniknął już
+z odpowiedzi wszystkich kontrolowanych resolverów. Status `BLOCKED` oznacza,
+że co najmniej jeden resolver nadal zwraca DS i `rndc dnssec -checkds
+withdrawn` nie wolno jeszcze wykonać. Dopiero `READY_FOR_WITHDRAWN` pozwala
+rozważyć ten krok.
 
 ## Filtrowanie rekordów
 

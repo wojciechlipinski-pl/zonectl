@@ -19,6 +19,7 @@ from .core.dnssec_disable_plan import (
     DnssecDisablePlanner,
 )
 from .core.dnssec_withdrawal_backup import DnssecWithdrawalBackup
+from .core.dnssec_withdrawal_check import DnssecWithdrawalChecker
 from .core.dnssec_ds_check import DnssecDsChecker
 from .core.dnssec_confirm_ds import DnssecConfirmDsTransaction
 from .core.dnssec_guidance import build_dnssec_guidance
@@ -92,6 +93,18 @@ def parser() -> argparse.ArgumentParser:
         help="resolver do kontroli DS; opcję można podać wielokrotnie",
     )
     dnssec_check_ds.add_argument("--json", action="store_true")
+    dnssec_withdrawal_check = dnssec_sub.add_parser(
+        "withdrawal-check",
+        help="sprawdź zniknięcie DS na wielu resolwerach; blokuje przedwczesny withdrawn",
+    )
+    dnssec_withdrawal_check.add_argument("name")
+    dnssec_withdrawal_check.add_argument(
+        "--resolver",
+        action="append",
+        dest="resolvers",
+        help="resolver do kontroli DS; opcję można podać wielokrotnie",
+    )
+    dnssec_withdrawal_check.add_argument("--json", action="store_true")
     dnssec_confirm_ds = dnssec_sub.add_parser(
         "confirm-ds",
         help="potwierdź w KASP zweryfikowaną publikację DS; domyślnie dry-run",
@@ -863,6 +876,39 @@ def main(argv: list[str] | None = None) -> int:
                 print(f"BŁĄD: {error}")
             print(f"\nNastępny krok: {result.next_action}")
         return 1 if result.status == "FAIL" else 0
+    if args.command == "dnssec" and args.dnssec_command == "withdrawal-check":
+        wanted = args.name.strip().rstrip(".").casefold()
+        zone = next(
+            (
+                item
+                for item in zones
+                if item.name.rstrip(".").casefold() == wanted
+            ),
+            None,
+        )
+        if zone is None:
+            print(f"BŁĄD: Nie znaleziono strefy: {args.name}", file=sys.stderr)
+            return 2
+        resolvers = tuple(
+            args.resolvers or ("1.1.1.1", "8.8.8.8", "9.9.9.9")
+        )
+        result = DnssecWithdrawalChecker(
+            timeout=int(config.toolkit.get("dig_timeout", "3")),
+        ).collect(zone.name, resolvers)
+        if args.json:
+            print(json.dumps(result.to_dict(), ensure_ascii=False, indent=2))
+        else:
+            print(f"KONTROLA WYCOFANIA DS — {result.zone}")
+            print(f"Status:  {result.status}")
+            print("\nResolvery:")
+            for check in result.resolver_checks:
+                print(f"  [{check.status:<11}] {check.resolver}: {check.message}")
+                for record in check.records:
+                    print(f"    {record}")
+            for error in result.errors:
+                print(f"BŁĄD: {error}")
+            print(f"\nNastępny krok: {result.next_action}")
+        return 0 if result.status == "READY_FOR_WITHDRAWN" else 1
     if args.command == "dnssec" and args.dnssec_command == "report":
         wanted = args.name.strip().rstrip(".").casefold()
         matches = [

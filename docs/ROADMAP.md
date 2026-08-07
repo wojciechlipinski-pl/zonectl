@@ -149,7 +149,9 @@ zrealizowane, a `[ ]` pozostają do wykonania.
   obowiązkowymi bramkami DS, KASP, backupu i walidacji BIND.
 - [x] Dodać atomowy i zweryfikowany pakiet odtworzeniowy tworzony przed
   rozpoczęciem wycofywania DS.
-- [ ] Chronić operatora przed przedwczesnym dodaniem lub usunięciem DS.
+- [x] Chronić operatora przed przedwczesnym usunięciem DS przez odczytową
+  kontrolę zniknięcia DS na wielu resolwerach, blokującą `withdrawn` do
+  czasu potwierdzenia.
 - [ ] Pokryć włączanie, rotację, awarie i rollback testami integracyjnymi BIND.
 
 ## Dokumentacja

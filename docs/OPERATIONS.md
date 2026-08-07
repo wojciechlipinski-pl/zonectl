@@ -531,3 +531,24 @@ zctl dnssec withdrawal-backup example.pl --commit
 Pakiet zawiera deklarację BIND, plik strefy, klucze, artefakty podpisywania,
 sumy SHA-256, metadane właścicieli i uprawnień oraz bieżący raport DNSSEC i
 kontrolę DS. Utworzenie pakietu nie zmienia konfiguracji ani stanu BIND.
+
+Po usunięciu DS u rejestratora nie wykonuj `rndc dnssec -checkds withdrawn`
+od razu. Poczekaj na propagację i sprawdź jego zniknięcie na wielu
+resolwerach:
+
+```bash
+zctl dnssec withdrawal-check example.pl
+zctl dnssec withdrawal-check example.pl \
+  --resolver 1.1.1.1 \
+  --resolver 8.8.8.8 \
+  --resolver 9.9.9.9
+```
+
+Polecenie jest wyłącznie odczytowe — wysyła zapytania `dig ... DS` do
+wskazanych resolwerów i nie dotyka BIND, KASP ani rejestratora. Status
+`BLOCKED` wskazuje resolwery, na których DS jest nadal widoczny; w tym
+stanie `rndc dnssec -checkds withdrawn` nie wolno wykonywać. Dopiero status
+`READY_FOR_WITHDRAWN` — brak DS na wszystkich sprawdzonych resolwerach —
+pozwala rozważyć ten krok, pod warunkiem że DNSKEY i RRSIG są nadal
+bezpiecznie publikowane. Status `ERROR` oznacza problem z samym zapytaniem
+(np. timeout) i również nie upoważnia do wycofania.
