@@ -23,6 +23,8 @@ from ..core.bind import BindService
 from ..core.bulk_operations import BulkOperation, BulkOperationError
 from ..core.config import ToolkitConfig
 from ..core.dnssec_ds_check import DnssecDsChecker
+from ..core.dnssec_disable_plan import DnssecDisablePlanner
+from ..core.dnssec_disable_transaction import DnssecDisableTransaction
 from ..core.dnssec_report import DnssecReporter
 from ..core.edit_lock import ZoneEditLockedError
 from ..core.models import Health, Zone, ZoneStatus
@@ -2059,6 +2061,23 @@ class CursesApp:
         ).collect(zone.name, resolvers)
         return DnssecStatusView.build(report, delegation)
 
+    def _dnssec_disable_plan(self, zone: Zone):
+        if self.config is None:
+            raise RuntimeError("Brak konfiguracji ZoneCTL")
+        discovered = self.config.discovered_zone(zone.name)
+        if discovered is None:
+            raise RuntimeError(
+                "Autodetekcja nie znalazła deklaracji BIND dla strefy"
+            )
+        return DnssecDisablePlanner().plan(discovered)
+
+    def _dnssec_finalize_dry_run(self, zone: Zone):
+        plan = self._dnssec_disable_plan(zone)
+        return DnssecDisableTransaction(
+            Path("/var/backups/zonectl-dnssec-disable/backups"),
+            Path("/var/backups/zonectl-dnssec-disable/manifests"),
+        ).apply(plan, stage="finalize")
+
     def _dnssec_status_view(self, win: curses.window, zone: Zone) -> None:
         """Read-only DNSSEC workflow status with explicit operator guidance."""
         offset = 0
@@ -2141,7 +2160,10 @@ class CursesApp:
                         attr = self._color(Health.PASS)
                     win.addnstr(row, 2, line, max(0, width - 4), attr)
 
-                footer = " ↑/↓ przewiń  PgUp/PgDn strona  r odśwież  q/Esc powrót "
+                footer = (
+                    " ↑/↓ przewiń  PgUp/PgDn strona  F3 plan  "
+                    "F4 dry-run finalizacji  r odśwież  q/Esc powrót "
+                )
                 win.addnstr(
                     height - 1,
                     0,
@@ -2154,6 +2176,58 @@ class CursesApp:
                 if key in (ord("q"), ord("Q"), 27, curses.KEY_BACKSPACE, 127, 8):
                     return
                 if key in (ord("r"), ord("R")):
+                    refresh = True
+                elif key == curses.KEY_F3:
+                    try:
+                        plan = self._dnssec_disable_plan(zone)
+                        self._message_view(
+                            win,
+                            title=f"Plan wycofania DNSSEC: {zone.name}",
+                            lines=(
+                                ["Etap insecure:"]
+                                + (plan.insecure_diff.splitlines() or ["Brak zmian"])
+                                + ["", "Etap finalize:"]
+                                + (plan.unified_diff.splitlines() or ["Brak zmian"])
+                            ),
+                        )
+                    except Exception as exc:
+                        self._message_view(
+                            win,
+                            title="Błąd planu DNSSEC",
+                            lines=[str(exc)],
+                            error=True,
+                        )
+                    refresh = True
+                elif key == curses.KEY_F4:
+                    try:
+                        result = self._dnssec_finalize_dry_run(zone)
+                        result_lines = [
+                            f"Etap: {result.stage}",
+                            f"Status: {result.status}",
+                            "Commit: NIE",
+                        ]
+                        if result.kasp_states:
+                            result_lines.append(
+                                "Stany KASP: " + ", ".join(result.kasp_states)
+                            )
+                        result_lines.extend(
+                            f"[{'OK' if step.ok else 'BŁĄD'}] "
+                            f"{step.name}: {step.message}"
+                            for step in result.steps
+                        )
+                        self._message_view(
+                            win,
+                            title=f"Dry-run finalizacji: {zone.name}",
+                            lines=result_lines,
+                            error=result.status not in {"DRY-RUN"},
+                        )
+                    except Exception as exc:
+                        self._message_view(
+                            win,
+                            title="Błąd dry-runu DNSSEC",
+                            lines=[str(exc)],
+                            error=True,
+                        )
                     refresh = True
                 elif key in (curses.KEY_DOWN, ord("j")):
                     offset = min(offset + 1, max(0, len(lines) - visible))
