@@ -58,6 +58,7 @@ zctl dnssec disable-plan example.pl
 zctl dnssec withdrawal-backup example.pl
 zctl dnssec withdrawal-check example.pl
 zctl dnssec withdrawal-confirm example.pl
+zctl dnssec disable-apply example.pl
 ```
 
 Raport pokazuje konfigurację `dnssec-policy` i `inline-signing`, stan KASP
@@ -93,6 +94,13 @@ ponownie uruchamia pełną kontrolę DS bezpośrednio przed wykonaniem `rndc`;
 jeśli świeży wynik nie jest `READY_FOR_WITHDRAWN`, komenda kończy się
 statusem `BLOCKED` i niczego nie zmienia. Sukces zapisuje manifest z
 identyfikatorem transakcji i kontrolą DS, która go autoryzowała.
+
+`disable-apply` jest ostatnim krokiem: transakcyjnie stosuje diff z
+`disable-plan`, usuwając `dnssec-policy`, `inline-signing` i `key-directory`
+z deklaracji BIND. Wykonuje się wyłącznie, gdy KASP zgłasza `ds: hidden`;
+inny odczytany stan jest twardą blokadą, której nie da się przesłonić.
+Nieczytelny stan KASP można świadomie przesłonić flagą
+`--acknowledge-unsigned`. Kluczy ani pakietu odtworzeniowego nie usuwa.
 
 ## Filtrowanie rekordów
 

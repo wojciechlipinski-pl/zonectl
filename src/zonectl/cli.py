@@ -14,6 +14,7 @@ from .core.dnssec_enable_plan import (
     DnssecEnablePlanner,
 )
 from .core.dnssec_enable_transaction import DnssecEnableTransaction
+from .core.dnssec_disable_transaction import DnssecDisableTransaction
 from .core.dnssec_disable_plan import (
     DnssecDisablePlanError,
     DnssecDisablePlanner,
@@ -194,6 +195,30 @@ def parser() -> argparse.ArgumentParser:
     )
     dnssec_disable_plan.add_argument("name")
     dnssec_disable_plan.add_argument("--json", action="store_true")
+    dnssec_disable_apply = dnssec_sub.add_parser(
+        "disable-apply",
+        help="zastosuj diff wycofania DNSSEC transakcyjnie; domyślnie dry-run",
+    )
+    dnssec_disable_apply.add_argument("name")
+    dnssec_disable_apply.add_argument(
+        "--backup-root",
+        type=Path,
+        default=Path("/var/backups/zonectl-dnssec-disable/backups"),
+    )
+    dnssec_disable_apply.add_argument(
+        "--manifest-directory",
+        type=Path,
+        default=Path("/var/backups/zonectl-dnssec-disable/manifests"),
+    )
+    dnssec_disable_apply.add_argument(
+        "--root-config", type=Path, default=Path("/etc/bind/named.conf")
+    )
+    dnssec_disable_apply.add_argument("--commit", action="store_true")
+    dnssec_disable_apply.add_argument("--activate", action="store_true")
+    dnssec_disable_apply.add_argument(
+        "--acknowledge-unsigned", action="store_true"
+    )
+    dnssec_disable_apply.add_argument("--json", action="store_true")
     dnssec_withdrawal_backup = dnssec_sub.add_parser(
         "withdrawal-backup",
         help="utwórz zweryfikowany pakiet przed wycofaniem DNSSEC; domyślnie dry-run",
@@ -667,6 +692,7 @@ def main(argv: list[str] | None = None) -> int:
         return 0 if result.status in {"DRY-RUN", "CONFIRMED"} else 1
     if args.command == "dnssec" and args.dnssec_command in {
         "disable-plan",
+        "disable-apply",
         "withdrawal-backup",
     }:
         wanted = args.name.strip().rstrip(".").casefold()
@@ -700,6 +726,35 @@ def main(argv: list[str] | None = None) -> int:
         except (DnssecDisablePlanError, OSError) as exc:
             print(f"BŁĄD: {exc}", file=sys.stderr)
             return 2
+        if args.dnssec_command == "disable-apply":
+            result = DnssecDisableTransaction(
+                args.backup_root,
+                args.manifest_directory,
+                root_config=args.root_config,
+            ).apply(
+                plan,
+                commit=args.commit,
+                activate=args.activate,
+                acknowledge_unsigned=args.acknowledge_unsigned,
+            )
+            if args.json:
+                print(json.dumps(asdict(result), ensure_ascii=False, indent=2))
+            else:
+                print(f"Transakcja: {result.transaction_id}")
+                print(f"Strefa:     {result.zone}")
+                print(f"Status:     {result.status}")
+                print(f"Commit:     {'TAK' if result.committed else 'NIE'}")
+                print(f"Stan DS:    {result.ds_state or 'nieodczytany'}")
+                if result.backup_directory:
+                    print(f"Backup:     {result.backup_directory}")
+                if result.manifest:
+                    print(f"Manifest:   {result.manifest}")
+                print("\nEtapy:")
+                for step in result.steps:
+                    print(
+                        f"[{'OK' if step.ok else 'BŁĄD'}] {step.name}: {step.message}"
+                    )
+            return 0 if result.status in {"DRY-RUN", "COMMIT"} else 1
         if args.dnssec_command == "withdrawal-backup":
             local_server = args.server or config.toolkit.get(
                 "local_server", "127.0.0.1"

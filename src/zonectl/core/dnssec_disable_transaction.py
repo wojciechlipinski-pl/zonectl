@@ -1,0 +1,357 @@
+"""Transakcyjne zastosowanie planu wycofania DNSSEC.
+
+Ostatni etap procedury: usuwa `dnssec-policy`, `inline-signing` i
+`key-directory` z deklaracji BIND, zgodnie z diffem wyliczonym wcześniej
+przez :class:`DnssecDisablePlanner`.
+
+Bramka bezpieczeństwa jest dwustopniowa. Podstawowo transakcja odczytuje
+`rndc dnssec -status` i wykonuje zmianę wyłącznie wtedy, gdy KASP zgłasza
+`ds: hidden` — czyli sam potwierdza, że rekord DS jest już wycofany i nie
+ma potrzeby utrzymywania łańcucha zaufania. Jeżeli stan da się odczytać,
+ale jest inny niż `hidden`, transakcja jest twardo blokowana i żadna flaga
+tego nie przesłania. Dopiero gdy stanu **nie da się odczytać** (inna wersja
+BIND, zmieniony format wyjścia, niedostępne `rndc`), operator może wziąć
+odpowiedzialność na siebie flagą ``--acknowledge-unsigned``.
+
+Kolejność jest ważna: dopóki resolvery mogą mieć DS w cache, zdjęcie
+podpisów zerwałoby walidację strefy. Dlatego to polecenie jest ostatnie,
+a nie pierwsze.
+"""
+
+from __future__ import annotations
+
+import json
+import os
+import re
+import shutil
+import tempfile
+import uuid
+from dataclasses import asdict, dataclass, field
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Callable
+
+from .dnssec_disable_plan import DnssecDisablePlan
+from .runner import run
+
+
+@dataclass(slots=True)
+class DnssecDisableStep:
+    name: str
+    ok: bool
+    message: str
+
+
+@dataclass(slots=True)
+class DnssecDisableResult:
+    transaction_id: str
+    zone: str
+    status: str
+    committed: bool = False
+    rolled_back: bool = False
+    ds_state: str | None = None
+    manifest: str | None = None
+    backup_directory: str | None = None
+    steps: list[DnssecDisableStep] = field(default_factory=list)
+
+    @property
+    def ok(self) -> bool:
+        return bool(self.steps) and all(step.ok for step in self.steps)
+
+
+StateReader = Callable[[str], "DsStateReading"]
+ConfigValidator = Callable[[Path], DnssecDisableStep]
+ZoneAction = Callable[[str], DnssecDisableStep]
+
+
+@dataclass(slots=True)
+class DsStateReading:
+    """Odczyt stanu DS z KASP.
+
+    ``state`` jest ``None``, gdy wyjścia nie udało się zinterpretować —
+    to jest przypadek, w którym dopuszczamy świadome przesłonięcie.
+    """
+
+    state: str | None
+    message: str
+
+
+_DS_STATE = re.compile(r"(?mi)^\s*-\s*ds:\s*(\S+)\s*$")
+
+
+def read_ds_state(zone: str, timeout: int = 30) -> DsStateReading:
+    outcome = run(["rndc", "dnssec", "-status", zone], timeout)
+    if outcome.returncode != 0:
+        detail = (outcome.stderr or outcome.stdout).strip()
+        return DsStateReading(None, f"rndc zwrócił kod {outcome.returncode}: {detail}")
+    match = _DS_STATE.search(outcome.stdout or "")
+    if match is None:
+        return DsStateReading(
+            None, "Nie odnaleziono stanu 'ds:' w wyjściu rndc dnssec -status"
+        )
+    return DsStateReading(match.group(1).casefold(), "Odczytano stan DS z KASP")
+
+
+class DnssecDisableTransaction:
+    """Stosuje diff wycofania DNSSEC z backupem i pełnym rollbackiem."""
+
+    def __init__(
+        self,
+        backup_root: Path,
+        manifest_directory: Path,
+        *,
+        root_config: Path = Path("/etc/bind/named.conf"),
+        state_reader: StateReader | None = None,
+        config_validator: ConfigValidator | None = None,
+        activator: ZoneAction | None = None,
+        loaded_verifier: ZoneAction | None = None,
+    ) -> None:
+        self.backup_root = backup_root
+        self.manifest_directory = manifest_directory
+        self.root_config = root_config
+        self.state_reader = state_reader or read_ds_state
+        self.config_validator = config_validator or self._validate_config
+        self.activator = activator or self._activate_bind
+        self.loaded_verifier = loaded_verifier or self._verify_loaded
+
+    def apply(
+        self,
+        plan: DnssecDisablePlan,
+        *,
+        commit: bool = False,
+        activate: bool = False,
+        acknowledge_unsigned: bool = False,
+    ) -> DnssecDisableResult:
+        txid = (
+            datetime.now().strftime("%Y%m%d-%H%M%S")
+            + f"-dnssec-disable-{plan.zone}-{uuid.uuid4().hex[:8]}"
+        )
+        result = DnssecDisableResult(txid, plan.zone, "PLAN")
+
+        conflict = self._preflight(plan)
+        if conflict is not None:
+            return self._finish(result, "CONFLICT", conflict, write_manifest=False)
+
+        reading = self.state_reader(plan.zone)
+        result.ds_state = reading.state
+        gate = self._gate(reading, acknowledge_unsigned)
+        result.steps.append(gate)
+        if not gate.ok:
+            return self._finish(result, "BLOCKED", write_manifest=False)
+
+        if not commit:
+            return self._finish(
+                result,
+                "DRY-RUN",
+                DnssecDisableStep("dry-run", True, "Nie zmieniono plików ani BIND"),
+                write_manifest=False,
+            )
+
+        backup_directory = self.backup_root / txid
+        result.backup_directory = str(backup_directory)
+        declaration_stat = plan.declaration_file.stat()
+        config_written = False
+        activation_attempted = False
+        try:
+            backup_directory.mkdir(parents=True, mode=0o750)
+            self._copy_backup(
+                plan.declaration_file, backup_directory / "bind-declaration.conf"
+            )
+            result.steps.append(
+                DnssecDisableStep("backup", True, f"Backup: {backup_directory}")
+            )
+
+            self._atomic_write(
+                plan.declaration_file,
+                plan.candidate_text.encode("utf-8"),
+                declaration_stat.st_mode & 0o777,
+                declaration_stat.st_uid,
+                declaration_stat.st_gid,
+            )
+            config_written = True
+            result.steps.append(
+                DnssecDisableStep(
+                    "configuration", True, f"Zaktualizowano {plan.declaration_file}"
+                )
+            )
+
+            config_step = self.config_validator(self.root_config)
+            result.steps.append(config_step)
+            if not config_step.ok:
+                raise RuntimeError(config_step.message)
+
+            if activate:
+                activation_attempted = True
+                for action in (self.activator, self.loaded_verifier):
+                    step = action(plan.zone)
+                    result.steps.append(step)
+                    if not step.ok:
+                        raise RuntimeError(step.message)
+
+            result.committed = True
+            result.steps.append(
+                DnssecDisableStep(
+                    "keys",
+                    True,
+                    "Klucze i pakiet odtworzeniowy pozostawiono nienaruszone",
+                )
+            )
+            return self._finish(result, "COMMIT")
+        except Exception as exc:
+            result.steps.append(DnssecDisableStep("transaction", False, str(exc)))
+            rollback_ok = True
+            try:
+                if config_written:
+                    self._atomic_write(
+                        plan.declaration_file,
+                        (backup_directory / "bind-declaration.conf").read_bytes(),
+                        declaration_stat.st_mode & 0o777,
+                        declaration_stat.st_uid,
+                        declaration_stat.st_gid,
+                    )
+                if activation_attempted:
+                    restore = self.activator(plan.zone)
+                    result.steps.append(
+                        DnssecDisableStep(
+                            "rndc-reconfig-rollback", restore.ok, restore.message
+                        )
+                    )
+                    if not restore.ok:
+                        rollback_ok = False
+            except OSError as rollback_error:
+                rollback_ok = False
+                result.steps.append(
+                    DnssecDisableStep("rollback", False, str(rollback_error))
+                )
+            else:
+                result.steps.append(
+                    DnssecDisableStep(
+                        "rollback", rollback_ok, "Przywrócono stan sprzed transakcji"
+                    )
+                )
+            result.rolled_back = rollback_ok
+            return self._finish(
+                result, "ROLLED-BACK" if rollback_ok else "ROLLBACK-FAILED"
+            )
+
+    @staticmethod
+    def _gate(
+        reading: DsStateReading, acknowledge_unsigned: bool
+    ) -> DnssecDisableStep:
+        if reading.state == "hidden":
+            return DnssecDisableStep(
+                "kasp-gate", True, "KASP zgłasza ds: hidden — DS jest wycofany"
+            )
+        if reading.state is not None:
+            return DnssecDisableStep(
+                "kasp-gate",
+                False,
+                f"Blokada: KASP zgłasza ds: {reading.state}, wymagane hidden. "
+                "Poczekaj na propagację; tej blokady nie wolno przesłonić.",
+            )
+        if acknowledge_unsigned:
+            return DnssecDisableStep(
+                "kasp-gate",
+                True,
+                f"Nie odczytano stanu KASP ({reading.message}); "
+                "operator potwierdził wycofanie flagą --acknowledge-unsigned",
+            )
+        return DnssecDisableStep(
+            "kasp-gate",
+            False,
+            f"Blokada: nie odczytano stanu DS z KASP ({reading.message}). "
+            "Sprawdź ręcznie i użyj --acknowledge-unsigned, jeśli DS jest wycofany.",
+        )
+
+    @staticmethod
+    def _preflight(plan: DnssecDisablePlan) -> DnssecDisableStep | None:
+        if not plan.declaration_file.is_file():
+            return DnssecDisableStep(
+                "preflight", False, f"Brak deklaracji: {plan.declaration_file}"
+            )
+        if plan.declaration_file.read_text(encoding="utf-8") != plan.original_text:
+            return DnssecDisableStep(
+                "preflight", False, "Konfiguracja zmieniła się od utworzenia planu"
+            )
+        if plan.candidate_text == plan.original_text:
+            return DnssecDisableStep(
+                "preflight", False, "Plan nie wprowadza żadnej zmiany"
+            )
+        return None
+
+    def _finish(
+        self,
+        result: DnssecDisableResult,
+        status: str,
+        step: DnssecDisableStep | None = None,
+        *,
+        write_manifest: bool = True,
+    ) -> DnssecDisableResult:
+        result.status = status
+        if step is not None:
+            result.steps.append(step)
+        if write_manifest:
+            self.manifest_directory.mkdir(parents=True, exist_ok=True, mode=0o750)
+            path = self.manifest_directory / f"{result.transaction_id}.json"
+            result.manifest = str(path)
+            payload = asdict(result)
+            payload["saved_at"] = (
+                datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds")
+            )
+            path.write_text(
+                json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8"
+            )
+        return result
+
+    @staticmethod
+    def _copy_backup(source: Path, target: Path) -> None:
+        shutil.copy2(source, target)
+        if hasattr(os, "chown"):
+            owner = source.stat()
+            os.chown(target, owner.st_uid, owner.st_gid)
+
+    @staticmethod
+    def _atomic_write(
+        path: Path, content: bytes, mode: int, uid: int, gid: int
+    ) -> None:
+        path.parent.mkdir(parents=True, exist_ok=True, mode=0o750)
+        fd, name = tempfile.mkstemp(prefix=f".{path.name}.", dir=path.parent)
+        temporary = Path(name)
+        try:
+            with os.fdopen(fd, "wb") as handle:
+                handle.write(content)
+                handle.flush()
+                os.fsync(handle.fileno())
+            os.chmod(temporary, mode)
+            if hasattr(os, "chown"):
+                os.chown(temporary, uid, gid)
+            os.replace(temporary, path)
+        finally:
+            temporary.unlink(missing_ok=True)
+
+    @staticmethod
+    def _validate_config(path: Path) -> DnssecDisableStep:
+        outcome = run(["named-checkconf", str(path)], 30)
+        return DnssecDisableStep(
+            "named-checkconf",
+            outcome.returncode == 0,
+            (outcome.stdout or outcome.stderr).strip() or f"kod {outcome.returncode}",
+        )
+
+    @staticmethod
+    def _activate_bind(_zone: str) -> DnssecDisableStep:
+        outcome = run(["rndc", "reconfig"], 30)
+        return DnssecDisableStep(
+            "rndc-reconfig",
+            outcome.returncode == 0,
+            (outcome.stdout or outcome.stderr).strip() or f"kod {outcome.returncode}",
+        )
+
+    @staticmethod
+    def _verify_loaded(zone: str) -> DnssecDisableStep:
+        outcome = run(["rndc", "zonestatus", zone], 30)
+        return DnssecDisableStep(
+            "rndc-zonestatus",
+            outcome.returncode == 0,
+            (outcome.stdout or outcome.stderr).strip() or f"kod {outcome.returncode}",
+        )

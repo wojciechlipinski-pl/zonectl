@@ -570,3 +570,43 @@ jeśli w tej właśnie chwili wynik nie jest `READY_FOR_WITHDRAWN` (np. DS
 zdążył się na nowo pojawić przez cache resolvera), operacja jest blokowana.
 Powodzenie zapisuje manifest z transakcją i kontrolą DS, która ją
 autoryzowała, w `/var/backups/zonectl-dnssec-withdrawal-confirm/manifests`.
+
+Po `withdrawal-confirm` KASP nie przechodzi od razu w stan końcowy: odlicza
+`parent-propagation-delay` i TTL rekordu DS z rodzica, więc `ds: omnipresent`
+bezpośrednio po operacji jest normalne. Do czasu osiągnięcia `ds: hidden`
+strefa musi nadal publikować DNSKEY i RRSIG — zdjęcie podpisów wcześniej
+zerwałoby walidację u resolverów, które mają DS jeszcze w cache.
+
+Stan sprawdzamy poleceniem:
+
+```bash
+rndc dnssec -status example.pl
+```
+
+Ostatnim krokiem procedury jest transakcyjne zastosowanie diffu z
+`disable-plan`:
+
+```bash
+zctl dnssec disable-apply example.pl
+zctl dnssec disable-apply example.pl --commit --activate
+```
+
+Bez `--commit` polecenie jest dry-runem: pokazuje odczytany stan DS i wynik
+bramki, nie zmieniając ani deklaracji, ani BIND. Właściwe wykonanie usuwa z
+deklaracji `dnssec-policy`, `inline-signing` i `key-directory`, zapisując
+plik atomowo z zachowaniem właściciela i uprawnień. `--activate` dokłada
+`rndc reconfig` i weryfikację `rndc zonestatus`.
+
+Bramka działa na odczycie `rndc dnssec -status`:
+
+- `ds: hidden` — jedyny stan dopuszczający wykonanie;
+- każdy inny odczytany stan (`omnipresent`, `unretentive`, `rumoured`) jest
+  **twardą blokadą**, której nie przesłania żadna flaga;
+- gdy stanu nie da się odczytać (inna wersja BIND, zmieniony format wyjścia,
+  niedostępne `rndc`), polecenie także blokuje, ale operator może wziąć
+  odpowiedzialność na siebie flagą `--acknowledge-unsigned`.
+
+Każde niepowodzenie walidacji `named-checkconf` lub aktywacji powoduje pełny
+rollback deklaracji z backupu i status `ROLLED-BACK`. Polecenie **nie usuwa
+kluczy ani pakietu odtworzeniowego** — są jedyną drogą powrotu do stanu
+podpisanego i należy je zachować.

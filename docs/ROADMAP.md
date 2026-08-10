@@ -155,7 +155,7 @@ zrealizowane, a `[ ]` pozostają do wykonania.
 - [x] Chronić operatora przed przedwczesnym usunięciem DS przez odczytową
   kontrolę zniknięcia DS na wielu resolwerach, blokującą `withdrawn` do
   czasu potwierdzenia.
-- [ ] Po wykonaniu `withdrawal-confirm` dodać transakcyjne zastosowanie
+- [x] Po wykonaniu `withdrawal-confirm` dodać transakcyjne zastosowanie
   diffu z `disable-plan` (usunięcie `dnssec-policy`/`inline-signing`),
   z walidacją `named-checkconf`, kontrolowanym `rndc reconfig` i rollbackiem.
 - [ ] Pokryć włączanie, rotację, awarie i rollback testami integracyjnymi BIND.
