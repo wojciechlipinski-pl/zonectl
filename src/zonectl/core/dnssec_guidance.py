@@ -27,7 +27,7 @@ class DnssecGuidance:
 def _kasp_states(lines: tuple[str, ...]) -> dict[str, str]:
     states: dict[str, str] = {}
     pattern = re.compile(
-        r"^\s*-\s*(dnskey|ds|zone rrsig|key rrsig):\s*([a-z-]+)\s*$",
+        r"^\s*-\s*(goal|dnskey|ds|zone rrsig|key rrsig):\s*([a-z-]+)\s*$",
         re.IGNORECASE,
     )
     for line in lines:
@@ -66,6 +66,43 @@ def build_dnssec_guidance(report: DnssecReport) -> DnssecGuidance:
             progress="0/4 warunków gotowych",
             next_action=f"Utwórz plan: zctl dnssec enable-plan {report.zone}",
         )
+    states = _kasp_states(report.rndc_status)
+    if (report.dnssec_policy or "").casefold() == "insecure":
+        withdrawal_states = (
+            "goal",
+            "dnskey",
+            "ds",
+            "zone rrsig",
+            "key rrsig",
+        )
+        hidden = sum(
+            states.get(name) == "hidden"
+            for name in withdrawal_states
+        )
+        not_before = localize_bind_time(report.next_key_event)
+        if all(
+            states.get(name) == "hidden" for name in ("goal", "dnskey", "ds")
+        ):
+            return DnssecGuidance(
+                stage="READY_TO_FINALIZE",
+                title="KASP zakończył wycofywanie DNSSEC",
+                progress=f"{hidden}/5 stanów KASP ukrytych",
+                next_action=(
+                    "Sprawdź dry-run: zctl dnssec disable-apply "
+                    f"{report.zone} --stage finalize"
+                ),
+                not_before=not_before,
+            )
+        action = f"Ponów kontrolę: zctl dnssec report {report.zone}"
+        if not_before:
+            action = f"Po {not_before} uruchom ponownie: zctl dnssec report {report.zone}"
+        return DnssecGuidance(
+            stage="WITHDRAWING",
+            title="Trwa bezpieczne wycofywanie DNSSEC przez KASP",
+            progress=f"{hidden}/5 stanów KASP ukrytych",
+            next_action=action,
+            not_before=not_before,
+        )
     if report.parent_ds_matches is True:
         return DnssecGuidance(
             stage="ACTIVE",
@@ -75,7 +112,6 @@ def build_dnssec_guidance(report: DnssecReport) -> DnssecGuidance:
             ds_publication_allowed=True,
         )
 
-    states = _kasp_states(report.rndc_status)
     required = ("dnskey", "zone rrsig", "key rrsig")
     ready = sum(states.get(name) == "omnipresent" for name in required)
     if ready == len(required) and report.calculated_ds:

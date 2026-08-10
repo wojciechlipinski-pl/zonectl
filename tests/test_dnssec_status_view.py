@@ -165,3 +165,24 @@ def test_tui_collects_report_and_delegation_with_configured_resolvers(
     assert view.stage == "PROPAGATING"
     assert ("check", "example.pl", ("r1", "r2")) in calls
     assert ("report", "example.pl", Path("/test/keys")) in calls
+
+
+def test_view_labels_insecure_policy_as_withdrawing() -> None:
+    withdrawing = replace(
+        report(),
+        dnssec_policy="insecure",
+        rndc_status=(
+            "dnssec-policy: insecure",
+            "- dnskey: omnipresent",
+            "- ds: unretentive",
+            "- zone rrsig: omnipresent",
+            "- key rrsig: omnipresent",
+        ),
+    )
+
+    view = DnssecStatusView.build(withdrawing)
+    text = "\n".join(view.lines)
+
+    assert view.stage == "WITHDRAWING"
+    assert "Finalizacja         ZABLOKOWANA" in text
+    assert "Publikacja DS" not in text

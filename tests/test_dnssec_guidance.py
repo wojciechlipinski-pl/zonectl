@@ -95,5 +95,44 @@ def test_json_report_contains_guidance() -> None:
     assert payload["guidance"]["stage"] == "PROPAGATING"
 
 
+def test_insecure_policy_reports_withdrawal_and_blocks_finalization() -> None:
+    guidance = build_dnssec_guidance(
+        report(
+            dnssec_policy="insecure",
+            rndc_status=(
+                "- goal: hidden",
+                "- dnskey: omnipresent",
+                "- ds: unretentive",
+                "- zone rrsig: omnipresent",
+                "- key rrsig: omnipresent",
+            ),
+            next_key_event="Tue, 11 Aug 2026 09:25:55 GMT",
+        )
+    )
+
+    assert guidance.stage == "WITHDRAWING"
+    assert guidance.ds_publication_allowed is False
+    assert guidance.not_before is not None
+    assert "2026-08-11" in guidance.not_before
+
+
+def test_insecure_policy_allows_finalize_only_after_hidden_kasp_state() -> None:
+    guidance = build_dnssec_guidance(
+        report(
+            dnssec_policy="insecure",
+            rndc_status=(
+                "- goal: hidden",
+                "- dnskey: hidden",
+                "- ds: hidden",
+                "- zone rrsig: hidden",
+                "- key rrsig: hidden",
+            ),
+        )
+    )
+
+    assert guidance.stage == "READY_TO_FINALIZE"
+    assert "--stage finalize" in guidance.next_action
+
+
 def test_unparseable_bind_time_is_preserved() -> None:
     assert localize_bind_time("unknown") == "unknown"

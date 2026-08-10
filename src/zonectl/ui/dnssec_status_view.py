@@ -76,17 +76,25 @@ class DnssecStatusView:
         lines.extend(("", f"Postęp              {guidance.progress}"))
         if guidance.not_before:
             lines.append(f"Następna kontrola   {guidance.not_before}")
-        lines.extend(
-            (
-                f"Następny krok        {guidance.next_action}",
+        lines.append(f"Następny krok        {guidance.next_action}")
+        if guidance.stage in {"WITHDRAWING", "READY_TO_FINALIZE"}:
+            lines.append(
+                "Finalizacja         "
+                + (
+                    "DOZWOLONA PO DRY-RUNIE"
+                    if guidance.stage == "READY_TO_FINALIZE"
+                    else "ZABLOKOWANA"
+                )
+            )
+        else:
+            lines.append(
                 "Publikacja DS        "
                 + (
                     "DOZWOLONA"
                     if publication_allowed
                     else "JESZCZE ZABLOKOWANA"
-                ),
+                )
             )
-        )
         return cls(
             zone=report.zone,
             stage=stage,
