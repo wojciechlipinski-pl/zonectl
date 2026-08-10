@@ -14,6 +14,7 @@ from zonectl.ui.dnssec_status_view import DnssecStatusView
 import curses
 import queue
 import threading
+import textwrap
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from pathlib import Path
@@ -1101,61 +1102,98 @@ class CursesApp:
         lines: list[str],
         error: bool = False,
     ) -> None:
-        """Wyświetla prosty modalny komunikat."""
-        win.erase()
-        height, width = win.getmaxyx()
-
+        """Wyświetla zawijany i przewijany modalny komunikat."""
         title_attr = curses.A_REVERSE | curses.A_BOLD
         body_attr = (
             self._color(Health.FAIL)
             if error
             else curses.A_NORMAL
         )
-
+        offset = 0
         try:
-            win.addnstr(
-                0,
-                0,
-                f" {title} ".ljust(width),
-                max(0, width - 1),
-                title_attr,
-            )
-
-            row = 2
-
-            for line in lines:
-                if row >= height - 2:
-                    break
-
+            win.timeout(-1)
+            while True:
+                win.erase()
+                height, width = win.getmaxyx()
+                wrapped = self._wrap_message_lines(lines, max(1, width - 4))
+                visible = max(1, height - 4)
+                maximum = max(0, len(wrapped) - visible)
+                offset = min(offset, maximum)
                 win.addnstr(
-                    row,
-                    2,
-                    str(line),
-                    max(0, width - 4),
-                    body_attr,
+                    0,
+                    0,
+                    f" {title} ".ljust(width),
+                    max(0, width - 1),
+                    title_attr,
                 )
-                row += 1
-
-            footer = " Dowolny klawisz — powrót "
-            win.addnstr(
-                height - 1,
-                0,
-                footer.ljust(width),
-                max(0, width - 1),
-                curses.A_REVERSE,
-            )
-            win.refresh()
-            try:
-                # Główne okno działa z krótkim timeoutem, aby odświeżać
-                # statusy w tle. Modal musi jednak czekać na świadome
-                # naciśnięcie kolejnego klawisza.
-                win.timeout(-1)
-                win.getch()
-            finally:
-                win.timeout(150)
-
+                for row, line in enumerate(
+                    wrapped[offset : offset + visible], start=2
+                ):
+                    win.addnstr(
+                        row,
+                        2,
+                        line,
+                        max(0, width - 4),
+                        body_attr,
+                    )
+                footer = (
+                    f" Linie {offset + 1}-{min(len(wrapped), offset + visible)}"
+                    f"/{len(wrapped)}  ↑/↓ PgUp/PgDn Home/End  q/Esc powrót "
+                )
+                win.addnstr(
+                    height - 1,
+                    0,
+                    footer.ljust(width),
+                    max(0, width - 1),
+                    curses.A_REVERSE,
+                )
+                win.refresh()
+                key = self._get_key(win)
+                if key in (curses.KEY_DOWN, ord("j")):
+                    offset = min(offset + 1, maximum)
+                elif key in (curses.KEY_UP, ord("k")):
+                    offset = max(0, offset - 1)
+                elif key == curses.KEY_NPAGE:
+                    offset = min(offset + visible, maximum)
+                elif key == curses.KEY_PPAGE:
+                    offset = max(0, offset - visible)
+                elif key == curses.KEY_HOME:
+                    offset = 0
+                elif key == curses.KEY_END:
+                    offset = maximum
+                else:
+                    return
         except curses.error:
             pass
+        finally:
+            try:
+                win.timeout(150)
+            except curses.error:
+                pass
+
+    @staticmethod
+    def _wrap_message_lines(lines: list[str], width: int) -> list[str]:
+        """Zawijaj tekst, zachowując puste linie i wcięcie kontynuacji."""
+        wrapped: list[str] = []
+        for value in lines:
+            line = str(value)
+            if not line:
+                wrapped.append("")
+                continue
+            indentation = line[: len(line) - len(line.lstrip())]
+            wrapped.extend(
+                textwrap.wrap(
+                    line,
+                    width=max(1, width),
+                    subsequent_indent=indentation,
+                    replace_whitespace=False,
+                    drop_whitespace=True,
+                    break_long_words=True,
+                    break_on_hyphens=False,
+                )
+                or [""]
+            )
+        return wrapped
 
     @staticmethod
     def _function_key_sequence(

@@ -40,3 +40,19 @@ def test_read_only_message_waits_without_window_timeout() -> None:
 
     assert window.getch_calls == 1
     assert window.timeouts == [-1, 150]
+
+
+def test_message_lines_wrap_and_preserve_indentation_and_blanks() -> None:
+    wrapped = CursesApp._wrap_message_lines(
+        ["  bardzo długi komunikat operatora", "", "ABCDEFGHIJ"],
+        12,
+    )
+
+    assert wrapped == [
+        "  bardzo",
+        "  długi",
+        "  komunikat",
+        "  operatora",
+        "",
+        "ABCDEFGHIJ",
+    ]
