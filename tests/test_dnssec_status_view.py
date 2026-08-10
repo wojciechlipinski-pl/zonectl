@@ -78,6 +78,8 @@ def test_view_shows_stage_time_delegation_and_block() -> None:
     text = "\n".join(view.lines)
 
     assert view.stage == "PROPAGATING"
+    assert view.operation == "STATUS"
+    assert view.operation_label == "wskazówki"
     assert view.publication_allowed is False
     assert "2026-08-05" in text
     assert "[MATCH] ns1.example.pl" in text
@@ -102,6 +104,7 @@ def test_view_allows_ds_when_kasp_is_ready() -> None:
     )
 
     assert view.stage == "READY_FOR_DS"
+    assert view.operation == "STATUS"
     assert view.publication_allowed is True
     assert "DOZWOLONA" in "\n".join(view.lines)
 
@@ -184,5 +187,31 @@ def test_view_labels_insecure_policy_as_withdrawing() -> None:
     text = "\n".join(view.lines)
 
     assert view.stage == "WITHDRAWING"
+    assert view.operation == "FINALIZE"
+    assert view.operation_label == "finalizacja"
     assert "Finalizacja         ZABLOKOWANA" in text
     assert "Publikacja DS" not in text
+
+
+def test_view_exposes_contextual_operations() -> None:
+    active = replace(
+        report(zone_rrsig="omnipresent"),
+        status="PASS",
+        parent_ds_records=("12345 13 2 ABCD",),
+        parent_ds_matches=True,
+        warnings=(),
+    )
+    unsigned = replace(
+        report(),
+        status="UNSIGNED",
+        configured=False,
+        dnssec_policy=None,
+        inline_signing=False,
+        signing=False,
+        parent_ds_matches=None,
+    )
+
+    assert DnssecStatusView.build(active).operation == "WITHDRAWAL"
+    assert DnssecStatusView.build(active).operation_label == "wycofanie"
+    assert DnssecStatusView.build(unsigned).operation == "ENABLE"
+    assert DnssecStatusView.build(unsigned).operation_label == "włączenie"

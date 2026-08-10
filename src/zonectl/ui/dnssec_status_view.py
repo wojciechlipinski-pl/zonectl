@@ -16,6 +16,8 @@ class DnssecStatusView:
     title: str
     lines: tuple[str, ...]
     publication_allowed: bool
+    operation: str
+    operation_label: str
 
     @classmethod
     def build(
@@ -101,7 +103,28 @@ class DnssecStatusView:
             title=title,
             lines=tuple(lines),
             publication_allowed=publication_allowed,
+            operation=cls._operation_for_stage(stage),
+            operation_label=cls._operation_label(stage),
         )
+
+    @staticmethod
+    def _operation_for_stage(stage: str) -> str:
+        if stage in {"WITHDRAWING", "READY_TO_FINALIZE"}:
+            return "FINALIZE"
+        if stage == "ACTIVE":
+            return "WITHDRAWAL"
+        if stage == "UNSIGNED":
+            return "ENABLE"
+        return "STATUS"
+
+    @classmethod
+    def _operation_label(cls, stage: str) -> str:
+        return {
+            "FINALIZE": "finalizacja",
+            "WITHDRAWAL": "wycofanie",
+            "ENABLE": "włączenie",
+            "STATUS": "wskazówki",
+        }[cls._operation_for_stage(stage)]
 
     @staticmethod
     def _yes_no(value: bool | None) -> str:

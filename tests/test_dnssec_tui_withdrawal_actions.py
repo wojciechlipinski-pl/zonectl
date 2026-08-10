@@ -12,7 +12,7 @@ def test_dnssec_screen_exposes_read_only_withdrawal_actions() -> None:
     source = inspect.getsource(CursesApp._dnssec_status_view)
 
     assert "F3 plan" in source
-    assert "F4 dry-run finalizacji" in source
+    assert "F4 {view.operation_label" in source
     assert "key == curses.KEY_F3" in source
     assert "key == curses.KEY_F4" in source
     assert 'ord("p")' not in source
@@ -81,3 +81,13 @@ def test_commit_path_requires_ready_stage_and_exact_zone_name() -> None:
     assert "supplied != expected" in source
     assert "CursesDialogs.confirm" in source
     assert "self._dnssec_finalize_commit(zone)" in source
+
+
+def test_f4_routes_non_finalize_stages_to_guidance_only() -> None:
+    source = inspect.getsource(CursesApp._dnssec_status_view)
+
+    assert 'view.operation != "FINALIZE"' in source
+    assert 'view.operation == "WITHDRAWAL"' in source
+    assert 'view.operation == "ENABLE"' in source
+    assert "withdrawal-backup" in source
+    assert "enable-plan" in source

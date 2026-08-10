@@ -2222,7 +2222,8 @@ class CursesApp:
 
                 footer = (
                     " ↑/↓ przewiń  PgUp/PgDn strona  F3 plan  "
-                    "F4 dry-run finalizacji  r odśwież  q/Esc powrót "
+                    f"F4 {view.operation_label if view else 'wskazówki'}  "
+                    "r odśwież  q/Esc powrót "
                 )
                 win.addnstr(
                     height - 1,
@@ -2239,17 +2240,34 @@ class CursesApp:
                     refresh = True
                 elif key == curses.KEY_F3:
                     try:
-                        plan = self._dnssec_disable_plan(zone)
-                        self._message_view(
-                            win,
-                            title=f"Plan wycofania DNSSEC: {zone.name}",
-                            lines=(
-                                ["Etap insecure:"]
-                                + (plan.insecure_diff.splitlines() or ["Brak zmian"])
-                                + ["", "Etap finalize:"]
-                                + (plan.unified_diff.splitlines() or ["Brak zmian"])
-                            ),
-                        )
+                        if view is not None and view.operation == "ENABLE":
+                            self._message_view(
+                                win,
+                                title=f"Plan włączenia DNSSEC: {zone.name}",
+                                lines=[
+                                    "Podgląd planu jest dostępny w CLI:",
+                                    f"zctl dnssec enable-plan {zone.name}",
+                                    "Polecenie nie zmienia BIND.",
+                                ],
+                            )
+                        else:
+                            plan = self._dnssec_disable_plan(zone)
+                            self._message_view(
+                                win,
+                                title=f"Plan wycofania DNSSEC: {zone.name}",
+                                lines=(
+                                    ["Etap insecure:"]
+                                    + (
+                                        plan.insecure_diff.splitlines()
+                                        or ["Brak zmian"]
+                                    )
+                                    + ["", "Etap finalize:"]
+                                    + (
+                                        plan.unified_diff.splitlines()
+                                        or ["Brak zmian"]
+                                    )
+                                ),
+                            )
                     except Exception as exc:
                         self._message_view(
                             win,
@@ -2259,6 +2277,35 @@ class CursesApp:
                         )
                     refresh = True
                 elif key == curses.KEY_F4:
+                    if view is None:
+                        refresh = True
+                        continue
+                    if view.operation != "FINALIZE":
+                        if view.operation == "WITHDRAWAL":
+                            action_lines = [
+                                "Strefa ma aktywny łańcuch zaufania DNSSEC.",
+                                "F3 pokazuje plan bezpiecznego wycofania.",
+                                "Przed usunięciem DS utwórz zweryfikowany backup:",
+                                f"zctl dnssec withdrawal-backup {zone.name} --commit",
+                            ]
+                        elif view.operation == "ENABLE":
+                            action_lines = [
+                                "Strefa nie jest podpisana.",
+                                "Rozpocznij od planu bez zmian w BIND:",
+                                f"zctl dnssec enable-plan {zone.name}",
+                            ]
+                        else:
+                            action_lines = [
+                                "Na tym etapie nie ma bezpiecznej operacji zapisu.",
+                                "Odśwież status po terminie wskazanym na ekranie.",
+                            ]
+                        self._message_view(
+                            win,
+                            title=f"Następna operacja DNSSEC: {zone.name}",
+                            lines=action_lines,
+                        )
+                        refresh = True
+                        continue
                     try:
                         result = self._dnssec_finalize_dry_run(zone)
                         self._message_view(
