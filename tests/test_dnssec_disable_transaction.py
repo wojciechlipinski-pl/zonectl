@@ -8,8 +8,8 @@ from zonectl.core.dnssec_disable_plan import DnssecDisablePlanner
 from zonectl.core.dnssec_disable_transaction import (
     DnssecDisableStep,
     DnssecDisableTransaction,
-    DsStateReading,
-    read_ds_state,
+    KaspReading,
+    read_kasp_states,
 )
 
 
@@ -41,12 +41,11 @@ def setup_plan(tmp_path: Path):
         inline_signing=True,
         key_directory=keys,
     )
-    plan = DnssecDisablePlanner().plan(zone)
-    return plan, declaration
+    return DnssecDisablePlanner().plan(zone), declaration
 
 
-def state(value: str | None, message: str = "stub"):
-    return lambda _zone: DsStateReading(value, message)
+def kasp(all_hidden: bool | None, states=("goal=hidden",)):
+    return lambda _zone: KaspReading(all_hidden, tuple(states), "stub")
 
 
 def ok(name: str):
@@ -55,7 +54,8 @@ def ok(name: str):
 
 def engine(tmp_path: Path, **overrides):
     defaults = {
-        "state_reader": state("hidden"),
+        "kasp_reader": kasp(True),
+        "ds_gate": lambda _zone: True,
         "config_validator": ok("named-checkconf"),
         "activator": ok("rndc-reconfig"),
         "loaded_verifier": ok("rndc-zonestatus"),
@@ -69,84 +69,139 @@ def engine(tmp_path: Path, **overrides):
     )
 
 
-def test_dry_run_changes_nothing(tmp_path: Path) -> None:
+# --- plan ---------------------------------------------------------------
+
+
+def test_plan_offers_both_candidate_texts(tmp_path: Path) -> None:
+    plan, _ = setup_plan(tmp_path)
+
+    assert "dnssec-policy insecure;" in plan.insecure_text
+    assert "inline-signing yes;" in plan.insecure_text
+    assert "dnssec-policy" not in plan.candidate_text
+    assert "inline-signing" not in plan.candidate_text
+
+
+# --- etap insecure ------------------------------------------------------
+
+
+def test_insecure_dry_run_changes_nothing(tmp_path: Path) -> None:
     plan, declaration = setup_plan(tmp_path)
     before = declaration.read_text(encoding="utf-8")
 
-    result = engine(tmp_path).apply(plan)
+    result = engine(tmp_path).apply(plan, stage="insecure")
 
     assert result.status == "DRY-RUN"
-    assert result.committed is False
-    assert declaration.read_text(encoding="utf-8") == before
-    assert not (tmp_path / "backups").exists()
-
-
-def test_blocked_when_kasp_ds_is_not_hidden(tmp_path: Path) -> None:
-    plan, declaration = setup_plan(tmp_path)
-    before = declaration.read_text(encoding="utf-8")
-
-    result = engine(tmp_path, state_reader=state("omnipresent")).apply(
-        plan, commit=True
-    )
-
-    assert result.status == "BLOCKED"
-    assert result.ds_state == "omnipresent"
-    assert result.committed is False
     assert declaration.read_text(encoding="utf-8") == before
 
 
-def test_non_hidden_state_cannot_be_overridden(tmp_path: Path) -> None:
+def test_insecure_blocked_while_ds_still_visible(tmp_path: Path) -> None:
     plan, declaration = setup_plan(tmp_path)
     before = declaration.read_text(encoding="utf-8")
 
-    result = engine(tmp_path, state_reader=state("unretentive")).apply(
-        plan, commit=True, acknowledge_unsigned=True
+    result = engine(tmp_path, ds_gate=lambda _z: False).apply(
+        plan, stage="insecure", commit=True
     )
 
     assert result.status == "BLOCKED"
     assert declaration.read_text(encoding="utf-8") == before
 
 
-def test_unreadable_state_blocks_without_acknowledgement(tmp_path: Path) -> None:
+def test_visible_ds_cannot_be_overridden(tmp_path: Path) -> None:
     plan, declaration = setup_plan(tmp_path)
     before = declaration.read_text(encoding="utf-8")
 
-    result = engine(tmp_path, state_reader=state(None, "brak rndc")).apply(
-        plan, commit=True
+    result = engine(tmp_path, ds_gate=lambda _z: False).apply(
+        plan, stage="insecure", commit=True, acknowledge_unsigned=True
     )
 
     assert result.status == "BLOCKED"
     assert declaration.read_text(encoding="utf-8") == before
 
 
-def test_unreadable_state_may_be_acknowledged(tmp_path: Path) -> None:
+def test_insecure_commit_swaps_policy_and_keeps_inline_signing(
+    tmp_path: Path,
+) -> None:
     plan, declaration = setup_plan(tmp_path)
 
-    result = engine(tmp_path, state_reader=state(None, "brak rndc")).apply(
-        plan, commit=True, acknowledge_unsigned=True
+    result = engine(tmp_path).apply(
+        plan, stage="insecure", commit=True, activate=True
     )
 
     assert result.status == "COMMIT"
-    assert result.committed is True
+    text = declaration.read_text(encoding="utf-8")
+    assert "dnssec-policy insecure;" in text
+    assert "inline-signing yes;" in text
+    assert "type primary;" in text
+
+
+# --- etap finalize ------------------------------------------------------
+
+
+def test_finalize_blocked_while_keys_not_hidden(tmp_path: Path) -> None:
+    plan, declaration = setup_plan(tmp_path)
+    before = declaration.read_text(encoding="utf-8")
+
+    result = engine(
+        tmp_path, kasp_reader=kasp(False, ("goal=hidden", "dnskey=omnipresent"))
+    ).apply(plan, stage="finalize", commit=True)
+
+    assert result.status == "BLOCKED"
+    assert "dnskey=omnipresent" in result.steps[0].message
+    assert declaration.read_text(encoding="utf-8") == before
+
+
+def test_visible_keys_cannot_be_overridden(tmp_path: Path) -> None:
+    plan, declaration = setup_plan(tmp_path)
+    before = declaration.read_text(encoding="utf-8")
+
+    result = engine(tmp_path, kasp_reader=kasp(False, ("ds=unretentive",))).apply(
+        plan, stage="finalize", commit=True, acknowledge_unsigned=True
+    )
+
+    assert result.status == "BLOCKED"
+    assert declaration.read_text(encoding="utf-8") == before
+
+
+def test_unreadable_kasp_blocks_without_acknowledgement(tmp_path: Path) -> None:
+    plan, declaration = setup_plan(tmp_path)
+    before = declaration.read_text(encoding="utf-8")
+
+    result = engine(tmp_path, kasp_reader=kasp(None, ())).apply(
+        plan, stage="finalize", commit=True
+    )
+
+    assert result.status == "BLOCKED"
+    assert declaration.read_text(encoding="utf-8") == before
+
+
+def test_unreadable_kasp_may_be_acknowledged(tmp_path: Path) -> None:
+    plan, declaration = setup_plan(tmp_path)
+
+    result = engine(tmp_path, kasp_reader=kasp(None, ())).apply(
+        plan, stage="finalize", commit=True, acknowledge_unsigned=True
+    )
+
+    assert result.status == "COMMIT"
     assert "dnssec-policy" not in declaration.read_text(encoding="utf-8")
 
 
-def test_commit_removes_dnssec_directives_and_keeps_keys(tmp_path: Path) -> None:
+def test_finalize_removes_all_dnssec_directives(tmp_path: Path) -> None:
     plan, declaration = setup_plan(tmp_path)
 
-    result = engine(tmp_path).apply(plan, commit=True, activate=True)
+    result = engine(tmp_path).apply(plan, stage="finalize", commit=True)
 
     assert result.status == "COMMIT"
-    assert result.committed is True
     text = declaration.read_text(encoding="utf-8")
     assert "dnssec-policy" not in text
     assert "inline-signing" not in text
     assert "key-directory" not in text
     assert "type primary;" in text
-    # Klucze muszą przetrwać — są jedyną drogą powrotu.
-    assert list((tmp_path / "keys").parent.glob("keys")) != []
+    assert (tmp_path / "keys").is_dir()
     payload = json.loads(Path(result.manifest).read_text(encoding="utf-8"))
-    assert payload["status"] == "COMMIT"
+    assert payload["stage"] == "finalize"
+
+
+# --- wspólne ------------------------------------------------------------
 
 
 def test_rollback_restores_declaration_when_checkconf_fails(tmp_path: Path) -> None:
@@ -158,43 +213,52 @@ def test_rollback_restores_declaration_when_checkconf_fails(tmp_path: Path) -> N
         config_validator=lambda _p: DnssecDisableStep(
             "named-checkconf", False, "błąd składni"
         ),
-    ).apply(plan, commit=True)
+    ).apply(plan, stage="insecure", commit=True)
 
     assert result.status == "ROLLED-BACK"
     assert result.rolled_back is True
-    assert result.committed is False
     assert declaration.read_text(encoding="utf-8") == before
 
 
 def test_conflict_when_declaration_changed_since_plan(tmp_path: Path) -> None:
     plan, declaration = setup_plan(tmp_path)
-    declaration.write_text("zone \"other.pl\" {};\n", encoding="utf-8")
+    declaration.write_text('zone "other.pl" {};\n', encoding="utf-8")
 
-    result = engine(tmp_path).apply(plan, commit=True)
+    result = engine(tmp_path).apply(plan, stage="insecure", commit=True)
 
     assert result.status == "CONFLICT"
-    assert result.committed is False
 
 
-def test_read_ds_state_parses_rndc_output(monkeypatch) -> None:
+def test_read_kasp_states_detects_all_hidden(monkeypatch) -> None:
     import zonectl.core.dnssec_disable_transaction as module
     from zonectl.core.runner import CommandResult
 
     output = (
-        "dnssec-policy: default\n"
         "key: 13062 (ECDSAP256SHA256), CSK\n"
         "  - goal:           hidden\n"
-        "  - dnskey:         omnipresent\n"
+        "  - dnskey:         hidden\n"
         "  - ds:             hidden\n"
     )
-    monkeypatch.setattr(
-        module, "run", lambda *_a, **_k: CommandResult(0, output, "")
+    monkeypatch.setattr(module, "run", lambda *_a, **_k: CommandResult(0, output, ""))
+
+    assert read_kasp_states("example.pl").all_hidden is True
+
+
+def test_read_kasp_states_detects_visible_key(monkeypatch) -> None:
+    import zonectl.core.dnssec_disable_transaction as module
+    from zonectl.core.runner import CommandResult
+
+    output = (
+        "  - goal:           omnipresent\n"
+        "  - dnskey:         omnipresent\n"
+        "  - ds:             omnipresent\n"
     )
+    monkeypatch.setattr(module, "run", lambda *_a, **_k: CommandResult(0, output, ""))
 
-    assert read_ds_state("example.pl").state == "hidden"
+    assert read_kasp_states("example.pl").all_hidden is False
 
 
-def test_read_ds_state_reports_unparsable_output(monkeypatch) -> None:
+def test_read_kasp_states_reports_unparsable_output(monkeypatch) -> None:
     import zonectl.core.dnssec_disable_transaction as module
     from zonectl.core.runner import CommandResult
 
@@ -202,4 +266,4 @@ def test_read_ds_state_reports_unparsable_output(monkeypatch) -> None:
         module, "run", lambda *_a, **_k: CommandResult(0, "nieznany format\n", "")
     )
 
-    assert read_ds_state("example.pl").state is None
+    assert read_kasp_states("example.pl").all_hidden is None

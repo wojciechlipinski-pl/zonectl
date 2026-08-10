@@ -571,42 +571,51 @@ zdążył się na nowo pojawić przez cache resolvera), operacja jest blokowana.
 Powodzenie zapisuje manifest z transakcją i kontrolą DS, która ją
 autoryzowała, w `/var/backups/zonectl-dnssec-withdrawal-confirm/manifests`.
 
-Po `withdrawal-confirm` KASP nie przechodzi od razu w stan końcowy: odlicza
-`parent-propagation-delay` i TTL rekordu DS z rodzica, więc `ds: omnipresent`
-bezpośrednio po operacji jest normalne. Do czasu osiągnięcia `ds: hidden`
-strefa musi nadal publikować DNSKEY i RRSIG — zdjęcie podpisów wcześniej
-zerwałoby walidację u resolverów, które mają DS jeszcze w cache.
+Po `withdrawal-confirm` KASP **nie** przejdzie samoczynnie w stan końcowy.
+Dopóki strefa ma `dnssec-policy default`, cel klucza pozostaje
+`goal: omnipresent` — KASP nadal dąży do posiadania DS i stan `ds` nie zejdzie
+do `hidden`. Czekanie na `hidden` pod polityką `default` jest bezcelowe.
 
-Stan sprawdzamy poleceniem:
+Dokumentacja BIND wymaga przeprowadzenia strefy przez wbudowaną politykę
+`insecure`; samo usunięcie `dnssec-policy` spowodowałoby ponowne podpisanie
+strefy. Stąd wycofanie ma dwa etapy.
+
+**Etap 1 — podmiana polityki na `insecure`:**
+
+```bash
+zctl dnssec disable-apply example.pl --stage insecure
+zctl dnssec disable-apply example.pl --stage insecure --commit --activate
+```
+
+Podmienia `dnssec-policy default` na `dnssec-policy insecure`, zostawiając
+`inline-signing`. Bramką jest zniknięcie DS ze wszystkich kontrolowanych
+resolverów — ten sam warunek, który przepuszcza `withdrawal-confirm`. Widoczny
+DS jest twardą blokadą, której nie przesłania żadna flaga. Ten etap przestawia
+cel KASP na `hidden` i uruchamia uporządkowane wycofywanie kluczy.
+
+Następnie obserwujemy, aż KASP schowa klucze:
 
 ```bash
 rndc dnssec -status example.pl
 ```
 
-Ostatnim krokiem procedury jest transakcyjne zastosowanie diffu z
-`disable-plan`:
+**Etap 2 — usunięcie konfiguracji DNSSEC:**
 
 ```bash
-zctl dnssec disable-apply example.pl
-zctl dnssec disable-apply example.pl --commit --activate
+zctl dnssec disable-apply example.pl --stage finalize
+zctl dnssec disable-apply example.pl --stage finalize --commit --activate
 ```
 
-Bez `--commit` polecenie jest dry-runem: pokazuje odczytany stan DS i wynik
-bramki, nie zmieniając ani deklaracji, ani BIND. Właściwe wykonanie usuwa z
-deklaracji `dnssec-policy`, `inline-signing` i `key-directory`, zapisując
-plik atomowo z zachowaniem właściciela i uprawnień. `--activate` dokłada
-`rndc reconfig` i weryfikację `rndc zonestatus`.
+Usuwa `dnssec-policy`, `inline-signing` i `key-directory`. Bramką jest
+potwierdzenie z KASP, że **wszystkie** stany kluczy (`goal`, `dnskey`, `ds`)
+są `hidden`. Każdy inny odczytany stan jest twardą blokadą.
 
-Bramka działa na odczycie `rndc dnssec -status`:
+W obu etapach brak `--commit` oznacza dry-run; `--activate` dokłada
+`rndc reconfig` i weryfikację `rndc zonestatus`. Gdy stanu KASP nie da się
+odczytać (inna wersja BIND, zmieniony format wyjścia), polecenie także
+blokuje, ale operator może wziąć odpowiedzialność na siebie flagą
+`--acknowledge-unsigned`. Niepowodzenie `named-checkconf` lub aktywacji
+powoduje pełny rollback deklaracji z backupu i status `ROLLED-BACK`.
 
-- `ds: hidden` — jedyny stan dopuszczający wykonanie;
-- każdy inny odczytany stan (`omnipresent`, `unretentive`, `rumoured`) jest
-  **twardą blokadą**, której nie przesłania żadna flaga;
-- gdy stanu nie da się odczytać (inna wersja BIND, zmieniony format wyjścia,
-  niedostępne `rndc`), polecenie także blokuje, ale operator może wziąć
-  odpowiedzialność na siebie flagą `--acknowledge-unsigned`.
-
-Każde niepowodzenie walidacji `named-checkconf` lub aktywacji powoduje pełny
-rollback deklaracji z backupu i status `ROLLED-BACK`. Polecenie **nie usuwa
-kluczy ani pakietu odtworzeniowego** — są jedyną drogą powrotu do stanu
-podpisanego i należy je zachować.
+Żaden z etapów **nie usuwa kluczy ani pakietu odtworzeniowego** — są jedyną
+drogą powrotu do stanu podpisanego.

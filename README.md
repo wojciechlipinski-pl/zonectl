@@ -58,7 +58,8 @@ zctl dnssec disable-plan example.pl
 zctl dnssec withdrawal-backup example.pl
 zctl dnssec withdrawal-check example.pl
 zctl dnssec withdrawal-confirm example.pl
-zctl dnssec disable-apply example.pl
+zctl dnssec disable-apply example.pl --stage insecure
+zctl dnssec disable-apply example.pl --stage finalize
 ```
 
 Raport pokazuje konfigurację `dnssec-policy` i `inline-signing`, stan KASP
@@ -95,12 +96,13 @@ jeśli świeży wynik nie jest `READY_FOR_WITHDRAWN`, komenda kończy się
 statusem `BLOCKED` i niczego nie zmienia. Sukces zapisuje manifest z
 identyfikatorem transakcji i kontrolą DS, która go autoryzowała.
 
-`disable-apply` jest ostatnim krokiem: transakcyjnie stosuje diff z
-`disable-plan`, usuwając `dnssec-policy`, `inline-signing` i `key-directory`
-z deklaracji BIND. Wykonuje się wyłącznie, gdy KASP zgłasza `ds: hidden`;
-inny odczytany stan jest twardą blokadą, której nie da się przesłonić.
-Nieczytelny stan KASP można świadomie przesłonić flagą
-`--acknowledge-unsigned`. Kluczy ani pakietu odtworzeniowego nie usuwa.
+`disable-apply` domyka procedurę w dwóch etapach, zgodnie z wymaganiem
+BIND, by strefę przeprowadzić przez wbudowaną politykę `insecure`, a nie
+usuwać `dnssec-policy` od razu. Etap `insecure` podmienia politykę i jest
+bramkowany zniknięciem DS z resolverów; etap `finalize` usuwa
+`dnssec-policy`, `inline-signing` i `key-directory`, i jest bramkowany
+potwierdzeniem z KASP, że wszystkie klucze są w stanie `hidden`. Kluczy
+ani pakietu odtworzeniowego żaden z etapów nie usuwa.
 
 ## Filtrowanie rekordów
 

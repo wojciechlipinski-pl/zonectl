@@ -26,7 +26,9 @@ class DnssecDisablePlan:
     original_text: str
     candidate_text: str
     unified_diff: str
-    actions: tuple[str, ...]
+    insecure_text: str = ""
+    insecure_diff: str = ""
+    actions: tuple[str, ...] = ()
 
     def to_dict(self) -> dict[str, object]:
         payload = asdict(self)
@@ -111,6 +113,22 @@ class DnssecDisablePlanner:
             tofile=f"{zone.config_file} (kandydat po wycofaniu DNSSEC)",
         )
 
+        # Etap 1 wycofania: podmiana polityki na wbudowaną "insecure".
+        # BIND wymaga tego kroku, aby uporządkowanie wycofać klucze i podpisy;
+        # samo usunięcie dnssec-policy spowodowałoby ponowne podpisanie strefy.
+        insecure_body = self._policy.sub(
+            "    dnssec-policy insecure;\n", body, count=1
+        )
+        insecure = (
+            original[: opening + 1] + insecure_body + original[closing:]
+        )
+        insecure_diff = DnssecEnablePlanner._unified_diff(
+            original,
+            insecure,
+            fromfile=str(zone.config_file),
+            tofile=f"{zone.config_file} (etap 1: dnssec-policy insecure)",
+        )
+
         key_directory = zone.key_directory
         key_files = (
             tuple(sorted(key_directory.glob(f"K{zone.name.rstrip('.')}.*")))
@@ -129,14 +147,17 @@ class DnssecDisablePlanner:
             original_text=original,
             candidate_text=candidate,
             unified_diff=diff,
+            insecure_text=insecure,
+            insecure_diff=insecure_diff,
             actions=(
                 "sprawdź aktywny łańcuch zaufania i zgodność DS",
                 "wykonaj backup deklaracji, pliku strefy, kluczy i artefaktów podpisywania",
                 "usuń DS u rejestratora; ZoneCTL nie zrobi tego automatycznie",
                 "poczekaj, aż DS zniknie ze wszystkich kontrolowanych resolverów",
                 "potwierdź stan withdrawn w KASP dopiero po pełnej kontroli",
-                "poczekaj na bezpieczny stan KASP ze schowanymi DNSKEY i podpisami",
-                "dopiero wtedy zastosuj pokazany diff konfiguracji BIND",
+                "etap 1: podmień dnssec-policy na wbudowaną politykę insecure",
+                "poczekaj, aż KASP wycofa klucze do stanu hidden",
+                "etap 2: dopiero wtedy usuń dnssec-policy i inline-signing",
                 "wykonaj named-checkconf, rndc reconfig i sprawdź strefę",
                 "zachowaj pakiet odtworzeniowy; nie usuwaj automatycznie kluczy",
             ),

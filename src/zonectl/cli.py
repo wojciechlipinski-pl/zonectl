@@ -197,9 +197,18 @@ def parser() -> argparse.ArgumentParser:
     dnssec_disable_plan.add_argument("--json", action="store_true")
     dnssec_disable_apply = dnssec_sub.add_parser(
         "disable-apply",
-        help="zastosuj diff wycofania DNSSEC transakcyjnie; domyślnie dry-run",
+        help="zastosuj wycofanie DNSSEC transakcyjnie; domyślnie dry-run",
     )
     dnssec_disable_apply.add_argument("name")
+    dnssec_disable_apply.add_argument(
+        "--stage",
+        choices=("insecure", "finalize"),
+        default="insecure",
+        help="insecure: podmiana polityki; finalize: usunięcie DNSSEC",
+    )
+    dnssec_disable_apply.add_argument(
+        "--resolver", action="append", dest="disable_resolvers"
+    )
     dnssec_disable_apply.add_argument(
         "--backup-root",
         type=Path,
@@ -727,12 +736,29 @@ def main(argv: list[str] | None = None) -> int:
             print(f"BŁĄD: {exc}", file=sys.stderr)
             return 2
         if args.dnssec_command == "disable-apply":
+            resolvers = tuple(
+                args.disable_resolvers or ("1.1.1.1", "8.8.8.8", "9.9.9.9")
+            )
+            checker = DnssecWithdrawalChecker(
+                timeout=int(config.toolkit.get("dig_timeout", "3")),
+            )
+
+            def ds_absent(zone_name: str) -> bool | None:
+                outcome = checker.collect(zone_name, resolvers)
+                if outcome.status == "READY_FOR_WITHDRAWN":
+                    return True
+                if outcome.status == "BLOCKED":
+                    return False
+                return None
+
             result = DnssecDisableTransaction(
                 args.backup_root,
                 args.manifest_directory,
                 root_config=args.root_config,
+                ds_gate=ds_absent,
             ).apply(
                 plan,
+                stage=args.stage,
                 commit=args.commit,
                 activate=args.activate,
                 acknowledge_unsigned=args.acknowledge_unsigned,
@@ -742,9 +768,11 @@ def main(argv: list[str] | None = None) -> int:
             else:
                 print(f"Transakcja: {result.transaction_id}")
                 print(f"Strefa:     {result.zone}")
+                print(f"Etap:       {result.stage}")
                 print(f"Status:     {result.status}")
                 print(f"Commit:     {'TAK' if result.committed else 'NIE'}")
-                print(f"Stan DS:    {result.ds_state or 'nieodczytany'}")
+                if result.kasp_states:
+                    print(f"Stany KASP: {', '.join(result.kasp_states)}")
                 if result.backup_directory:
                     print(f"Backup:     {result.backup_directory}")
                 if result.manifest:

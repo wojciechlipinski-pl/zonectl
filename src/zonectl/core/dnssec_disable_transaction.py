@@ -1,21 +1,24 @@
-"""Transakcyjne zastosowanie planu wycofania DNSSEC.
+"""Transakcyjne wycofanie DNSSEC — dwa etapy.
 
-Ostatni etap procedury: usuwa `dnssec-policy`, `inline-signing` i
-`key-directory` z deklaracji BIND, zgodnie z diffem wyliczonym wcześniej
-przez :class:`DnssecDisablePlanner`.
+BIND nie pozwala po prostu usunąć ``dnssec-policy``: dokumentacja wymaga
+przejścia przez wbudowaną politykę ``insecure``, bo w przeciwnym razie
+strefa zostanie ponownie podpisana. Stąd dwa etapy:
 
-Bramka bezpieczeństwa jest dwustopniowa. Podstawowo transakcja odczytuje
-`rndc dnssec -status` i wykonuje zmianę wyłącznie wtedy, gdy KASP zgłasza
-`ds: hidden` — czyli sam potwierdza, że rekord DS jest już wycofany i nie
-ma potrzeby utrzymywania łańcucha zaufania. Jeżeli stan da się odczytać,
-ale jest inny niż `hidden`, transakcja jest twardo blokowana i żadna flaga
-tego nie przesłania. Dopiero gdy stanu **nie da się odczytać** (inna wersja
-BIND, zmieniony format wyjścia, niedostępne `rndc`), operator może wziąć
-odpowiedzialność na siebie flagą ``--acknowledge-unsigned``.
+**Etap ``insecure``** — podmienia ``dnssec-policy default`` na
+``dnssec-policy insecure``, zostawiając ``inline-signing``. Bramką jest
+zniknięcie DS ze wszystkich kontrolowanych resolverów, czyli dokładnie ten
+sam warunek, który przepuszcza ``withdrawal-confirm``. Dopiero ta zmiana
+przestawia cel KASP z ``omnipresent`` na ``hidden`` i uruchamia
+uporządkowane wycofywanie kluczy.
 
-Kolejność jest ważna: dopóki resolvery mogą mieć DS w cache, zdjęcie
-podpisów zerwałoby walidację strefy. Dlatego to polecenie jest ostatnie,
-a nie pierwsze.
+**Etap ``finalize``** — usuwa ``dnssec-policy``, ``inline-signing`` i
+``key-directory``. Bramką jest potwierdzenie z KASP, że **wszystkie** klucze
+mają ``goal``, ``dnskey`` i ``ds`` w stanie ``hidden``. Ta bramka jest
+osiągalna wyłącznie po etapie pierwszym.
+
+W obu etapach brak ``--commit`` oznacza dry-run, każde niepowodzenie
+walidacji powoduje pełny rollback deklaracji z backupu, a klucze i pakiet
+odtworzeniowy pozostają nietknięte.
 """
 
 from __future__ import annotations
@@ -49,7 +52,8 @@ class DnssecDisableResult:
     status: str
     committed: bool = False
     rolled_back: bool = False
-    ds_state: str | None = None
+    stage: str = "insecure"
+    kasp_states: tuple[str, ...] = ()
     manifest: str | None = None
     backup_directory: str | None = None
     steps: list[DnssecDisableStep] = field(default_factory=list)
@@ -59,37 +63,43 @@ class DnssecDisableResult:
         return bool(self.steps) and all(step.ok for step in self.steps)
 
 
-StateReader = Callable[[str], "DsStateReading"]
+KaspReader = Callable[[str], "KaspReading"]
+DsGate = Callable[[str], bool | None]
 ConfigValidator = Callable[[Path], DnssecDisableStep]
 ZoneAction = Callable[[str], DnssecDisableStep]
 
 
 @dataclass(slots=True)
-class DsStateReading:
-    """Odczyt stanu DS z KASP.
+class KaspReading:
+    """Odczyt stanu kluczy z ``rndc dnssec -status``.
 
-    ``state`` jest ``None``, gdy wyjścia nie udało się zinterpretować —
-    to jest przypadek, w którym dopuszczamy świadome przesłonięcie.
+    ``all_hidden`` jest ``None``, gdy wyjścia nie udało się zinterpretować —
+    tylko wtedy dopuszczamy świadome przesłonięcie bramki.
     """
 
-    state: str | None
+    all_hidden: bool | None
+    states: tuple[str, ...]
     message: str
 
 
-_DS_STATE = re.compile(r"(?mi)^\s*-\s*ds:\s*(\S+)\s*$")
+_KEY_STATE = re.compile(r"(?mi)^\s*-\s*(goal|dnskey|ds):\s*(\S+)\s*$")
 
 
-def read_ds_state(zone: str, timeout: int = 30) -> DsStateReading:
+def read_kasp_states(zone: str, timeout: int = 30) -> KaspReading:
     outcome = run(["rndc", "dnssec", "-status", zone], timeout)
     if outcome.returncode != 0:
         detail = (outcome.stderr or outcome.stdout).strip()
-        return DsStateReading(None, f"rndc zwrócił kod {outcome.returncode}: {detail}")
-    match = _DS_STATE.search(outcome.stdout or "")
-    if match is None:
-        return DsStateReading(
-            None, "Nie odnaleziono stanu 'ds:' w wyjściu rndc dnssec -status"
+        return KaspReading(
+            None, (), f"rndc zwrócił kod {outcome.returncode}: {detail}"
         )
-    return DsStateReading(match.group(1).casefold(), "Odczytano stan DS z KASP")
+    found = _KEY_STATE.findall(outcome.stdout or "")
+    if not found:
+        return KaspReading(
+            None, (), "Nie odnaleziono stanów kluczy w wyjściu rndc dnssec -status"
+        )
+    states = tuple(f"{name.casefold()}={value.casefold()}" for name, value in found)
+    all_hidden = all(value.casefold() == "hidden" for _name, value in found)
+    return KaspReading(all_hidden, states, "Odczytano stany kluczy z KASP")
 
 
 class DnssecDisableTransaction:
@@ -101,7 +111,8 @@ class DnssecDisableTransaction:
         manifest_directory: Path,
         *,
         root_config: Path = Path("/etc/bind/named.conf"),
-        state_reader: StateReader | None = None,
+        kasp_reader: KaspReader | None = None,
+        ds_gate: DsGate | None = None,
         config_validator: ConfigValidator | None = None,
         activator: ZoneAction | None = None,
         loaded_verifier: ZoneAction | None = None,
@@ -109,7 +120,8 @@ class DnssecDisableTransaction:
         self.backup_root = backup_root
         self.manifest_directory = manifest_directory
         self.root_config = root_config
-        self.state_reader = state_reader or read_ds_state
+        self.kasp_reader = kasp_reader or read_kasp_states
+        self.ds_gate = ds_gate
         self.config_validator = config_validator or self._validate_config
         self.activator = activator or self._activate_bind
         self.loaded_verifier = loaded_verifier or self._verify_loaded
@@ -118,23 +130,33 @@ class DnssecDisableTransaction:
         self,
         plan: DnssecDisablePlan,
         *,
+        stage: str = "insecure",
         commit: bool = False,
         activate: bool = False,
         acknowledge_unsigned: bool = False,
     ) -> DnssecDisableResult:
+        if stage not in {"insecure", "finalize"}:
+            raise ValueError(f"Nieznany etap wycofania: {stage}")
         txid = (
             datetime.now().strftime("%Y%m%d-%H%M%S")
-            + f"-dnssec-disable-{plan.zone}-{uuid.uuid4().hex[:8]}"
+            + f"-dnssec-disable-{stage}-{plan.zone}-{uuid.uuid4().hex[:8]}"
         )
         result = DnssecDisableResult(txid, plan.zone, "PLAN")
+        result.stage = stage
+        target_text = (
+            plan.insecure_text if stage == "insecure" else plan.candidate_text
+        )
 
-        conflict = self._preflight(plan)
+        conflict = self._preflight(plan, target_text)
         if conflict is not None:
             return self._finish(result, "CONFLICT", conflict, write_manifest=False)
 
-        reading = self.state_reader(plan.zone)
-        result.ds_state = reading.state
-        gate = self._gate(reading, acknowledge_unsigned)
+        if stage == "insecure":
+            gate = self._insecure_gate(plan.zone, acknowledge_unsigned)
+        else:
+            reading = self.kasp_reader(plan.zone)
+            result.kasp_states = reading.states
+            gate = self._finalize_gate(reading, acknowledge_unsigned)
         result.steps.append(gate)
         if not gate.ok:
             return self._finish(result, "BLOCKED", write_manifest=False)
@@ -163,7 +185,7 @@ class DnssecDisableTransaction:
 
             self._atomic_write(
                 plan.declaration_file,
-                plan.candidate_text.encode("utf-8"),
+                target_text.encode("utf-8"),
                 declaration_stat.st_mode & 0o777,
                 declaration_stat.st_uid,
                 declaration_stat.st_gid,
@@ -234,37 +256,88 @@ class DnssecDisableTransaction:
                 result, "ROLLED-BACK" if rollback_ok else "ROLLBACK-FAILED"
             )
 
-    @staticmethod
-    def _gate(
-        reading: DsStateReading, acknowledge_unsigned: bool
+    def _insecure_gate(
+        self, zone: str, acknowledge_unsigned: bool
     ) -> DnssecDisableStep:
-        if reading.state == "hidden":
+        """Etap 1 wolno wykonać dopiero, gdy DS zniknął z resolverów."""
+        if self.ds_gate is None:
+            if acknowledge_unsigned:
+                return DnssecDisableStep(
+                    "ds-gate",
+                    True,
+                    "Brak kontroli DS; operator potwierdził wycofanie "
+                    "flagą --acknowledge-unsigned",
+                )
             return DnssecDisableStep(
-                "kasp-gate", True, "KASP zgłasza ds: hidden — DS jest wycofany"
+                "ds-gate",
+                False,
+                "Blokada: nie skonfigurowano kontroli DS. Uruchom najpierw "
+                "withdrawal-check albo użyj --acknowledge-unsigned.",
             )
-        if reading.state is not None:
+        absent = self.ds_gate(zone)
+        if absent is True:
+            return DnssecDisableStep(
+                "ds-gate", True, "DS nie jest widoczny na żadnym resolverze"
+            )
+        if absent is False:
+            return DnssecDisableStep(
+                "ds-gate",
+                False,
+                "Blokada: DS jest nadal widoczny na co najmniej jednym "
+                "resolverze. Tej blokady nie wolno przesłonić.",
+            )
+        if acknowledge_unsigned:
+            return DnssecDisableStep(
+                "ds-gate",
+                True,
+                "Nie rozstrzygnięto kontroli DS; operator potwierdził "
+                "wycofanie flagą --acknowledge-unsigned",
+            )
+        return DnssecDisableStep(
+            "ds-gate",
+            False,
+            "Blokada: nie rozstrzygnięto kontroli DS. Sprawdź ręcznie i użyj "
+            "--acknowledge-unsigned, jeśli DS jest wycofany.",
+        )
+
+    @staticmethod
+    def _finalize_gate(
+        reading: KaspReading, acknowledge_unsigned: bool
+    ) -> DnssecDisableStep:
+        """Etap 2 wolno wykonać dopiero, gdy KASP schował wszystkie klucze."""
+        if reading.all_hidden is True:
+            return DnssecDisableStep(
+                "kasp-gate", True, "KASP zgłasza wszystkie stany kluczy jako hidden"
+            )
+        if reading.all_hidden is False:
+            visible = ", ".join(
+                state for state in reading.states if not state.endswith("=hidden")
+            )
             return DnssecDisableStep(
                 "kasp-gate",
                 False,
-                f"Blokada: KASP zgłasza ds: {reading.state}, wymagane hidden. "
-                "Poczekaj na propagację; tej blokady nie wolno przesłonić.",
+                f"Blokada: KASP nie schował jeszcze kluczy ({visible}). "
+                "Wykonaj najpierw etap insecure i poczekaj; tej blokady nie "
+                "wolno przesłonić.",
             )
         if acknowledge_unsigned:
             return DnssecDisableStep(
                 "kasp-gate",
                 True,
-                f"Nie odczytano stanu KASP ({reading.message}); "
-                "operator potwierdził wycofanie flagą --acknowledge-unsigned",
+                f"Nie odczytano stanu KASP ({reading.message}); operator "
+                "potwierdził wycofanie flagą --acknowledge-unsigned",
             )
         return DnssecDisableStep(
             "kasp-gate",
             False,
-            f"Blokada: nie odczytano stanu DS z KASP ({reading.message}). "
-            "Sprawdź ręcznie i użyj --acknowledge-unsigned, jeśli DS jest wycofany.",
+            f"Blokada: nie odczytano stanów kluczy z KASP ({reading.message}). "
+            "Sprawdź ręcznie i użyj --acknowledge-unsigned, jeśli klucze są wycofane.",
         )
 
     @staticmethod
-    def _preflight(plan: DnssecDisablePlan) -> DnssecDisableStep | None:
+    def _preflight(
+        plan: DnssecDisablePlan, target_text: str
+    ) -> DnssecDisableStep | None:
         if not plan.declaration_file.is_file():
             return DnssecDisableStep(
                 "preflight", False, f"Brak deklaracji: {plan.declaration_file}"
@@ -273,7 +346,7 @@ class DnssecDisableTransaction:
             return DnssecDisableStep(
                 "preflight", False, "Konfiguracja zmieniła się od utworzenia planu"
             )
-        if plan.candidate_text == plan.original_text:
+        if not target_text or target_text == plan.original_text:
             return DnssecDisableStep(
                 "preflight", False, "Plan nie wprowadza żadnej zmiany"
             )
