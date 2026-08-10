@@ -2116,6 +2116,28 @@ class CursesApp:
             Path("/var/backups/zonectl-dnssec-disable/manifests"),
         ).apply(plan, stage="finalize")
 
+    def _dnssec_finalize_commit(self, zone: Zone):
+        plan = self._dnssec_disable_plan(zone)
+        return DnssecDisableTransaction(
+            Path("/var/backups/zonectl-dnssec-disable/backups"),
+            Path("/var/backups/zonectl-dnssec-disable/manifests"),
+        ).apply(plan, stage="finalize", commit=True, activate=True)
+
+    @staticmethod
+    def _dnssec_disable_result_lines(result) -> list[str]:
+        lines = [
+            f"Etap: {result.stage}",
+            f"Status: {result.status}",
+            f"Commit: {'TAK' if result.committed else 'NIE'}",
+        ]
+        if result.kasp_states:
+            lines.append("Stany KASP: " + ", ".join(result.kasp_states))
+        lines.extend(
+            f"[{'OK' if step.ok else 'BŁĄD'}] {step.name}: {step.message}"
+            for step in result.steps
+        )
+        return lines
+
     def _dnssec_status_view(self, win: curses.window, zone: Zone) -> None:
         """Read-only DNSSEC workflow status with explicit operator guidance."""
         offset = 0
@@ -2239,26 +2261,58 @@ class CursesApp:
                 elif key == curses.KEY_F4:
                     try:
                         result = self._dnssec_finalize_dry_run(zone)
-                        result_lines = [
-                            f"Etap: {result.stage}",
-                            f"Status: {result.status}",
-                            "Commit: NIE",
-                        ]
-                        if result.kasp_states:
-                            result_lines.append(
-                                "Stany KASP: " + ", ".join(result.kasp_states)
-                            )
-                        result_lines.extend(
-                            f"[{'OK' if step.ok else 'BŁĄD'}] "
-                            f"{step.name}: {step.message}"
-                            for step in result.steps
-                        )
                         self._message_view(
                             win,
                             title=f"Dry-run finalizacji: {zone.name}",
-                            lines=result_lines,
+                            lines=self._dnssec_disable_result_lines(result),
                             error=result.status not in {"DRY-RUN"},
                         )
+                        if (
+                            result.status == "DRY-RUN"
+                            and view is not None
+                            and view.stage == "READY_TO_FINALIZE"
+                        ):
+                            if self.config is not None and self.config.read_only:
+                                self._read_only_message(win, zone)
+                            else:
+                                confirmation = CursesDialogs.text_input(
+                                    win,
+                                    " Wpisz pełną nazwę strefy, aby finalizować: ",
+                                )
+                                expected = zone.name.rstrip(".").casefold()
+                                supplied = (confirmation or "").rstrip(".").casefold()
+                                if supplied != expected:
+                                    self._message_view(
+                                        win,
+                                        title="Finalizacja anulowana",
+                                        lines=[
+                                            "Nie podano dokładnej nazwy strefy. "
+                                            "Nie zmieniono BIND."
+                                        ],
+                                    )
+                                elif not CursesDialogs.confirm(
+                                    win,
+                                    f"Finalizować DNSSEC dla {zone.name}?",
+                                    key_reader=self._get_key,
+                                ):
+                                    self._message_view(
+                                        win,
+                                        title="Finalizacja anulowana",
+                                        lines=["Nie zmieniono BIND."],
+                                    )
+                                else:
+                                    committed = self._dnssec_finalize_commit(zone)
+                                    self._message_view(
+                                        win,
+                                        title=(
+                                            "Wynik finalizacji DNSSEC: "
+                                            f"{zone.name}"
+                                        ),
+                                        lines=self._dnssec_disable_result_lines(
+                                            committed
+                                        ),
+                                        error=not committed.ok,
+                                    )
                     except Exception as exc:
                         self._message_view(
                             win,
