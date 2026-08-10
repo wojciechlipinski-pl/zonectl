@@ -57,6 +57,7 @@ zctl dnssec enable example.pl
 zctl dnssec disable-plan example.pl
 zctl dnssec withdrawal-backup example.pl
 zctl dnssec withdrawal-check example.pl
+zctl dnssec withdrawal-confirm example.pl
 ```
 
 Raport pokazuje konfigurację `dnssec-policy` i `inline-signing`, stan KASP
@@ -84,6 +85,14 @@ z odpowiedzi wszystkich kontrolowanych resolverów. Status `BLOCKED` oznacza,
 że co najmniej jeden resolver nadal zwraca DS i `rndc dnssec -checkds
 withdrawn` nie wolno jeszcze wykonać. Dopiero `READY_FOR_WITHDRAWN` pozwala
 rozważyć ten krok.
+
+`withdrawal-confirm` jest jedynym miejscem w ZoneCTL, które wykonuje `rndc
+dnssec -checkds withdrawn`. Bez `--commit` pozostaje dry-runem. Właściwa
+operacja wymaga jednocześnie `--commit` i `--acknowledge-withdrawn` oraz
+ponownie uruchamia pełną kontrolę DS bezpośrednio przed wykonaniem `rndc`;
+jeśli świeży wynik nie jest `READY_FOR_WITHDRAWN`, komenda kończy się
+statusem `BLOCKED` i niczego nie zmienia. Sukces zapisuje manifest z
+identyfikatorem transakcji i kontrolą DS, która go autoryzowała.
 
 ## Filtrowanie rekordów
 

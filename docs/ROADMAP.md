@@ -144,7 +144,10 @@ zrealizowane, a `[ ]` pozostają do wykonania.
   wyniku `PASS` z pełnej kontroli delegacji.
 - [x] Dodać w TUI odczytowy ekran etapu DNSSEC, KASP, propagacji DS oraz
   zgodności serwerów autorytatywnych.
-- [ ] Dodać osobną, wieloetapową i bezpieczną procedurę wyłączenia DNSSEC.
+- [x] Dodać osobną, wieloetapową i bezpieczną procedurę wyłączenia DNSSEC:
+  odczytowy plan, zweryfikowany backup, odczytowa kontrola zniknięcia DS na
+  wielu resolwerach i strzeżone wykonanie `rndc dnssec -checkds withdrawn`
+  dopiero po świeżym potwierdzeniu i podwójnej jawnej fladze.
 - [x] Dodać pozbawiony skutków ubocznych plan wyłączenia DNSSEC z
   obowiązkowymi bramkami DS, KASP, backupu i walidacji BIND.
 - [x] Dodać atomowy i zweryfikowany pakiet odtworzeniowy tworzony przed
@@ -152,6 +155,9 @@ zrealizowane, a `[ ]` pozostają do wykonania.
 - [x] Chronić operatora przed przedwczesnym usunięciem DS przez odczytową
   kontrolę zniknięcia DS na wielu resolwerach, blokującą `withdrawn` do
   czasu potwierdzenia.
+- [ ] Po wykonaniu `withdrawal-confirm` dodać transakcyjne zastosowanie
+  diffu z `disable-plan` (usunięcie `dnssec-policy`/`inline-signing`),
+  z walidacją `named-checkconf`, kontrolowanym `rndc reconfig` i rollbackiem.
 - [ ] Pokryć włączanie, rotację, awarie i rollback testami integracyjnymi BIND.
 
 ## Dokumentacja

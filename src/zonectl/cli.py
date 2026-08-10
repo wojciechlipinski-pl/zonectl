@@ -20,6 +20,7 @@ from .core.dnssec_disable_plan import (
 )
 from .core.dnssec_withdrawal_backup import DnssecWithdrawalBackup
 from .core.dnssec_withdrawal_check import DnssecWithdrawalChecker
+from .core.dnssec_withdrawal_confirm import DnssecWithdrawalConfirmTransaction
 from .core.dnssec_ds_check import DnssecDsChecker
 from .core.dnssec_confirm_ds import DnssecConfirmDsTransaction
 from .core.dnssec_guidance import build_dnssec_guidance
@@ -105,6 +106,24 @@ def parser() -> argparse.ArgumentParser:
         help="resolver do kontroli DS; opcję można podać wielokrotnie",
     )
     dnssec_withdrawal_check.add_argument("--json", action="store_true")
+    dnssec_withdrawal_confirm = dnssec_sub.add_parser(
+        "withdrawal-confirm",
+        help="wykonaj rndc dnssec -checkds withdrawn; domyślnie dry-run",
+    )
+    dnssec_withdrawal_confirm.add_argument("name")
+    dnssec_withdrawal_confirm.add_argument(
+        "--resolver", action="append", dest="resolvers"
+    )
+    dnssec_withdrawal_confirm.add_argument(
+        "--manifest-directory",
+        type=Path,
+        default=Path("/var/backups/zonectl-dnssec-withdrawal-confirm/manifests"),
+    )
+    dnssec_withdrawal_confirm.add_argument("--commit", action="store_true")
+    dnssec_withdrawal_confirm.add_argument(
+        "--acknowledge-withdrawn", action="store_true"
+    )
+    dnssec_withdrawal_confirm.add_argument("--json", action="store_true")
     dnssec_confirm_ds = dnssec_sub.add_parser(
         "confirm-ds",
         help="potwierdź w KASP zweryfikowaną publikację DS; domyślnie dry-run",
@@ -909,6 +928,47 @@ def main(argv: list[str] | None = None) -> int:
                 print(f"BŁĄD: {error}")
             print(f"\nNastępny krok: {result.next_action}")
         return 0 if result.status == "READY_FOR_WITHDRAWN" else 1
+    if args.command == "dnssec" and args.dnssec_command == "withdrawal-confirm":
+        wanted = args.name.strip().rstrip(".").casefold()
+        zone = next(
+            (
+                item
+                for item in zones
+                if item.name.rstrip(".").casefold() == wanted
+            ),
+            None,
+        )
+        if zone is None:
+            print(f"BŁĄD: Nie znaleziono strefy: {args.name}", file=sys.stderr)
+            return 2
+        resolvers = tuple(
+            args.resolvers or ("1.1.1.1", "8.8.8.8", "9.9.9.9")
+        )
+        checker = DnssecWithdrawalChecker(
+            timeout=int(config.toolkit.get("dig_timeout", "3")),
+        )
+        result = DnssecWithdrawalConfirmTransaction(
+            args.manifest_directory,
+            checker=checker.collect,
+        ).apply(
+            zone.name,
+            resolvers,
+            commit=args.commit,
+            acknowledge_withdrawn=args.acknowledge_withdrawn,
+        )
+        if args.json:
+            print(json.dumps(asdict(result), ensure_ascii=False, indent=2))
+        else:
+            print(f"Transakcja: {result.transaction_id}")
+            print(f"Strefa:     {result.zone}")
+            print(f"Status:     {result.status}")
+            print(f"Commit:     {'TAK' if result.committed else 'NIE'}")
+            if result.manifest:
+                print(f"Manifest:   {result.manifest}")
+            print("\nEtapy:")
+            for step in result.steps:
+                print(f"[{'OK' if step.ok else 'BŁĄD'}] {step.name}: {step.message}")
+        return 0 if result.status in {"DRY-RUN", "WITHDRAWN"} else 1
     if args.command == "dnssec" and args.dnssec_command == "report":
         wanted = args.name.strip().rstrip(".").casefold()
         matches = [

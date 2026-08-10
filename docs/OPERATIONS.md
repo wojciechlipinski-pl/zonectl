@@ -552,3 +552,21 @@ stanie `rndc dnssec -checkds withdrawn` nie wolno wykonywać. Dopiero status
 pozwala rozważyć ten krok, pod warunkiem że DNSKEY i RRSIG są nadal
 bezpiecznie publikowane. Status `ERROR` oznacza problem z samym zapytaniem
 (np. timeout) i również nie upoważnia do wycofania.
+
+Gdy `withdrawal-check` zwróci `READY_FOR_WITHDRAWN`, wykonanie właściwego
+kroku jest osobną, jawną operacją:
+
+```bash
+zctl dnssec withdrawal-confirm example.pl
+zctl dnssec withdrawal-confirm example.pl --commit --acknowledge-withdrawn
+```
+
+Bez flag polecenie jest dry-runem — pokazuje wynik świeżej kontroli DS i nic
+nie zmienia. Właściwe wykonanie `rndc dnssec -checkds withdrawn` wymaga
+jednocześnie `--commit` i `--acknowledge-withdrawn`; podanie tylko jednej z
+tych flag kończy się statusem `BLOCKED`. Nawet z obiema flagami polecenie
+uruchamia pełną kontrolę DS ponownie, bezpośrednio przed wywołaniem `rndc` —
+jeśli w tej właśnie chwili wynik nie jest `READY_FOR_WITHDRAWN` (np. DS
+zdążył się na nowo pojawić przez cache resolvera), operacja jest blokowana.
+Powodzenie zapisuje manifest z transakcją i kontrolą DS, która ją
+autoryzowała, w `/var/backups/zonectl-dnssec-withdrawal-confirm/manifests`.
