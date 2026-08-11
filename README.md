@@ -6,7 +6,7 @@ ZoneCTL jest terminalowym narzędziem do bezpiecznego zarządzania strefami DNS 
 
 ## Wersja
 
-**4.5.0 — TUI zone creation wizard**
+**4.6.0 — transactional DNSSEC lifecycle management**
 
 ## Uruchomienie
 
@@ -47,7 +47,8 @@ w których BIND wykrył `dnssec-policy` lub `inline-signing`.
 
 ## Raport DNSSEC
 
-Wersja rozwojowa 4.6 udostępnia raport DNSSEC działający wyłącznie do odczytu:
+Wersja 4.6 udostępnia raportowanie oraz transakcyjne zarządzanie cyklem życia
+DNSSEC:
 
 ```bash
 zctl dnssec report example.pl
@@ -59,6 +60,7 @@ zctl dnssec withdrawal-backup example.pl
 zctl dnssec withdrawal-check example.pl
 zctl dnssec withdrawal-confirm example.pl
 zctl dnssec disable-apply example.pl --stage insecure
+zctl dnssec prepare-finalize-serial example.pl
 zctl dnssec disable-apply example.pl --stage finalize
 ```
 

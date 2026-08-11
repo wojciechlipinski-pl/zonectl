@@ -158,7 +158,9 @@ zrealizowane, a `[ ]` pozostają do wykonania.
 - [x] Po wykonaniu `withdrawal-confirm` dodać transakcyjne zastosowanie
   diffu z `disable-plan` (usunięcie `dnssec-policy`/`inline-signing`),
   z walidacją `named-checkconf`, kontrolowanym `rndc reconfig` i rollbackiem.
-- [ ] Pokryć włączanie, rotację, awarie i rollback testami integracyjnymi BIND.
+- [x] Pokryć włączanie, awarie i rollback testami integracyjnymi BIND oraz
+  przeprowadzić produkcyjne włączenie i pełne wycofanie DNSSEC na strefach
+  testowych. Rotacja kluczy pozostaje osobnym zakresem kolejnego wydania.
 
 ## Dokumentacja
 

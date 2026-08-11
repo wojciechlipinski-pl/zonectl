@@ -1,5 +1,45 @@
 # Changelog
 
+## 4.6.0 - 2026-08-11
+
+### Added
+
+- read-only DNSSEC report covering BIND configuration, KASP, keys, DNSKEY,
+  RRSIG, calculated DS and public DS visibility
+- transactional DNSSEC enablement with planning, dry-run, backups, validation,
+  activation checks and rollback
+- multi-resolver DS verification and controlled KASP confirmation of published
+  or withdrawn DS state
+- verified recovery packages and a staged `insecure`/`finalize` DNSSEC
+  withdrawal workflow
+- DNSSEC status and guarded lifecycle actions in the TUI
+- safe SOA serial preparation before serving an unsigned zone to secondaries
+
+### Changed
+
+- TUI shortcuts follow the Midnight Commander model: `Insert`, `F3`, `F4`,
+  `F8`/`Delete`, `F2` and `F10`
+- DNSSEC reports provide workflow stage, progress, earliest next check and a
+  precise operator action
+- long TUI messages wrap and scroll instead of being truncated
+
+### Safety
+
+- RPZ zones are blocked independently in CLI and TUI DNSSEC write workflows
+- DNSSEC withdrawal cannot proceed until DS disappearance and required KASP
+  states are confirmed by fresh checks
+- finalization is blocked unless the source SOA serial is strictly newer than
+  the serial currently served from the inline-signed zone
+- key material and verified recovery packages are retained after finalization
+
+### Verified
+
+- DNSSEC enablement was completed and externally validated for `mops.elk.pl`
+- DNSSEC withdrawal was completed for `investin.elk.pl`; all seven
+  authoritative servers served unsigned serial `2026081101`, no authoritative
+  DNSKEY remained, and DS was absent through three public resolvers
+- 475 automated tests passed before release preparation
+
 ## 4.5.0 - 2026-07-31
 
 ### Added

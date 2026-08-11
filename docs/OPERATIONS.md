@@ -602,9 +602,19 @@ rndc dnssec -status example.pl
 **Etap 2 — usunięcie konfiguracji DNSSEC:**
 
 ```bash
+zctl dnssec prepare-finalize-serial example.pl
+zctl dnssec prepare-finalize-serial example.pl --commit
 zctl dnssec disable-apply example.pl --stage finalize
 zctl dnssec disable-apply example.pl --stage finalize --commit --activate
 ```
+
+Przed finalizacją ZoneCTL porównuje serial źródłowego pliku strefy z serialem
+aktualnie serwowanym przez wariant inline-signed. Źródłowy serial musi być
+ściśle nowszy, aby secondary zaakceptowały pierwszą strefę bez DNSSEC.
+`prepare-finalize-serial` wylicza bezpieczny serial, sprawdza kandydacki plik
+przez `named-checkzone`, a po `--commit` wykonuje backup i atomowo aktualizuje
+wyłącznie plik źródłowy. Polecenie nie przeładowuje BIND; właściwe przełączenie
+następuje dopiero w transakcji `finalize`.
 
 Usuwa `dnssec-policy`, `inline-signing` i `key-directory`. Bramką jest
 potwierdzenie z KASP, że **wszystkie** stany kluczy (`goal`, `dnskey`, `ds`)
@@ -619,3 +629,23 @@ powoduje pełny rollback deklaracji z backupu i status `ROLLED-BACK`.
 
 Żaden z etapów **nie usuwa kluczy ani pakietu odtworzeniowego** — są jedyną
 drogą powrotu do stanu podpisanego.
+
+### Produkcyjna weryfikacja procedury 4.6
+
+Pełny proces włączenia DNSSEC zweryfikowano na `mops.elk.pl`: DNSKEY i RRSIG
+były zgodne na primary i secondary, DS został potwierdzony przez wiele
+resolverów, a odpowiedzi walidujące posiadały flagę AD.
+
+Pełny proces wycofania zweryfikowano na `investin.elk.pl`. Po usunięciu DS,
+potwierdzeniu `withdrawn`, przejściu przez politykę `insecure` i osiągnięciu
+stanów KASP `goal=hidden`, `dnskey=hidden`, `ds=hidden`, finalizacja została
+przepuszczona dopiero po podniesieniu źródłowego seriala ponad serial wariantu
+podpisanego. Po finalizacji:
+
+- primary oraz `ns2.elkman.pl` i pięć serwerów HE.net serwowały serial
+  `2026081101`;
+- wszystkie serwery autorytatywne zwracały zero rekordów DNSKEY;
+- DS był nieobecny przez resolvery `1.1.1.1`, `8.8.8.8` i `9.9.9.9`;
+- BIND raportował `secure: no`, a deklaracja nie zawierała `dnssec-policy`,
+  `inline-signing` ani `key-directory`;
+- klucze, manifesty, snapshoty i pakiety odtworzeniowe pozostały zachowane.
