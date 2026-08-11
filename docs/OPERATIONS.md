@@ -306,6 +306,19 @@ W TUI ekran szczegółów strefy udostępnia `F6 migracja`. W widoku migracji
 strefy oraz końcowe potwierdzenie. Stany RPZ, DNSSEC, secondary i `MANAGED`
 pozostają zablokowane przez ten sam planner co CLI.
 
+### Inwentaryzacja ACL i secondary 4.7
+
+```bash
+zctl bind inventory
+zctl bind inventory --json
+```
+
+Raport przechodzi przez aktywne pliki `include`, pokazuje źródło i numer linii
+każdej definicji `acl`, `primaries` lub `masters`, jej elementy oraz użycia w
+`allow-query`, `allow-recursion`, `allow-transfer`, `allow-notify`,
+`also-notify` i `primaries`. Polecenie nie zapisuje konfiguracji i nie wywołuje
+`rndc`.
+
 Strefy z `health_profile = rpz` są automatycznie zarządzanymi źródłami
 polityki i nie podlegają zwykłemu cyklowi życia domen. ZoneCTL blokuje dla
 nich wyłączenie, przywrócenie i kwarantannę; nadal je monitoruje.

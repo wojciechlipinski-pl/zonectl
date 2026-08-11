@@ -218,6 +218,13 @@ zctl zone migration-apply example.pl \
 W TUI otwórz szczegóły strefy i użyj `F6`, następnie `F3` dla planu albo
 `F4` dla dry-runu i kontrolowanej migracji.
 
+Odczytowa inwentaryzacja globalnych ACL i grup secondary:
+
+```bash
+zctl bind inventory
+zctl bind inventory --json
+```
+
 ## Testy
 
 ```bash

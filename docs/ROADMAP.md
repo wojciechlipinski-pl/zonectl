@@ -125,10 +125,10 @@ zrealizowane, a `[ ]` pozostają do wykonania.
 
 ### Zarządzanie ACL i serwerami secondary
 
-- [ ] Zinwentaryzować źródła definicji ACL BIND oraz ich użycie w
+- [x] Zinwentaryzować źródła definicji ACL BIND oraz ich użycie w
   `allow-query`, `allow-recursion`, `allow-transfer`, `allow-notify`,
   `also-notify` i `primaries`.
-- [ ] Dodać odczytowy widok listy zaufanych sieci i hostów (`trusted`) wraz z
+- [x] Dodać odczytowy widok listy zaufanych sieci i hostów (`trusted`) wraz z
   plikiem źródłowym, numerem linii i miejscami użycia każdej ACL.
 - [ ] Dodać edycję `trusted` w CLI i TUI z walidacją adresów IPv4, IPv6,
   prefiksów CIDR, negacji oraz nazw dozwolonych elementów ACL.

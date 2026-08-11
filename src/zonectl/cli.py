@@ -8,6 +8,10 @@ from pathlib import Path
 
 from . import __version__
 from .core.bind import BindService
+from .core.bind_access_inventory import (
+    BindAccessInventoryError,
+    BindAccessInventoryReader,
+)
 from .core.config import DEFAULT_CONFIG, DEFAULT_GROUPS, DEFAULT_ZONES, ToolkitConfig
 from .core.dnssec_enable_plan import (
     DnssecEnablePlanError,
@@ -76,6 +80,16 @@ def parser() -> argparse.ArgumentParser:
     domains = sub.add_parser("domains", help="wyświetl listę domen")
     domains.add_argument("--grouped", action="store_true", help="pokaż domeny w grupach")
     sub.add_parser("groups", help="wyświetl przypisanie domen do grup")
+
+    bind_config = sub.add_parser("bind", help="odczyt konfiguracji BIND")
+    bind_sub = bind_config.add_subparsers(dest="bind_command", required=True)
+    bind_inventory = bind_sub.add_parser(
+        "inventory", help="pokaż ACL i grupy serwerów secondary bez zmian"
+    )
+    bind_inventory.add_argument(
+        "--root-config", type=Path, default=Path("/etc/bind/named.conf")
+    )
+    bind_inventory.add_argument("--json", action="store_true")
 
     dnssec = sub.add_parser(
         "dnssec",
@@ -724,6 +738,34 @@ def main(argv: list[str] | None = None) -> int:
     if args.command in {"transaction", "tx"}:
         return transaction_main(args, config)
     zones = config.zones()
+    if args.command == "bind" and args.bind_command == "inventory":
+        try:
+            report = BindAccessInventoryReader(args.root_config).collect()
+        except (BindAccessInventoryError, OSError) as exc:
+            print(f"BŁĄD: {exc}", file=sys.stderr)
+            return 2
+        if args.json:
+            print(json.dumps(report.to_dict(), ensure_ascii=False, indent=2))
+        else:
+            print("DEFINICJE ACL I GRUP SECONDARY")
+            if not report.definitions:
+                print("- brak")
+            for item in report.definitions:
+                print(
+                    f"[{item.kind.upper()}] {item.name} — "
+                    f"{item.source}:{item.line}"
+                )
+                for entry in item.entries:
+                    print(f"  {entry}")
+            print("\nUŻYCIA")
+            if not report.usages:
+                print("- brak")
+            for usage in report.usages:
+                print(
+                    f"[{usage.directive}] {usage.source}:{usage.line} — "
+                    + "; ".join(usage.values)
+                )
+        return 0
     if args.command == "dnssec" and args.dnssec_command == "confirm-ds":
         if args.commit != args.acknowledge_published:
             print(
