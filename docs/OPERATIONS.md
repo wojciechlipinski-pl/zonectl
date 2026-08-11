@@ -269,6 +269,23 @@ polecenia wykonują dry-run. Strefy zarządzane przez ZoneCTL mają osobne
 deklaracje w `/etc/bind/zonectl-zones.d`, dołączane przez indeks
 `/etc/bind/zonectl-zones.conf`.
 
+### Odczytowy plan migracji deklaracji 4.7
+
+Przed przenoszeniem starszych deklaracji z `named.conf.local` należy wykonać
+inwentaryzację i plan dla jednej wybranej strefy:
+
+```bash
+zctl zone migration-inventory
+zctl zone migration-plan example.pl
+```
+
+Inwentaryzacja rozróżnia strefy już zarządzane, zwykłe primary, secondary,
+RPZ, DNSSEC i deklaracje pochodzące z innych plików include. Plan pokazuje
+usunięcie bloku z `named.conf.local`, utworzenie kompletnej deklaracji w
+`zonectl-zones.d` i dopisanie pojedynczego include do `zonectl-zones.conf`.
+Na tym etapie polecenia nie zapisują plików, nie uruchamiają walidatorów i nie
+kontaktują się z `rndc`.
+
 Strefy z `health_profile = rpz` są automatycznie zarządzanymi źródłami
 polityki i nie podlegają zwykłemu cyklowi życia domen. ZoneCTL blokuje dla
 nich wyłączenie, przywrócenie i kwarantannę; nadal je monitoruje.

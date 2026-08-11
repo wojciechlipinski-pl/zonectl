@@ -108,17 +108,17 @@ zrealizowane, a `[ ]` pozostają do wykonania.
 
 ## ZoneCTL 4.7 — migracja istniejących deklaracji stref
 
-- [ ] Zinwentaryzować strefy zdefiniowane bezpośrednio w
+- [x] Zinwentaryzować strefy zdefiniowane bezpośrednio w
   `/etc/bind/named.conf.local` i odróżnić je od stref automatycznych, RPZ,
   secondary oraz już zarządzanych przez ZoneCTL.
-- [ ] Dodać pozbawiony skutków ubocznych plan migracji pojedynczej strefy do
+- [x] Dodać pozbawiony skutków ubocznych plan migracji pojedynczej strefy do
   `/etc/bind/zonectl-zones.d/<strefa>.conf`, zachowujący kompletny blok BIND.
 - [ ] Aktualizować `/etc/bind/zonectl-zones.conf` jako indeks zawierający
   dokładnie jeden `include` dla każdej deklaracji zarządzanej przez ZoneCTL.
 - [ ] Wymagać backupu `named.conf.local`, indeksu i deklaracji, walidacji
   `named-checkconf`, kontrolowanego `rndc reconfig`, potwierdzenia
   `rndc zonestatus` oraz pełnego rollbacku po błędzie.
-- [ ] Domyślnie blokować migrację RPZ, secondary i stref DNSSEC; obsłużyć je
+- [x] Domyślnie blokować migrację RPZ, secondary i stref DNSSEC; obsłużyć je
   dopiero przez jawne, osobne profile migracyjne.
 - [ ] Udostępnić dry-run i migrację pojedynczej strefy w CLI oraz TUI, bez
   automatycznej migracji zbiorczej produkcyjnej konfiguracji.

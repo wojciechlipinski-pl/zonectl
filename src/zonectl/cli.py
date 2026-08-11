@@ -51,6 +51,10 @@ from .core.zone_lifecycle import (
     ZoneLifecyclePlanner,
 )
 from .core.zone_inventory import ZoneInventory
+from .core.managed_zone_migration import (
+    ManagedZoneMigrationError,
+    ManagedZoneMigrationPlanner,
+)
 from .presentation import transaction_exit_code, transaction_lines
 from .ui.curses_app import CursesApp
 
@@ -505,6 +509,35 @@ def parser() -> argparse.ArgumentParser:
     )
     safety.add_argument("name", nargs="?")
     safety.add_argument("--json", action="store_true")
+    migration_inventory = lifecycle_sub.add_parser(
+        "migration-inventory",
+        help="zinwentaryzuj deklaracje BIND przed migracją do ZoneCTL",
+    )
+    migration_plan = lifecycle_sub.add_parser(
+        "migration-plan",
+        help="pokaż odczytowy plan migracji pojedynczej strefy",
+    )
+    migration_plan.add_argument("name")
+    for migration_command in (migration_inventory, migration_plan):
+        migration_command.add_argument(
+            "--root-config", type=Path, default=Path("/etc/bind/named.conf")
+        )
+        migration_command.add_argument(
+            "--local-config",
+            type=Path,
+            default=Path("/etc/bind/named.conf.local"),
+        )
+        migration_command.add_argument(
+            "--managed-config",
+            type=Path,
+            default=Path("/etc/bind/zonectl-zones.conf"),
+        )
+        migration_command.add_argument(
+            "--managed-zone-directory",
+            type=Path,
+            default=Path("/etc/bind/zonectl-zones.d"),
+        )
+        migration_command.add_argument("--json", action="store_true")
 
     tx = sub.add_parser("transaction", aliases=["tx"], help="bezpieczne transakcje na plikach stref")
     txsub = tx.add_subparsers(dest="tx_command", required=True)
@@ -1207,6 +1240,55 @@ def main(argv: list[str] | None = None) -> int:
 
         return 1 if report.status == "FAIL" else 0
     if args.command == "zone":
+        if args.zone_command in {"migration-inventory", "migration-plan"}:
+            planner = ManagedZoneMigrationPlanner(
+                root_config=args.root_config,
+                local_config=args.local_config,
+                managed_config=args.managed_config,
+                managed_zone_directory=args.managed_zone_directory,
+            )
+            try:
+                if args.zone_command == "migration-inventory":
+                    items = planner.inventory()
+                    if args.json:
+                        print(json.dumps(
+                            [item.to_dict() for item in items],
+                            ensure_ascii=False,
+                            indent=2,
+                        ))
+                    elif not items:
+                        print("Nie znaleziono aktywnych deklaracji stref BIND.")
+                    else:
+                        print(f"{'STAN':<20} {'STREFA':<32} {'TYP':<12} DEKLARACJA")
+                        for item in items:
+                            print(
+                                f"{item.state:<20} {item.name:<32} "
+                                f"{item.zone_type:<12} {item.config_file}"
+                            )
+                            print(f"  {item.reason}")
+                    return 0
+
+                plan = planner.plan(args.name)
+                if args.json:
+                    print(json.dumps(plan.to_dict(), ensure_ascii=False, indent=2))
+                else:
+                    print(f"PLAN MIGRACJI STREFY — BEZ ZMIAN W SYSTEMIE")
+                    print(f"Strefa:       {plan.zone}")
+                    print(f"Źródło:       {plan.source_config}")
+                    print(f"Deklaracja:   {plan.declaration_file}")
+                    print(f"Indeks:       {plan.managed_config}")
+                    print("\nPlanowane diffy:\n")
+                    print(plan.source_diff, end="")
+                    print(plan.declaration_diff, end="")
+                    print(plan.managed_diff, end="")
+                    print("\nPlanowane etapy:")
+                    for action in plan.actions:
+                        print(f"- {action}")
+                    print("\nWynik: DRY-RUN — niczego nie zmieniono")
+                return 0
+            except (ManagedZoneMigrationError, OSError) as exc:
+                print(f"BŁĄD: {exc}", file=sys.stderr)
+                return 2
         if args.zone_command == "safety":
             selected = zones
             if args.name:

@@ -194,6 +194,18 @@ Docelowo każda strefa otrzymuje osobny plik
 `/etc/bind/zonectl-zones.d/NAZWA.conf`, a indeks
 `/etc/bind/zonectl-zones.conf` zawiera wyłącznie dyrektywy `include`.
 
+Istniejące deklaracje można najpierw bezpiecznie zinwentaryzować i obejrzeć
+plan migracji pojedynczej strefy. Oba polecenia są wyłącznie odczytowe:
+
+```bash
+zctl zone migration-inventory
+zctl zone migration-plan example.pl
+```
+
+Plan zachowuje pełny blok strefy, pokazuje diff trzech plików i blokuje RPZ,
+strefy secondary oraz strefy używające DNSSEC. Nie zapisuje plików i nie
+wywołuje `rndc`.
+
 ## Testy
 
 ```bash
