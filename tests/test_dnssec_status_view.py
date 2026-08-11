@@ -217,6 +217,23 @@ def test_view_exposes_contextual_operations() -> None:
     assert DnssecStatusView.build(unsigned).operation_label == "włączenie"
 
 
+def test_public_ds_hidden_in_kasp_requires_confirmation() -> None:
+    active = replace(
+        report(zone_rrsig="omnipresent"),
+        status="PASS",
+        parent_ds_records=("12345 13 2 ABCD",),
+        parent_ds_matches=True,
+        warnings=(),
+    )
+    passed = replace(delegation(), status="PASS", kasp_ready=True)
+
+    view = DnssecStatusView.build(active, passed)
+
+    assert view.stage == "DS_CONFIRMATION_REQUIRED"
+    assert view.operation == "CONFIRM_DS"
+    assert view.operation_label == "potwierdzenie DS"
+
+
 def test_unsigned_zone_keeps_enable_action_when_dnskey_check_fails() -> None:
     unsigned = replace(
         report(),

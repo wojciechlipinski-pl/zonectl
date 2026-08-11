@@ -5,6 +5,7 @@ from pathlib import Path
 
 from zonectl.core.dnssec_disable_transaction import DnssecDisableResult
 from zonectl.core.dnssec_enable_transaction import DnssecEnableResult
+from zonectl.core.dnssec_confirm_ds import DnssecConfirmResult
 from zonectl.core.dnssec_withdrawal_backup import DnssecWithdrawalBackupResult
 from zonectl.core.models import Zone
 from zonectl.ui.curses_app import CursesApp
@@ -212,3 +213,45 @@ def test_enable_commit_ui_requires_exact_confirmation() -> None:
     assert "Włączyć i aktywować DNSSEC" in source
     assert "self._dnssec_enable_commit(zone)" in source
     assert "self.config.read_only" in source
+
+
+def test_confirm_ds_routes_dry_run_and_commit(monkeypatch) -> None:
+    calls = []
+
+    class FakeChecker:
+        def __init__(self, **_kwargs):
+            pass
+
+        def collect(self, zone, resolvers):
+            calls.append(("check", zone, resolvers))
+
+    class FakeTransaction:
+        def __init__(self, _manifest_directory, *, checker):
+            self.checker = checker
+
+        def apply(self, zone, resolvers, **kwargs):
+            calls.append((zone, resolvers, kwargs))
+            status = "CONFIRMED" if kwargs["commit"] else "DRY-RUN"
+            return DnssecConfirmResult("tx", zone, status)
+
+    app = CursesApp.__new__(CursesApp)
+    app.config = None
+    monkeypatch.setattr("zonectl.ui.curses_app.DnssecDsChecker", FakeChecker)
+    monkeypatch.setattr(
+        "zonectl.ui.curses_app.DnssecConfirmDsTransaction", FakeTransaction
+    )
+    zone = Zone("example.pl", Path("zone.db"))
+
+    assert app._dnssec_confirm_ds(zone).status == "DRY-RUN"
+    assert app._dnssec_confirm_ds(zone, commit=True).status == "CONFIRMED"
+    assert calls[-1][2] == {"commit": True, "acknowledge_published": True}
+
+
+def test_confirm_ds_ui_requires_fresh_check_and_exact_confirmation() -> None:
+    source = inspect.getsource(CursesApp._dnssec_status_view)
+
+    assert 'view.operation == "CONFIRM_DS"' in source
+    assert "Kontrola DS przed potwierdzeniem" in source
+    assert "Wpisz pełną nazwę strefy, aby potwierdzić DS" in source
+    assert "Potwierdzić opublikowany DS" in source
+    assert "committed = self._dnssec_confirm_ds(" in source

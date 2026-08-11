@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import re
 
 from ..core.dnssec_ds_check import DnssecDsCheck
 from ..core.dnssec_guidance import build_dnssec_guidance
@@ -44,6 +45,14 @@ class DnssecStatusView:
                 publication_allowed = False
             elif guidance.stage == "READY_FOR_DS":
                 publication_allowed = delegation.status == "NOT_PUBLISHED"
+            if (
+                guidance.stage == "ACTIVE"
+                and delegation.status == "PASS"
+                and cls._kasp_ds_state(report) == "hidden"
+            ):
+                stage = "DS_CONFIRMATION_REQUIRED"
+                title = "DS jest publiczny i wymaga potwierdzenia w KASP"
+                publication_allowed = True
         lines: list[str] = [
             f"Status raportu       {report.status}",
             f"dnssec-policy        {report.dnssec_policy or '-'}",
@@ -113,6 +122,8 @@ class DnssecStatusView:
             return "FINALIZE"
         if stage == "ACTIVE":
             return "WITHDRAWAL"
+        if stage == "DS_CONFIRMATION_REQUIRED":
+            return "CONFIRM_DS"
         if stage == "UNSIGNED":
             return "ENABLE"
         return "STATUS"
@@ -122,9 +133,18 @@ class DnssecStatusView:
         return {
             "FINALIZE": "finalizacja",
             "WITHDRAWAL": "wycofanie",
+            "CONFIRM_DS": "potwierdzenie DS",
             "ENABLE": "włączenie",
             "STATUS": "wskazówki",
         }[cls._operation_for_stage(stage)]
+
+    @staticmethod
+    def _kasp_ds_state(report: DnssecReport) -> str | None:
+        for line in report.rndc_status:
+            match = re.match(r"^\s*-\s*ds:\s*([a-z-]+)\s*$", line, re.IGNORECASE)
+            if match:
+                return match.group(1).casefold()
+        return None
 
     @staticmethod
     def _yes_no(value: bool | None) -> str:

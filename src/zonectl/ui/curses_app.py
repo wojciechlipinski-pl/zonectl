@@ -24,6 +24,7 @@ from ..core.bind import BindService
 from ..core.bulk_operations import BulkOperation, BulkOperationError
 from ..core.config import ToolkitConfig
 from ..core.dnssec_ds_check import DnssecDsChecker
+from ..core.dnssec_confirm_ds import DnssecConfirmDsTransaction
 from ..core.dnssec_disable_plan import DnssecDisablePlanner
 from ..core.dnssec_disable_transaction import DnssecDisableTransaction
 from ..core.dnssec_enable_plan import DnssecEnablePlanner
@@ -2136,6 +2137,29 @@ class CursesApp:
             Path("/var/backups/zonectl-dnssec-enable/manifests"),
         ).apply(plan, commit=True, activate=True)
 
+    def _dnssec_confirm_ds(self, zone: Zone, *, commit: bool = False):
+        toolkit = self.config.toolkit if self.config is not None else {}
+        local_server = toolkit.get("local_server", "127.0.0.1")
+        timeout = int(toolkit.get("dig_timeout", "3"))
+        resolvers = tuple(
+            item.strip()
+            for item in toolkit.get(
+                "dnssec_resolvers",
+                "1.1.1.1,8.8.8.8,9.9.9.9",
+            ).split(",")
+            if item.strip()
+        )
+        checker = DnssecDsChecker(local_server=local_server, timeout=timeout)
+        return DnssecConfirmDsTransaction(
+            Path("/var/backups/zonectl-dnssec-confirm-ds/manifests"),
+            checker=checker.collect,
+        ).apply(
+            zone.name,
+            resolvers,
+            commit=commit,
+            acknowledge_published=commit,
+        )
+
     def _dnssec_finalize_dry_run(self, zone: Zone):
         plan = self._dnssec_disable_plan(zone)
         return DnssecDisableTransaction(
@@ -2204,6 +2228,20 @@ class CursesApp:
             f"Commit: {'TAK' if result.committed else 'NIE'}",
             f"Rollback: {'TAK' if result.rolled_back else 'NIE'}",
         ]
+        lines.extend(
+            f"[{'OK' if step.ok else 'BŁĄD'}] {step.name}: {step.message}"
+            for step in result.steps
+        )
+        return lines
+
+    @staticmethod
+    def _dnssec_confirm_result_lines(result) -> list[str]:
+        lines = [
+            f"Status: {result.status}",
+            f"Commit: {'TAK' if result.committed else 'NIE'}",
+        ]
+        if result.manifest:
+            lines.append(f"Manifest: {result.manifest}")
         lines.extend(
             f"[{'OK' if step.ok else 'BŁĄD'}] {step.name}: {step.message}"
             for step in result.steps
@@ -2327,7 +2365,15 @@ class CursesApp:
                     refresh = True
                 elif key == curses.KEY_F3:
                     try:
-                        if view is not None and view.operation == "ENABLE":
+                        if view is not None and view.operation == "CONFIRM_DS":
+                            checked = self._collect_dnssec_status(zone)
+                            self._message_view(
+                                win,
+                                title=f"Kontrola DS przed potwierdzeniem: {zone.name}",
+                                lines=checked.lines,
+                                error=checked.operation != "CONFIRM_DS",
+                            )
+                        elif view is not None and view.operation == "ENABLE":
                             plan = self._dnssec_enable_plan(zone)
                             self._message_view(
                                 win,
@@ -2424,6 +2470,56 @@ class CursesApp:
                             self._message_view(
                                 win,
                                 title="Błąd backupu DNSSEC",
+                                lines=[str(exc)],
+                                error=True,
+                            )
+                        refresh = True
+                        continue
+                    if view.operation == "CONFIRM_DS":
+                        try:
+                            result = self._dnssec_confirm_ds(zone)
+                            self._message_view(
+                                win,
+                                title=f"Dry-run potwierdzenia DS: {zone.name}",
+                                lines=self._dnssec_confirm_result_lines(result),
+                                error=result.status != "DRY-RUN",
+                            )
+                            if result.status == "DRY-RUN":
+                                if self.config is not None and self.config.read_only:
+                                    self._read_only_message(win, zone)
+                                else:
+                                    confirmation = CursesDialogs.text_input(
+                                        win,
+                                        " Wpisz pełną nazwę strefy, aby potwierdzić DS: ",
+                                    )
+                                    expected = zone.name.rstrip(".").casefold()
+                                    supplied = (confirmation or "").rstrip(".").casefold()
+                                    if supplied != expected:
+                                        self._message_view(
+                                            win,
+                                            title="Potwierdzenie DS anulowane",
+                                            lines=["Nie zmieniono stanu KASP."],
+                                        )
+                                    elif CursesDialogs.confirm(
+                                        win,
+                                        f"Potwierdzić opublikowany DS dla {zone.name}?",
+                                        key_reader=self._get_key,
+                                    ):
+                                        committed = self._dnssec_confirm_ds(
+                                            zone, commit=True
+                                        )
+                                        self._message_view(
+                                            win,
+                                            title=f"Wynik potwierdzenia DS: {zone.name}",
+                                            lines=self._dnssec_confirm_result_lines(
+                                                committed
+                                            ),
+                                            error=committed.status != "CONFIRMED",
+                                        )
+                        except Exception as exc:
+                            self._message_view(
+                                win,
+                                title="Błąd potwierdzenia DS",
                                 lines=[str(exc)],
                                 error=True,
                             )
