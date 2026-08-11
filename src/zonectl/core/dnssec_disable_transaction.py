@@ -313,12 +313,23 @@ class DnssecDisableTransaction:
             visible = ", ".join(
                 state for state in reading.states if not state.endswith("=hidden")
             )
+            withdrawing = "goal=hidden" in reading.states
+            if withdrawing:
+                guidance = (
+                    "KASP realizuje już etap insecure. Poczekaj do następnego "
+                    "zdarzenia KASP i ponów kontrolę; tej blokady nie wolno "
+                    "przesłonić."
+                )
+            else:
+                guidance = (
+                    "Wykonaj najpierw etap insecure i poczekaj; tej blokady "
+                    "nie wolno przesłonić."
+                )
             return DnssecDisableStep(
                 "kasp-gate",
                 False,
                 f"Blokada: KASP nie schował jeszcze kluczy ({visible}). "
-                "Wykonaj najpierw etap insecure i poczekaj; tej blokady nie "
-                "wolno przesłonić.",
+                + guidance,
             )
         if acknowledge_unsigned:
             return DnssecDisableStep(

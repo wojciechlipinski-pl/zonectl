@@ -147,7 +147,23 @@ def test_finalize_blocked_while_keys_not_hidden(tmp_path: Path) -> None:
 
     assert result.status == "BLOCKED"
     assert "dnskey=omnipresent" in result.steps[0].message
+    assert "KASP realizuje już etap insecure" in result.steps[0].message
+    assert "Wykonaj najpierw etap insecure" not in result.steps[0].message
     assert declaration.read_text(encoding="utf-8") == before
+
+
+def test_finalize_advises_insecure_when_withdrawal_has_not_started(
+    tmp_path: Path,
+) -> None:
+    plan, _declaration = setup_plan(tmp_path)
+
+    result = engine(
+        tmp_path,
+        kasp_reader=kasp(False, ("goal=omnipresent", "dnskey=omnipresent")),
+    ).apply(plan, stage="finalize")
+
+    assert result.status == "BLOCKED"
+    assert "Wykonaj najpierw etap insecure" in result.steps[0].message
 
 
 def test_visible_keys_cannot_be_overridden(tmp_path: Path) -> None:
