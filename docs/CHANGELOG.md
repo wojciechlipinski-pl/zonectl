@@ -1,7 +1,43 @@
 # Historia zmian
 
-> Wygenerowano z Git: `2026-07-31T14:40:09+02:00`.
+> Wygenerowano z Git: `2026-08-11T13:14:02+02:00`.
 
+- `2026-08-11` — `59c9dc4` — release: prepare ZoneCTL 4.6.0
+- `2026-08-11` — `c3c835d` — feat: prepare SOA serial before DNSSEC finalization
+- `2026-08-11` — `d6d065a` — fix: block DNSSEC finalization on SOA serial regression
+- `2026-08-11` — `491c973` — fix: block DNSSEC write workflows for RPZ in TUI
+- `2026-08-11` — `8365fdd` — fix: clarify DNSSEC finalization gate guidance
+- `2026-08-11` — `bb7d844` — feat: confirm verified DS publication from TUI
+- `2026-08-11` — `ad50354` — fix: report expected DNSSEC insecure state
+- `2026-08-11` — `af32d29` — feat: safely enable DNSSEC from TUI
+- `2026-08-11` — `466d3f7` — feat: add DNSSEC enablement plan and dry-run to TUI
+- `2026-08-11` — `6ca598f` — feat: create DNSSEC withdrawal backups from TUI
+- `2026-08-10` — `34c9b16` — feat: add contextual DNSSEC actions to TUI
+- `2026-08-10` — `4e1f575` — feat: safely finalize DNSSEC withdrawal from TUI
+- `2026-08-10` — `1e3d80b` — fix: wrap and scroll long TUI messages
+- `2026-08-10` — `24d06c3` — feat: add DNSSEC withdrawal actions to TUI
+- `2026-08-10` — `9c1c811` — feat: show DNSSEC withdrawal progress in TUI
+- `2026-08-10` — `41874e8` — fix: stage DNSSEC withdrawal through built-in insecure policy
+- `2026-08-10` — `4ace3db` — feat: apply DNSSEC withdrawal diff behind KASP hidden-DS gate
+- `2026-08-10` — `faa90c9` — chore: enforce LF line endings via gitattributes
+- `2026-08-10` — `92cf807` — style: normalize line endings to LF
+- `2026-08-10` — `c83ef77` — feat: add guarded rndc withdrawn execution behind fresh DS check
+- `2026-08-07` — `5565774` — feat: add read-only DS-withdrawal check to block premature withdrawn
+- `2026-08-06` — `9361837` — feat: create verified DNSSEC withdrawal backups
+- `2026-08-06` — `b7d6838` — feat: add safe DNSSEC withdrawal plans
+- `2026-08-06` — `3282c34` — feat: add DNSSEC TUI status and consistent keybindings
+- `2026-08-05` — `97f7ce6` — feat: confirm verified DS publication in KASP
+- `2026-08-05` — `ccd55f7` — feat: verify DNSSEC delegation across resolvers
+- `2026-08-05` — `b0fcb69` — feat: guide operators through DNSSEC propagation
+- `2026-08-04` — `f3dddc8` — fix: preserve BIND ownership during DNSSEC rollback
+- `2026-08-04` — `c221086` — feat: expose transactional DNSSEC enablement CLI
+- `2026-08-04` — `9415141` — test: validate DNSSEC enablement with real BIND tools
+- `2026-08-04` — `4bac647` — feat: add transactional DNSSEC enablement engine
+- `2026-08-04` — `164d0f6` — feat: add safe DNSSEC enablement plans
+- `2026-08-04` — `e3a9c2e` — feat: add read-only DNSSEC state report
+- `2026-08-04` — `be53940` — docs: plan transactional DNSSEC management
+- `2026-08-04` — `2a59ea4` — fix: improve TUI navigation and natural record sorting
+- `2026-07-31` — `6a78b9c` — docs: regenerate documentation for 4.5.0
 - `2026-07-31` — `77baf93` — release: prepare ZoneCTL 4.5.0
 - `2026-07-31` — `ad3c54b` — feat: add TUI zone creation wizard
 - `2026-07-31` — `adb4609` — docs: regenerate documentation for 4.4.0
@@ -66,31 +102,3 @@
 - `2026-07-30` — `a25f173` — build: initialize ZoneCTL migration framework
 - `2026-07-29` — `e6eb4eb` — docs: finalize automatic project documentation generator
 - `2026-07-29` — `aec45de` — docs: add automatic project documentation generator
-- `2026-07-29` — `6efd150` — docs: add project memory and technical documentation set
-- `2026-07-29` — `66802d0` — Release 3.2.3: add F2 save support
-- `2026-07-29` — `7ac71d2` — Release 3.2.0: transactional zone editor and BIND discovery
-- `2026-07-29` — `168a4e5` — Sprint 4.8: extract record view controller
-- `2026-07-29` — `a3be91e` — Sprint 4.7: complete record change tracking and F2 editing
-- `2026-07-29` — `ff5093e` — Sprint 4.7: support deleting DNS records
-- `2026-07-29` — `1998add` — Sprint 4.6: add NewRecordDialog and improve record editor UX
-- `2026-07-28` — `7d9a41a` — Sprint 4.5: extract RecordEditor from CursesApp
-- `2026-07-28` — `87d8d2a` — Sprint 4.3: record editor and pending changes view
-- `2026-07-28` — `c4612ee` — Sprint 4.4: centralize record view keybindings
-- `2026-07-28` — `6b00880` — Sprint 4.0: ZoneModel and dialog extraction
-- `2026-07-28` — `61272e3` — feat: add domain and record search
-- `2026-07-28` — `5a1ea88` — feat: parse and display zone records
-- `2026-07-28` — `6131629` — feat: add zone records view
-- `2026-07-28` — `ea7eef0` — feat: add zone details view to TUI
-- `2026-07-28` — `bf92425` — chore: ignore backup files
-- `2026-07-28` — `d37165e` — feat: discover zones from BIND configuration
-- `2026-07-28` — `6ec23e9` — Merge branch 'sprint-3.2.0'
-- `2026-07-28` — `93ef9e0` — Sprint 3.2: add verify command and shared zone verification
-- `2026-07-28` — `d9b518e` — Merge Sprint 3.1.3
-- `2026-07-28` — `96f4631` — Sprint 3.1.3: verify loaded SOA serial for inline-signing zones
-- `2026-07-28` — `2e42b61` — Merge Sprint 3.1.2: transaction status
-- `2026-07-28` — `ae227e3` — Add transaction status to results
-- `2026-07-28` — `46b89b2` — Merge Sprint 3.1.1: no-change detection
-- `2026-07-28` — `e37466c` — Detect unchanged zone before commit
-- `2026-07-28` — `036b012` — Refactor project to standard Python package layout
-- `2026-07-28` — `91246bb` — Add project metadata and repository files
-- `2026-07-28` — `0e7fb2f` — Baseline 3.1.0 transaction layer

@@ -1,6 +1,6 @@
 # Architektura
 
-> Wygenerowano z importów AST: `2026-07-31T14:40:09+02:00`.
+> Wygenerowano z importów AST: `2026-08-11T13:14:02+02:00`.
 
 ## `src/elkman_dns/__init__.py`
 
@@ -25,10 +25,23 @@ Brak docstringa.
 - `argparse`
 - `json`
 - `sys`
+- `dataclasses: asdict`
 - `pathlib: Path`
 - `: __version__`
 - `core.bind: BindService`
 - `core.config: DEFAULT_CONFIG, DEFAULT_GROUPS, DEFAULT_ZONES, ToolkitConfig`
+- `core.dnssec_enable_plan: DnssecEnablePlanError, DnssecEnablePlanner`
+- `core.dnssec_enable_transaction: DnssecEnableTransaction`
+- `core.dnssec_disable_transaction: DnssecDisableTransaction`
+- `core.dnssec_finalize_serial: DnssecFinalizeSerialTransaction`
+- `core.dnssec_disable_plan: DnssecDisablePlanError, DnssecDisablePlanner`
+- `core.dnssec_withdrawal_backup: DnssecWithdrawalBackup`
+- `core.dnssec_withdrawal_check: DnssecWithdrawalChecker`
+- `core.dnssec_withdrawal_confirm: DnssecWithdrawalConfirmTransaction`
+- `core.dnssec_ds_check: DnssecDsChecker`
+- `core.dnssec_confirm_ds: DnssecConfirmDsTransaction`
+- `core.dnssec_guidance: build_dnssec_guidance`
+- `core.dnssec_report: DnssecReporter`
 - `core.transaction: TransactionEngine, TransactionResult`
 - `core.zone_create_transaction: ZoneCreateTransaction`
 - `core.zone_disable_transaction: ZoneDisableError, ZoneDisableTransaction`
@@ -142,6 +155,199 @@ Automatyczne wykrywanie stref i plików źródłowych BIND.
 - `re`
 - `dataclasses: dataclass`
 - `pathlib: Path`
+
+## `src/zonectl/core/dnssec_confirm_ds.py`
+
+Controlled acknowledgement of a published DS record in BIND KASP.
+
+**Importy:**
+
+- `__future__: annotations`
+- `json`
+- `os`
+- `re`
+- `tempfile`
+- `uuid`
+- `dataclasses: asdict, dataclass, field`
+- `datetime: datetime, timezone`
+- `pathlib: Path`
+- `typing: Callable`
+- `dnssec_ds_check: DnssecDsCheck`
+- `runner: CommandResult, run`
+
+## `src/zonectl/core/dnssec_disable_plan.py`
+
+Side-effect-free plan for safely withdrawing DNSSEC from a BIND zone.
+
+**Importy:**
+
+- `__future__: annotations`
+- `re`
+- `dataclasses: asdict, dataclass`
+- `pathlib: Path`
+- `discovery: ZoneConfig`
+- `dnssec_enable_plan: DnssecEnablePlanner`
+
+## `src/zonectl/core/dnssec_disable_transaction.py`
+
+Transakcyjne wycofanie DNSSEC — dwa etapy. BIND nie pozwala po prostu usunąć ``dnssec-policy``: dokumentacja wymaga przejścia przez wbudowaną politykę ``insecure``, bo w przeciwnym razie strefa zostanie ponownie podpisana. Stąd dwa etapy: **Etap ``insecure``** — podmienia ``dnssec-policy default`` na ``dnssec-policy insecure``, zostawiając ``inline-signing``. Bramką jest zniknięcie DS ze wszystkich kontrolowanych resolverów, czyli dokładnie ten sam warunek, który przepuszcza ``withdrawal-confirm``. Dopiero ta zmiana przestawia cel KASP z ``omnipresent`` na ``hidden`` i uruchamia uporządkowane wycofywanie kluczy. **Etap ``finalize``** — usuwa ``dnssec-policy``, ``inline-signing`` i ``key-directory``. Bramką jest potwierdzenie z KASP, że **wszystkie** klucze mają ``goal``, ``dnskey`` i ``ds`` w stanie ``hidden``. Ta bramka jest osiągalna wyłącznie po etapie pierwszym. W obu etapach brak ``--commit`` oznacza dry-run, każde niepowodzenie walidacji powoduje pełny rollback deklaracji z backupu, a klucze i pakiet odtworzeniowy pozostają nietknięte.
+
+**Importy:**
+
+- `__future__: annotations`
+- `json`
+- `os`
+- `re`
+- `shutil`
+- `tempfile`
+- `uuid`
+- `dataclasses: asdict, dataclass, field`
+- `datetime: datetime, timezone`
+- `pathlib: Path`
+- `typing: Callable`
+- `dnssec_disable_plan: DnssecDisablePlan`
+- `runner: run`
+
+## `src/zonectl/core/dnssec_ds_check.py`
+
+Read-only verification of DNSSEC delegation and authoritative servers.
+
+**Importy:**
+
+- `__future__: annotations`
+- `re`
+- `dataclasses: asdict, dataclass`
+- `typing: Callable`
+- `dnssec_report: _answer_rdata, dnskey_to_ds`
+- `runner: CommandResult, run`
+
+## `src/zonectl/core/dnssec_enable_plan.py`
+
+Pozbawiony skutków ubocznych plan włączenia DNSSEC w BIND.
+
+**Importy:**
+
+- `__future__: annotations`
+- `difflib`
+- `re`
+- `dataclasses: asdict, dataclass`
+- `pathlib: Path`
+- `discovery: ZoneConfig`
+
+## `src/zonectl/core/dnssec_enable_transaction.py`
+
+Transakcyjne zastosowanie planu włączenia DNSSEC.
+
+**Importy:**
+
+- `__future__: annotations`
+- `json`
+- `os`
+- `shutil`
+- `tempfile`
+- `uuid`
+- `dataclasses: asdict, dataclass, field`
+- `datetime: datetime, timezone`
+- `pathlib: Path`
+- `typing: Callable`
+- `dnssec_enable_plan: DnssecEnablePlan`
+- `runner: run`
+
+## `src/zonectl/core/dnssec_finalize_serial.py`
+
+Safe SOA preparation before DNSSEC withdrawal finalization.
+
+**Importy:**
+
+- `__future__: annotations`
+- `os`
+- `re`
+- `shutil`
+- `tempfile`
+- `uuid`
+- `dataclasses: dataclass, field`
+- `datetime: date, datetime`
+- `pathlib: Path`
+- `typing: Callable`
+- `runner: run`
+- `soa_serial: bump_document_soa_serial`
+- `zone_file_parser: ZoneFileParser`
+- `zone_writer: ZoneWriter`
+
+## `src/zonectl/core/dnssec_guidance.py`
+
+Operator guidance derived from the read-only DNSSEC report.
+
+**Importy:**
+
+- `__future__: annotations`
+- `re`
+- `dataclasses: asdict, dataclass`
+- `email.utils: parsedate_to_datetime`
+- `typing: TYPE_CHECKING`
+
+## `src/zonectl/core/dnssec_report.py`
+
+Odczytowy raport konfiguracji i stanu DNSSEC strefy.
+
+**Importy:**
+
+- `__future__: annotations`
+- `base64`
+- `hashlib`
+- `re`
+- `dataclasses: asdict, dataclass`
+- `pathlib: Path`
+- `typing: Callable`
+- `dnssec_guidance: build_dnssec_guidance`
+- `models: Zone`
+- `runner: CommandResult, run`
+
+## `src/zonectl/core/dnssec_withdrawal_backup.py`
+
+Verified recovery package created before DNSSEC withdrawal.
+
+**Importy:**
+
+- `__future__: annotations`
+- `hashlib`
+- `json`
+- `os`
+- `shutil`
+- `tempfile`
+- `uuid`
+- `dataclasses: asdict, dataclass, field`
+- `datetime: datetime, timezone`
+- `pathlib: Path`
+- `dnssec_disable_plan: DnssecDisablePlan`
+
+## `src/zonectl/core/dnssec_withdrawal_check.py`
+
+Read-only confirmation that DS has disappeared everywhere before withdrawal. This is the mirror image of :mod:`dnssec_ds_check`: instead of waiting for a DS record to *appear* at every resolver, it waits for the DS record to *disappear* at every resolver before allowing the operator to run ``rndc dnssec -checkds withdrawn``. As long as any checked resolver still returns a DS record, the result is ``BLOCKED`` and no follow-up command should touch KASP or the registrar.
+
+**Importy:**
+
+- `__future__: annotations`
+- `subprocess`
+- `dataclasses: asdict, dataclass, field`
+- `typing: Callable, Sequence`
+
+## `src/zonectl/core/dnssec_withdrawal_confirm.py`
+
+Guarded confirmation of DNSSEC withdrawal. This is the write-side counterpart to :mod:`dnssec_withdrawal_check`. It is the only place in ZoneCTL allowed to run ``rndc dnssec -checkds withdrawn``, and it refuses to do so unless: 1. the caller passed ``--commit`` (otherwise it is a pure dry-run), and 2. the caller passed the explicit ``--acknowledge-withdrawn`` flag, and 3. a *freshly run* :class:`DnssecWithdrawalChecker` reports ``READY_FOR_WITHDRAWN`` at the moment of the call. Any of those failing leaves BIND, KASP, and the zone completely untouched and returns ``BLOCKED`` with the reason. A successful run writes a manifest recording the DS check that authorized it, so the decision is auditable after the fact.
+
+**Importy:**
+
+- `__future__: annotations`
+- `json`
+- `os`
+- `subprocess`
+- `uuid`
+- `dataclasses: asdict, dataclass, field`
+- `datetime: datetime, timezone`
+- `pathlib: Path`
+- `typing: Callable, Sequence`
+- `dnssec_withdrawal_check: DnssecWithdrawalCheckResult`
 
 ## `src/zonectl/core/edit_lock.py`
 
@@ -555,11 +761,14 @@ Brak docstringa.
 - `zonectl.ui.function_keys: decode_function_key`
 - `zonectl.ui.records.editor: RecordEditor`
 - `zonectl.ui.records.new_record: NewRecordDialog`
+- `zonectl.ui.records.controller: natural_name_key`
 - `zonectl.ui.records.renderer: RecordRenderer`
 - `zonectl.ui.zone_create_dialog: ZoneCreateDialog`
+- `zonectl.ui.dnssec_status_view: DnssecStatusView`
 - `curses`
 - `queue`
 - `threading`
+- `textwrap`
 - `concurrent.futures: ThreadPoolExecutor, as_completed`
 - `dataclasses: dataclass`
 - `pathlib: Path`
@@ -567,6 +776,14 @@ Brak docstringa.
 - `core.bind: BindService`
 - `core.bulk_operations: BulkOperation, BulkOperationError`
 - `core.config: ToolkitConfig`
+- `core.dnssec_ds_check: DnssecDsChecker`
+- `core.dnssec_confirm_ds: DnssecConfirmDsTransaction`
+- `core.dnssec_disable_plan: DnssecDisablePlanner`
+- `core.dnssec_disable_transaction: DnssecDisableTransaction`
+- `core.dnssec_enable_plan: DnssecEnablePlanner`
+- `core.dnssec_enable_transaction: DnssecEnableTransaction`
+- `core.dnssec_report: DnssecReporter`
+- `core.dnssec_withdrawal_backup: DnssecWithdrawalBackup`
 - `core.edit_lock: ZoneEditLockedError`
 - `core.models: Health, Zone, ZoneStatus`
 - `core.multi_zone_session: MultiZoneEditSession, MultiZoneSessionError`
@@ -588,6 +805,19 @@ Brak docstringa.
 - `__future__: annotations`
 - `curses`
 - `collections.abc: Callable`
+
+## `src/zonectl/ui/dnssec_status_view.py`
+
+Presentation model for the read-only DNSSEC TUI screen.
+
+**Importy:**
+
+- `__future__: annotations`
+- `dataclasses: dataclass`
+- `re`
+- `core.dnssec_ds_check: DnssecDsCheck`
+- `core.dnssec_guidance: build_dnssec_guidance`
+- `core.dnssec_report: DnssecReport`
 
 ## `src/zonectl/ui/form_style.py`
 
@@ -626,6 +856,7 @@ Stan, sortowanie i filtrowanie widoku rekordów DNS.
 
 - `__future__: annotations`
 - `collections.abc: Sequence`
+- `re`
 - `zonectl.core.zone_model: ZoneModel, ZoneRecordView`
 
 ## `src/zonectl/ui/records/editor.py`

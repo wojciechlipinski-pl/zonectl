@@ -1,6 +1,6 @@
 # Dokumentacja modułów
 
-> Wygenerowano z AST: `2026-07-31T14:40:09+02:00`.
+> Wygenerowano z AST: `2026-08-11T13:14:02+02:00`.
 
 ## `src/elkman_dns/__init__.py`
 
@@ -20,43 +20,43 @@ Brak docstringa.
 
 ### `def parser`
 
-Linia: `39`
+Linia: `58`
 
 Brak docstringa.
 
 ### `def legacy_main`
 
-Linia: `347`
+Linia: `554`
 
 Brak docstringa.
 
 ### `def grouped_lines`
 
-Linia: `357`
+Linia: `564`
 
 Brak docstringa.
 
 ### `def print_transaction`
 
-Linia: `371`
+Linia: `578`
 
 Brak docstringa.
 
 ### `def transaction_main`
 
-Linia: `381`
+Linia: `587`
 
 Brak docstringa.
 
 ### `def main`
 
-Linia: `445`
+Linia: `651`
 
 Brak docstringa.
 
 ### `def deprecated_main`
 
-Linia: `826`
+Linia: `1568`
 
 Brak docstringa.
 
@@ -267,9 +267,9 @@ Konfiguracja ZoneCTL. Konfiguracja BIND jest źródłem prawdy dla: - nazw stref
 - `_zone_override` — linia 235; brak docstringa.
 - `_group_for` — linia 247; brak docstringa.
 - `_zone_from_discovery` — linia 263; brak docstringa.
-- `_zones_from_discovery` — linia 330; brak docstringa.
-- `_zones_from_legacy_config` — linia 344; tryb zgodności ze starym zones.conf. używany wyłącznie, gdy auto_discover_zones = no.
-- `zones` — linia 422; brak docstringa.
+- `_zones_from_discovery` — linia 331; brak docstringa.
+- `_zones_from_legacy_config` — linia 345; tryb zgodności ze starym zones.conf. używany wyłącznie, gdy auto_discover_zones = no.
+- `zones` — linia 428; brak docstringa.
 
 ## `src/zonectl/core/discovery.py`
 
@@ -332,6 +332,455 @@ Czyta konfigurację BIND, rozwija include i wykrywa strefy.
 - `_find_block_end` — linia 470; brak docstringa.
 - `_strip_comments` — linia 509; usuwa komentarze //, # i /* ... */, ale zachowuje tekst wewnątrz cudzysłowów.
 
+## `src/zonectl/core/dnssec_confirm_ds.py`
+
+Controlled acknowledgement of a published DS record in BIND KASP.
+
+### `class DnssecConfirmStep`
+
+Linia: `20`
+
+Brak docstringa.
+
+### `class DnssecConfirmResult`
+
+Linia: `27`
+
+Brak docstringa.
+
+### `class DnssecConfirmDsTransaction`
+
+Linia: `40`
+
+Acknowledge DS only after an independent check returned PASS.
+
+**Metody:**
+
+- `__init__` — linia 43; brak docstringa.
+- `apply` — linia 56; brak docstringa.
+- `_finish` — linia 121; brak docstringa.
+- `_atomic_json` — linia 141; brak docstringa.
+- `_confirm` — linia 156; brak docstringa.
+- `_verify` — linia 162; brak docstringa.
+
+## `src/zonectl/core/dnssec_disable_plan.py`
+
+Side-effect-free plan for safely withdrawing DNSSEC from a BIND zone.
+
+### `class DnssecDisablePlanError`
+
+Linia: `13`
+
+The requested DNSSEC withdrawal is unsafe or ambiguous.
+
+### `class DnssecDisablePlan`
+
+Linia: `18`
+
+Brak docstringa.
+
+**Metody:**
+
+- `to_dict` — linia 33; brak docstringa.
+
+### `class DnssecDisablePlanner`
+
+Linia: `45`
+
+Build the final unsigned configuration without changing the system.
+
+**Metody:**
+
+- `_artifacts` — linia 63; brak docstringa.
+- `plan` — linia 72; brak docstringa.
+
+## `src/zonectl/core/dnssec_disable_transaction.py`
+
+Transakcyjne wycofanie DNSSEC — dwa etapy. BIND nie pozwala po prostu usunąć ``dnssec-policy``: dokumentacja wymaga przejścia przez wbudowaną politykę ``insecure``, bo w przeciwnym razie strefa zostanie ponownie podpisana. Stąd dwa etapy: **Etap ``insecure``** — podmienia ``dnssec-policy default`` na ``dnssec-policy insecure``, zostawiając ``inline-signing``. Bramką jest zniknięcie DS ze wszystkich kontrolowanych resolverów, czyli dokładnie ten sam warunek, który przepuszcza ``withdrawal-confirm``. Dopiero ta zmiana przestawia cel KASP z ``omnipresent`` na ``hidden`` i uruchamia uporządkowane wycofywanie kluczy. **Etap ``finalize``** — usuwa ``dnssec-policy``, ``inline-signing`` i ``key-directory``. Bramką jest potwierdzenie z KASP, że **wszystkie** klucze mają ``goal``, ``dnskey`` i ``ds`` w stanie ``hidden``. Ta bramka jest osiągalna wyłącznie po etapie pierwszym. W obu etapach brak ``--commit`` oznacza dry-run, każde niepowodzenie walidacji powoduje pełny rollback deklaracji z backupu, a klucze i pakiet odtworzeniowy pozostają nietknięte.
+
+### `class DnssecDisableStep`
+
+Linia: `42`
+
+Brak docstringa.
+
+### `class DnssecDisableResult`
+
+Linia: `49`
+
+Brak docstringa.
+
+**Metody:**
+
+- `ok` — linia 62; brak docstringa.
+
+### `class KaspReading`
+
+Linia: `74`
+
+Odczyt stanu kluczy z ``rndc dnssec -status``. ``all_hidden`` jest ``None``, gdy wyjścia nie udało się zinterpretować — tylko wtedy dopuszczamy świadome przesłonięcie bramki.
+
+### `def read_kasp_states`
+
+Linia: `89`
+
+Brak docstringa.
+
+### `class DnssecDisableTransaction`
+
+Linia: `106`
+
+Stosuje diff wycofania DNSSEC z backupem i pełnym rollbackiem.
+
+**Metody:**
+
+- `__init__` — linia 109; brak docstringa.
+- `apply` — linia 132; brak docstringa.
+- `_insecure_gate` — linia 268; etap 1 wolno wykonać dopiero, gdy ds zniknął z resolverów.
+- `_finalize_gate` — linia 313; etap 2 wolno wykonać dopiero, gdy kasp schował wszystkie klucze.
+- `_serial_gate` — linia 358; nie dopuść do cofnięcia soa po odłączeniu inline-signing.
+- `_preflight` — linia 409; brak docstringa.
+- `_finish` — linia 426; brak docstringa.
+- `_copy_backup` — linia 451; brak docstringa.
+- `_atomic_write` — linia 458; brak docstringa.
+- `_validate_config` — linia 477; brak docstringa.
+- `_activate_bind` — linia 486; brak docstringa.
+- `_verify_loaded` — linia 495; brak docstringa.
+
+## `src/zonectl/core/dnssec_ds_check.py`
+
+Read-only verification of DNSSEC delegation and authoritative servers.
+
+### `class DsResolverCheck`
+
+Linia: `14`
+
+Brak docstringa.
+
+### `class DnskeyAuthorityCheck`
+
+Linia: `22`
+
+Brak docstringa.
+
+### `class DnssecDsCheck`
+
+Linia: `32`
+
+Brak docstringa.
+
+**Metody:**
+
+- `to_dict` — linia 42; brak docstringa.
+
+### `class DnssecDsChecker`
+
+Linia: `46`
+
+Compare DS and DNSKEY through independent read-only DNS queries.
+
+**Metody:**
+
+- `__init__` — linia 49; brak docstringa.
+- `_command` — linia 60; brak docstringa.
+- `_dig` — linia 63; brak docstringa.
+- `_normal` — linia 85; brak docstringa.
+- `_kasp_ready` — linia 89; brak docstringa.
+- `_kasp_ds_state` — linia 103; brak docstringa.
+- `collect` — linia 111; brak docstringa.
+
+## `src/zonectl/core/dnssec_enable_plan.py`
+
+Pozbawiony skutków ubocznych plan włączenia DNSSEC w BIND.
+
+### `class DnssecEnablePlanError`
+
+Linia: `13`
+
+Plan włączenia DNSSEC jest niebezpieczny albo niejednoznaczny.
+
+### `class DnssecEnablePlan`
+
+Linia: `18`
+
+Brak docstringa.
+
+**Metody:**
+
+- `to_dict` — linia 31; brak docstringa.
+
+### `class DnssecEnablePlanner`
+
+Linia: `43`
+
+Buduje plan zmiany deklaracji strefy, ale niczego nie zapisuje.
+
+**Metody:**
+
+- `_display_lines` — linia 55; normalizuje wyłącznie końcowe spacje na potrzeby czytelnego diffu.
+- `_unified_range` — linia 65; brak docstringa.
+- `_unified_diff` — linia 74; tworzy diff bez heurystyki autojunk mylącej powtarzalne bloki bind.
+- `_matching_brace` — linia 108; brak docstringa.
+- `_target_block` — linia 133; brak docstringa.
+- `plan` — linia 155; brak docstringa.
+
+## `src/zonectl/core/dnssec_enable_transaction.py`
+
+Transakcyjne zastosowanie planu włączenia DNSSEC.
+
+### `class DnssecEnableStep`
+
+Linia: `20`
+
+Brak docstringa.
+
+### `class DnssecEnableResult`
+
+Linia: `27`
+
+Brak docstringa.
+
+**Metody:**
+
+- `ok` — linia 38; brak docstringa.
+
+### `class DnssecEnableTransaction`
+
+Linia: `47`
+
+Stosuje plan DNSSEC z backupem i pełnym rollbackiem plików.
+
+**Metody:**
+
+- `__init__` — linia 50; brak docstringa.
+- `apply` — linia 71; brak docstringa.
+- `_preflight` — linia 182; brak docstringa.
+- `_finish` — linia 208; brak docstringa.
+- `_copy_backup` — linia 229; brak docstringa.
+- `_atomic_write` — linia 236; brak docstringa.
+- `_atomic_copy_exact` — linia 253; brak docstringa.
+- `_atomic_copy_to_parent_owner` — linia 258; brak docstringa.
+- `_remove_new_artifacts` — linia 264; brak docstringa.
+- `_validate_zone` — linia 270; brak docstringa.
+- `_validate_config` — linia 275; brak docstringa.
+- `_activate_bind` — linia 280; brak docstringa.
+- `_verify_loaded` — linia 285; brak docstringa.
+- `_verify_dnssec` — linia 290; brak docstringa.
+
+## `src/zonectl/core/dnssec_finalize_serial.py`
+
+Safe SOA preparation before DNSSEC withdrawal finalization.
+
+### `class DnssecFinalizeSerialStep`
+
+Linia: `22`
+
+Brak docstringa.
+
+### `class DnssecFinalizeSerialResult`
+
+Linia: `29`
+
+Brak docstringa.
+
+### `class DnssecFinalizeSerialTransaction`
+
+Linia: `45`
+
+Raise the source SOA above the currently served signed serial.
+
+**Metody:**
+
+- `__init__` — linia 48; brak docstringa.
+- `apply` — linia 61; brak docstringa.
+- `_blocked` — linia 151; brak docstringa.
+- `_served_serial` — linia 159; brak docstringa.
+- `_validate_zone` — linia 174; brak docstringa.
+
+## `src/zonectl/core/dnssec_guidance.py`
+
+Operator guidance derived from the read-only DNSSEC report.
+
+### `class DnssecGuidance`
+
+Linia: `15`
+
+Brak docstringa.
+
+**Metody:**
+
+- `to_dict` — linia 23; brak docstringa.
+
+### `def _kasp_states`
+
+Linia: `27`
+
+Brak docstringa.
+
+### `def localize_bind_time`
+
+Linia: `40`
+
+Convert a BIND GMT timestamp to the server's local timezone.
+
+### `def build_dnssec_guidance`
+
+Linia: `53`
+
+Return one unambiguous next step without changing BIND.
+
+## `src/zonectl/core/dnssec_report.py`
+
+Odczytowy raport konfiguracji i stanu DNSSEC strefy.
+
+### `class DnssecReport`
+
+Linia: `18`
+
+Brak docstringa.
+
+**Metody:**
+
+- `to_dict` — linia 38; brak docstringa.
+
+### `def _dns_name_wire`
+
+Linia: `44`
+
+Brak docstringa.
+
+### `def _key_tag`
+
+Linia: `57`
+
+Brak docstringa.
+
+### `def dnskey_to_ds`
+
+Linia: `65`
+
+Oblicz RDATA rekordu DS z tekstowego RDATA DNSKEY (RFC 4034).
+
+### `def _answer_rdata`
+
+Linia: `86`
+
+Brak docstringa.
+
+### `class DnssecReporter`
+
+Linia: `116`
+
+Zbiera stan DNSSEC bez wykonywania operacji zmieniających system.
+
+**Metody:**
+
+- `__init__` — linia 119; brak docstringa.
+- `_command` — linia 132; brak docstringa.
+- `_dig` — linia 139; brak docstringa.
+- `_key_files` — linia 155; brak docstringa.
+- `_signing_state` — linia 168; brak docstringa.
+- `collect` — linia 189; brak docstringa.
+
+## `src/zonectl/core/dnssec_withdrawal_backup.py`
+
+Verified recovery package created before DNSSEC withdrawal.
+
+### `class DnssecWithdrawalBackupStep`
+
+Linia: `19`
+
+Brak docstringa.
+
+### `class DnssecWithdrawalBackupResult`
+
+Linia: `26`
+
+Brak docstringa.
+
+### `class DnssecWithdrawalBackupError`
+
+Linia: `36`
+
+A complete and verified recovery package could not be created.
+
+### `class DnssecWithdrawalBackup`
+
+Linia: `40`
+
+Copy every withdrawal input into an atomically published package.
+
+**Metody:**
+
+- `__init__` — linia 43; brak docstringa.
+- `_sha256` — linia 47; brak docstringa.
+- `_copy_record` — linia 55; brak docstringa.
+- `_sources` — linia 84; brak docstringa.
+- `_preflight` — linia 97; brak docstringa.
+- `create` — linia 108; brak docstringa.
+
+## `src/zonectl/core/dnssec_withdrawal_check.py`
+
+Read-only confirmation that DS has disappeared everywhere before withdrawal. This is the mirror image of :mod:`dnssec_ds_check`: instead of waiting for a DS record to *appear* at every resolver, it waits for the DS record to *disappear* at every resolver before allowing the operator to run ``rndc dnssec -checkds withdrawn``. As long as any checked resolver still returns a DS record, the result is ``BLOCKED`` and no follow-up command should touch KASP or the registrar.
+
+### `class ResolverDsWithdrawalCheck`
+
+Linia: `21`
+
+Brak docstringa.
+
+### `class DnssecWithdrawalCheckResult`
+
+Linia: `29`
+
+Brak docstringa.
+
+**Metody:**
+
+- `to_dict` — linia 36; brak docstringa.
+
+### `class DnssecWithdrawalChecker`
+
+Linia: `40`
+
+Confirms DS is gone everywhere before permitting the withdrawn step. Purely read-only: issues ``dig ... DS`` queries against each resolver and never touches BIND, KASP, or the registrar. ``dig_runner`` can be injected for testing; it defaults to a real ``subprocess.run`` call.
+
+**Metody:**
+
+- `__init__` — linia 48; brak docstringa.
+- `_default_dig_runner` — linia 57; brak docstringa.
+- `_check_resolver` — linia 68; brak docstringa.
+- `collect` — linia 102; brak docstringa.
+
+## `src/zonectl/core/dnssec_withdrawal_confirm.py`
+
+Guarded confirmation of DNSSEC withdrawal. This is the write-side counterpart to :mod:`dnssec_withdrawal_check`. It is the only place in ZoneCTL allowed to run ``rndc dnssec -checkds withdrawn``, and it refuses to do so unless: 1. the caller passed ``--commit`` (otherwise it is a pure dry-run), and 2. the caller passed the explicit ``--acknowledge-withdrawn`` flag, and 3. a *freshly run* :class:`DnssecWithdrawalChecker` reports ``READY_FOR_WITHDRAWN`` at the moment of the call. Any of those failing leaves BIND, KASP, and the zone completely untouched and returns ``BLOCKED`` with the reason. A successful run writes a manifest recording the DS check that authorized it, so the decision is auditable after the fact.
+
+### `class DnssecWithdrawalConfirmStep`
+
+Linia: `36`
+
+Brak docstringa.
+
+### `class DnssecWithdrawalConfirmResult`
+
+Linia: `43`
+
+Brak docstringa.
+
+### `class DnssecWithdrawalConfirmTransaction`
+
+Linia: `52`
+
+Executes the withdrawn step only behind a freshly verified gate.
+
+**Metody:**
+
+- `__init__` — linia 55; brak docstringa.
+- `_default_rndc_runner` — linia 68; brak docstringa.
+- `_step` — linia 79; brak docstringa.
+- `apply` — linia 82; brak docstringa.
+
 ## `src/zonectl/core/edit_lock.py`
 
 Brak docstringa.
@@ -381,7 +830,7 @@ Brak docstringa.
 
 ### `class ZoneStatus`
 
-Linia: `32`
+Linia: `33`
 
 Brak docstringa.
 
@@ -1681,53 +2130,69 @@ Brak docstringa.
 
 ### `class Row`
 
-Linia: `50`
+Linia: `61`
 
 Brak docstringa.
 
 ### `class CursesApp`
 
-Linia: `57`
+Linia: `68`
 
 Brak docstringa.
 
 **Metody:**
 
-- `__init__` — linia 60; brak docstringa.
-- `run` — linia 105; brak docstringa.
-- `_main` — linia 108; brak docstringa.
-- `_init_colors` — linia 149; brak docstringa.
-- `_color` — linia 160; brak docstringa.
-- `_symbol` — linia 171; brak docstringa.
-- `_start_refresh` — linia 174; brak docstringa.
-- `_refresh_worker` — linia 182; brak docstringa.
-- `_consume_results` — linia 196; brak docstringa.
-- `_zone_key` — linia 207; brak docstringa.
-- `_ordered_groups` — linia 224; brak docstringa.
-- `_rebuild_rows` — linia 231; brak docstringa.
-- `_selected_zone_name` — linia 255; brak docstringa.
-- `_draw` — linia 260; brak docstringa.
-- `_activate` — linia 321; brak docstringa.
-- `_toggle_multi_selection` — linia 334; dodaj lub usuń bieżącą strefę z zestawu wielostrefowego.
-- `_activate_group_selection` — linia 347; zachowaj dotychczasowe działanie spacji dla nagłówka grupy.
-- `_search` — linia 360; filtruje domeny na głównej liście.
-- `_create_zone_wizard` — linia 376; collect, preview and transactionally create a primary zone.
-- `_records_view` — linia 480; wyświetla i edytuje źródłowy dokument strefy.
-- `_message_view` — linia 1090; wyświetla prosty modalny komunikat.
-- `_function_key_sequence` — linia 1155; brak docstringa.
-- `_get_key` — linia 1161; odczytuje klawisz i rozpoznaje f2 wysyłane jako esc [ 12 ~.
-- `_transaction_result_view` — linia 1205; wyświetla wynik zapisu lub rollbacku transakcji.
-- `_pending_changes_view` — linia 1218; wyświetla oczekujące zmiany w rekordach strefy.
-- `_diff_view` — linia 1448; wyświetl przewijany unified diff bez zapisywania strefy.
-- `_export_diff` — linia 1549; wyeksportuj oczekujące zmiany bez wykonywania commit.
-- `_read_only_message` — linia 1577; brak docstringa.
-- `_bulk_operation_view` — linia 1591; brak docstringa.
-- `_bulk_preview_view` — linia 1694; pokaż podgląd; enter przechodzi do potwierdzenia.
-- `_approve_zone_change` — linia 1754; odrzuć nowe błędy i wymagaj potwierdzenia nowych ostrzeżeń.
-- `_multi_zone_view` — linia 1816; edytuj kilka zaznaczonych stref w jednej sesji tui.
-- `_domain_view` — linia 2027; wyświetla szczegóły wybranej strefy. klawisze: - r: ponowne sprawdzenie strefy, - q / esc / backspace: powrót do listy.
-- `_serial_ok` — linia 2296; brak docstringa.
-- `_bool_text` — linia 2306; brak docstringa.
+- `__init__` — linia 71; brak docstringa.
+- `run` — linia 116; brak docstringa.
+- `_main` — linia 119; brak docstringa.
+- `_init_colors` — linia 160; brak docstringa.
+- `_color` — linia 171; brak docstringa.
+- `_symbol` — linia 182; brak docstringa.
+- `_start_refresh` — linia 185; brak docstringa.
+- `_refresh_worker` — linia 193; brak docstringa.
+- `_consume_results` — linia 207; brak docstringa.
+- `_zone_key` — linia 218; brak docstringa.
+- `_ordered_groups` — linia 235; brak docstringa.
+- `_rebuild_rows` — linia 242; brak docstringa.
+- `_selected_zone_name` — linia 266; brak docstringa.
+- `_draw` — linia 271; brak docstringa.
+- `_activate` — linia 332; brak docstringa.
+- `_toggle_multi_selection` — linia 345; dodaj lub usuń bieżącą strefę z zestawu wielostrefowego.
+- `_activate_group_selection` — linia 358; zachowaj dotychczasowe działanie spacji dla nagłówka grupy.
+- `_search` — linia 371; filtruje domeny na głównej liście.
+- `_create_zone_wizard` — linia 387; collect, preview and transactionally create a primary zone.
+- `_records_view` — linia 491; wyświetla i edytuje źródłowy dokument strefy.
+- `_message_view` — linia 1101; wyświetla zawijany i przewijany modalny komunikat.
+- `_wrap_message_lines` — linia 1179; zawijaj tekst, zachowując puste linie i wcięcie kontynuacji.
+- `_function_key_sequence` — linia 1203; brak docstringa.
+- `_get_key` — linia 1209; odczytuje klawisz i rozpoznaje f2 wysyłane jako esc [ 12 ~.
+- `_transaction_result_view` — linia 1253; wyświetla wynik zapisu lub rollbacku transakcji.
+- `_pending_changes_view` — linia 1266; wyświetla oczekujące zmiany w rekordach strefy.
+- `_diff_view` — linia 1496; wyświetl przewijany unified diff bez zapisywania strefy.
+- `_export_diff` — linia 1597; wyeksportuj oczekujące zmiany bez wykonywania commit.
+- `_read_only_message` — linia 1625; brak docstringa.
+- `_bulk_operation_view` — linia 1639; brak docstringa.
+- `_bulk_preview_view` — linia 1742; pokaż podgląd; enter przechodzi do potwierdzenia.
+- `_approve_zone_change` — linia 1802; odrzuć nowe błędy i wymagaj potwierdzenia nowych ostrzeżeń.
+- `_multi_zone_view` — linia 1864; edytuj kilka zaznaczonych stref w jednej sesji tui.
+- `_collect_dnssec_status` — linia 2075; brak docstringa.
+- `_ensure_dnssec_tui_allowed` — linia 2107; brak docstringa.
+- `_dnssec_disable_plan` — linia 2113; brak docstringa.
+- `_dnssec_enable_plan` — linia 2124; brak docstringa.
+- `_dnssec_enable_dry_run` — linia 2135; brak docstringa.
+- `_dnssec_enable_commit` — linia 2142; brak docstringa.
+- `_dnssec_confirm_ds` — linia 2149; brak docstringa.
+- `_dnssec_finalize_dry_run` — linia 2173; brak docstringa.
+- `_dnssec_finalize_commit` — linia 2180; brak docstringa.
+- `_dnssec_withdrawal_backup` — linia 2187; brak docstringa.
+- `_dnssec_backup_result_lines` — linia 2219; brak docstringa.
+- `_dnssec_enable_result_lines` — linia 2235; brak docstringa.
+- `_dnssec_confirm_result_lines` — linia 2248; brak docstringa.
+- `_dnssec_disable_result_lines` — linia 2262; brak docstringa.
+- `_dnssec_status_view` — linia 2276; read-only dnssec workflow status with explicit operator guidance.
+- `_domain_view` — linia 2682; wyświetla szczegóły wybranej strefy. klawisze: - r: ponowne sprawdzenie strefy, - q / esc / backspace: powrót do listy.
+- `_serial_ok` — linia 2956; brak docstringa.
+- `_bool_text` — linia 2966; brak docstringa.
 
 ## `src/zonectl/ui/dialogs.py`
 
@@ -1745,6 +2210,24 @@ Wspólne dialogi tekstowe interfejsu curses.
 - `text_input` — linia 30; wyświetla jednowierszowy dialog tekstowy. enter zatwierdza wartość. esc anuluje dialog.
 - `search` — linia 132; brak docstringa.
 - `confirm` — linia 153; wyświetla potwierdzenie [t/n].
+
+## `src/zonectl/ui/dnssec_status_view.py`
+
+Presentation model for the read-only DNSSEC TUI screen.
+
+### `class DnssecStatusView`
+
+Linia: `14`
+
+Brak docstringa.
+
+**Metody:**
+
+- `build` — linia 24; brak docstringa.
+- `_operation_for_stage` — linia 120; brak docstringa.
+- `_operation_label` — linia 132; brak docstringa.
+- `_kasp_ds_state` — linia 142; brak docstringa.
+- `_yes_no` — linia 150; brak docstringa.
 
 ## `src/zonectl/ui/form_style.py`
 
@@ -1768,7 +2251,7 @@ Brak docstringa.
 
 ### `def decode_function_key`
 
-Linia: `31`
+Linia: `41`
 
 Rozpoznaj sekwencję funkcyjną xterm lub PuTTY/Linux.
 
@@ -1782,27 +2265,33 @@ Brak klas i funkcji na poziomie modułu.
 
 Stan, sortowanie i filtrowanie widoku rekordów DNS.
 
+### `def natural_name_key`
+
+Linia: `11`
+
+Sortuj cyfry według wartości, a tekst bez rozróżniania liter.
+
 ### `class RecordController`
 
-Linia: `10`
+Linia: `23`
 
 Zarządza prezentacją rekordów bez zależności od curses.
 
 **Metody:**
 
-- `__init__` — linia 19; brak docstringa.
-- `sort_name` — linia 33; brak docstringa.
-- `cycle_sort` — linia 36; brak docstringa.
-- `set_search` — linia 44; brak docstringa.
-- `clear_search` — linia 49; brak docstringa.
-- `_name_key` — linia 54; brak docstringa.
-- `_type_key` — linia 67; brak docstringa.
-- `_ttl_key` — linia 80; brak docstringa.
-- `ordered_views` — linia 94; brak docstringa.
-- `clamp_selection` — linia 140; brak docstringa.
-- `move` — linia 167; brak docstringa.
-- `current` — linia 181; brak docstringa.
-- `select_identifier` — linia 193; brak docstringa.
+- `__init__` — linia 32; brak docstringa.
+- `sort_name` — linia 46; brak docstringa.
+- `cycle_sort` — linia 49; brak docstringa.
+- `set_search` — linia 57; brak docstringa.
+- `clear_search` — linia 62; brak docstringa.
+- `_name_key` — linia 67; brak docstringa.
+- `_type_key` — linia 80; brak docstringa.
+- `_ttl_key` — linia 93; brak docstringa.
+- `ordered_views` — linia 107; brak docstringa.
+- `clamp_selection` — linia 153; brak docstringa.
+- `move` — linia 180; brak docstringa.
+- `current` — linia 194; brak docstringa.
+- `select_identifier` — linia 206; brak docstringa.
 
 ## `src/zonectl/ui/records/editor.py`
 
@@ -1905,4 +2394,4 @@ Pełnoekranowy formularz parametrów nowej strefy DNS.
 - `_get_key` — linia 35; brak docstringa.
 - `_put` — linia 60; brak docstringa.
 - `_edit_line` — linia 69; brak docstringa.
-- `collect` — linia 117; brak docstringa.
+- `collect` — linia 121; brak docstringa.
