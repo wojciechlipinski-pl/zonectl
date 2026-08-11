@@ -2103,7 +2103,15 @@ class CursesApp:
         ).collect(zone.name, resolvers)
         return DnssecStatusView.build(report, delegation)
 
+    @staticmethod
+    def _ensure_dnssec_tui_allowed(zone: Zone) -> None:
+        if zone.health_profile.casefold() == "rpz":
+            raise RuntimeError(
+                f"Operacje DNSSEC w TUI są zablokowane dla RPZ: {zone.name}"
+            )
+
     def _dnssec_disable_plan(self, zone: Zone):
+        self._ensure_dnssec_tui_allowed(zone)
         if self.config is None:
             raise RuntimeError("Brak konfiguracji ZoneCTL")
         discovered = self.config.discovered_zone(zone.name)
@@ -2114,6 +2122,7 @@ class CursesApp:
         return DnssecDisablePlanner().plan(discovered)
 
     def _dnssec_enable_plan(self, zone: Zone):
+        self._ensure_dnssec_tui_allowed(zone)
         if self.config is None:
             raise RuntimeError("Brak konfiguracji ZoneCTL")
         discovered = self.config.discovered_zone(zone.name)
@@ -2138,6 +2147,7 @@ class CursesApp:
         ).apply(plan, commit=True, activate=True)
 
     def _dnssec_confirm_ds(self, zone: Zone, *, commit: bool = False):
+        self._ensure_dnssec_tui_allowed(zone)
         toolkit = self.config.toolkit if self.config is not None else {}
         local_server = toolkit.get("local_server", "127.0.0.1")
         timeout = int(toolkit.get("dig_timeout", "3"))

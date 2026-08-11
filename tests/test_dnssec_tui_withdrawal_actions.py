@@ -3,6 +3,8 @@ from __future__ import annotations
 import inspect
 from pathlib import Path
 
+import pytest
+
 from zonectl.core.dnssec_disable_transaction import DnssecDisableResult
 from zonectl.core.dnssec_enable_transaction import DnssecEnableResult
 from zonectl.core.dnssec_confirm_ds import DnssecConfirmResult
@@ -255,3 +257,20 @@ def test_confirm_ds_ui_requires_fresh_check_and_exact_confirmation() -> None:
     assert "Wpisz pełną nazwę strefy, aby potwierdzić DS" in source
     assert "Potwierdzić opublikowany DS" in source
     assert "committed = self._dnssec_confirm_ds(" in source
+
+
+@pytest.mark.parametrize(
+    "method",
+    ["_dnssec_enable_plan", "_dnssec_disable_plan", "_dnssec_confirm_ds"],
+)
+def test_dnssec_tui_write_workflows_reject_rpz(method: str) -> None:
+    app = CursesApp.__new__(CursesApp)
+    app.config = None
+    zone = Zone(
+        "cert-rpz.local",
+        Path("zone.db"),
+        health_profile="rpz",
+    )
+
+    with pytest.raises(RuntimeError, match="zablokowane dla RPZ"):
+        getattr(app, method)(zone)
