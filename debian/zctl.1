@@ -1,0 +1,39 @@
+.TH ZCTL 1 "11 August 2026" "ZoneCTL 4.6.0" "System Administration"
+.SH NAME
+zctl \- transactional DNS management toolkit for BIND 9
+.SH SYNOPSIS
+.B zctl
+.RI [ options ]
+.I command
+.RI [ arguments ]
+.SH DESCRIPTION
+.B zctl
+provides guarded CLI and TUI workflows for DNS zones, records, lifecycle
+operations and DNSSEC management. Mutating operations default to dry-run and
+require explicit confirmation before changing BIND configuration.
+.SH COMMANDS
+.TP
+.B tui
+Start the terminal user interface.
+.TP
+.B zone
+Plan and execute zone lifecycle operations.
+.TP
+.B dnssec
+Report, enable, verify and safely withdraw DNSSEC.
+.SH FILES
+.TP
+.I /etc/bind
+BIND configuration inspected or modified by explicitly committed operations.
+.TP
+.I /var/lib/zonectl
+ZoneCTL state, disabled zones and quarantine data.
+.TP
+.I /var/backups/zonectl-*
+Transactional backups and manifests.
+.SH SEE ALSO
+.BR named (8),
+.BR rndc (8),
+.BR named-checkconf (8),
+.BR named-checkzone (8),
+.BR dig (1)

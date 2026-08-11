@@ -17,7 +17,8 @@ zctl domains
 zctl domains --grouped
 ```
 
-Stare polecenie `elkman-dns` pozostaje chwilowo dostępne i wyświetla ostrzeżenie.
+Pakiet systemowy instaluje wyłącznie polecenie `zctl`. Historyczna nazwa
+`elkman-dns` nie jest już udostępniana jako systemowy entry point.
 
 ## Cykl życia stref
 

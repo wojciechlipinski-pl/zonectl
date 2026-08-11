@@ -1,0 +1,29 @@
+Source: zonectl
+Section: admin
+Priority: optional
+Maintainer: Wojciech Lipiński <wojciech.lipinski.elk@gmail.com>
+Build-Depends:
+ debhelper-compat (= 13),
+ dh-python,
+ pybuild-plugin-pyproject,
+ python3-all,
+ python3-pytest,
+ python3-setuptools (>= 68),
+ bind9-utils (>= 1:9.20.0),
+ bind9-dnsutils (>= 1:9.20.0)
+Standards-Version: 4.7.4
+Rules-Requires-Root: no
+
+Package: zonectl
+Architecture: all
+Depends:
+ ${misc:Depends},
+ ${python3:Depends},
+ python3 (>= 3.11),
+ bind9 (>= 1:9.20.0),
+ bind9-utils (>= 1:9.20.0),
+ bind9-dnsutils (>= 1:9.20.0)
+Description: transactional DNS management toolkit for BIND 9
+ ZoneCTL provides guarded CLI and TUI workflows for BIND DNS zones, records,
+ lifecycle operations and DNSSEC management. Mutating operations use plans,
+ validation, backups, explicit confirmation and rollback.

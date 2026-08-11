@@ -1,0 +1,12 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: ZoneCTL
+
+Files: *
+Copyright: 2026 Wojciech Lipiński
+License: Proprietary
+ All rights reserved.
+
+Files: debian/*
+Copyright: 2026 Wojciech Lipiński
+License: Proprietary
+ All rights reserved.

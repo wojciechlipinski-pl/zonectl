@@ -14,7 +14,6 @@ authors = [
 
 [project.scripts]
 zctl = "zonectl.cli:main"
-elkman-dns = "elkman_dns.cli:deprecated_main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
