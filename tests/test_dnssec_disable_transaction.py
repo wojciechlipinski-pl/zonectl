@@ -59,6 +59,7 @@ def engine(tmp_path: Path, **overrides):
         "config_validator": ok("named-checkconf"),
         "activator": ok("rndc-reconfig"),
         "loaded_verifier": ok("rndc-zonestatus"),
+        "serial_gate": ok("serial-gate"),
     }
     defaults.update(overrides)
     return DnssecDisableTransaction(
@@ -164,6 +165,38 @@ def test_finalize_advises_insecure_when_withdrawal_has_not_started(
 
     assert result.status == "BLOCKED"
     assert "Wykonaj najpierw etap insecure" in result.steps[0].message
+
+
+def test_finalize_blocks_serial_regression(tmp_path: Path) -> None:
+    plan, declaration = setup_plan(tmp_path)
+    before = declaration.read_text(encoding="utf-8")
+
+    result = engine(
+        tmp_path,
+        serial_gate=lambda _zone, _path: DnssecDisableStep(
+            "serial-gate",
+            False,
+            "serial źródłowy 2026072701 nie jest wyższy od 2026072716",
+        ),
+    ).apply(plan, stage="finalize", commit=True, activate=True)
+
+    assert result.status == "BLOCKED"
+    assert "serial źródłowy" in result.steps[-1].message
+    assert declaration.read_text(encoding="utf-8") == before
+
+
+def test_finalize_accepts_newer_source_serial(tmp_path: Path) -> None:
+    plan, _declaration = setup_plan(tmp_path)
+
+    result = engine(
+        tmp_path,
+        serial_gate=lambda _zone, _path: DnssecDisableStep(
+            "serial-gate", True, "serial poprawny"
+        ),
+    ).apply(plan, stage="finalize")
+
+    assert result.status == "DRY-RUN"
+    assert result.steps[-2].name == "serial-gate"
 
 
 def test_visible_keys_cannot_be_overridden(tmp_path: Path) -> None:
@@ -283,3 +316,48 @@ def test_read_kasp_states_reports_unparsable_output(monkeypatch) -> None:
     )
 
     assert read_kasp_states("example.pl").all_hidden is None
+
+
+def test_serial_gate_prefers_signed_serial_and_blocks_regression(
+    monkeypatch,
+) -> None:
+    import zonectl.core.dnssec_disable_transaction as module
+    from zonectl.core.runner import CommandResult
+
+    def fake_run(command, _timeout):
+        if command[0] == "named-checkzone":
+            return CommandResult(0, "loaded serial 2026072701\nOK\n", "")
+        return CommandResult(
+            0,
+            "serial: 2026072701\nsigned serial: 2026072716\n",
+            "",
+        )
+
+    monkeypatch.setattr(module, "run", fake_run)
+
+    step = DnssecDisableTransaction._serial_gate(
+        "example.pl", Path("/zones/example.pl")
+    )
+
+    assert step.ok is False
+    assert "2026072701" in step.message
+    assert "2026072716" in step.message
+
+
+def test_serial_gate_accepts_newer_source_serial(monkeypatch) -> None:
+    import zonectl.core.dnssec_disable_transaction as module
+    from zonectl.core.runner import CommandResult
+
+    def fake_run(command, _timeout):
+        if command[0] == "named-checkzone":
+            return CommandResult(0, "loaded serial 2026081100\nOK\n", "")
+        return CommandResult(0, "signed serial: 2026072716\n", "")
+
+    monkeypatch.setattr(module, "run", fake_run)
+
+    step = DnssecDisableTransaction._serial_gate(
+        "example.pl", Path("/zones/example.pl")
+    )
+
+    assert step.ok is True
+    assert "2026081100" in step.message

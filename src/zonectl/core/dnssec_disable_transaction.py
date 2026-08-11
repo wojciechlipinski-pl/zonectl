@@ -67,6 +67,7 @@ KaspReader = Callable[[str], "KaspReading"]
 DsGate = Callable[[str], bool | None]
 ConfigValidator = Callable[[Path], DnssecDisableStep]
 ZoneAction = Callable[[str], DnssecDisableStep]
+SerialGate = Callable[[str, Path], DnssecDisableStep]
 
 
 @dataclass(slots=True)
@@ -116,6 +117,7 @@ class DnssecDisableTransaction:
         config_validator: ConfigValidator | None = None,
         activator: ZoneAction | None = None,
         loaded_verifier: ZoneAction | None = None,
+        serial_gate: SerialGate | None = None,
     ) -> None:
         self.backup_root = backup_root
         self.manifest_directory = manifest_directory
@@ -125,6 +127,7 @@ class DnssecDisableTransaction:
         self.config_validator = config_validator or self._validate_config
         self.activator = activator or self._activate_bind
         self.loaded_verifier = loaded_verifier or self._verify_loaded
+        self.serial_gate = serial_gate or self._serial_gate
 
     def apply(
         self,
@@ -160,6 +163,12 @@ class DnssecDisableTransaction:
         result.steps.append(gate)
         if not gate.ok:
             return self._finish(result, "BLOCKED", write_manifest=False)
+
+        if stage == "finalize":
+            serial_gate = self.serial_gate(plan.zone, plan.zone_file)
+            result.steps.append(serial_gate)
+            if not serial_gate.ok:
+                return self._finish(result, "BLOCKED", write_manifest=False)
 
         if not commit:
             return self._finish(
@@ -343,6 +352,57 @@ class DnssecDisableTransaction:
             False,
             f"Blokada: nie odczytano stanów kluczy z KASP ({reading.message}). "
             "Sprawdź ręcznie i użyj --acknowledge-unsigned, jeśli klucze są wycofane.",
+        )
+
+    @staticmethod
+    def _serial_gate(zone: str, zone_file: Path) -> DnssecDisableStep:
+        """Nie dopuść do cofnięcia SOA po odłączeniu inline-signing."""
+        source_result = run(["named-checkzone", zone, str(zone_file)], 30)
+        source_match = re.search(
+            r"\bloaded serial\s+(\d+)\b",
+            source_result.stdout + source_result.stderr,
+            re.IGNORECASE,
+        )
+        status_result = run(["rndc", "zonestatus", zone], 15)
+        status_text = status_result.stdout + status_result.stderr
+        signed_match = re.search(
+            r"^signed serial:\s*(\d+)\s*$",
+            status_text,
+            re.MULTILINE | re.IGNORECASE,
+        )
+        served_match = signed_match or re.search(
+            r"^serial:\s*(\d+)\s*$",
+            status_text,
+            re.MULTILINE | re.IGNORECASE,
+        )
+        if (
+            source_result.returncode != 0
+            or status_result.returncode != 0
+            or source_match is None
+            or served_match is None
+        ):
+            return DnssecDisableStep(
+                "serial-gate",
+                False,
+                "Blokada: nie udało się jednoznacznie porównać serialu "
+                "źródłowego z obecnie serwowanym serialem.",
+            )
+        source = int(source_match.group(1))
+        served = int(served_match.group(1))
+        difference = (source - served) % (2**32)
+        newer = 0 < difference < 2**31
+        if not newer:
+            return DnssecDisableStep(
+                "serial-gate",
+                False,
+                f"Blokada: serial źródłowy {source} nie jest wyższy od "
+                f"serwowanego serialu {served}. Podbij serial źródłowy przed "
+                "finalizacją, aby secondary pobrały strefę bez DNSSEC.",
+            )
+        return DnssecDisableStep(
+            "serial-gate",
+            True,
+            f"Serial źródłowy {source} jest wyższy od serwowanego {served}",
         )
 
     @staticmethod
