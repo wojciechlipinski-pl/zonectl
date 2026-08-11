@@ -301,6 +301,11 @@ przywraca `named.conf.local` oraz indeks i usuwa nową deklarację.
 Przed wdrożeniem produkcyjnym ten przebieg jest również sprawdzany w izolacji
 z prawdziwym `named-checkconf`, bez kontaktowania się z produkcyjnym `rndc`.
 
+W TUI ekran szczegółów strefy udostępnia `F6 migracja`. W widoku migracji
+`F3` pokazuje plan, a `F4` wykonuje dry-run i dopiero potem prosi o pełną nazwę
+strefy oraz końcowe potwierdzenie. Stany RPZ, DNSSEC, secondary i `MANAGED`
+pozostają zablokowane przez ten sam planner co CLI.
+
 Strefy z `health_profile = rpz` są automatycznie zarządzanymi źródłami
 polityki i nie podlegają zwykłemu cyklowi życia domen. ZoneCTL blokuje dla
 nich wyłączenie, przywrócenie i kwarantannę; nadal je monitoruje.

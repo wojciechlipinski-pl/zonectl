@@ -31,6 +31,13 @@ from ..core.dnssec_enable_plan import DnssecEnablePlanner
 from ..core.dnssec_enable_transaction import DnssecEnableTransaction
 from ..core.dnssec_report import DnssecReporter
 from ..core.dnssec_withdrawal_backup import DnssecWithdrawalBackup
+from ..core.managed_zone_migration import (
+    ManagedZoneMigrationError,
+    ManagedZoneMigrationPlanner,
+)
+from ..core.managed_zone_migration_transaction import (
+    ManagedZoneMigrationTransaction,
+)
 from ..core.edit_lock import ZoneEditLockedError
 from ..core.models import Health, Zone, ZoneStatus
 from ..core.multi_zone_session import (
@@ -2898,6 +2905,7 @@ class CursesApp:
 
             footer = (
                 " F3 rekordy"
+                "   F6 migracja"
                 "   d DNSSEC"
                 "   r odśwież strefę"
                 "   q/Esc/Backspace powrót "
@@ -2923,6 +2931,10 @@ class CursesApp:
 
             if key == curses.KEY_F3:
                 self._records_view(win, zone)
+                continue
+
+            if key == curses.KEY_F6:
+                self._zone_migration_view(win, zone)
                 continue
 
             if key in (ord("d"), ord("D")):
@@ -2952,6 +2964,192 @@ class CursesApp:
                     )
                     self.statuses[zone.name] = status
                     notice = f"Błąd odświeżania: {exc}"
+    def _zone_migration_planner(self) -> ManagedZoneMigrationPlanner:
+        toolkit = self.config.toolkit if self.config is not None else {}
+        return ManagedZoneMigrationPlanner(
+            root_config=Path(
+                toolkit.get("bind_root_config", "/etc/bind/named.conf")
+            ),
+            local_config=Path(
+                toolkit.get("bind_local_config", "/etc/bind/named.conf.local")
+            ),
+            managed_config=Path(
+                toolkit.get("managed_config", "/etc/bind/zonectl-zones.conf")
+            ),
+            managed_zone_directory=Path(
+                toolkit.get("managed_zone_dir", "/etc/bind/zonectl-zones.d")
+            ),
+        )
+
+    @staticmethod
+    def _migration_result_lines(result) -> list[str]:
+        lines = [
+            f"Transakcja: {result.transaction_id}",
+            f"Status: {result.status}",
+            f"Commit: {'TAK' if result.committed else 'NIE'}",
+            f"Rollback: {'TAK' if result.rolled_back else 'NIE'}",
+        ]
+        if result.backup_directory:
+            lines.append(f"Backup: {result.backup_directory}")
+        if result.manifest:
+            lines.append(f"Manifest: {result.manifest}")
+        lines.append("")
+        lines.extend(
+            f"[{'OK' if step.ok else 'BŁĄD'}] {step.name}: {step.message}"
+            for step in result.steps
+        )
+        return lines
+
+    def _zone_migration_view(self, win: curses.window, zone: Zone) -> None:
+        """F3 shows a plan; F4 runs dry-run and guarded migration."""
+        planner = self._zone_migration_planner()
+        try:
+            item = next(
+                entry
+                for entry in planner.inventory()
+                if entry.name.rstrip(".").casefold()
+                == zone.name.rstrip(".").casefold()
+            )
+        except (ManagedZoneMigrationError, OSError, StopIteration) as exc:
+            self._message_view(
+                win,
+                title=f"Migracja strefy: {zone.name}",
+                lines=[f"Nie można odczytać stanu migracji: {exc}"],
+                error=True,
+            )
+            return
+
+        while True:
+            height, width = win.getmaxyx()
+            win.erase()
+            win.addnstr(
+                0,
+                0,
+                f" Migracja strefy: {zone.name} ".ljust(width),
+                max(0, width - 1),
+                curses.A_REVERSE | curses.A_BOLD,
+            )
+            lines = [
+                f"Stan:       {item.state}",
+                f"Typ:        {item.zone_type}",
+                f"Deklaracja: {item.config_file}",
+                f"Powód:      {item.reason}",
+                "",
+                "Migracja obejmuje wyłącznie deklarację BIND.",
+                "Plik strefy i serial SOA nie zostaną zmienione.",
+            ]
+            for row, line in enumerate(lines, start=2):
+                if row < height - 2:
+                    win.addnstr(row, 2, line, max(0, width - 4))
+            footer = " F3 plan   F4 dry-run/migracja   q/Esc powrót "
+            win.addnstr(
+                height - 1,
+                0,
+                footer.ljust(width),
+                max(0, width - 1),
+                curses.A_REVERSE,
+            )
+            win.refresh()
+            key = self._get_key(win)
+            if key in (ord("q"), ord("Q"), 27, curses.KEY_BACKSPACE, 127, 8):
+                return
+            if key == curses.KEY_F3:
+                self._show_zone_migration_plan(win, zone, planner)
+                continue
+            if key == curses.KEY_F4:
+                if self.read_only:
+                    self._message_view(
+                        win,
+                        title="Tryb tylko do odczytu",
+                        lines=["Migracja strefy jest zablokowana."],
+                        error=True,
+                    )
+                    continue
+                if self._apply_zone_migration(win, zone, planner):
+                    return
+
+    def _show_zone_migration_plan(self, win, zone, planner) -> None:
+        try:
+            plan = planner.plan(zone.name)
+            lines = [
+                f"Źródło: {plan.source_config}",
+                f"Deklaracja: {plan.declaration_file}",
+                f"Indeks: {plan.managed_config}",
+                "",
+            ]
+            lines += (
+                plan.source_diff + plan.declaration_diff + plan.managed_diff
+            ).splitlines()
+            lines += ["", "Planowane etapy:"]
+            lines += [f"- {action}" for action in plan.actions]
+            self._message_view(
+                win, title=f"Plan migracji: {zone.name}", lines=lines
+            )
+        except (ManagedZoneMigrationError, OSError) as exc:
+            self._message_view(
+                win,
+                title="Migracja zablokowana",
+                lines=[str(exc)],
+                error=True,
+            )
+
+    def _apply_zone_migration(self, win, zone, planner) -> bool:
+        try:
+            plan = planner.plan(zone.name)
+            toolkit = self.config.toolkit if self.config is not None else {}
+            transaction = ManagedZoneMigrationTransaction(
+                Path(
+                    toolkit.get(
+                        "zone_migration_backup_root",
+                        "/var/backups/zonectl-zone-migration/backups",
+                    )
+                ),
+                Path(
+                    toolkit.get(
+                        "zone_migration_manifest_dir",
+                        "/var/backups/zonectl-zone-migration/manifests",
+                    )
+                ),
+                root_config=planner.root_config,
+            )
+            dry_run = transaction.apply(plan)
+            self._message_view(
+                win,
+                title=f"Dry-run migracji: {zone.name}",
+                lines=self._migration_result_lines(dry_run),
+            )
+            confirmation = CursesDialogs.text_input(
+                win,
+                " Wpisz pełną nazwę strefy, aby migrować: ",
+                initial="",
+            )
+            expected = zone.name.rstrip(".").casefold()
+            received = (confirmation or "").strip().rstrip(".").casefold()
+            if received != expected:
+                self._message_view(
+                    win,
+                    title="Migracja anulowana",
+                    lines=["Potwierdzenie nie odpowiada nazwie strefy."],
+                )
+                return False
+            if not CursesDialogs.confirm(
+                win, f"Migrować i przeładować BIND dla {zone.name}?"
+            ):
+                return False
+            result = transaction.apply(plan, commit=True, activate=True)
+            self._message_view(
+                win,
+                title=f"Wynik migracji: {zone.name}",
+                lines=self._migration_result_lines(result),
+                error=result.status != "COMMIT",
+            )
+            return result.status == "COMMIT"
+        except (ManagedZoneMigrationError, OSError) as exc:
+            self._message_view(
+                win, title="Błąd migracji", lines=[str(exc)], error=True
+            )
+            return False
+
     @staticmethod
     def _serial_ok(zone: Zone, status: ZoneStatus) -> bool:
         if not status.local_serial:

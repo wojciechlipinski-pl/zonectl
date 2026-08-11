@@ -120,7 +120,7 @@ zrealizowane, a `[ ]` pozostają do wykonania.
   `rndc zonestatus` oraz pełnego rollbacku po błędzie.
 - [x] Domyślnie blokować migrację RPZ, secondary i stref DNSSEC; obsłużyć je
   dopiero przez jawne, osobne profile migracyjne.
-- [ ] Udostępnić dry-run i migrację pojedynczej strefy w CLI oraz TUI, bez
+- [x] Udostępnić dry-run i migrację pojedynczej strefy w CLI oraz TUI, bez
   automatycznej migracji zbiorczej produkcyjnej konfiguracji.
 
 ### Zarządzanie ACL i serwerami secondary

@@ -215,6 +215,9 @@ zctl zone migration-apply example.pl \
   --commit --activate --confirm example.pl
 ```
 
+W TUI otwórz szczegóły strefy i użyj `F6`, następnie `F3` dla planu albo
+`F4` dla dry-runu i kontrolowanej migracji.
+
 ## Testy
 
 ```bash
