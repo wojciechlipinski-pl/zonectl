@@ -215,3 +215,39 @@ def test_view_exposes_contextual_operations() -> None:
     assert DnssecStatusView.build(active).operation_label == "wycofanie"
     assert DnssecStatusView.build(unsigned).operation == "ENABLE"
     assert DnssecStatusView.build(unsigned).operation_label == "włączenie"
+
+
+def test_unsigned_zone_keeps_enable_action_when_dnskey_check_fails() -> None:
+    unsigned = replace(
+        report(),
+        status="UNSIGNED",
+        configured=False,
+        dnssec_policy=None,
+        inline_signing=False,
+        signing=False,
+        dnskey_records=(),
+        rrsig_records=(),
+        calculated_ds=(),
+        parent_ds_matches=None,
+    )
+    failed_delegation = replace(
+        delegation(),
+        status="FAIL",
+        authority_checks=(
+            DnskeyAuthorityCheck(
+                "ns1.example.pl",
+                "MISMATCH",
+                True,
+                (),
+                (),
+                "Brak DNSKEY lub RRSIG",
+            ),
+        ),
+        errors=("Brak DNSKEY",),
+    )
+
+    view = DnssecStatusView.build(unsigned, failed_delegation)
+
+    assert view.stage == "UNSIGNED"
+    assert view.operation == "ENABLE"
+    assert view.operation_label == "włączenie"

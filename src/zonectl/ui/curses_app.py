@@ -26,6 +26,8 @@ from ..core.config import ToolkitConfig
 from ..core.dnssec_ds_check import DnssecDsChecker
 from ..core.dnssec_disable_plan import DnssecDisablePlanner
 from ..core.dnssec_disable_transaction import DnssecDisableTransaction
+from ..core.dnssec_enable_plan import DnssecEnablePlanner
+from ..core.dnssec_enable_transaction import DnssecEnableTransaction
 from ..core.dnssec_report import DnssecReporter
 from ..core.dnssec_withdrawal_backup import DnssecWithdrawalBackup
 from ..core.edit_lock import ZoneEditLockedError
@@ -2110,6 +2112,23 @@ class CursesApp:
             )
         return DnssecDisablePlanner().plan(discovered)
 
+    def _dnssec_enable_plan(self, zone: Zone):
+        if self.config is None:
+            raise RuntimeError("Brak konfiguracji ZoneCTL")
+        discovered = self.config.discovered_zone(zone.name)
+        if discovered is None:
+            raise RuntimeError(
+                "Autodetekcja nie znalazła deklaracji BIND dla strefy"
+            )
+        return DnssecEnablePlanner().plan(discovered)
+
+    def _dnssec_enable_dry_run(self, zone: Zone):
+        plan = self._dnssec_enable_plan(zone)
+        return DnssecEnableTransaction(
+            Path("/var/backups/zonectl-dnssec-enable/backups"),
+            Path("/var/backups/zonectl-dnssec-enable/manifests"),
+        ).apply(plan)
+
     def _dnssec_finalize_dry_run(self, zone: Zone):
         plan = self._dnssec_disable_plan(zone)
         return DnssecDisableTransaction(
@@ -2165,6 +2184,19 @@ class CursesApp:
             lines.append(f"Pakiet: {result.package}")
         if result.manifest:
             lines.append(f"Manifest: {result.manifest}")
+        lines.extend(
+            f"[{'OK' if step.ok else 'BŁĄD'}] {step.name}: {step.message}"
+            for step in result.steps
+        )
+        return lines
+
+    @staticmethod
+    def _dnssec_enable_result_lines(result) -> list[str]:
+        lines = [
+            f"Status: {result.status}",
+            f"Commit: {'TAK' if result.committed else 'NIE'}",
+            f"Rollback: {'TAK' if result.rolled_back else 'NIE'}",
+        ]
         lines.extend(
             f"[{'OK' if step.ok else 'BŁĄD'}] {step.name}: {step.message}"
             for step in result.steps
@@ -2289,14 +2321,24 @@ class CursesApp:
                 elif key == curses.KEY_F3:
                     try:
                         if view is not None and view.operation == "ENABLE":
+                            plan = self._dnssec_enable_plan(zone)
                             self._message_view(
                                 win,
                                 title=f"Plan włączenia DNSSEC: {zone.name}",
-                                lines=[
-                                    "Podgląd planu jest dostępny w CLI:",
-                                    f"zctl dnssec enable-plan {zone.name}",
-                                    "Polecenie nie zmienia BIND.",
-                                ],
+                                lines=(
+                                    [
+                                        f"Plik źródłowy: {plan.source_zone_file}",
+                                        f"Plik docelowy: {plan.target_zone_file}",
+                                        "Migracja pliku: "
+                                        + ("TAK" if plan.migration_required else "NIE"),
+                                        f"Polityka: {plan.policy}",
+                                        "",
+                                        "Planowany diff:",
+                                    ]
+                                    + (plan.unified_diff.splitlines() or ["Brak zmian"])
+                                    + ["", "Planowane etapy:"]
+                                    + [f"- {action}" for action in plan.actions]
+                                ),
                             )
                         else:
                             plan = self._dnssec_disable_plan(zone)
@@ -2382,11 +2424,23 @@ class CursesApp:
                         continue
                     if view.operation != "FINALIZE":
                         if view.operation == "ENABLE":
-                            action_lines = [
-                                "Strefa nie jest podpisana.",
-                                "Rozpocznij od planu bez zmian w BIND:",
-                                f"zctl dnssec enable-plan {zone.name}",
-                            ]
+                            try:
+                                result = self._dnssec_enable_dry_run(zone)
+                                self._message_view(
+                                    win,
+                                    title=f"Dry-run włączenia DNSSEC: {zone.name}",
+                                    lines=self._dnssec_enable_result_lines(result),
+                                    error=result.status != "DRY-RUN",
+                                )
+                            except Exception as exc:
+                                self._message_view(
+                                    win,
+                                    title="Błąd dry-runu DNSSEC",
+                                    lines=[str(exc)],
+                                    error=True,
+                                )
+                            refresh = True
+                            continue
                         else:
                             action_lines = [
                                 "Na tym etapie nie ma bezpiecznej operacji zapisu.",

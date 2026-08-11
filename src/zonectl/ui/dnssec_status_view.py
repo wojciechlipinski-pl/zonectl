@@ -29,7 +29,7 @@ class DnssecStatusView:
         stage = guidance.stage
         title = guidance.title
         publication_allowed = guidance.ds_publication_allowed
-        if delegation is not None:
+        if delegation is not None and guidance.stage != "UNSIGNED":
             if delegation.status == "FAIL":
                 stage = "ERROR"
                 title = "Kontrola delegacji DNSSEC wykryła błąd"

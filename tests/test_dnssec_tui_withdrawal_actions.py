@@ -4,6 +4,7 @@ import inspect
 from pathlib import Path
 
 from zonectl.core.dnssec_disable_transaction import DnssecDisableResult
+from zonectl.core.dnssec_enable_transaction import DnssecEnableResult
 from zonectl.core.dnssec_withdrawal_backup import DnssecWithdrawalBackupResult
 from zonectl.core.models import Zone
 from zonectl.ui.curses_app import CursesApp
@@ -91,7 +92,6 @@ def test_f4_routes_non_finalize_stages_to_guidance_only() -> None:
     assert 'view.operation == "WITHDRAWAL"' in source
     assert 'view.operation == "ENABLE"' in source
     assert "self._dnssec_withdrawal_backup(zone)" in source
-    assert "enable-plan" in source
 
 
 def test_withdrawal_backup_routes_dry_run_and_commit(monkeypatch) -> None:
@@ -147,3 +147,36 @@ def test_withdrawal_backup_ui_requires_exact_confirmation() -> None:
     assert "Utworzyć backup wycofania DNSSEC" in source
     assert "zone, commit=True" in source
     assert 'committed.status != "BACKUP-CREATED"' in source
+
+
+def test_enable_dry_run_never_commits_or_activates(monkeypatch) -> None:
+    calls = []
+    sentinel_plan = object()
+
+    class FakeTransaction:
+        def __init__(self, backup_root, manifest_directory):
+            calls.append((backup_root, manifest_directory))
+
+        def apply(self, plan, **kwargs):
+            calls.append((plan, kwargs))
+            return DnssecEnableResult("tx", "example.pl", "DRY-RUN")
+
+    app = CursesApp.__new__(CursesApp)
+    monkeypatch.setattr(app, "_dnssec_enable_plan", lambda _zone: sentinel_plan)
+    monkeypatch.setattr(
+        "zonectl.ui.curses_app.DnssecEnableTransaction", FakeTransaction
+    )
+
+    result = app._dnssec_enable_dry_run(Zone("example.pl", Path("zone.db")))
+
+    assert result.status == "DRY-RUN"
+    assert calls[-1] == (sentinel_plan, {})
+
+
+def test_unsigned_tui_uses_real_plan_and_dry_run() -> None:
+    source = inspect.getsource(CursesApp._dnssec_status_view)
+
+    assert "plan = self._dnssec_enable_plan(zone)" in source
+    assert "plan.unified_diff.splitlines()" in source
+    assert "self._dnssec_enable_dry_run(zone)" in source
+    assert "Dry-run włączenia DNSSEC" in source
