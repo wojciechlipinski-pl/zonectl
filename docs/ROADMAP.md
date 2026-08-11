@@ -106,6 +106,45 @@ zrealizowane, a `[ ]` pozostają do wykonania.
 - [x] Udokumentować współpracę z backupem Veeam jako głównym zabezpieczeniem
   maszyny wirtualnej.
 
+## ZoneCTL 4.7 — migracja istniejących deklaracji stref
+
+- [ ] Zinwentaryzować strefy zdefiniowane bezpośrednio w
+  `/etc/bind/named.conf.local` i odróżnić je od stref automatycznych, RPZ,
+  secondary oraz już zarządzanych przez ZoneCTL.
+- [ ] Dodać pozbawiony skutków ubocznych plan migracji pojedynczej strefy do
+  `/etc/bind/zonectl-zones.d/<strefa>.conf`, zachowujący kompletny blok BIND.
+- [ ] Aktualizować `/etc/bind/zonectl-zones.conf` jako indeks zawierający
+  dokładnie jeden `include` dla każdej deklaracji zarządzanej przez ZoneCTL.
+- [ ] Wymagać backupu `named.conf.local`, indeksu i deklaracji, walidacji
+  `named-checkconf`, kontrolowanego `rndc reconfig`, potwierdzenia
+  `rndc zonestatus` oraz pełnego rollbacku po błędzie.
+- [ ] Domyślnie blokować migrację RPZ, secondary i stref DNSSEC; obsłużyć je
+  dopiero przez jawne, osobne profile migracyjne.
+- [ ] Udostępnić dry-run i migrację pojedynczej strefy w CLI oraz TUI, bez
+  automatycznej migracji zbiorczej produkcyjnej konfiguracji.
+
+### Zarządzanie ACL i serwerami secondary
+
+- [ ] Zinwentaryzować źródła definicji ACL BIND oraz ich użycie w
+  `allow-query`, `allow-recursion`, `allow-transfer`, `allow-notify`,
+  `also-notify` i `primaries`.
+- [ ] Dodać odczytowy widok listy zaufanych sieci i hostów (`trusted`) wraz z
+  plikiem źródłowym, numerem linii i miejscami użycia każdej ACL.
+- [ ] Dodać edycję `trusted` w CLI i TUI z walidacją adresów IPv4, IPv6,
+  prefiksów CIDR, negacji oraz nazw dozwolonych elementów ACL.
+- [ ] Dodać zarządzanie nazwanymi grupami serwerów secondary/slave używanymi
+  przez `also-notify`, `allow-transfer`, `allow-notify` i `primaries`, bez
+  powielania adresów w deklaracjach poszczególnych stref.
+- [ ] Udostępnić przypisywanie strefy do grupy secondary oraz odczytowy raport
+  pokazujący, które strefy korzystają z danego serwera lub grupy.
+- [ ] Każdą zmianę ACL wykonywać przez planowany diff, backup, atomowy zapis,
+  `named-checkconf`, kontrolowane `rndc reconfig` i automatyczny rollback.
+- [ ] Blokować usunięcie ostatniego wpisu administracyjnego, wpisu wymaganego
+  przez aktywny transfer albo całej używanej ACL bez osobnego potwierdzenia i
+  raportu skutków.
+- [ ] Rejestrować w manifeście operatora, przyczynę, stan przed i po zmianie
+  oraz listę stref, których dotyczyła modyfikacja ACL lub secondary.
+
 ## Jakość techniczna
 
 - [x] Zachować względną nazwę właściciela i komentarz inline po edycji.
