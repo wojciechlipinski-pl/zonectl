@@ -200,11 +200,20 @@ plan migracji pojedynczej strefy. Oba polecenia są wyłącznie odczytowe:
 ```bash
 zctl zone migration-inventory
 zctl zone migration-plan example.pl
+zctl zone migration-apply example.pl
 ```
 
 Plan zachowuje pełny blok strefy, pokazuje diff trzech plików i blokuje RPZ,
 strefy secondary oraz strefy używające DNSSEC. Nie zapisuje plików i nie
 wywołuje `rndc`.
+
+Właściwa migracja wymaga jednocześnie `--commit`, `--activate` oraz dokładnego
+potwierdzenia nazwy strefy:
+
+```bash
+zctl zone migration-apply example.pl \
+  --commit --activate --confirm example.pl
+```
 
 ## Testy
 

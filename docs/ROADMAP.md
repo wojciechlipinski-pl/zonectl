@@ -113,9 +113,9 @@ zrealizowane, a `[ ]` pozostają do wykonania.
   secondary oraz już zarządzanych przez ZoneCTL.
 - [x] Dodać pozbawiony skutków ubocznych plan migracji pojedynczej strefy do
   `/etc/bind/zonectl-zones.d/<strefa>.conf`, zachowujący kompletny blok BIND.
-- [ ] Aktualizować `/etc/bind/zonectl-zones.conf` jako indeks zawierający
+- [x] Aktualizować `/etc/bind/zonectl-zones.conf` jako indeks zawierający
   dokładnie jeden `include` dla każdej deklaracji zarządzanej przez ZoneCTL.
-- [ ] Wymagać backupu `named.conf.local`, indeksu i deklaracji, walidacji
+- [x] Wymagać backupu `named.conf.local`, indeksu i deklaracji, walidacji
   `named-checkconf`, kontrolowanego `rndc reconfig`, potwierdzenia
   `rndc zonestatus` oraz pełnego rollbacku po błędzie.
 - [x] Domyślnie blokować migrację RPZ, secondary i stref DNSSEC; obsłużyć je

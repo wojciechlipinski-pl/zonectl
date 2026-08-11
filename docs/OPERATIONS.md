@@ -286,6 +286,21 @@ usunięcie bloku z `named.conf.local`, utworzenie kompletnej deklaracji w
 Na tym etapie polecenia nie zapisują plików, nie uruchamiają walidatorów i nie
 kontaktują się z `rndc`.
 
+Po weryfikacji planu dry-run właściwa migracja pojedynczej strefy wygląda tak:
+
+```bash
+zctl zone migration-apply example.pl
+zctl zone migration-apply example.pl \
+  --commit --activate --confirm example.pl
+```
+
+Transakcja ponownie sprawdza niezmienność obu plików wejściowych, wykonuje
+backup, zachowuje uprawnienia, zapisuje trzy elementy atomowo, uruchamia
+`named-checkconf`, `rndc reconfig` i `rndc zonestatus`. Błąd na dowolnym etapie
+przywraca `named.conf.local` oraz indeks i usuwa nową deklarację.
+Przed wdrożeniem produkcyjnym ten przebieg jest również sprawdzany w izolacji
+z prawdziwym `named-checkconf`, bez kontaktowania się z produkcyjnym `rndc`.
+
 Strefy z `health_profile = rpz` są automatycznie zarządzanymi źródłami
 polityki i nie podlegają zwykłemu cyklowi życia domen. ZoneCTL blokuje dla
 nich wyłączenie, przywrócenie i kwarantannę; nadal je monitoruje.

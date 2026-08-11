@@ -69,3 +69,29 @@ def test_migration_plan_cli_rejects_unknown_zone(
 
     assert code == 2
     assert "Nie znaleziono" in capsys.readouterr().err
+
+
+def test_migration_apply_cli_dry_run(monkeypatch, tmp_path, capsys) -> None:
+    monkeypatch.setattr(cli.ToolkitConfig, "load", lambda self: _EmptyConfig())
+    paths, local = _arguments(tmp_path)
+    before = local.read_bytes()
+
+    code = cli.main(["zone", "migration-apply", "example.pl", *paths])
+
+    assert code == 0
+    assert "Status:     DRY-RUN" in capsys.readouterr().out
+    assert local.read_bytes() == before
+
+
+def test_migration_apply_requires_both_write_flags(
+    monkeypatch, tmp_path, capsys
+) -> None:
+    monkeypatch.setattr(cli.ToolkitConfig, "load", lambda self: _EmptyConfig())
+    paths, _ = _arguments(tmp_path)
+
+    code = cli.main([
+        "zone", "migration-apply", "example.pl", *paths, "--commit"
+    ])
+
+    assert code == 2
+    assert "--commit i --activate" in capsys.readouterr().err

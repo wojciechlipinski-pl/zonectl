@@ -41,6 +41,8 @@ class ManagedZoneMigrationPlan:
     managed_config: Path
     declaration_file: Path
     declaration_text: str
+    source_original: str
+    managed_original: str
     source_candidate: str
     managed_candidate: str
     source_diff: str
@@ -207,6 +209,8 @@ class ManagedZoneMigrationPlanner:
             managed_config=self.managed_config,
             declaration_file=declaration_file,
             declaration_text=declaration_text,
+            source_original=local_text,
+            managed_original=managed_text,
             source_candidate=source_candidate,
             managed_candidate=managed_candidate,
             source_diff=source_diff,

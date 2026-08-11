@@ -55,6 +55,9 @@ from .core.managed_zone_migration import (
     ManagedZoneMigrationError,
     ManagedZoneMigrationPlanner,
 )
+from .core.managed_zone_migration_transaction import (
+    ManagedZoneMigrationTransaction,
+)
 from .presentation import transaction_exit_code, transaction_lines
 from .ui.curses_app import CursesApp
 
@@ -538,6 +541,34 @@ def parser() -> argparse.ArgumentParser:
             default=Path("/etc/bind/zonectl-zones.d"),
         )
         migration_command.add_argument("--json", action="store_true")
+    migration_apply = lifecycle_sub.add_parser(
+        "migration-apply",
+        help="transakcyjnie migruj jedną deklarację; domyślnie dry-run",
+    )
+    migration_apply.add_argument("name")
+    migration_apply.add_argument("--confirm")
+    migration_apply.add_argument("--commit", action="store_true")
+    migration_apply.add_argument("--activate", action="store_true")
+    migration_apply.add_argument(
+        "--backup-root",
+        type=Path,
+        default=Path("/var/backups/zonectl-zone-migration/backups"),
+    )
+    migration_apply.add_argument(
+        "--manifest-directory",
+        type=Path,
+        default=Path("/var/backups/zonectl-zone-migration/manifests"),
+    )
+    for migration_option in (
+        ("--root-config", Path("/etc/bind/named.conf")),
+        ("--local-config", Path("/etc/bind/named.conf.local")),
+        ("--managed-config", Path("/etc/bind/zonectl-zones.conf")),
+        ("--managed-zone-directory", Path("/etc/bind/zonectl-zones.d")),
+    ):
+        migration_apply.add_argument(
+            migration_option[0], type=Path, default=migration_option[1]
+        )
+    migration_apply.add_argument("--json", action="store_true")
 
     tx = sub.add_parser("transaction", aliases=["tx"], help="bezpieczne transakcje na plikach stref")
     txsub = tx.add_subparsers(dest="tx_command", required=True)
@@ -1240,6 +1271,52 @@ def main(argv: list[str] | None = None) -> int:
 
         return 1 if report.status == "FAIL" else 0
     if args.command == "zone":
+        if args.zone_command == "migration-apply":
+            if args.commit != args.activate:
+                print(
+                    "BŁĄD: właściwa migracja wymaga jednocześnie --commit i --activate.",
+                    file=sys.stderr,
+                )
+                return 2
+            wanted = args.name.strip().rstrip(".").casefold()
+            if args.commit and (args.confirm or "").strip().rstrip(".").casefold() != wanted:
+                print(
+                    "BŁĄD: --confirm musi odpowiadać pełnej nazwie strefy.",
+                    file=sys.stderr,
+                )
+                return 2
+            planner = ManagedZoneMigrationPlanner(
+                root_config=args.root_config,
+                local_config=args.local_config,
+                managed_config=args.managed_config,
+                managed_zone_directory=args.managed_zone_directory,
+            )
+            try:
+                plan = planner.plan(wanted)
+                result = ManagedZoneMigrationTransaction(
+                    args.backup_root,
+                    args.manifest_directory,
+                    root_config=args.root_config,
+                ).apply(plan, commit=args.commit, activate=args.activate)
+            except (ManagedZoneMigrationError, OSError) as exc:
+                print(f"BŁĄD: {exc}", file=sys.stderr)
+                return 2
+            if args.json:
+                print(json.dumps(asdict(result), ensure_ascii=False, indent=2))
+            else:
+                print(f"Transakcja: {result.transaction_id}")
+                print(f"Strefa:     {result.zone}")
+                print(f"Status:     {result.status}")
+                print(f"Commit:     {'TAK' if result.committed else 'NIE'}")
+                print(f"Rollback:   {'TAK' if result.rolled_back else 'NIE'}")
+                if result.backup_directory:
+                    print(f"Backup:     {result.backup_directory}")
+                if result.manifest:
+                    print(f"Manifest:   {result.manifest}")
+                print("\nEtapy:")
+                for step in result.steps:
+                    print(f"[{'OK' if step.ok else 'BŁĄD'}] {step.name}: {step.message}")
+            return 0 if result.status in {"DRY-RUN", "COMMIT"} else 1
         if args.zone_command in {"migration-inventory", "migration-plan"}:
             planner = ManagedZoneMigrationPlanner(
                 root_config=args.root_config,
