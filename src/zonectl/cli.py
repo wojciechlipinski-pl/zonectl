@@ -15,6 +15,7 @@ from .core.dnssec_enable_plan import (
 )
 from .core.dnssec_enable_transaction import DnssecEnableTransaction
 from .core.dnssec_disable_transaction import DnssecDisableTransaction
+from .core.dnssec_finalize_serial import DnssecFinalizeSerialTransaction
 from .core.dnssec_disable_plan import (
     DnssecDisablePlanError,
     DnssecDisablePlanner,
@@ -228,6 +229,18 @@ def parser() -> argparse.ArgumentParser:
         "--acknowledge-unsigned", action="store_true"
     )
     dnssec_disable_apply.add_argument("--json", action="store_true")
+    dnssec_finalize_serial = dnssec_sub.add_parser(
+        "prepare-finalize-serial",
+        help="przygotuj nowszy serial SOA przed finalizacją DNSSEC; domyślnie dry-run",
+    )
+    dnssec_finalize_serial.add_argument("name")
+    dnssec_finalize_serial.add_argument(
+        "--backup-root",
+        type=Path,
+        default=Path("/var/backups/zonectl-dnssec-disable/serial-backups"),
+    )
+    dnssec_finalize_serial.add_argument("--commit", action="store_true")
+    dnssec_finalize_serial.add_argument("--json", action="store_true")
     dnssec_withdrawal_backup = dnssec_sub.add_parser(
         "withdrawal-backup",
         help="utwórz zweryfikowany pakiet przed wycofaniem DNSSEC; domyślnie dry-run",
@@ -699,6 +712,57 @@ def main(argv: list[str] | None = None) -> int:
             for step in result.steps:
                 print(f"[{'OK' if step.ok else 'BŁĄD'}] {step.name}: {step.message}")
         return 0 if result.status in {"DRY-RUN", "CONFIRMED"} else 1
+    if (
+        args.command == "dnssec"
+        and args.dnssec_command == "prepare-finalize-serial"
+    ):
+        wanted = args.name.strip().rstrip(".").casefold()
+        display_zone = next(
+            (
+                zone
+                for zone in zones
+                if zone.name.rstrip(".").casefold() == wanted
+            ),
+            None,
+        )
+        if display_zone is None:
+            print(f"BŁĄD: Nie znaleziono strefy: {args.name}", file=sys.stderr)
+            return 2
+        if display_zone.health_profile.casefold() == "rpz":
+            print(
+                f"BŁĄD: Przygotowanie seriala jest zablokowane dla RPZ: "
+                f"{display_zone.name}",
+                file=sys.stderr,
+            )
+            return 2
+        discovered = config.discovered_zone(args.name)
+        if discovered is None or discovered.source_file is None:
+            print(
+                "BŁĄD: Operacja wymaga autodetekcji aktywnego pliku strefy.",
+                file=sys.stderr,
+            )
+            return 2
+        result = DnssecFinalizeSerialTransaction(args.backup_root).apply(
+            display_zone.name,
+            discovered.source_file,
+            commit=args.commit,
+        )
+        if args.json:
+            print(json.dumps(asdict(result), ensure_ascii=False, indent=2))
+        else:
+            print(f"Transakcja:       {result.transaction_id}")
+            print(f"Strefa:           {result.zone}")
+            print(f"Status:           {result.status}")
+            print(f"Serial źródłowy:  {result.previous_serial or '-'}")
+            print(f"Serial serwowany: {result.served_serial or '-'}")
+            print(f"Nowy serial:      {result.new_serial or '-'}")
+            print(f"Commit:           {'TAK' if result.committed else 'NIE'}")
+            if result.backup:
+                print(f"Backup:           {result.backup}")
+            print("\nEtapy:")
+            for step in result.steps:
+                print(f"[{'OK' if step.ok else 'BŁĄD'}] {step.name}: {step.message}")
+        return 0 if result.status in {"DRY-RUN", "COMMIT"} else 1
     if args.command == "dnssec" and args.dnssec_command in {
         "disable-plan",
         "disable-apply",

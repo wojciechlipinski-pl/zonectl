@@ -32,6 +32,22 @@ def test_future_or_higher_serial_remains_monotonic() -> None:
     ) == 2026073006
 
 
+def test_bump_can_exceed_an_external_minimum_serial() -> None:
+    document = ZoneFileParser.parse_text(
+        "@ IN SOA ns1.example.pl. hostmaster.example.pl. "
+        "2026072701 3600 900 1209600 3600\n"
+    )
+
+    change = bump_document_soa_serial(
+        document,
+        today=date(2026, 8, 11),
+        minimum_current=2026072716,
+    )
+
+    assert change.previous == 2026072701
+    assert change.current == 2026081101
+
+
 def test_multiline_soa_serial_is_bumped_without_format_loss() -> None:
     original = (
         "$ORIGIN example.pl.\n"

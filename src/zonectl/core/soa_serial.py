@@ -101,6 +101,7 @@ def bump_document_soa_serial(
     document: ZoneDocument,
     *,
     today: date | None = None,
+    minimum_current: int | None = None,
 ) -> SoaSerialChange:
     """
     Podbija serial pierwszego rekordu SOA w ZoneDocument.
@@ -134,7 +135,7 @@ def bump_document_soa_serial(
                 ) from exc
 
             current = next_soa_serial(
-                previous,
+                max(previous, minimum_current or previous),
                 today=today,
             )
 
@@ -173,7 +174,7 @@ def bump_document_soa_serial(
         if single_match is not None:
             previous = int(single_match.group("serial"))
             current = next_soa_serial(
-                previous,
+                max(previous, minimum_current or previous),
                 today=today,
             )
 
@@ -202,7 +203,7 @@ def bump_document_soa_serial(
 
             previous = int(match.group("serial"))
             current = next_soa_serial(
-                previous,
+                max(previous, minimum_current or previous),
                 today=today,
             )
 
