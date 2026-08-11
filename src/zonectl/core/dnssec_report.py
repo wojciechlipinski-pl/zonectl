@@ -255,11 +255,12 @@ class DnssecReporter:
             elif not configured:
                 errors.append("Publiczny DS istnieje dla niepodpisanej strefy.")
 
-        if configured and signing is False:
+        withdrawing = (zone.dnssec_policy or "").casefold() == "insecure"
+        if configured and not withdrawing and signing is False:
             errors.append("DNSSEC jest skonfigurowany, ale BIND nie raportuje podpisywania.")
-        if configured and not dnskeys:
+        if configured and not withdrawing and not dnskeys:
             errors.append("DNSSEC jest skonfigurowany, ale brak lokalnego DNSKEY.")
-        if configured and not rrsigs:
+        if configured and not withdrawing and not rrsigs:
             errors.append("DNSSEC jest skonfigurowany, ale brak RRSIG dla DNSKEY.")
 
         if errors:

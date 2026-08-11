@@ -111,3 +111,44 @@ def test_unsigned_zone_is_reported_without_failure() -> None:
     assert report.parent_ds_matches is None
     assert report.dnskey_records == ()
     assert report.warnings == ()
+
+
+def test_insecure_policy_accepts_removed_key_and_signatures() -> None:
+    def runner(command: list[str], timeout: int) -> CommandResult:
+        if command[:2] == ["rndc", "zonestatus"]:
+            return CommandResult(
+                0,
+                "name: example.pl\nsecure: no\n"
+                "next key event: Tue, 11 Aug 2026 10:30:55 GMT\n",
+                "",
+            )
+        if command[:3] == ["rndc", "dnssec", "-status"]:
+            return CommandResult(
+                0,
+                "dnssec-policy: insecure\n"
+                    "zone signing: no\n"
+                "Key has been removed from the zone\n"
+                "- goal: hidden\n"
+                "- dnskey: unretentive\n"
+                "- ds: hidden\n"
+                "- zone rrsig: unretentive\n"
+                "- key rrsig: unretentive\n",
+                "",
+            )
+        return CommandResult(0, "", "")
+
+    report = DnssecReporter(command_runner=runner).collect(
+        Zone(
+            "example.pl",
+            Path("/zones/example.pl"),
+            dnssec_policy="insecure",
+            inline_signing=True,
+        )
+    )
+
+    assert report.status == "WARN"
+    assert report.signing is False
+    assert report.dnskey_records == ()
+    assert report.rrsig_records == ()
+    assert report.errors == ()
+    assert report.next_key_event == "Tue, 11 Aug 2026 10:30:55 GMT"
