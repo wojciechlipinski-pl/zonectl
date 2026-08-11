@@ -180,3 +180,35 @@ def test_unsigned_tui_uses_real_plan_and_dry_run() -> None:
     assert "plan.unified_diff.splitlines()" in source
     assert "self._dnssec_enable_dry_run(zone)" in source
     assert "Dry-run włączenia DNSSEC" in source
+
+
+def test_enable_commit_uses_commit_and_activation(monkeypatch) -> None:
+    calls = []
+    sentinel_plan = object()
+
+    class FakeTransaction:
+        def __init__(self, _backup_root, _manifest_directory):
+            pass
+
+        def apply(self, plan, **kwargs):
+            calls.append((plan, kwargs))
+            return DnssecEnableResult("tx", "example.pl", "COMMIT")
+
+    app = CursesApp.__new__(CursesApp)
+    monkeypatch.setattr(app, "_dnssec_enable_plan", lambda _zone: sentinel_plan)
+    monkeypatch.setattr(
+        "zonectl.ui.curses_app.DnssecEnableTransaction", FakeTransaction
+    )
+
+    app._dnssec_enable_commit(Zone("example.pl", Path("zone.db")))
+
+    assert calls == [(sentinel_plan, {"commit": True, "activate": True})]
+
+
+def test_enable_commit_ui_requires_exact_confirmation() -> None:
+    source = inspect.getsource(CursesApp._dnssec_status_view)
+
+    assert "Wpisz pełną nazwę strefy, aby włączyć DNSSEC" in source
+    assert "Włączyć i aktywować DNSSEC" in source
+    assert "self._dnssec_enable_commit(zone)" in source
+    assert "self.config.read_only" in source

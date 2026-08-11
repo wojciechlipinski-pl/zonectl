@@ -2129,6 +2129,13 @@ class CursesApp:
             Path("/var/backups/zonectl-dnssec-enable/manifests"),
         ).apply(plan)
 
+    def _dnssec_enable_commit(self, zone: Zone):
+        plan = self._dnssec_enable_plan(zone)
+        return DnssecEnableTransaction(
+            Path("/var/backups/zonectl-dnssec-enable/backups"),
+            Path("/var/backups/zonectl-dnssec-enable/manifests"),
+        ).apply(plan, commit=True, activate=True)
+
     def _dnssec_finalize_dry_run(self, zone: Zone):
         plan = self._dnssec_disable_plan(zone)
         return DnssecDisableTransaction(
@@ -2432,6 +2439,43 @@ class CursesApp:
                                     lines=self._dnssec_enable_result_lines(result),
                                     error=result.status != "DRY-RUN",
                                 )
+                                if result.status == "DRY-RUN":
+                                    if self.config is not None and self.config.read_only:
+                                        self._read_only_message(win, zone)
+                                    else:
+                                        confirmation = CursesDialogs.text_input(
+                                            win,
+                                            " Wpisz pełną nazwę strefy, aby włączyć DNSSEC: ",
+                                        )
+                                        expected = zone.name.rstrip(".").casefold()
+                                        supplied = (
+                                            (confirmation or "")
+                                            .rstrip(".")
+                                            .casefold()
+                                        )
+                                        if supplied != expected:
+                                            self._message_view(
+                                                win,
+                                                title="Włączenie DNSSEC anulowane",
+                                                lines=["Nie zmieniono BIND."],
+                                            )
+                                        elif CursesDialogs.confirm(
+                                            win,
+                                            f"Włączyć i aktywować DNSSEC dla {zone.name}?",
+                                            key_reader=self._get_key,
+                                        ):
+                                            committed = self._dnssec_enable_commit(zone)
+                                            self._message_view(
+                                                win,
+                                                title=(
+                                                    "Wynik włączenia DNSSEC: "
+                                                    f"{zone.name}"
+                                                ),
+                                                lines=self._dnssec_enable_result_lines(
+                                                    committed
+                                                ),
+                                                error=not committed.ok,
+                                            )
                             except Exception as exc:
                                 self._message_view(
                                     win,
