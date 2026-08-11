@@ -27,6 +27,7 @@ from ..core.dnssec_ds_check import DnssecDsChecker
 from ..core.dnssec_disable_plan import DnssecDisablePlanner
 from ..core.dnssec_disable_transaction import DnssecDisableTransaction
 from ..core.dnssec_report import DnssecReporter
+from ..core.dnssec_withdrawal_backup import DnssecWithdrawalBackup
 from ..core.edit_lock import ZoneEditLockedError
 from ..core.models import Health, Zone, ZoneStatus
 from ..core.multi_zone_session import (
@@ -2123,6 +2124,53 @@ class CursesApp:
             Path("/var/backups/zonectl-dnssec-disable/manifests"),
         ).apply(plan, stage="finalize", commit=True, activate=True)
 
+    def _dnssec_withdrawal_backup(self, zone: Zone, *, commit: bool = False):
+        plan = self._dnssec_disable_plan(zone)
+        toolkit = self.config.toolkit if self.config is not None else {}
+        local_server = toolkit.get("local_server", "127.0.0.1")
+        timeout = int(toolkit.get("dig_timeout", "3"))
+        resolvers = tuple(
+            item.strip()
+            for item in toolkit.get(
+                "dnssec_resolvers",
+                "1.1.1.1,8.8.8.8,9.9.9.9",
+            ).split(",")
+            if item.strip()
+        )
+        report = DnssecReporter(
+            local_server=local_server,
+            resolver=resolvers[0],
+            timeout=timeout,
+        ).collect(zone, plan.key_directory)
+        delegation = DnssecDsChecker(
+            local_server=local_server,
+            timeout=timeout,
+        ).collect(plan.zone, resolvers)
+        return DnssecWithdrawalBackup(
+            Path("/var/backups/zonectl-dnssec-withdrawal")
+        ).create(
+            plan,
+            commit=commit,
+            dnssec_report=report.to_dict(),
+            ds_check=delegation.to_dict(),
+        )
+
+    @staticmethod
+    def _dnssec_backup_result_lines(result) -> list[str]:
+        lines = [
+            f"Status: {result.status}",
+            f"Commit: {'TAK' if result.committed else 'NIE'}",
+        ]
+        if result.package:
+            lines.append(f"Pakiet: {result.package}")
+        if result.manifest:
+            lines.append(f"Manifest: {result.manifest}")
+        lines.extend(
+            f"[{'OK' if step.ok else 'BŁĄD'}] {step.name}: {step.message}"
+            for step in result.steps
+        )
+        return lines
+
     @staticmethod
     def _dnssec_disable_result_lines(result) -> list[str]:
         lines = [
@@ -2280,15 +2328,60 @@ class CursesApp:
                     if view is None:
                         refresh = True
                         continue
+                    if view.operation == "WITHDRAWAL":
+                        try:
+                            result = self._dnssec_withdrawal_backup(zone)
+                            self._message_view(
+                                win,
+                                title=f"Dry-run backupu DNSSEC: {zone.name}",
+                                lines=self._dnssec_backup_result_lines(result),
+                                error=result.status != "DRY-RUN",
+                            )
+                            if result.status == "DRY-RUN":
+                                if self.config is not None and self.config.read_only:
+                                    self._read_only_message(win, zone)
+                                else:
+                                    confirmation = CursesDialogs.text_input(
+                                        win,
+                                        " Wpisz pełną nazwę strefy, aby utworzyć backup: ",
+                                    )
+                                    expected = zone.name.rstrip(".").casefold()
+                                    supplied = (confirmation or "").rstrip(".").casefold()
+                                    if supplied != expected:
+                                        self._message_view(
+                                            win,
+                                            title="Backup anulowany",
+                                            lines=[
+                                                "Nie utworzono pakietu i nie zmieniono BIND."
+                                            ],
+                                        )
+                                    elif CursesDialogs.confirm(
+                                        win,
+                                        f"Utworzyć backup wycofania DNSSEC dla {zone.name}?",
+                                        key_reader=self._get_key,
+                                    ):
+                                        committed = self._dnssec_withdrawal_backup(
+                                            zone, commit=True
+                                        )
+                                        self._message_view(
+                                            win,
+                                            title=f"Backup wycofania DNSSEC: {zone.name}",
+                                            lines=self._dnssec_backup_result_lines(
+                                                committed
+                                            ),
+                                            error=committed.status != "BACKUP-CREATED",
+                                        )
+                        except Exception as exc:
+                            self._message_view(
+                                win,
+                                title="Błąd backupu DNSSEC",
+                                lines=[str(exc)],
+                                error=True,
+                            )
+                        refresh = True
+                        continue
                     if view.operation != "FINALIZE":
-                        if view.operation == "WITHDRAWAL":
-                            action_lines = [
-                                "Strefa ma aktywny łańcuch zaufania DNSSEC.",
-                                "F3 pokazuje plan bezpiecznego wycofania.",
-                                "Przed usunięciem DS utwórz zweryfikowany backup:",
-                                f"zctl dnssec withdrawal-backup {zone.name} --commit",
-                            ]
-                        elif view.operation == "ENABLE":
+                        if view.operation == "ENABLE":
                             action_lines = [
                                 "Strefa nie jest podpisana.",
                                 "Rozpocznij od planu bez zmian w BIND:",
