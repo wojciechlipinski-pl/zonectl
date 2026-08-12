@@ -134,6 +134,8 @@ zrealizowane, a `[ ]` pozostają do wykonania.
   nieużywane definicje i wpływ problemów na strefy.
 - [x] Generować odczytowy diff uporządkowania pojedynczej ACL i walidować
   kandydacką konfigurację w izolacji prawdziwym `named-checkconf`.
+- [x] Stosować zweryfikowany plan ACL transakcyjnie z backupem, atomowym
+  zapisem, kontrolowanym `rndc reconfig`, manifestem i rollbackiem.
 - [ ] Dodać edycję `trusted` w CLI i TUI z walidacją adresów IPv4, IPv6,
   prefiksów CIDR, negacji oraz nazw dozwolonych elementów ACL.
 - [ ] Dodać zarządzanie nazwanymi grupami serwerów secondary/slave używanymi

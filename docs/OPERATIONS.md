@@ -335,6 +335,19 @@ Planner zachowuje pierwsze wystąpienie każdego wpisu, usuwa wyłącznie dalsze
 duplikaty, stosuje jawnie podane zamiany i uruchamia `named-checkconf` na
 izolowanej kopii całego aktywnego drzewa konfiguracji.
 
+Właściwe zastosowanie identycznego planu wymaga trzech jawnych zabezpieczeń:
+
+```bash
+zctl bind acl-apply trusted \
+  --replace 192.168.200/24=192.168.200.0/24 \
+  --commit --activate --confirm trusted
+```
+
+Transakcja ponownie sprawdza niezmienność pliku, zachowuje właściciela i tryb,
+wykonuje backup, zapis atomowy, `named-checkconf`, `rndc reconfig` i manifest.
+Niepowodzenie przywraca oryginalny plik i ponownie ładuje poprzednią
+konfigurację, jeśli aktywacja została już rozpoczęta.
+
 Strefy z `health_profile = rpz` są automatycznie zarządzanymi źródłami
 polityki i nie podlegają zwykłemu cyklowi życia domen. ZoneCTL blokuje dla
 nich wyłączenie, przywrócenie i kwarantannę; nadal je monitoruje.

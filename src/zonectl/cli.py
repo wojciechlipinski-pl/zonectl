@@ -14,6 +14,7 @@ from .core.bind_access_inventory import (
 )
 from .core.bind_access_audit import BindAccessAuditor
 from .core.bind_acl_plan import BindAclPlanError, BindAclPlanner
+from .core.bind_acl_transaction import BindAclTransaction
 from .core.config import DEFAULT_CONFIG, DEFAULT_GROUPS, DEFAULT_ZONES, ToolkitConfig
 from .core.dnssec_enable_plan import (
     DnssecEnablePlanError,
@@ -111,6 +112,29 @@ def parser() -> argparse.ArgumentParser:
         "--root-config", type=Path, default=Path("/etc/bind/named.conf")
     )
     bind_acl_plan.add_argument("--json", action="store_true")
+    bind_acl_apply = bind_sub.add_parser(
+        "acl-apply", help="transakcyjnie zastosuj plan ACL; domyślnie dry-run"
+    )
+    bind_acl_apply.add_argument("name")
+    bind_acl_apply.add_argument(
+        "--replace", action="append", default=[], metavar="STARY=NOWY"
+    )
+    bind_acl_apply.add_argument("--keep-duplicates", action="store_true")
+    bind_acl_apply.add_argument("--confirm")
+    bind_acl_apply.add_argument("--commit", action="store_true")
+    bind_acl_apply.add_argument("--activate", action="store_true")
+    bind_acl_apply.add_argument(
+        "--root-config", type=Path, default=Path("/etc/bind/named.conf")
+    )
+    bind_acl_apply.add_argument(
+        "--backup-root", type=Path,
+        default=Path("/var/backups/zonectl-bind-acl/backups"),
+    )
+    bind_acl_apply.add_argument(
+        "--manifest-directory", type=Path,
+        default=Path("/var/backups/zonectl-bind-acl/manifests"),
+    )
+    bind_acl_apply.add_argument("--json", action="store_true")
 
     dnssec = sub.add_parser(
         "dnssec",
@@ -759,6 +783,55 @@ def main(argv: list[str] | None = None) -> int:
     if args.command in {"transaction", "tx"}:
         return transaction_main(args, config)
     zones = config.zones()
+    if args.command == "bind" and args.bind_command == "acl-apply":
+        if args.commit != args.activate:
+            print(
+                "BŁĄD: właściwa zmiana wymaga jednocześnie --commit i --activate.",
+                file=sys.stderr,
+            )
+            return 2
+        if args.commit and (args.confirm or "").casefold() != args.name.casefold():
+            print(
+                "BŁĄD: --confirm musi odpowiadać pełnej nazwie ACL.",
+                file=sys.stderr,
+            )
+            return 2
+        replacements: dict[str, str] = {}
+        try:
+            for value in args.replace:
+                old, new = value.split("=", 1)
+                if not old.strip() or not new.strip():
+                    raise ValueError
+                replacements[old.strip()] = new.strip()
+            plan = BindAclPlanner(args.root_config).plan(
+                args.name,
+                replacements=replacements,
+                remove_duplicates=not args.keep_duplicates,
+            )
+            result = BindAclTransaction(
+                args.backup_root,
+                args.manifest_directory,
+                root_config=args.root_config,
+            ).apply(plan, commit=args.commit, activate=args.activate)
+        except (BindAclPlanError, OSError, ValueError) as exc:
+            print(f"BŁĄD: {str(exc) or 'nieprawidłowe --replace'}", file=sys.stderr)
+            return 2
+        if args.json:
+            print(json.dumps(asdict(result), ensure_ascii=False, indent=2))
+        else:
+            print(f"Transakcja: {result.transaction_id}")
+            print(f"ACL:         {result.acl}")
+            print(f"Status:      {result.status}")
+            print(f"Commit:      {'TAK' if result.committed else 'NIE'}")
+            print(f"Rollback:    {'TAK' if result.rolled_back else 'NIE'}")
+            if result.backup:
+                print(f"Backup:      {result.backup}")
+            if result.manifest:
+                print(f"Manifest:    {result.manifest}")
+            print("\nEtapy:")
+            for step in result.steps:
+                print(f"[{'OK' if step.ok else 'BŁĄD'}] {step.name}: {step.message}")
+        return 0 if result.status in {"DRY-RUN", "COMMIT"} else 1
     if args.command == "bind" and args.bind_command == "acl-plan":
         replacements: dict[str, str] = {}
         try:

@@ -226,6 +226,8 @@ zctl bind inventory --json
 zctl bind audit
 zctl bind acl-plan trusted \
   --replace 192.168.200/24=192.168.200.0/24
+zctl bind acl-apply trusted \
+  --replace 192.168.200/24=192.168.200.0/24
 ```
 
 ## Testy
