@@ -379,6 +379,15 @@ wykrytą po planowaniu, wykonuje backup, zapis atomowy, `named-checkconf` oraz
 stref objętych zmianą. Błąd walidacji lub aktywacji uruchamia rollback
 konfiguracji i ponowne `rndc reconfig`.
 
+W głównym widoku TUI `F9` otwiera przeglądarkę ACL i grup secondary. Klawisz
+`F3` pokazuje adresy, role i dotknięte strefy. `F4` dla grupy secondary
+przyjmuje pełną listę adresów, pokazuje plan i dry-run, wymaga wpisania pełnej
+nazwy grupy oraz dodatkowego potwierdzenia przed zapisem. Pełna edycja ACL w
+tym widoku pozostaje zablokowana do czasu dodania równoważnego edytora list.
+Lista adresów jest edytowana pełnoekranowo: `Insert` dodaje, `F4` edytuje,
+`F8` lub `Delete` usuwa, a `F2` przechodzi do planu i dry-runu. `Esc` i `F10`
+porzucają zmiany po potwierdzeniu.
+
 Strefy z `health_profile = rpz` są automatycznie zarządzanymi źródłami
 polityki i nie podlegają zwykłemu cyklowi życia domen. ZoneCTL blokuje dla
 nich wyłączenie, przywrócenie i kwarantannę; nadal je monitoruje.

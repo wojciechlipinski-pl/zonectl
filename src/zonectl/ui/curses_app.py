@@ -21,6 +21,13 @@ from pathlib import Path
 
 from .. import __version__
 from ..core.bind import BindService
+from ..core.bind_access_inventory import (
+    BindAccessInventoryError,
+    BindAccessInventoryReader,
+)
+from ..core.bind_secondary_plan import BindSecondaryPlanError, BindSecondaryPlanner
+from ..core.bind_secondary_report import BindSecondaryReporter
+from ..core.bind_secondary_transaction import BindSecondaryTransaction
 from ..core.bulk_operations import BulkOperation, BulkOperationError
 from ..core.config import ToolkitConfig
 from ..core.dnssec_ds_check import DnssecDsChecker
@@ -162,6 +169,8 @@ class CursesApp:
                 self._start_refresh(force=True)
             elif key == curses.KEY_IC:
                 self._create_zone_wizard(stdscr)
+            elif key == curses.KEY_F9:
+                self._bind_access_view(stdscr)
         self.stop_event.set()
 
     def _init_colors(self) -> None:
@@ -331,7 +340,7 @@ class CursesApp:
                 attr |= curses.A_REVERSE
             win.addnstr(screen_row, 0, line.ljust(width), max(0, width - 1), attr)
 
-        footer = " Enter otwórz  Ins nowa strefa  Spacja zaznacz  m wiele stref  / szukaj  g grupy  F7/s sortuj  r odśwież  q/Esc/F10 wyjście "
+        footer = " Enter otwórz  Ins nowa strefa  F9 ACL/secondary  Spacja zaznacz  / szukaj  F7 sortuj  r odśwież  F10 wyjście "
         win.addnstr(height - 2, 0, footer.ljust(width), max(0, width - 1), curses.A_REVERSE)
         draw_project_credits(win)
         win.refresh()
@@ -2964,6 +2973,219 @@ class CursesApp:
                     )
                     self.statuses[zone.name] = status
                     notice = f"Błąd odświeżania: {exc}"
+    def _bind_root_config(self) -> Path:
+        toolkit = self.config.toolkit if self.config is not None else {}
+        return Path(toolkit.get("bind_root_config", "/etc/bind/named.conf"))
+
+    def _bind_access_view(self, win: curses.window) -> None:
+        """F9 browser for named ACLs and secondary groups."""
+        selected = 0
+        while True:
+            try:
+                inventory = BindAccessInventoryReader(
+                    self._bind_root_config()
+                ).collect()
+                report = BindSecondaryReporter().build(inventory)
+            except (BindAccessInventoryError, OSError) as exc:
+                self._message_view(
+                    win, title="ACL i secondary", lines=[str(exc)], error=True
+                )
+                return
+            secondary_names = {item.name.casefold() for item in report.groups}
+            items = [
+                ("secondary" if item.name.casefold() in secondary_names else "acl", item)
+                for item in inventory.definitions
+            ]
+            if not items:
+                self._message_view(
+                    win, title="ACL i secondary", lines=["Brak definicji."]
+                )
+                return
+            selected = min(selected, len(items) - 1)
+            height, width = win.getmaxyx()
+            visible = max(1, height - 5)
+            offset = max(0, min(selected, len(items) - visible))
+            win.erase()
+            win.addnstr(
+                0, 0, " ACL i grupy secondary ".ljust(width), max(0, width - 1),
+                curses.A_REVERSE | curses.A_BOLD,
+            )
+            win.addnstr(2, 1, "Typ        Nazwa                    Adresy", max(0, width - 2), curses.A_BOLD)
+            for row, (kind, item) in enumerate(items[offset:offset + visible], 3):
+                index = offset + row - 3
+                line = f"{kind:<10} {item.name:<24} {', '.join(item.entries)}"
+                attr = curses.A_REVERSE if index == selected else curses.A_NORMAL
+                win.addnstr(row, 1, line, max(0, width - 2), attr)
+            footer = " F3 podgląd   F4 edycja secondary   q/Esc/F10 powrót "
+            win.addnstr(height - 1, 0, footer.ljust(width), max(0, width - 1), curses.A_REVERSE)
+            win.refresh()
+            key = self._get_key(win)
+            if key in (ord("q"), ord("Q"), 27, curses.KEY_F10):
+                return
+            if key in (curses.KEY_DOWN, ord("j")):
+                selected = min(selected + 1, len(items) - 1)
+            elif key in (curses.KEY_UP, ord("k")):
+                selected = max(0, selected - 1)
+            elif key == curses.KEY_F3:
+                self._show_bind_access_item(win, items[selected], report)
+            elif key == curses.KEY_F4:
+                kind, item = items[selected]
+                if kind != "secondary":
+                    self._message_view(
+                        win,
+                        title=f"ACL: {item.name}",
+                        lines=[
+                            "Pełna edycja ACL będzie dodana w następnym etapie.",
+                            "Obecnie dostępne są raport, acl-plan i acl-apply.",
+                        ],
+                    )
+                elif self.read_only:
+                    self._message_view(
+                        win, title="Tryb tylko do odczytu",
+                        lines=["Zmiana grupy secondary jest zablokowana."], error=True,
+                    )
+                else:
+                    self._edit_secondary_group(win, item.name, item.entries)
+
+    def _show_bind_access_item(self, win, selected_item, report) -> None:
+        kind, item = selected_item
+        lines = [
+            f"Typ: {kind}", f"Nazwa: {item.name}",
+            f"Źródło: {item.source}:{item.line}", "", "Adresy:",
+        ] + [f"  {value}" for value in item.entries]
+        group = next(
+            (entry for entry in report.groups if entry.name.casefold() == item.name.casefold()),
+            None,
+        )
+        if group is not None:
+            lines += ["", f"Role: {', '.join(group.roles)}", f"Użycia: {group.usage_count}", "Strefy:"]
+            lines += [f"  {zone}" for zone in group.zones]
+        self._message_view(win, title=f"{kind}: {item.name}", lines=lines)
+
+    @staticmethod
+    def _secondary_result_lines(result) -> list[str]:
+        lines = [
+            f"Transakcja: {result.transaction_id}", f"Status: {result.status}",
+            f"Commit: {'TAK' if result.committed else 'NIE'}",
+            f"Rollback: {'TAK' if result.rolled_back else 'NIE'}", "",
+        ]
+        lines.extend(
+            f"[{'OK' if step.ok else 'BŁĄD'}] {step.name}: {step.message}"
+            for step in result.steps
+        )
+        return lines
+
+    def _edit_secondary_group(self, win, name: str, current: tuple[str, ...]) -> None:
+        addresses = self._secondary_address_editor(win, name, current)
+        if addresses is None:
+            return
+        try:
+            planner = BindSecondaryPlanner(self._bind_root_config())
+            plan = planner.plan(name, addresses)
+        except (BindSecondaryPlanError, OSError) as exc:
+            self._message_view(win, title="Zmiana zablokowana", lines=[str(exc)], error=True)
+            return
+        self._message_view(
+            win, title=f"Plan secondary: {name}",
+            lines=(plan.diff or "Brak zmian.").splitlines()
+            + ["", f"Dotknięte strefy: {len(plan.zones)}"],
+        )
+        transaction = BindSecondaryTransaction(
+            Path("/var/backups/zonectl-bind-secondary/backups"),
+            Path("/var/backups/zonectl-bind-secondary/manifests"),
+            root_config=self._bind_root_config(),
+        )
+        dry_run = transaction.apply(plan)
+        self._message_view(
+            win, title=f"Dry-run secondary: {name}",
+            lines=self._secondary_result_lines(dry_run),
+            error=dry_run.status != "DRY-RUN",
+        )
+        if dry_run.status != "DRY-RUN" or not plan.diff:
+            return
+        confirmation = CursesDialogs.text_input(
+            win, " Wpisz pełną nazwę grupy: "
+        )
+        if (confirmation or "").casefold() != name.casefold():
+            self._message_view(
+                win, title="Anulowano", lines=["Nazwa grupy nie jest zgodna."]
+            )
+            return
+        if not CursesDialogs.confirm(win, f"Zastosować zmianę grupy {name}"):
+            return
+        result = transaction.apply(plan, commit=True, activate=True)
+        self._message_view(
+            win, title=f"Transakcja secondary: {name}",
+            lines=self._secondary_result_lines(result),
+            error=result.status != "COMMIT",
+        )
+
+    def _secondary_address_editor(
+        self, win: curses.window, name: str, current: tuple[str, ...]
+    ) -> list[str] | None:
+        """Full-screen MC-style editor for a secondary address list."""
+        addresses = list(current)
+        selected = 0
+        while True:
+            height, width = win.getmaxyx()
+            visible = max(1, height - 7)
+            if addresses:
+                selected = min(selected, len(addresses) - 1)
+            else:
+                selected = 0
+            offset = max(0, min(selected, len(addresses) - visible))
+            win.erase()
+            win.addnstr(
+                0, 0, f" Edycja secondary: {name} ".ljust(width),
+                max(0, width - 1), curses.A_REVERSE | curses.A_BOLD,
+            )
+            win.addnstr(2, 2, "Adres IP serwera", max(0, width - 4), curses.A_BOLD)
+            for row, address in enumerate(addresses[offset:offset + visible], 4):
+                index = offset + row - 4
+                attr = curses.A_REVERSE if index == selected else curses.A_NORMAL
+                win.addnstr(row, 2, f"{index + 1:>3}. {address}", max(0, width - 4), attr)
+            if not addresses:
+                win.addnstr(4, 2, "(lista pusta — Insert dodaje adres)", max(0, width - 4), curses.A_DIM)
+            footer = " Ins dodaj   F4 edytuj   F8/Del usuń   F2 plan/dry-run   Esc/F10 anuluj "
+            win.addnstr(height - 1, 0, footer.ljust(width), max(0, width - 1), curses.A_REVERSE)
+            win.refresh()
+            key = self._get_key(win)
+            if key in (27, curses.KEY_F10, ord("q"), ord("Q")):
+                if addresses != list(current) and not CursesDialogs.confirm(
+                    win, "Porzucić zmiany listy secondary"
+                ):
+                    continue
+                return None
+            if key in (curses.KEY_DOWN, ord("j")) and addresses:
+                selected = min(selected + 1, len(addresses) - 1)
+            elif key in (curses.KEY_UP, ord("k")) and addresses:
+                selected = max(0, selected - 1)
+            elif key == curses.KEY_IC:
+                value = CursesDialogs.text_input(
+                    win, " Nowy adres: ", row=2
+                )
+                if value is not None and value.strip():
+                    addresses.append(value.strip())
+                    selected = len(addresses) - 1
+            elif key == curses.KEY_F4 and addresses:
+                value = CursesDialogs.text_input(
+                    win, " Edytuj adres: ", initial=addresses[selected], row=2
+                )
+                if value is not None and value.strip():
+                    addresses[selected] = value.strip()
+            elif key in (curses.KEY_F8, curses.KEY_DC) and addresses:
+                if CursesDialogs.confirm(win, f"Usunąć {addresses[selected]}"):
+                    addresses.pop(selected)
+                    selected = min(selected, max(0, len(addresses) - 1))
+            elif key in (curses.KEY_F2, 19):
+                if addresses == list(current):
+                    self._message_view(
+                        win, title=f"Secondary: {name}",
+                        lines=["Brak zmian do zaplanowania."],
+                    )
+                    continue
+                return addresses
+
     def _zone_migration_planner(self) -> ManagedZoneMigrationPlanner:
         toolkit = self.config.toolkit if self.config is not None else {}
         return ManagedZoneMigrationPlanner(

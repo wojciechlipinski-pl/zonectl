@@ -145,6 +145,8 @@ zrealizowane, a `[ ]` pozostają do wykonania.
   grupy notify lub transfer wraz z raportem wpływu na strefy.
 - [x] Stosować plan zmiany grupy secondary transakcyjnie z backupem, atomowym
   zapisem, `named-checkconf`, `rndc reconfig`, manifestem i rollbackiem.
+- [x] Udostępnić w TUI przegląd ACL i grup secondary oraz transakcyjną edycję
+  pełnej listy adresów grupy secondary przez `F3`/`F4`.
 - [x] Udostępnić odczytowy raport pokazujący role, adresy i strefy korzystające
   z danego serwera lub grupy secondary.
 - [ ] Udostępnić przypisywanie strefy do grupy secondary.
