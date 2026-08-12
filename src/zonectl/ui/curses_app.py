@@ -25,6 +25,8 @@ from ..core.bind_access_inventory import (
     BindAccessInventoryError,
     BindAccessInventoryReader,
 )
+from ..core.bind_acl_plan import BindAclPlanError, BindAclPlanner
+from ..core.bind_acl_transaction import BindAclTransaction
 from ..core.bind_secondary_plan import BindSecondaryPlanError, BindSecondaryPlanner
 from ..core.bind_secondary_report import BindSecondaryReporter
 from ..core.bind_secondary_transaction import BindSecondaryTransaction
@@ -3030,20 +3032,13 @@ class CursesApp:
                 self._show_bind_access_item(win, items[selected], report)
             elif key == curses.KEY_F4:
                 kind, item = items[selected]
-                if kind != "secondary":
-                    self._message_view(
-                        win,
-                        title=f"ACL: {item.name}",
-                        lines=[
-                            "Pełna edycja ACL będzie dodana w następnym etapie.",
-                            "Obecnie dostępne są raport, acl-plan i acl-apply.",
-                        ],
-                    )
-                elif self.read_only:
+                if self.read_only:
                     self._message_view(
                         win, title="Tryb tylko do odczytu",
-                        lines=["Zmiana grupy secondary jest zablokowana."], error=True,
+                        lines=["Zmiana konfiguracji BIND jest zablokowana."], error=True,
                     )
+                elif kind == "acl":
+                    self._edit_acl(win, item.name, item.entries)
                 else:
                     self._edit_secondary_group(win, item.name, item.entries)
 
@@ -3074,6 +3069,99 @@ class CursesApp:
             for step in result.steps
         )
         return lines
+
+    def _edit_acl(self, win, name: str, current: tuple[str, ...]) -> None:
+        entries = self._acl_entry_editor(win, name, current)
+        if entries is None:
+            return
+        try:
+            plan = BindAclPlanner(self._bind_root_config()).plan(name, entries=entries)
+        except (BindAclPlanError, OSError) as exc:
+            self._message_view(win, title="Zmiana ACL zablokowana", lines=[str(exc)], error=True)
+            return
+        self._message_view(
+            win, title=f"Plan ACL: {name}",
+            lines=(plan.diff or "Brak zmian.").splitlines(),
+        )
+        transaction = BindAclTransaction(
+            Path("/var/backups/zonectl-bind-acl/backups"),
+            Path("/var/backups/zonectl-bind-acl/manifests"),
+            root_config=self._bind_root_config(),
+        )
+        dry_run = transaction.apply(plan)
+        self._message_view(
+            win, title=f"Dry-run ACL: {name}",
+            lines=self._secondary_result_lines(dry_run),
+            error=dry_run.status != "DRY-RUN",
+        )
+        if dry_run.status != "DRY-RUN" or not plan.diff:
+            return
+        confirmation = CursesDialogs.text_input(win, " Wpisz pełną nazwę ACL: ")
+        if (confirmation or "").casefold() != name.casefold():
+            self._message_view(win, title="Anulowano", lines=["Nazwa ACL nie jest zgodna."])
+            return
+        if not CursesDialogs.confirm(win, f"Zastosować zmianę ACL {name}"):
+            return
+        result = transaction.apply(plan, commit=True, activate=True)
+        self._message_view(
+            win, title=f"Transakcja ACL: {name}",
+            lines=self._secondary_result_lines(result),
+            error=result.status != "COMMIT",
+        )
+
+    def _acl_entry_editor(
+        self, win: curses.window, name: str, current: tuple[str, ...]
+    ) -> list[str] | None:
+        """Full-screen editor for hosts, networks and named ACL elements."""
+        entries = list(current)
+        selected = 0
+        while True:
+            height, width = win.getmaxyx()
+            visible = max(1, height - 7)
+            selected = min(selected, max(0, len(entries) - 1))
+            offset = max(0, min(selected, len(entries) - visible))
+            win.erase()
+            win.addnstr(
+                0, 0, f" Edycja ACL: {name} ".ljust(width), max(0, width - 1),
+                curses.A_REVERSE | curses.A_BOLD,
+            )
+            win.addnstr(2, 2, "Host, sieć CIDR, negacja lub nazwana ACL", max(0, width - 4), curses.A_BOLD)
+            for row, value in enumerate(entries[offset:offset + visible], 4):
+                index = offset + row - 4
+                attr = curses.A_REVERSE if index == selected else curses.A_NORMAL
+                win.addnstr(row, 2, f"{index + 1:>3}. {value}", max(0, width - 4), attr)
+            footer = " Ins dodaj   F4 edytuj   F8/Del usuń   F2 plan/dry-run   Esc/F10 anuluj "
+            win.addnstr(height - 1, 0, footer.ljust(width), max(0, width - 1), curses.A_REVERSE)
+            win.refresh()
+            key = self._get_key(win)
+            if key in (27, curses.KEY_F10, ord("q"), ord("Q")):
+                if entries != list(current) and not CursesDialogs.confirm(win, "Porzucić zmiany ACL"):
+                    continue
+                return None
+            if key in (curses.KEY_DOWN, ord("j")) and entries:
+                selected = min(selected + 1, len(entries) - 1)
+            elif key in (curses.KEY_UP, ord("k")) and entries:
+                selected = max(0, selected - 1)
+            elif key == curses.KEY_IC:
+                value = CursesDialogs.text_input(win, " Nowy element ACL: ", row=2)
+                if value is not None and value.strip():
+                    entries.append(value.strip())
+                    selected = len(entries) - 1
+            elif key == curses.KEY_F4 and entries:
+                value = CursesDialogs.text_input(
+                    win, " Edytuj element ACL: ", initial=entries[selected], row=2
+                )
+                if value is not None and value.strip():
+                    entries[selected] = value.strip()
+            elif key in (curses.KEY_F8, curses.KEY_DC) and entries:
+                if CursesDialogs.confirm(win, f"Usunąć {entries[selected]}"):
+                    entries.pop(selected)
+                    selected = min(selected, max(0, len(entries) - 1))
+            elif key in (curses.KEY_F2, 19):
+                if entries == list(current):
+                    self._message_view(win, title=f"ACL: {name}", lines=["Brak zmian do zaplanowania."])
+                    continue
+                return entries
 
     def _edit_secondary_group(self, win, name: str, current: tuple[str, ...]) -> None:
         addresses = self._secondary_address_editor(win, name, current)

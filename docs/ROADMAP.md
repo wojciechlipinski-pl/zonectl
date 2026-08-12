@@ -136,7 +136,7 @@ zrealizowane, a `[ ]` pozostają do wykonania.
   kandydacką konfigurację w izolacji prawdziwym `named-checkconf`.
 - [x] Stosować zweryfikowany plan ACL transakcyjnie z backupem, atomowym
   zapisem, kontrolowanym `rndc reconfig`, manifestem i rollbackiem.
-- [ ] Dodać edycję `trusted` w CLI i TUI z walidacją adresów IPv4, IPv6,
+- [x] Dodać edycję `trusted` w CLI i TUI z walidacją adresów IPv4, IPv6,
   prefiksów CIDR, negacji oraz nazw dozwolonych elementów ACL.
 - [ ] Dodać zarządzanie nazwanymi grupami serwerów secondary/slave używanymi
   przez `also-notify`, `allow-transfer`, `allow-notify` i `primaries`, bez

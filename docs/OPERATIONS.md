@@ -367,6 +367,7 @@ zctl bind secondary-plan he-transfer --address 216.218.133.2
 zctl bind secondary-apply dns2-notify --address 5.172.189.198
 zctl bind secondary-apply dns2-notify --address 5.172.189.198 \
   --commit --activate --confirm dns2-notify
+zctl bind acl-plan trusted --entry localhost --entry 192.168.200.0/24
 ```
 
 Planner odrzuca pustą listę, duplikaty oraz błędne IPv4/IPv6. Pokazuje
@@ -382,8 +383,9 @@ konfiguracji i ponowne `rndc reconfig`.
 W głównym widoku TUI `F9` otwiera przeglądarkę ACL i grup secondary. Klawisz
 `F3` pokazuje adresy, role i dotknięte strefy. `F4` dla grupy secondary
 przyjmuje pełną listę adresów, pokazuje plan i dry-run, wymaga wpisania pełnej
-nazwy grupy oraz dodatkowego potwierdzenia przed zapisem. Pełna edycja ACL w
-tym widoku pozostaje zablokowana do czasu dodania równoważnego edytora list.
+nazwy grupy oraz dodatkowego potwierdzenia przed zapisem. Edycja ACL korzysta
+z tego samego schematu i dodatkowo blokuje pustą listę, duplikaty, błędne
+elementy oraz usunięcie `localhost` z ACL `trusted`.
 Lista adresów jest edytowana pełnoekranowo: `Insert` dodaje, `F4` edytuje,
 `F8` lub `Delete` usuwa, a `F2` przechodzi do planu i dry-runu. `Esc` i `F10`
 porzucają zmiany po potwierdzeniu.

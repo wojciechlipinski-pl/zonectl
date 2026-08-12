@@ -54,6 +54,7 @@ class BindAclPlanner:
         *,
         replacements: dict[str, str] | None = None,
         remove_duplicates: bool = True,
+        entries: list[str] | tuple[str, ...] | None = None,
     ) -> BindAclPlan:
         inventory = BindAccessInventoryReader(self.root_config).collect()
         matches = [
@@ -80,9 +81,15 @@ class BindAclPlanner:
         opening = masked.find("{", match.start(), match.end())
         closing = BindConfigDiscovery._find_block_end(masked, opening, definition.source)
         body = original[opening + 1 : closing]
-        candidate_body, changed, removed = self._rewrite_body(
-            body, replacements or {}, remove_duplicates
-        )
+        if entries is None:
+            candidate_body, changed, removed = self._rewrite_body(
+                body, replacements or {}, remove_duplicates
+            )
+        else:
+            normalized_entries = self._validate_full_entries(name, entries)
+            candidate_body = self._replace_entries(body, normalized_entries)
+            changed = ["pełna lista ACL"] if candidate_body != body else []
+            removed = []
         candidate = original[: opening + 1] + candidate_body + original[closing:]
         diff = "".join(
             difflib.unified_diff(
@@ -106,6 +113,61 @@ class BindAclPlanner:
             validation_ok=validation_ok,
             validation_message=validation_message,
         )
+
+    @classmethod
+    def _validate_full_entries(
+        cls, name: str, entries: list[str] | tuple[str, ...]
+    ) -> tuple[str, ...]:
+        if not entries:
+            raise BindAclPlanError("ACL nie może być pusta")
+        result: list[str] = []
+        seen: set[str] = set()
+        token = re.compile(r"^[A-Za-z_][A-Za-z0-9_.-]*$")
+        for raw in entries:
+            value = raw.strip()
+            negated = value.startswith("!")
+            item = value[1:] if negated else value
+            try:
+                ipaddress.ip_network(item, strict=False)
+            except ValueError:
+                if not token.fullmatch(item):
+                    raise BindAclPlanError(f"Nieprawidłowy element ACL: {raw}")
+            key = cls._normalized(value)
+            if key in seen:
+                raise BindAclPlanError(f"Powtórzony element ACL: {value}")
+            seen.add(key)
+            result.append(value)
+        if name.casefold() == "trusted" and "localhost" not in {
+            value.lstrip("!").casefold() for value in result if not value.startswith("!")
+        }:
+            raise BindAclPlanError("ACL trusted musi zachować wpis localhost")
+        return tuple(result)
+
+    @staticmethod
+    def _replace_entries(body: str, entries: tuple[str, ...]) -> str:
+        pattern = re.compile(
+            r"(?m)^(?P<indent>[ \t]*)(?P<value>!?[A-Za-z0-9:./_-]+)"
+            r"(?P<tail>[ \t]*;[^\r\n]*)(?P<newline>\r?\n|$)"
+        )
+        matches = list(pattern.finditer(body))
+        if not matches:
+            raise BindAclPlanError("ACL nie zawiera edytowalnych wpisów")
+        first, last = matches[0], matches[-1]
+        newline = "\r\n" if "\r\n" in body else "\n"
+        indent = first.group("indent")
+        original_lines = {
+            BindAclPlanner._normalized(match.group("value")): match.group(0)
+            for match in matches
+        }
+        rendered: list[str] = []
+        for value in entries:
+            preserved = original_lines.get(BindAclPlanner._normalized(value))
+            if preserved is not None:
+                rendered.append(preserved.rstrip("\r\n"))
+            else:
+                rendered.append(f"{indent}{value};")
+        replacement = newline.join(rendered) + newline
+        return body[: first.start()] + replacement + body[last.end() :]
 
     @staticmethod
     def _rewrite_body(

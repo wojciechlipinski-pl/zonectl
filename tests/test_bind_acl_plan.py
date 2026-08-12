@@ -63,3 +63,38 @@ def test_keep_duplicates_only_applies_replacement(tmp_path: Path, monkeypatch) -
     )
     assert plan.candidate_text.count("172.24.0.0/16") == 2
     assert plan.removed_duplicates == ()
+
+
+def test_full_list_plan_preserves_unchanged_inline_comment(
+    tmp_path: Path, monkeypatch
+) -> None:
+    root, _ = _config(tmp_path)
+    monkeypatch.setattr(
+        BindAclPlanner, "_validate_candidate",
+        lambda self, source, candidate: (True, "kod 0"),
+    )
+    plan = BindAclPlanner(root).plan(
+        "trusted", entries=["localhost", "192.0.2.0/24"]
+    )
+    assert "localhost; // zachowaj komentarz" in plan.candidate_text
+    assert "192.0.2.0/24;" in plan.candidate_text
+    assert "172.24.0.0/16" not in plan.candidate_text
+
+
+def test_full_list_rejects_empty_duplicate_invalid_and_missing_localhost(
+    tmp_path: Path,
+) -> None:
+    root, _ = _config(tmp_path)
+    planner = BindAclPlanner(root)
+    for entries in (
+        [],
+        ["localhost", "192.0.2.1", "192.0.2.1/32"],
+        ["localhost", "bad value"],
+        ["192.0.2.0/24"],
+    ):
+        try:
+            planner.plan("trusted", entries=entries)
+        except Exception as exc:
+            assert "ACL" in str(exc) or "element" in str(exc)
+        else:
+            raise AssertionError(f"Nie odrzucono: {entries}")

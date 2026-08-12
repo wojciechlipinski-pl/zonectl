@@ -113,6 +113,10 @@ def parser() -> argparse.ArgumentParser:
     bind_acl_plan.add_argument(
         "--replace", action="append", default=[], metavar="STARY=NOWY"
     )
+    bind_acl_plan.add_argument(
+        "--entry", action="append", dest="entries",
+        help="element pełnej docelowej listy ACL; opcję można powtarzać",
+    )
     bind_acl_plan.add_argument("--keep-duplicates", action="store_true")
     bind_acl_plan.add_argument(
         "--root-config", type=Path, default=Path("/etc/bind/named.conf")
@@ -124,6 +128,10 @@ def parser() -> argparse.ArgumentParser:
     bind_acl_apply.add_argument("name")
     bind_acl_apply.add_argument(
         "--replace", action="append", default=[], metavar="STARY=NOWY"
+    )
+    bind_acl_apply.add_argument(
+        "--entry", action="append", dest="entries",
+        help="element pełnej docelowej listy ACL; opcję można powtarzać",
     )
     bind_acl_apply.add_argument("--keep-duplicates", action="store_true")
     bind_acl_apply.add_argument("--confirm")
@@ -955,6 +963,10 @@ def main(argv: list[str] | None = None) -> int:
             return 2
         replacements: dict[str, str] = {}
         try:
+            if args.entries is not None and (args.replace or args.keep_duplicates):
+                raise BindAclPlanError(
+                    "--entry nie można łączyć z --replace ani --keep-duplicates"
+                )
             for value in args.replace:
                 old, new = value.split("=", 1)
                 if not old.strip() or not new.strip():
@@ -964,6 +976,7 @@ def main(argv: list[str] | None = None) -> int:
                 args.name,
                 replacements=replacements,
                 remove_duplicates=not args.keep_duplicates,
+                entries=args.entries,
             )
             result = BindAclTransaction(
                 args.backup_root,
@@ -992,6 +1005,10 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "bind" and args.bind_command == "acl-plan":
         replacements: dict[str, str] = {}
         try:
+            if args.entries is not None and (args.replace or args.keep_duplicates):
+                raise BindAclPlanError(
+                    "--entry nie można łączyć z --replace ani --keep-duplicates"
+                )
             for value in args.replace:
                 old, new = value.split("=", 1)
                 if not old.strip() or not new.strip():
@@ -1001,6 +1018,7 @@ def main(argv: list[str] | None = None) -> int:
                 args.name,
                 replacements=replacements,
                 remove_duplicates=not args.keep_duplicates,
+                entries=args.entries,
             )
         except (BindAclPlanError, OSError, ValueError) as exc:
             detail = str(exc) or "--replace wymaga formatu STARY=NOWY"

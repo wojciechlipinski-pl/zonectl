@@ -43,5 +43,17 @@ def test_secondary_address_editor_uses_mc_keybindings() -> None:
 def test_acl_write_is_not_mixed_with_secondary_transaction() -> None:
     source = inspect.getsource(CursesApp._bind_access_view)
 
-    assert 'kind != "secondary"' in source
-    assert "Pełna edycja ACL będzie dodana" in source
+    assert 'kind == "acl"' in source
+    assert "self._edit_acl" in source
+
+
+def test_acl_editor_uses_mc_keys_and_guarded_transaction() -> None:
+    editor = inspect.getsource(CursesApp._acl_entry_editor)
+    workflow = inspect.getsource(CursesApp._edit_acl)
+
+    for key in ("KEY_IC", "KEY_F4", "KEY_F8", "KEY_DC", "KEY_F2"):
+        assert key in editor
+    assert "entries=entries" in workflow
+    assert "dry_run = transaction.apply(plan)" in workflow
+    assert "Wpisz pełną nazwę ACL" in workflow
+    assert "transaction.apply(plan, commit=True, activate=True)" in workflow
