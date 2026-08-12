@@ -217,12 +217,55 @@ zrealizowane, a `[ ]` pozostają do wykonania.
 ## Dokumentacja
 
 - [ ] Dodać przykłady obsługi każdego wspieranego typu rekordu.
-- [ ] Dodać zrzuty ekranów TUI.
+- [ ] Dodać bezpieczne, syntetyczne zrzuty ekranów TUI generowane bez dostępu
+  do konfiguracji produkcyjnej.
 - [ ] Przygotować instrukcję odtwarzania po awarii.
 - [ ] Opisać procedurę wydania nowej wersji.
 - [ ] Prowadzić listę wspieranych wersji Pythona, BIND i systemów.
-- [ ] Przygotować publiczną dokumentację w języku polskim i angielskim.
-- [ ] Dodać `README.en.md` oraz angielskie instrukcje instalacji i CLI.
+- [x] Przygotować publiczną dokumentację w języku polskim i angielskim.
+- [x] Ustawić angielski `README.md`, zachować `README.pl.md` oraz dodać
+  angielską instrukcję operatorską w `docs/en/OPERATIONS.md`.
+
+## ZoneCTL 4.8 — hardening, automation and safe demonstrations
+
+Zakres 4.8 jest zamknięty. Nowe pomysły trafiają do późniejszych wydań, aby
+nie rozciągać prac nad stabilizacją.
+
+### Bezpieczne materiały demonstracyjne
+
+- [ ] Dodać deterministyczny generator demonstracyjnego stanu TUI, który nie
+  czyta `/etc/bind`, `/var/lib/bind`, nazw hostów ani danych operatora.
+- [ ] Wygenerować ekrany: lista stref, rekordy, DNSSEC, ACL, secondary oraz
+  wynik transakcji.
+- [ ] Zapisać obrazy w `docs/images/` i osadzić je w obu wersjach README.
+- [ ] Dodać test wykrywający w obrazach/metadanych i plikach demonstracyjnych
+  zabronione nazwy produkcyjne.
+
+### Zabezpieczenia ACL i secondary
+
+- [ ] Blokować usunięcie ostatniego wpisu administracyjnego oraz wpisu
+  wymaganego przez aktywny transfer.
+- [ ] Wymagać rozszerzonego potwierdzenia przy opróżnianiu używanej ACL lub
+  odłączaniu ostatniej pary secondary od strefy.
+- [ ] Rozszerzyć manifest o operatora, przyczynę, stan przed i po operacji oraz
+  pełną listę dotkniętych stref.
+
+### Testy awarii i jakość
+
+- [ ] Dodać macierz wymuszonych awarii dla zapisu, walidacji, aktywacji i
+  rollbacku cyklu życia stref, ACL oraz secondary.
+- [ ] Sprawdzać zachowanie właściciela, grupy i trybu pliku po sukcesie oraz
+  rollbacku.
+- [ ] Uzupełnić docstringi publicznego API i zwiększyć pokrycie krytycznych
+  ścieżek zapisu.
+
+### Automatyzacja GitHub i pakietów
+
+- [ ] Dodać GitHub Actions uruchamiające testy bez dostępu do produkcyjnego
+  BIND.
+- [ ] Automatycznie budować wheel i pakiet Debian oraz uruchamiać Lintian.
+- [ ] Publikować artefakty dopiero dla podpisanego lub jawnie zatwierdzonego
+  tagu wydania.
 
 ## Przyszłe rozszerzenie — internationalization (i18n)
 
