@@ -223,6 +223,7 @@ Odczytowa inwentaryzacja globalnych ACL i grup secondary:
 ```bash
 zctl bind inventory
 zctl bind inventory --json
+zctl bind audit
 ```
 
 ## Testy

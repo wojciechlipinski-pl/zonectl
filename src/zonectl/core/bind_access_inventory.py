@@ -34,6 +34,7 @@ class BindListUsage:
     source: Path
     line: int
     values: tuple[str, ...]
+    zone: str | None = None
 
     def to_dict(self) -> dict[str, object]:
         data = asdict(self)
@@ -78,6 +79,7 @@ class BindAccessInventoryReader:
             raw = source.read_text(encoding="utf-8", errors="replace")
             masked = self._mask_comments(raw)
             definition_ranges: list[tuple[int, int]] = []
+            zone_ranges = self._zone_ranges(masked, source)
             for match in self._definition.finditer(masked):
                 opening = masked.find("{", match.start(), match.end())
                 closing = BindConfigDiscovery._find_block_end(masked, opening, source)
@@ -102,12 +104,33 @@ class BindAccessInventoryReader:
                         source=source,
                         line=raw.count("\n", 0, match.start()) + 1,
                         values=self._entries(raw[opening + 1 : closing]),
+                        zone=next(
+                            (
+                                name
+                                for start, end, name in zone_ranges
+                                if start <= match.start() < end
+                            ),
+                            None,
+                        ),
                     )
                 )
         return BindAccessInventory(
             definitions=tuple(sorted(definitions, key=lambda x: (x.name.casefold(), str(x.source), x.line))),
             usages=tuple(sorted(usages, key=lambda x: (x.directive, str(x.source), x.line))),
         )
+
+    @staticmethod
+    def _zone_ranges(text: str, source: Path) -> tuple[tuple[int, int, str], ...]:
+        ranges: list[tuple[int, int, str]] = []
+        position = 0
+        for match in BindConfigDiscovery._zone_start_re.finditer(text):
+            if match.start() < position:
+                continue
+            opening = text.find("{", match.start(), match.end())
+            closing = BindConfigDiscovery._find_block_end(text, opening, source)
+            ranges.append((match.start(), closing + 1, match.group("name").rstrip(".")))
+            position = closing + 1
+        return tuple(ranges)
 
     @staticmethod
     def _entries(body: str) -> tuple[str, ...]:

@@ -12,6 +12,7 @@ from .core.bind_access_inventory import (
     BindAccessInventoryError,
     BindAccessInventoryReader,
 )
+from .core.bind_access_audit import BindAccessAuditor
 from .core.config import DEFAULT_CONFIG, DEFAULT_GROUPS, DEFAULT_ZONES, ToolkitConfig
 from .core.dnssec_enable_plan import (
     DnssecEnablePlanError,
@@ -90,6 +91,13 @@ def parser() -> argparse.ArgumentParser:
         "--root-config", type=Path, default=Path("/etc/bind/named.conf")
     )
     bind_inventory.add_argument("--json", action="store_true")
+    bind_audit = bind_sub.add_parser(
+        "audit", help="wykryj błędy i ryzyka ACL oraz secondary bez zmian"
+    )
+    bind_audit.add_argument(
+        "--root-config", type=Path, default=Path("/etc/bind/named.conf")
+    )
+    bind_audit.add_argument("--json", action="store_true")
 
     dnssec = sub.add_parser(
         "dnssec",
@@ -738,12 +746,33 @@ def main(argv: list[str] | None = None) -> int:
     if args.command in {"transaction", "tx"}:
         return transaction_main(args, config)
     zones = config.zones()
-    if args.command == "bind" and args.bind_command == "inventory":
+    if args.command == "bind" and args.bind_command in {"inventory", "audit"}:
         try:
             report = BindAccessInventoryReader(args.root_config).collect()
         except (BindAccessInventoryError, OSError) as exc:
             print(f"BŁĄD: {exc}", file=sys.stderr)
             return 2
+        if args.bind_command == "audit":
+            audit = BindAccessAuditor().audit(report)
+            if args.json:
+                print(json.dumps(audit.to_dict(), ensure_ascii=False, indent=2))
+            else:
+                print("AUDYT ACL I GRUP SECONDARY")
+                print(f"Status: {audit.status}")
+                if not audit.findings:
+                    print("[OK] Nie wykryto problemów.")
+                for finding in audit.findings:
+                    location = (
+                        f" — {finding.source}:{finding.line}"
+                        if finding.source and finding.line else ""
+                    )
+                    print(
+                        f"[{finding.severity}] {finding.code}: "
+                        f"{finding.message}{location}"
+                    )
+                    if finding.zones:
+                        print("  Strefy: " + ", ".join(finding.zones))
+            return 1 if audit.status == "FAIL" else 0
         if args.json:
             print(json.dumps(report.to_dict(), ensure_ascii=False, indent=2))
         else:

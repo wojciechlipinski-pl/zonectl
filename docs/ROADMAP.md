@@ -130,6 +130,8 @@ zrealizowane, a `[ ]` pozostają do wykonania.
   `also-notify` i `primaries`.
 - [x] Dodać odczytowy widok listy zaufanych sieci i hostów (`trusted`) wraz z
   plikiem źródłowym, numerem linii i miejscami użycia każdej ACL.
+- [x] Audytować duplikaty, błędne prefiksy, nierozpoznane odwołania,
+  nieużywane definicje i wpływ problemów na strefy.
 - [ ] Dodać edycję `trusted` w CLI i TUI z walidacją adresów IPv4, IPv6,
   prefiksów CIDR, negacji oraz nazw dozwolonych elementów ACL.
 - [ ] Dodać zarządzanie nazwanymi grupami serwerów secondary/slave używanymi

@@ -319,6 +319,11 @@ każdej definicji `acl`, `primaries` lub `masters`, jej elementy oraz użycia w
 `also-notify` i `primaries`. Polecenie nie zapisuje konfiguracji i nie wywołuje
 `rndc`.
 
+`zctl bind audit` uzupełnia raport o duplikaty, błędne i niekanoniczne
+prefiksy, nierozpoznane odwołania, nieużywane definicje oraz strefy dotknięte
+problemem. Kod zakończenia `1` oznacza wykrycie błędu konfiguracji wejściowej;
+audyt nadal pozostaje operacją wyłącznie odczytową.
+
 Strefy z `health_profile = rpz` są automatycznie zarządzanymi źródłami
 polityki i nie podlegają zwykłemu cyklowi życia domen. ZoneCTL blokuje dla
 nich wyłączenie, przywrócenie i kwarantannę; nadal je monitoruje.
