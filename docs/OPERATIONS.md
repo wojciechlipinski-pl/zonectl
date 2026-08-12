@@ -1,5 +1,7 @@
 # Instrukcja operacyjna
 
+[English](en/OPERATIONS.md) | [Polski](OPERATIONS.md)
+
 ## Zasady bezpieczeństwa
 
 - Polecenia zmieniające strefy wykonuj jako `root`.
