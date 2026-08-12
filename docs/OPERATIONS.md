@@ -359,6 +359,17 @@ Raport łączy definicje notify i transfer w pary logiczne, pokazuje osobne
 adresy każdej roli, liczbę użyć i kompletną listę korzystających stref. Różne
 adresy notify i transfer są dozwolone; ostrzeżeniem jest brak jednej z ról.
 
+Plan zmiany jednej grupy przyjmuje pełną docelową listę adresów:
+
+```bash
+zctl bind secondary-plan dns2-notify --address 5.172.189.198
+zctl bind secondary-plan he-transfer --address 216.218.133.2
+```
+
+Planner odrzuca pustą listę, duplikaty oraz błędne IPv4/IPv6. Pokazuje
+minimalny diff i wszystkie dotknięte strefy, a następnie sprawdza izolowaną
+kandydacką konfigurację prawdziwym `named-checkconf`. Nie zapisuje plików.
+
 Strefy z `health_profile = rpz` są automatycznie zarządzanymi źródłami
 polityki i nie podlegają zwykłemu cyklowi życia domen. ZoneCTL blokuje dla
 nich wyłączenie, przywrócenie i kwarantannę; nadal je monitoruje.

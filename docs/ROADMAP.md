@@ -141,6 +141,8 @@ zrealizowane, a `[ ]` pozostają do wykonania.
 - [ ] Dodać zarządzanie nazwanymi grupami serwerów secondary/slave używanymi
   przez `also-notify`, `allow-transfer`, `allow-notify` i `primaries`, bez
   powielania adresów w deklaracjach poszczególnych stref.
+- [x] Dodać odczytowy, walidowany plan zmiany pełnej listy adresów pojedynczej
+  grupy notify lub transfer wraz z raportem wpływu na strefy.
 - [x] Udostępnić odczytowy raport pokazujący role, adresy i strefy korzystające
   z danego serwera lub grupy secondary.
 - [ ] Udostępnić przypisywanie strefy do grupy secondary.

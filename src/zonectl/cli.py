@@ -16,6 +16,10 @@ from .core.bind_access_audit import BindAccessAuditor
 from .core.bind_acl_plan import BindAclPlanError, BindAclPlanner
 from .core.bind_acl_transaction import BindAclTransaction
 from .core.bind_secondary_report import BindSecondaryReporter
+from .core.bind_secondary_plan import (
+    BindSecondaryPlanError,
+    BindSecondaryPlanner,
+)
 from .core.config import DEFAULT_CONFIG, DEFAULT_GROUPS, DEFAULT_ZONES, ToolkitConfig
 from .core.dnssec_enable_plan import (
     DnssecEnablePlanError,
@@ -144,6 +148,17 @@ def parser() -> argparse.ArgumentParser:
         "--root-config", type=Path, default=Path("/etc/bind/named.conf")
     )
     bind_secondary.add_argument("--json", action="store_true")
+    bind_secondary_plan = bind_sub.add_parser(
+        "secondary-plan", help="pokaż zwalidowany plan zmiany jednej grupy"
+    )
+    bind_secondary_plan.add_argument("name")
+    bind_secondary_plan.add_argument(
+        "--address", action="append", required=True, dest="addresses"
+    )
+    bind_secondary_plan.add_argument(
+        "--root-config", type=Path, default=Path("/etc/bind/named.conf")
+    )
+    bind_secondary_plan.add_argument("--json", action="store_true")
 
     dnssec = sub.add_parser(
         "dnssec",
@@ -792,6 +807,33 @@ def main(argv: list[str] | None = None) -> int:
     if args.command in {"transaction", "tx"}:
         return transaction_main(args, config)
     zones = config.zones()
+    if args.command == "bind" and args.bind_command == "secondary-plan":
+        try:
+            plan = BindSecondaryPlanner(args.root_config).plan(
+                args.name, args.addresses
+            )
+        except (BindSecondaryPlanError, OSError) as exc:
+            print(f"BŁĄD: {exc}", file=sys.stderr)
+            return 2
+        if args.json:
+            print(json.dumps(plan.to_dict(), ensure_ascii=False, indent=2))
+        else:
+            print("PLAN ZMIANY GRUPY SECONDARY — BEZ ZMIAN W SYSTEMIE")
+            print(f"Grupa:       {plan.name}")
+            print(f"Typ:         {plan.kind}")
+            print(f"Role:        {', '.join(plan.roles)}")
+            print(f"Plik:        {plan.source}")
+            print(f"Adresy były: {', '.join(plan.old_addresses)}")
+            print(f"Adresy będą: {', '.join(plan.new_addresses)}")
+            print(f"Strefy ({len(plan.zones)}):")
+            for zone in plan.zones:
+                print(f"  {zone}")
+            print(f"Walidacja:   {'OK' if plan.validation_ok else 'BŁĄD'}")
+            print(f"named-checkconf: {plan.validation_message}")
+            print("\nPlanowany diff:\n")
+            print(plan.diff or "Brak zmian.")
+            print("\nWynik: DRY-RUN — niczego nie zmieniono")
+        return 0 if plan.validation_ok else 1
     if args.command == "bind" and args.bind_command == "secondary-report":
         try:
             inventory = BindAccessInventoryReader(args.root_config).collect()
