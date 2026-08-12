@@ -15,6 +15,7 @@ from .core.bind_access_inventory import (
 from .core.bind_access_audit import BindAccessAuditor
 from .core.bind_acl_plan import BindAclPlanError, BindAclPlanner
 from .core.bind_acl_transaction import BindAclTransaction
+from .core.bind_secondary_report import BindSecondaryReporter
 from .core.config import DEFAULT_CONFIG, DEFAULT_GROUPS, DEFAULT_ZONES, ToolkitConfig
 from .core.dnssec_enable_plan import (
     DnssecEnablePlanError,
@@ -135,6 +136,14 @@ def parser() -> argparse.ArgumentParser:
         default=Path("/var/backups/zonectl-bind-acl/manifests"),
     )
     bind_acl_apply.add_argument("--json", action="store_true")
+    bind_secondary = bind_sub.add_parser(
+        "secondary-report",
+        help="pokaż grupy notify/transfer i korzystające strefy bez zmian",
+    )
+    bind_secondary.add_argument(
+        "--root-config", type=Path, default=Path("/etc/bind/named.conf")
+    )
+    bind_secondary.add_argument("--json", action="store_true")
 
     dnssec = sub.add_parser(
         "dnssec",
@@ -783,6 +792,43 @@ def main(argv: list[str] | None = None) -> int:
     if args.command in {"transaction", "tx"}:
         return transaction_main(args, config)
     zones = config.zones()
+    if args.command == "bind" and args.bind_command == "secondary-report":
+        try:
+            inventory = BindAccessInventoryReader(args.root_config).collect()
+            report = BindSecondaryReporter().build(inventory)
+        except (BindAccessInventoryError, OSError) as exc:
+            print(f"BŁĄD: {exc}", file=sys.stderr)
+            return 2
+        if args.json:
+            print(json.dumps(report.to_dict(), ensure_ascii=False, indent=2))
+        else:
+            print("RAPORT GRUP SECONDARY — TYLKO ODCZYT")
+            print("\nGRUPY")
+            for group in report.groups:
+                print(
+                    f"[{','.join(group.roles) or 'nieużywana'}] {group.name} "
+                    f"({group.kind}) — {group.source}:{group.line}"
+                )
+                print("  Adresy: " + (", ".join(group.entries) or "-"))
+                print("  Strefy: " + (", ".join(group.zones) or "-"))
+                print(f"  Użycia: {group.usage_count}")
+            print("\nPARY LOGICZNE")
+            for pair in report.pairs:
+                print(f"[{pair.status}] {pair.name}")
+                print(
+                    "  Notify: "
+                    + (", ".join(pair.notify_groups) or "BRAK")
+                    + " — "
+                    + (", ".join(pair.notify_addresses) or "-")
+                )
+                print(
+                    "  Transfer: "
+                    + (", ".join(pair.transfer_groups) or "BRAK")
+                    + " — "
+                    + (", ".join(pair.transfer_addresses) or "-")
+                )
+                print("  Strefy: " + (", ".join(pair.zones) or "-"))
+        return 0
     if args.command == "bind" and args.bind_command == "acl-apply":
         if args.commit != args.activate:
             print(

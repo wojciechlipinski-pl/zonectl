@@ -348,6 +348,17 @@ wykonuje backup, zapis atomowy, `named-checkconf`, `rndc reconfig` i manifest.
 Niepowodzenie przywraca oryginalny plik i ponownie ładuje poprzednią
 konfigurację, jeśli aktywacja została już rozpoczęta.
 
+Raport wpływu grup serwerów secondary jest odczytowy:
+
+```bash
+zctl bind secondary-report
+zctl bind secondary-report --json
+```
+
+Raport łączy definicje notify i transfer w pary logiczne, pokazuje osobne
+adresy każdej roli, liczbę użyć i kompletną listę korzystających stref. Różne
+adresy notify i transfer są dozwolone; ostrzeżeniem jest brak jednej z ról.
+
 Strefy z `health_profile = rpz` są automatycznie zarządzanymi źródłami
 polityki i nie podlegają zwykłemu cyklowi życia domen. ZoneCTL blokuje dla
 nich wyłączenie, przywrócenie i kwarantannę; nadal je monitoruje.

@@ -224,6 +224,7 @@ Odczytowa inwentaryzacja globalnych ACL i grup secondary:
 zctl bind inventory
 zctl bind inventory --json
 zctl bind audit
+zctl bind secondary-report
 zctl bind acl-plan trusted \
   --replace 192.168.200/24=192.168.200.0/24
 zctl bind acl-apply trusted \

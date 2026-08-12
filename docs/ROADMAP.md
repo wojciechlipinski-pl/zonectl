@@ -141,8 +141,9 @@ zrealizowane, a `[ ]` pozostają do wykonania.
 - [ ] Dodać zarządzanie nazwanymi grupami serwerów secondary/slave używanymi
   przez `also-notify`, `allow-transfer`, `allow-notify` i `primaries`, bez
   powielania adresów w deklaracjach poszczególnych stref.
-- [ ] Udostępnić przypisywanie strefy do grupy secondary oraz odczytowy raport
-  pokazujący, które strefy korzystają z danego serwera lub grupy.
+- [x] Udostępnić odczytowy raport pokazujący role, adresy i strefy korzystające
+  z danego serwera lub grupy secondary.
+- [ ] Udostępnić przypisywanie strefy do grupy secondary.
 - [ ] Każdą zmianę ACL wykonywać przez planowany diff, backup, atomowy zapis,
   `named-checkconf`, kontrolowane `rndc reconfig` i automatyczny rollback.
 - [ ] Blokować usunięcie ostatniego wpisu administracyjnego, wpisu wymaganego
