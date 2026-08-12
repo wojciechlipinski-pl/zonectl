@@ -132,6 +132,8 @@ zrealizowane, a `[ ]` pozostają do wykonania.
   plikiem źródłowym, numerem linii i miejscami użycia każdej ACL.
 - [x] Audytować duplikaty, błędne prefiksy, nierozpoznane odwołania,
   nieużywane definicje i wpływ problemów na strefy.
+- [x] Generować odczytowy diff uporządkowania pojedynczej ACL i walidować
+  kandydacką konfigurację w izolacji prawdziwym `named-checkconf`.
 - [ ] Dodać edycję `trusted` w CLI i TUI z walidacją adresów IPv4, IPv6,
   prefiksów CIDR, negacji oraz nazw dozwolonych elementów ACL.
 - [ ] Dodać zarządzanie nazwanymi grupami serwerów secondary/slave używanymi

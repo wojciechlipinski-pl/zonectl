@@ -324,6 +324,17 @@ prefiksy, nierozpoznane odwołania, nieużywane definicje oraz strefy dotknięte
 problemem. Kod zakończenia `1` oznacza wykrycie błędu konfiguracji wejściowej;
 audyt nadal pozostaje operacją wyłącznie odczytową.
 
+Plan uporządkowania pojedynczej ACL również nie zapisuje pliku:
+
+```bash
+zctl bind acl-plan trusted \
+  --replace 192.168.200/24=192.168.200.0/24
+```
+
+Planner zachowuje pierwsze wystąpienie każdego wpisu, usuwa wyłącznie dalsze
+duplikaty, stosuje jawnie podane zamiany i uruchamia `named-checkconf` na
+izolowanej kopii całego aktywnego drzewa konfiguracji.
+
 Strefy z `health_profile = rpz` są automatycznie zarządzanymi źródłami
 polityki i nie podlegają zwykłemu cyklowi życia domen. ZoneCTL blokuje dla
 nich wyłączenie, przywrócenie i kwarantannę; nadal je monitoruje.

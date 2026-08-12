@@ -13,6 +13,7 @@ from .core.bind_access_inventory import (
     BindAccessInventoryReader,
 )
 from .core.bind_access_audit import BindAccessAuditor
+from .core.bind_acl_plan import BindAclPlanError, BindAclPlanner
 from .core.config import DEFAULT_CONFIG, DEFAULT_GROUPS, DEFAULT_ZONES, ToolkitConfig
 from .core.dnssec_enable_plan import (
     DnssecEnablePlanError,
@@ -98,6 +99,18 @@ def parser() -> argparse.ArgumentParser:
         "--root-config", type=Path, default=Path("/etc/bind/named.conf")
     )
     bind_audit.add_argument("--json", action="store_true")
+    bind_acl_plan = bind_sub.add_parser(
+        "acl-plan", help="pokaż zwalidowany plan uporządkowania jednej ACL"
+    )
+    bind_acl_plan.add_argument("name")
+    bind_acl_plan.add_argument(
+        "--replace", action="append", default=[], metavar="STARY=NOWY"
+    )
+    bind_acl_plan.add_argument("--keep-duplicates", action="store_true")
+    bind_acl_plan.add_argument(
+        "--root-config", type=Path, default=Path("/etc/bind/named.conf")
+    )
+    bind_acl_plan.add_argument("--json", action="store_true")
 
     dnssec = sub.add_parser(
         "dnssec",
@@ -746,6 +759,41 @@ def main(argv: list[str] | None = None) -> int:
     if args.command in {"transaction", "tx"}:
         return transaction_main(args, config)
     zones = config.zones()
+    if args.command == "bind" and args.bind_command == "acl-plan":
+        replacements: dict[str, str] = {}
+        try:
+            for value in args.replace:
+                old, new = value.split("=", 1)
+                if not old.strip() or not new.strip():
+                    raise ValueError
+                replacements[old.strip()] = new.strip()
+            plan = BindAclPlanner(args.root_config).plan(
+                args.name,
+                replacements=replacements,
+                remove_duplicates=not args.keep_duplicates,
+            )
+        except (BindAclPlanError, OSError, ValueError) as exc:
+            detail = str(exc) or "--replace wymaga formatu STARY=NOWY"
+            print(f"BŁĄD: {detail}", file=sys.stderr)
+            return 2
+        if args.json:
+            print(json.dumps(plan.to_dict(), ensure_ascii=False, indent=2))
+        else:
+            print(f"PLAN UPORZĄDKOWANIA ACL — BEZ ZMIAN W SYSTEMIE")
+            print(f"ACL:         {plan.name}")
+            print(f"Plik:        {plan.source}")
+            print(f"Walidacja:   {'OK' if plan.validation_ok else 'BŁĄD'}")
+            print(f"named-checkconf: {plan.validation_message}")
+            print("\nPlanowany diff:\n")
+            print(plan.diff or "Brak zmian.")
+            print("\nZamiany:")
+            for value in plan.replacements or ("-",):
+                print(f"  {value}")
+            print("Usunięte duplikaty:")
+            for value in plan.removed_duplicates or ("-",):
+                print(f"  {value}")
+            print("\nWynik: DRY-RUN — niczego nie zmieniono")
+        return 0 if plan.validation_ok else 1
     if args.command == "bind" and args.bind_command in {"inventory", "audit"}:
         try:
             report = BindAccessInventoryReader(args.root_config).collect()
