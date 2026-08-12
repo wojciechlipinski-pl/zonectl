@@ -364,11 +364,20 @@ Plan zmiany jednej grupy przyjmuje pełną docelową listę adresów:
 ```bash
 zctl bind secondary-plan dns2-notify --address 5.172.189.198
 zctl bind secondary-plan he-transfer --address 216.218.133.2
+zctl bind secondary-apply dns2-notify --address 5.172.189.198
+zctl bind secondary-apply dns2-notify --address 5.172.189.198 \
+  --commit --activate --confirm dns2-notify
 ```
 
 Planner odrzuca pustą listę, duplikaty oraz błędne IPv4/IPv6. Pokazuje
 minimalny diff i wszystkie dotknięte strefy, a następnie sprawdza izolowaną
 kandydacką konfigurację prawdziwym `named-checkconf`. Nie zapisuje plików.
+
+`secondary-apply` ponownie buduje i sprawdza plan, odrzuca zmianę pliku
+wykrytą po planowaniu, wykonuje backup, zapis atomowy, `named-checkconf` oraz
+`rndc reconfig`. Manifest zawiera stare i nowe adresy, role grupy oraz listę
+stref objętych zmianą. Błąd walidacji lub aktywacji uruchamia rollback
+konfiguracji i ponowne `rndc reconfig`.
 
 Strefy z `health_profile = rpz` są automatycznie zarządzanymi źródłami
 polityki i nie podlegają zwykłemu cyklowi życia domen. ZoneCTL blokuje dla

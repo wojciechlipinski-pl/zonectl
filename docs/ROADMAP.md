@@ -143,6 +143,8 @@ zrealizowane, a `[ ]` pozostają do wykonania.
   powielania adresów w deklaracjach poszczególnych stref.
 - [x] Dodać odczytowy, walidowany plan zmiany pełnej listy adresów pojedynczej
   grupy notify lub transfer wraz z raportem wpływu na strefy.
+- [x] Stosować plan zmiany grupy secondary transakcyjnie z backupem, atomowym
+  zapisem, `named-checkconf`, `rndc reconfig`, manifestem i rollbackiem.
 - [x] Udostępnić odczytowy raport pokazujący role, adresy i strefy korzystające
   z danego serwera lub grupy secondary.
 - [ ] Udostępnić przypisywanie strefy do grupy secondary.
