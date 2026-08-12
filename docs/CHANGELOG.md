@@ -1,7 +1,24 @@
 # Historia zmian
 
-> Wygenerowano z Git: `2026-08-11T13:14:02+02:00`.
+> Wygenerowano z Git: `2026-08-12T10:58:01+02:00`.
 
+- `2026-08-12` — `3e6781c` — release: prepare ZoneCTL 4.7.0
+- `2026-08-12` — `f1a2e2e` — feat: assign zones to BIND secondary groups transactionally
+- `2026-08-12` — `c7e840f` — feat: manage full BIND ACL lists from TUI
+- `2026-08-12` — `67995d7` — feat: manage BIND secondary groups from TUI
+- `2026-08-12` — `4a96835` — feat: apply BIND secondary group changes transactionally
+- `2026-08-12` — `1046c0c` — feat: plan validated BIND secondary group changes
+- `2026-08-12` — `eaa8992` — feat: report BIND secondary group impact
+- `2026-08-12` — `e68326c` — feat: apply BIND ACL changes transactionally
+- `2026-08-12` — `07b368a` — feat: plan validated BIND ACL cleanup
+- `2026-08-12` — `f1ba96a` — feat: audit BIND ACL and secondary configuration
+- `2026-08-11` — `109408a` — feat: inventory BIND ACL and secondary configuration
+- `2026-08-11` — `beeff6d` — feat: manage zone declaration migrations from TUI
+- `2026-08-11` — `7cc9a7f` — feat: migrate legacy zone declarations transactionally
+- `2026-08-11` — `6855e3e` — feat: inventory and plan managed zone migrations
+- `2026-08-11` — `b0da6bd` — docs: plan managed zones ACL and secondary administration
+- `2026-08-11` — `b11dfd9` — build: add Debian package for ZoneCTL 4.6.0
+- `2026-08-11` — `3f95741` — docs: regenerate documentation for 4.6.0
 - `2026-08-11` — `59c9dc4` — release: prepare ZoneCTL 4.6.0
 - `2026-08-11` — `c3c835d` — feat: prepare SOA serial before DNSSEC finalization
 - `2026-08-11` — `d6d065a` — fix: block DNSSEC finalization on SOA serial regression
@@ -85,20 +102,3 @@
 - `2026-07-30` — `0b6a584` — test: cover Pending Changes commit workflow
 - `2026-07-30` — `0e19447` — test: cover transaction validation and reload failures
 - `2026-07-30` — `820d023` — docs: prioritize write safety roadmap
-- `2026-07-30` — `22dafc8` — docs: plan bilingual documentation and i18n
-- `2026-07-30` — `e31b237` — docs: regenerate documentation for 4.1.2
-- `2026-07-30` — `30c3134` — release: prepare ZoneCTL 4.1.2
-- `2026-07-30` — `0fe3dcd` — fix: handle function keys in main TUI
-- `2026-07-30` — `46218ce` — docs: regenerate documentation for 4.1.1
-- `2026-07-30` — `68ed0b9` — release: prepare ZoneCTL 4.1.1
-- `2026-07-30` — `a140553` — feat: add RPZ health profile
-- `2026-07-30` — `1f6ea27` — docs: add RPZ health profile to roadmap
-- `2026-07-30` — `aee3cee` — docs: regenerate documentation for zonectl namespace
-- `2026-07-30` — `ad5c510` — refactor: move implementation to zonectl package
-- `2026-07-30` — `185907c` — feat: introduce zonectl Python namespace
-- `2026-07-30` — `50a15c6` — feat: migrate system directories to ZoneCTL paths
-- `2026-07-30` — `e4e6609` — refactor: centralize system paths
-- `2026-07-30` — `7e97e78` — feat: introduce ZoneCTL identity layer
-- `2026-07-30` — `a25f173` — build: initialize ZoneCTL migration framework
-- `2026-07-29` — `e6eb4eb` — docs: finalize automatic project documentation generator
-- `2026-07-29` — `aec45de` — docs: add automatic project documentation generator

@@ -1,6 +1,6 @@
 # Architektura
 
-> Wygenerowano z importów AST: `2026-08-11T13:14:02+02:00`.
+> Wygenerowano z importów AST: `2026-08-12T10:58:01+02:00`.
 
 ## `src/elkman_dns/__init__.py`
 
@@ -29,6 +29,14 @@ Brak docstringa.
 - `pathlib: Path`
 - `: __version__`
 - `core.bind: BindService`
+- `core.bind_access_inventory: BindAccessInventoryError, BindAccessInventoryReader`
+- `core.bind_access_audit: BindAccessAuditor`
+- `core.bind_acl_plan: BindAclPlanError, BindAclPlanner`
+- `core.bind_acl_transaction: BindAclTransaction`
+- `core.bind_secondary_report: BindSecondaryReporter`
+- `core.bind_secondary_plan: BindSecondaryPlanError, BindSecondaryPlanner`
+- `core.bind_secondary_transaction: BindSecondaryTransaction`
+- `core.bind_zone_secondary: BindZoneSecondaryError, BindZoneSecondaryPlanner`
 - `core.config: DEFAULT_CONFIG, DEFAULT_GROUPS, DEFAULT_ZONES, ToolkitConfig`
 - `core.dnssec_enable_plan: DnssecEnablePlanError, DnssecEnablePlanner`
 - `core.dnssec_enable_transaction: DnssecEnableTransaction`
@@ -50,6 +58,8 @@ Brak docstringa.
 - `core.zone_quarantine_restore: QuarantineRestoreError, QuarantineRestoreTransaction`
 - `core.zone_lifecycle: ZoneCreateRequest, ZoneLifecycleError, ZoneLifecyclePlanner`
 - `core.zone_inventory: ZoneInventory`
+- `core.managed_zone_migration: ManagedZoneMigrationError, ManagedZoneMigrationPlanner`
+- `core.managed_zone_migration_transaction: ManagedZoneMigrationTransaction`
 - `presentation: transaction_exit_code, transaction_lines`
 - `ui.curses_app: CursesApp`
 
@@ -86,6 +96,68 @@ Brak docstringa.
 - `runner: run`
 - `zone_parser: DNSRecord, ZoneRecordParser`
 
+## `src/zonectl/core/bind_access_audit.py`
+
+Safety audit for BIND ACLs and secondary server groups.
+
+**Importy:**
+
+- `__future__: annotations`
+- `ipaddress`
+- `collections: Counter`
+- `dataclasses: asdict, dataclass`
+- `pathlib: Path`
+- `bind_access_inventory: BindAccessInventory, BindListDefinition`
+
+## `src/zonectl/core/bind_access_inventory.py`
+
+Read-only inventory of BIND ACLs and named secondary server groups.
+
+**Importy:**
+
+- `__future__: annotations`
+- `re`
+- `dataclasses: asdict, dataclass`
+- `pathlib: Path`
+- `discovery: BindConfigDiscovery, BindDiscoveryError`
+
+## `src/zonectl/core/bind_acl_plan.py`
+
+Read-only, validated cleanup plan for one BIND ACL.
+
+**Importy:**
+
+- `__future__: annotations`
+- `difflib`
+- `ipaddress`
+- `re`
+- `shutil`
+- `tempfile`
+- `dataclasses: asdict, dataclass`
+- `pathlib: Path`
+- `bind_access_inventory: BindAccessInventoryReader`
+- `runner: run`
+- `discovery: BindConfigDiscovery`
+
+## `src/zonectl/core/bind_acl_transaction.py`
+
+Transactional application of a validated BIND ACL plan.
+
+**Importy:**
+
+- `__future__: annotations`
+- `json`
+- `os`
+- `shutil`
+- `tempfile`
+- `uuid`
+- `dataclasses: asdict, dataclass, field`
+- `datetime: datetime, timezone`
+- `pathlib: Path`
+- `typing: Callable`
+- `bind_acl_plan: BindAclPlan`
+- `runner: run`
+
 ## `src/zonectl/core/bind_bootstrap.py`
 
 Brak docstringa.
@@ -114,6 +186,72 @@ Brak docstringa.
 - `re`
 - `pathlib: Path`
 - `models: Zone`
+
+## `src/zonectl/core/bind_secondary_plan.py`
+
+Read-only validated plan for changing one BIND secondary group.
+
+**Importy:**
+
+- `__future__: annotations`
+- `difflib`
+- `ipaddress`
+- `re`
+- `shutil`
+- `tempfile`
+- `dataclasses: asdict, dataclass`
+- `pathlib: Path`
+- `bind_access_inventory: BindAccessInventoryReader`
+- `bind_secondary_report: BindSecondaryReporter`
+- `discovery: BindConfigDiscovery`
+- `runner: run`
+
+## `src/zonectl/core/bind_secondary_report.py`
+
+Read-only impact report for BIND secondary/notify groups.
+
+**Importy:**
+
+- `__future__: annotations`
+- `re`
+- `dataclasses: asdict, dataclass`
+- `bind_access_inventory: BindAccessInventory`
+
+## `src/zonectl/core/bind_secondary_transaction.py`
+
+Transactional application of a validated BIND secondary-group plan.
+
+**Importy:**
+
+- `__future__: annotations`
+- `json`
+- `os`
+- `shutil`
+- `tempfile`
+- `uuid`
+- `dataclasses: asdict, dataclass, field`
+- `datetime: datetime, timezone`
+- `pathlib: Path`
+- `typing: Callable`
+- `bind_secondary_plan: BindSecondaryPlan`
+- `runner: run`
+
+## `src/zonectl/core/bind_zone_secondary.py`
+
+Plan assignment of one primary zone to logical secondary groups.
+
+**Importy:**
+
+- `__future__: annotations`
+- `difflib`
+- `re`
+- `dataclasses: dataclass`
+- `pathlib: Path`
+- `bind_access_inventory: BindAccessInventoryReader`
+- `bind_secondary_plan: BindSecondaryPlan, BindSecondaryPlanner`
+- `bind_secondary_report: BindSecondaryReporter`
+- `discovery: BindConfigDiscovery, BindDiscoveryError`
+- `managed_zone_migration: ManagedZoneMigrationPlanner`
 
 ## `src/zonectl/core/bulk_operations.py`
 
@@ -366,6 +504,39 @@ Brak docstringa.
 - `datetime: datetime, timezone`
 - `pathlib: Path`
 - `typing: TextIO`
+
+## `src/zonectl/core/managed_zone_migration.py`
+
+Read-only inventory and plans for migrating legacy BIND declarations.
+
+**Importy:**
+
+- `__future__: annotations`
+- `difflib`
+- `re`
+- `dataclasses: asdict, dataclass`
+- `pathlib: Path`
+- `discovery: BindConfigDiscovery, BindDiscoveryError, ZoneConfig`
+- `zone_lifecycle: ZoneLifecycleError, normalize_zone_name`
+
+## `src/zonectl/core/managed_zone_migration_transaction.py`
+
+Transactional migration of one legacy BIND zone declaration.
+
+**Importy:**
+
+- `__future__: annotations`
+- `json`
+- `os`
+- `shutil`
+- `tempfile`
+- `uuid`
+- `dataclasses: asdict, dataclass, field`
+- `datetime: datetime, timezone`
+- `pathlib: Path`
+- `typing: Callable`
+- `managed_zone_migration: ManagedZoneMigrationPlan`
+- `runner: run`
 
 ## `src/zonectl/core/models.py`
 
@@ -774,6 +945,13 @@ Brak docstringa.
 - `pathlib: Path`
 - `: __version__`
 - `core.bind: BindService`
+- `core.bind_access_inventory: BindAccessInventoryError, BindAccessInventoryReader`
+- `core.bind_acl_plan: BindAclPlanError, BindAclPlanner`
+- `core.bind_acl_transaction: BindAclTransaction`
+- `core.bind_secondary_plan: BindSecondaryPlanError, BindSecondaryPlanner`
+- `core.bind_secondary_report: BindSecondaryReporter`
+- `core.bind_secondary_transaction: BindSecondaryTransaction`
+- `core.bind_zone_secondary: BindZoneSecondaryError, BindZoneSecondaryPlanner`
 - `core.bulk_operations: BulkOperation, BulkOperationError`
 - `core.config: ToolkitConfig`
 - `core.dnssec_ds_check: DnssecDsChecker`
@@ -784,6 +962,8 @@ Brak docstringa.
 - `core.dnssec_enable_transaction: DnssecEnableTransaction`
 - `core.dnssec_report: DnssecReporter`
 - `core.dnssec_withdrawal_backup: DnssecWithdrawalBackup`
+- `core.managed_zone_migration: ManagedZoneMigrationError, ManagedZoneMigrationPlanner`
+- `core.managed_zone_migration_transaction: ManagedZoneMigrationTransaction`
 - `core.edit_lock: ZoneEditLockedError`
 - `core.models: Health, Zone, ZoneStatus`
 - `core.multi_zone_session: MultiZoneEditSession, MultiZoneSessionError`

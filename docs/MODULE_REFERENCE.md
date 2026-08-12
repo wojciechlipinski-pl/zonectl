@@ -1,6 +1,6 @@
 # Dokumentacja modułów
 
-> Wygenerowano z AST: `2026-08-11T13:14:02+02:00`.
+> Wygenerowano z AST: `2026-08-12T10:58:01+02:00`.
 
 ## `src/elkman_dns/__init__.py`
 
@@ -20,43 +20,43 @@ Brak docstringa.
 
 ### `def parser`
 
-Linia: `58`
+Linia: `79`
 
 Brak docstringa.
 
 ### `def legacy_main`
 
-Linia: `554`
+Linia: `753`
 
 Brak docstringa.
 
 ### `def grouped_lines`
 
-Linia: `564`
+Linia: `763`
 
 Brak docstringa.
 
 ### `def print_transaction`
 
-Linia: `578`
+Linia: `777`
 
 Brak docstringa.
 
 ### `def transaction_main`
 
-Linia: `587`
+Linia: `786`
 
 Brak docstringa.
 
 ### `def main`
 
-Linia: `651`
+Linia: `850`
 
 Brak docstringa.
 
 ### `def deprecated_main`
 
-Linia: `1568`
+Linia: `2159`
 
 Brak docstringa.
 
@@ -108,6 +108,163 @@ Read-only BIND status service used by the Sprint 1 dashboard.
 - `zone_records` — linia 91; zwraca kanoniczną listę rekordów z aktywnego pliku strefy.
 - `parsed_zone_records` — linia 137; zwraca rekordy strefy przekształcone do modelu dnsrecord.
 - `quick_status` — linia 165; brak docstringa.
+
+## `src/zonectl/core/bind_access_audit.py`
+
+Safety audit for BIND ACLs and secondary server groups.
+
+### `class BindAccessFinding`
+
+Linia: `14`
+
+Brak docstringa.
+
+**Metody:**
+
+- `to_dict` — linia 22; brak docstringa.
+
+### `class BindAccessAudit`
+
+Linia: `30`
+
+Brak docstringa.
+
+**Metody:**
+
+- `to_dict` — linia 34; brak docstringa.
+
+### `class BindAccessAuditor`
+
+Linia: `41`
+
+Brak docstringa.
+
+**Metody:**
+
+- `audit` — linia 44; brak docstringa.
+- `_definition_findings` — linia 119; brak docstringa.
+- `_reference` — linia 187; brak docstringa.
+
+## `src/zonectl/core/bind_access_inventory.py`
+
+Read-only inventory of BIND ACLs and named secondary server groups.
+
+### `class BindAccessInventoryError`
+
+Linia: `12`
+
+Brak docstringa.
+
+### `class BindListDefinition`
+
+Linia: `17`
+
+Brak docstringa.
+
+**Metody:**
+
+- `to_dict` — linia 24; brak docstringa.
+
+### `class BindListUsage`
+
+Linia: `32`
+
+Brak docstringa.
+
+**Metody:**
+
+- `to_dict` — linia 39; brak docstringa.
+
+### `class BindAccessInventory`
+
+Linia: `47`
+
+Brak docstringa.
+
+**Metody:**
+
+- `to_dict` — linia 51; brak docstringa.
+
+### `class BindAccessInventoryReader`
+
+Linia: `58`
+
+Brak docstringa.
+
+**Metody:**
+
+- `__init__` — linia 68; brak docstringa.
+- `collect` — linia 71; brak docstringa.
+- `_zone_ranges` — linia 123; brak docstringa.
+- `_entries` — linia 136; brak docstringa.
+- `_mask_comments` — linia 145; brak docstringa.
+
+## `src/zonectl/core/bind_acl_plan.py`
+
+Read-only, validated cleanup plan for one BIND ACL.
+
+### `class BindAclPlanError`
+
+Linia: `18`
+
+Brak docstringa.
+
+### `class BindAclPlan`
+
+Linia: `23`
+
+Brak docstringa.
+
+**Metody:**
+
+- `to_dict` — linia 34; brak docstringa.
+
+### `class BindAclPlanner`
+
+Linia: `42`
+
+Brak docstringa.
+
+**Metody:**
+
+- `__init__` — linia 48; brak docstringa.
+- `plan` — linia 51; brak docstringa.
+- `_validate_full_entries` — linia 118; brak docstringa.
+- `_replace_entries` — linia 147; brak docstringa.
+- `_rewrite_body` — linia 173; brak docstringa.
+- `_normalized` — linia 204; brak docstringa.
+- `_validate_candidate` — linia 213; brak docstringa.
+
+## `src/zonectl/core/bind_acl_transaction.py`
+
+Transactional application of a validated BIND ACL plan.
+
+### `class BindAclStep`
+
+Linia: `20`
+
+Brak docstringa.
+
+### `class BindAclResult`
+
+Linia: `27`
+
+Brak docstringa.
+
+### `class BindAclTransaction`
+
+Linia: `42`
+
+Brak docstringa.
+
+**Metody:**
+
+- `__init__` — linia 43; brak docstringa.
+- `apply` — linia 58; brak docstringa.
+- `_write_manifest` — linia 144; brak docstringa.
+- `_atomic_write` — linia 155; brak docstringa.
+- `_validate_config` — linia 170; brak docstringa.
+- `_activate` — linia 176; brak docstringa.
 
 ## `src/zonectl/core/bind_bootstrap.py`
 
@@ -187,6 +344,151 @@ Odczytuje strefy bezpośrednio z konfiguracji BIND. Obsługuje: - zone "example.
 - `_zone_from_block` — linia 177; brak docstringa.
 - `_group_for` — linia 242; brak docstringa.
 - `_strip_comments` — linia 266; usuń komentarze //, # i /* ... */ bez niszczenia tekstu znajdującego się wewnątrz cudzysłowów.
+
+## `src/zonectl/core/bind_secondary_plan.py`
+
+Read-only validated plan for changing one BIND secondary group.
+
+### `class BindSecondaryPlanError`
+
+Linia: `19`
+
+Brak docstringa.
+
+### `class BindSecondaryPlan`
+
+Linia: `24`
+
+Brak docstringa.
+
+**Metody:**
+
+- `to_dict` — linia 38; brak docstringa.
+
+### `class BindSecondaryPlanner`
+
+Linia: `46`
+
+Brak docstringa.
+
+**Metody:**
+
+- `__init__` — linia 53; brak docstringa.
+- `plan` — linia 56; brak docstringa.
+- `_validate_addresses` — linia 121; brak docstringa.
+- `_format_body` — linia 140; brak docstringa.
+- `_validate_candidate` — linia 157; brak docstringa.
+
+## `src/zonectl/core/bind_secondary_report.py`
+
+Read-only impact report for BIND secondary/notify groups.
+
+### `class SecondaryGroupReport`
+
+Linia: `12`
+
+Brak docstringa.
+
+**Metody:**
+
+- `to_dict` — linia 22; brak docstringa.
+
+### `class SecondaryPairReport`
+
+Linia: `31`
+
+Brak docstringa.
+
+**Metody:**
+
+- `to_dict` — linia 40; brak docstringa.
+
+### `class BindSecondaryReport`
+
+Linia: `51`
+
+Brak docstringa.
+
+**Metody:**
+
+- `to_dict` — linia 55; brak docstringa.
+
+### `class BindSecondaryReporter`
+
+Linia: `62`
+
+Brak docstringa.
+
+**Metody:**
+
+- `build` — linia 66; brak docstringa.
+- `_role` — linia 129; brak docstringa.
+- `_base_name` — linia 137; brak docstringa.
+
+## `src/zonectl/core/bind_secondary_transaction.py`
+
+Transactional application of a validated BIND secondary-group plan.
+
+### `class BindSecondaryStep`
+
+Linia: `20`
+
+Brak docstringa.
+
+### `class BindSecondaryResult`
+
+Linia: `27`
+
+Brak docstringa.
+
+### `class BindSecondaryTransaction`
+
+Linia: `46`
+
+Brak docstringa.
+
+**Metody:**
+
+- `__init__` — linia 47; brak docstringa.
+- `apply` — linia 62; brak docstringa.
+- `_write_manifest` — linia 165; brak docstringa.
+- `_atomic_write` — linia 176; brak docstringa.
+- `_validate_config` — linia 191; brak docstringa.
+- `_activate` — linia 197; brak docstringa.
+
+## `src/zonectl/core/bind_zone_secondary.py`
+
+Plan assignment of one primary zone to logical secondary groups.
+
+### `class BindZoneSecondaryError`
+
+Linia: `17`
+
+Brak docstringa.
+
+### `class BindZoneSecondaryPlan`
+
+Linia: `22`
+
+Brak docstringa.
+
+**Metody:**
+
+- `transaction_plan` — linia 33; brak docstringa.
+
+### `class BindZoneSecondaryPlanner`
+
+Linia: `44`
+
+Brak docstringa.
+
+**Metody:**
+
+- `__init__` — linia 47; brak docstringa.
+- `available_pairs` — linia 50; brak docstringa.
+- `plan` — linia 54; brak docstringa.
+- `_directive_values` — linia 102; brak docstringa.
+- `_set_directive` — linia 112; brak docstringa.
 
 ## `src/zonectl/core/bulk_operations.py`
 
@@ -811,6 +1113,97 @@ Międzyprocesowa blokada wyłącznej sesji edycji strefy.
 - `release` — linia 120; brak docstringa.
 - `__enter__` — linia 135; brak docstringa.
 - `__exit__` — linia 138; brak docstringa.
+
+## `src/zonectl/core/managed_zone_migration.py`
+
+Read-only inventory and plans for migrating legacy BIND declarations.
+
+### `class ManagedZoneMigrationError`
+
+Linia: `14`
+
+A migration cannot be planned without violating a safety rule.
+
+### `class ManagedZoneInventoryItem`
+
+Linia: `19`
+
+Brak docstringa.
+
+**Metody:**
+
+- `to_dict` — linia 28; brak docstringa.
+
+### `class ManagedZoneMigrationPlan`
+
+Linia: `38`
+
+Brak docstringa.
+
+**Metody:**
+
+- `to_dict` — linia 53; brak docstringa.
+
+### `class _ZoneSpan`
+
+Linia: `62`
+
+Brak docstringa.
+
+### `class ManagedZoneMigrationPlanner`
+
+Linia: `69`
+
+Build migration inventory and unified diffs without writing files.
+
+**Metody:**
+
+- `__init__` — linia 81; brak docstringa.
+- `inventory` — linia 96; brak docstringa.
+- `plan` — linia 117; brak docstringa.
+- `_discover` — linia 232; brak docstringa.
+- `_inventory_item` — linia 238; brak docstringa.
+- `_is_rpz` — linia 302; brak docstringa.
+- `_key` — linia 308; brak docstringa.
+- `_read` — linia 312; brak docstringa.
+- `_zone_spans` — linia 323; brak docstringa.
+- `_mask_comments` — linia 359; brak docstringa.
+- `_included_paths` — linia 406; brak docstringa.
+- `_append_include` — linia 417; brak docstringa.
+- `_diff` — linia 424; brak docstringa.
+
+## `src/zonectl/core/managed_zone_migration_transaction.py`
+
+Transactional migration of one legacy BIND zone declaration.
+
+### `class ManagedZoneMigrationStep`
+
+Linia: `20`
+
+Brak docstringa.
+
+### `class ManagedZoneMigrationResult`
+
+Linia: `27`
+
+Brak docstringa.
+
+### `class ManagedZoneMigrationTransaction`
+
+Linia: `42`
+
+Apply a precomputed plan atomically and restore all files on failure.
+
+**Metody:**
+
+- `__init__` — linia 45; brak docstringa.
+- `apply` — linia 62; brak docstringa.
+- `_preflight` — linia 175; brak docstringa.
+- `_write_manifest` — linia 190; brak docstringa.
+- `_atomic_write` — linia 201; brak docstringa.
+- `_validate_config` — linia 217; brak docstringa.
+- `_activate` — linia 223; brak docstringa.
+- `_verify_loaded` — linia 229; brak docstringa.
 
 ## `src/zonectl/core/models.py`
 
@@ -2130,69 +2523,83 @@ Brak docstringa.
 
 ### `class Row`
 
-Linia: `61`
+Linia: `78`
 
 Brak docstringa.
 
 ### `class CursesApp`
 
-Linia: `68`
+Linia: `85`
 
 Brak docstringa.
 
 **Metody:**
 
-- `__init__` — linia 71; brak docstringa.
-- `run` — linia 116; brak docstringa.
-- `_main` — linia 119; brak docstringa.
-- `_init_colors` — linia 160; brak docstringa.
-- `_color` — linia 171; brak docstringa.
-- `_symbol` — linia 182; brak docstringa.
-- `_start_refresh` — linia 185; brak docstringa.
-- `_refresh_worker` — linia 193; brak docstringa.
-- `_consume_results` — linia 207; brak docstringa.
-- `_zone_key` — linia 218; brak docstringa.
-- `_ordered_groups` — linia 235; brak docstringa.
-- `_rebuild_rows` — linia 242; brak docstringa.
-- `_selected_zone_name` — linia 266; brak docstringa.
-- `_draw` — linia 271; brak docstringa.
-- `_activate` — linia 332; brak docstringa.
-- `_toggle_multi_selection` — linia 345; dodaj lub usuń bieżącą strefę z zestawu wielostrefowego.
-- `_activate_group_selection` — linia 358; zachowaj dotychczasowe działanie spacji dla nagłówka grupy.
-- `_search` — linia 371; filtruje domeny na głównej liście.
-- `_create_zone_wizard` — linia 387; collect, preview and transactionally create a primary zone.
-- `_records_view` — linia 491; wyświetla i edytuje źródłowy dokument strefy.
-- `_message_view` — linia 1101; wyświetla zawijany i przewijany modalny komunikat.
-- `_wrap_message_lines` — linia 1179; zawijaj tekst, zachowując puste linie i wcięcie kontynuacji.
-- `_function_key_sequence` — linia 1203; brak docstringa.
-- `_get_key` — linia 1209; odczytuje klawisz i rozpoznaje f2 wysyłane jako esc [ 12 ~.
-- `_transaction_result_view` — linia 1253; wyświetla wynik zapisu lub rollbacku transakcji.
-- `_pending_changes_view` — linia 1266; wyświetla oczekujące zmiany w rekordach strefy.
-- `_diff_view` — linia 1496; wyświetl przewijany unified diff bez zapisywania strefy.
-- `_export_diff` — linia 1597; wyeksportuj oczekujące zmiany bez wykonywania commit.
-- `_read_only_message` — linia 1625; brak docstringa.
-- `_bulk_operation_view` — linia 1639; brak docstringa.
-- `_bulk_preview_view` — linia 1742; pokaż podgląd; enter przechodzi do potwierdzenia.
-- `_approve_zone_change` — linia 1802; odrzuć nowe błędy i wymagaj potwierdzenia nowych ostrzeżeń.
-- `_multi_zone_view` — linia 1864; edytuj kilka zaznaczonych stref w jednej sesji tui.
-- `_collect_dnssec_status` — linia 2075; brak docstringa.
-- `_ensure_dnssec_tui_allowed` — linia 2107; brak docstringa.
-- `_dnssec_disable_plan` — linia 2113; brak docstringa.
-- `_dnssec_enable_plan` — linia 2124; brak docstringa.
-- `_dnssec_enable_dry_run` — linia 2135; brak docstringa.
-- `_dnssec_enable_commit` — linia 2142; brak docstringa.
-- `_dnssec_confirm_ds` — linia 2149; brak docstringa.
-- `_dnssec_finalize_dry_run` — linia 2173; brak docstringa.
-- `_dnssec_finalize_commit` — linia 2180; brak docstringa.
-- `_dnssec_withdrawal_backup` — linia 2187; brak docstringa.
-- `_dnssec_backup_result_lines` — linia 2219; brak docstringa.
-- `_dnssec_enable_result_lines` — linia 2235; brak docstringa.
-- `_dnssec_confirm_result_lines` — linia 2248; brak docstringa.
-- `_dnssec_disable_result_lines` — linia 2262; brak docstringa.
-- `_dnssec_status_view` — linia 2276; read-only dnssec workflow status with explicit operator guidance.
-- `_domain_view` — linia 2682; wyświetla szczegóły wybranej strefy. klawisze: - r: ponowne sprawdzenie strefy, - q / esc / backspace: powrót do listy.
-- `_serial_ok` — linia 2956; brak docstringa.
-- `_bool_text` — linia 2966; brak docstringa.
+- `__init__` — linia 88; brak docstringa.
+- `run` — linia 133; brak docstringa.
+- `_main` — linia 136; brak docstringa.
+- `_init_colors` — linia 179; brak docstringa.
+- `_color` — linia 190; brak docstringa.
+- `_symbol` — linia 201; brak docstringa.
+- `_start_refresh` — linia 204; brak docstringa.
+- `_refresh_worker` — linia 212; brak docstringa.
+- `_consume_results` — linia 226; brak docstringa.
+- `_zone_key` — linia 237; brak docstringa.
+- `_ordered_groups` — linia 254; brak docstringa.
+- `_rebuild_rows` — linia 261; brak docstringa.
+- `_selected_zone_name` — linia 285; brak docstringa.
+- `_draw` — linia 290; brak docstringa.
+- `_activate` — linia 351; brak docstringa.
+- `_toggle_multi_selection` — linia 364; dodaj lub usuń bieżącą strefę z zestawu wielostrefowego.
+- `_activate_group_selection` — linia 377; zachowaj dotychczasowe działanie spacji dla nagłówka grupy.
+- `_search` — linia 390; filtruje domeny na głównej liście.
+- `_create_zone_wizard` — linia 406; collect, preview and transactionally create a primary zone.
+- `_records_view` — linia 510; wyświetla i edytuje źródłowy dokument strefy.
+- `_message_view` — linia 1120; wyświetla zawijany i przewijany modalny komunikat.
+- `_wrap_message_lines` — linia 1198; zawijaj tekst, zachowując puste linie i wcięcie kontynuacji.
+- `_function_key_sequence` — linia 1222; brak docstringa.
+- `_get_key` — linia 1228; odczytuje klawisz i rozpoznaje f2 wysyłane jako esc [ 12 ~.
+- `_transaction_result_view` — linia 1272; wyświetla wynik zapisu lub rollbacku transakcji.
+- `_pending_changes_view` — linia 1285; wyświetla oczekujące zmiany w rekordach strefy.
+- `_diff_view` — linia 1515; wyświetl przewijany unified diff bez zapisywania strefy.
+- `_export_diff` — linia 1616; wyeksportuj oczekujące zmiany bez wykonywania commit.
+- `_read_only_message` — linia 1644; brak docstringa.
+- `_bulk_operation_view` — linia 1658; brak docstringa.
+- `_bulk_preview_view` — linia 1761; pokaż podgląd; enter przechodzi do potwierdzenia.
+- `_approve_zone_change` — linia 1821; odrzuć nowe błędy i wymagaj potwierdzenia nowych ostrzeżeń.
+- `_multi_zone_view` — linia 1883; edytuj kilka zaznaczonych stref w jednej sesji tui.
+- `_collect_dnssec_status` — linia 2094; brak docstringa.
+- `_ensure_dnssec_tui_allowed` — linia 2126; brak docstringa.
+- `_dnssec_disable_plan` — linia 2132; brak docstringa.
+- `_dnssec_enable_plan` — linia 2143; brak docstringa.
+- `_dnssec_enable_dry_run` — linia 2154; brak docstringa.
+- `_dnssec_enable_commit` — linia 2161; brak docstringa.
+- `_dnssec_confirm_ds` — linia 2168; brak docstringa.
+- `_dnssec_finalize_dry_run` — linia 2192; brak docstringa.
+- `_dnssec_finalize_commit` — linia 2199; brak docstringa.
+- `_dnssec_withdrawal_backup` — linia 2206; brak docstringa.
+- `_dnssec_backup_result_lines` — linia 2238; brak docstringa.
+- `_dnssec_enable_result_lines` — linia 2254; brak docstringa.
+- `_dnssec_confirm_result_lines` — linia 2267; brak docstringa.
+- `_dnssec_disable_result_lines` — linia 2281; brak docstringa.
+- `_dnssec_status_view` — linia 2295; read-only dnssec workflow status with explicit operator guidance.
+- `_domain_view` — linia 2701; wyświetla szczegóły wybranej strefy. klawisze: - r: ponowne sprawdzenie strefy, - q / esc / backspace: powrót do listy.
+- `_zone_secondary_view` — linia 2984; brak docstringa.
+- `_bind_root_config` — linia 3045; brak docstringa.
+- `_bind_access_view` — linia 3049; f9 browser for named acls and secondary groups.
+- `_show_bind_access_item` — linia 3112; brak docstringa.
+- `_secondary_result_lines` — linia 3128; brak docstringa.
+- `_edit_acl` — linia 3140; brak docstringa.
+- `_acl_entry_editor` — linia 3179; full-screen editor for hosts, networks and named acl elements.
+- `_edit_secondary_group` — linia 3233; brak docstringa.
+- `_secondary_address_editor` — linia 3278; full-screen mc-style editor for a secondary address list.
+- `_zone_migration_planner` — linia 3344; brak docstringa.
+- `_migration_result_lines` — linia 3362; brak docstringa.
+- `_zone_migration_view` — linia 3380; f3 shows a plan; f4 runs dry-run and guarded migration.
+- `_show_zone_migration_plan` — linia 3448; brak docstringa.
+- `_apply_zone_migration` — linia 3473; brak docstringa.
+- `_serial_ok` — linia 3531; brak docstringa.
+- `_bool_text` — linia 3541; brak docstringa.
 
 ## `src/zonectl/ui/dialogs.py`
 
