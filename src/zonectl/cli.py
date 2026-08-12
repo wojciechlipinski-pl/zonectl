@@ -21,6 +21,7 @@ from .core.bind_secondary_plan import (
     BindSecondaryPlanner,
 )
 from .core.bind_secondary_transaction import BindSecondaryTransaction
+from .core.bind_zone_secondary import BindZoneSecondaryError, BindZoneSecondaryPlanner
 from .core.config import DEFAULT_CONFIG, DEFAULT_GROUPS, DEFAULT_ZONES, ToolkitConfig
 from .core.dnssec_enable_plan import (
     DnssecEnablePlanError,
@@ -191,6 +192,25 @@ def parser() -> argparse.ArgumentParser:
         default=Path("/var/backups/zonectl-bind-secondary/manifests"),
     )
     bind_secondary_apply.add_argument("--json", action="store_true")
+    bind_zone_secondary_plan = bind_sub.add_parser(
+        "zone-secondary-plan", help="pokaż plan przypisania strefy do par secondary"
+    )
+    bind_zone_secondary_plan.add_argument("zone")
+    bind_zone_secondary_plan.add_argument("--pair", action="append", default=[], dest="pairs")
+    bind_zone_secondary_plan.add_argument("--root-config", type=Path, default=Path("/etc/bind/named.conf"))
+    bind_zone_secondary_plan.add_argument("--json", action="store_true")
+    bind_zone_secondary_apply = bind_sub.add_parser(
+        "zone-secondary-apply", help="transakcyjnie przypisz strefę do par secondary"
+    )
+    bind_zone_secondary_apply.add_argument("zone")
+    bind_zone_secondary_apply.add_argument("--pair", action="append", default=[], dest="pairs")
+    bind_zone_secondary_apply.add_argument("--confirm")
+    bind_zone_secondary_apply.add_argument("--commit", action="store_true")
+    bind_zone_secondary_apply.add_argument("--activate", action="store_true")
+    bind_zone_secondary_apply.add_argument("--root-config", type=Path, default=Path("/etc/bind/named.conf"))
+    bind_zone_secondary_apply.add_argument("--backup-root", type=Path, default=Path("/var/backups/zonectl-bind-secondary/backups"))
+    bind_zone_secondary_apply.add_argument("--manifest-directory", type=Path, default=Path("/var/backups/zonectl-bind-secondary/manifests"))
+    bind_zone_secondary_apply.add_argument("--json", action="store_true")
 
     dnssec = sub.add_parser(
         "dnssec",
@@ -839,6 +859,51 @@ def main(argv: list[str] | None = None) -> int:
     if args.command in {"transaction", "tx"}:
         return transaction_main(args, config)
     zones = config.zones()
+    if args.command == "bind" and args.bind_command in {
+        "zone-secondary-plan", "zone-secondary-apply"
+    }:
+        applying = args.bind_command == "zone-secondary-apply"
+        if applying and args.commit != args.activate:
+            print("BŁĄD: właściwa zmiana wymaga jednocześnie --commit i --activate.", file=sys.stderr)
+            return 2
+        if applying and args.commit and (args.confirm or "").rstrip(".").casefold() != args.zone.rstrip(".").casefold():
+            print("BŁĄD: --confirm musi odpowiadać pełnej nazwie strefy.", file=sys.stderr)
+            return 2
+        try:
+            plan = BindZoneSecondaryPlanner(args.root_config).plan(args.zone, args.pairs)
+            if applying:
+                result = BindSecondaryTransaction(
+                    args.backup_root, args.manifest_directory,
+                    root_config=args.root_config,
+                ).apply(plan.transaction_plan(), commit=args.commit, activate=args.activate)
+        except (BindZoneSecondaryError, OSError) as exc:
+            print(f"BŁĄD: {exc}", file=sys.stderr)
+            return 2
+        if applying:
+            if args.json:
+                print(json.dumps(asdict(result), ensure_ascii=False, indent=2))
+            else:
+                print(f"Transakcja: {result.transaction_id}")
+                print(f"Strefa:     {plan.zone}")
+                print(f"Status:     {result.status}")
+                print(f"Pary były:  {', '.join(plan.old_pairs) or '-'}")
+                print(f"Pary są:    {', '.join(plan.new_pairs) or '-'}")
+                print(f"Commit:     {'TAK' if result.committed else 'NIE'}")
+                print(f"Rollback:   {'TAK' if result.rolled_back else 'NIE'}")
+                print("\nEtapy:")
+                for step in result.steps:
+                    print(f"[{'OK' if step.ok else 'BŁĄD'}] {step.name}: {step.message}")
+            return 0 if result.status in {"DRY-RUN", "COMMIT"} else 1
+        if args.json:
+            print(json.dumps(asdict(plan), ensure_ascii=False, indent=2, default=str))
+        else:
+            print(f"PLAN PRZYPISANIA SECONDARY — {plan.zone}")
+            print(f"Pary były: {', '.join(plan.old_pairs) or '-'}")
+            print(f"Pary będą: {', '.join(plan.new_pairs) or '-'}")
+            print(f"Walidacja: {'OK' if plan.validation_ok else 'BŁĄD'}")
+            print("\n" + (plan.diff or "Brak zmian."))
+            print("\nWynik: DRY-RUN — niczego nie zmieniono")
+        return 0 if plan.validation_ok else 1
     if args.command == "bind" and args.bind_command == "secondary-apply":
         if args.commit != args.activate:
             print(

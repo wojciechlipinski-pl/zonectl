@@ -233,6 +233,7 @@ wybranej definicji, a `F4` prowadzi przez plan, dry-run i transakcyjną zmianę
 grupy secondary.
 Edytory ACL i secondary używają tych samych klawiszy co rekordy: `Insert`,
 `F4`, `F8/Delete` oraz `F2` do przejścia do planu i dry-runu.
+W szczegółach strefy `F5` zarządza przypisaniem do logicznych par secondary.
 zctl bind acl-plan trusted \
   --replace 192.168.200/24=192.168.200.0/24
 zctl bind acl-plan trusted --entry localhost --entry 192.168.200.0/24

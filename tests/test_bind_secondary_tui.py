@@ -57,3 +57,13 @@ def test_acl_editor_uses_mc_keys_and_guarded_transaction() -> None:
     assert "dry_run = transaction.apply(plan)" in workflow
     assert "Wpisz pełną nazwę ACL" in workflow
     assert "transaction.apply(plan, commit=True, activate=True)" in workflow
+
+
+def test_zone_details_open_secondary_assignment_with_f5() -> None:
+    details = inspect.getsource(CursesApp._domain_view)
+    workflow = inspect.getsource(CursesApp._zone_secondary_view)
+    assert "curses.KEY_F5" in details
+    assert "_zone_secondary_view" in details
+    assert "planner.plan(zone.name" in workflow
+    assert "transaction.apply(plan.transaction_plan())" in workflow
+    assert "commit=True, activate=True" in workflow

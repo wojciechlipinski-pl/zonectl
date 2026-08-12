@@ -390,6 +390,16 @@ Lista adresów jest edytowana pełnoekranowo: `Insert` dodaje, `F4` edytuje,
 `F8` lub `Delete` usuwa, a `F2` przechodzi do planu i dry-runu. `Esc` i `F10`
 porzucają zmiany po potwierdzeniu.
 
+Przypisanie strefy do pełnych par notify/transfer:
+
+```bash
+zctl bind zone-secondary-plan example.pl --pair dns2 --pair he
+zctl bind zone-secondary-apply example.pl --pair dns2 --pair he
+```
+
+W szczegółach strefy ten sam workflow otwiera `F5`. Plan zawsze zmienia razem
+`also-notify` i `allow-transfer`; strefy RPZ oraz niepełne pary są blokowane.
+
 Strefy z `health_profile = rpz` są automatycznie zarządzanymi źródłami
 polityki i nie podlegają zwykłemu cyklowi życia domen. ZoneCTL blokuje dla
 nich wyłączenie, przywrócenie i kwarantannę; nadal je monitoruje.

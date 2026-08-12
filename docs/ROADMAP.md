@@ -149,7 +149,7 @@ zrealizowane, a `[ ]` pozostają do wykonania.
   pełnej listy adresów grupy secondary przez `F3`/`F4`.
 - [x] Udostępnić odczytowy raport pokazujący role, adresy i strefy korzystające
   z danego serwera lub grupy secondary.
-- [ ] Udostępnić przypisywanie strefy do grupy secondary.
+- [x] Udostępnić przypisywanie strefy do logicznych par secondary w CLI i TUI.
 - [ ] Każdą zmianę ACL wykonywać przez planowany diff, backup, atomowy zapis,
   `named-checkconf`, kontrolowane `rndc reconfig` i automatyczny rollback.
 - [ ] Blokować usunięcie ostatniego wpisu administracyjnego, wpisu wymaganego

@@ -30,6 +30,7 @@ from ..core.bind_acl_transaction import BindAclTransaction
 from ..core.bind_secondary_plan import BindSecondaryPlanError, BindSecondaryPlanner
 from ..core.bind_secondary_report import BindSecondaryReporter
 from ..core.bind_secondary_transaction import BindSecondaryTransaction
+from ..core.bind_zone_secondary import BindZoneSecondaryError, BindZoneSecondaryPlanner
 from ..core.bulk_operations import BulkOperation, BulkOperationError
 from ..core.config import ToolkitConfig
 from ..core.dnssec_ds_check import DnssecDsChecker
@@ -2916,6 +2917,7 @@ class CursesApp:
 
             footer = (
                 " F3 rekordy"
+                "   F5 secondary"
                 "   F6 migracja"
                 "   d DNSSEC"
                 "   r odśwież strefę"
@@ -2942,6 +2944,10 @@ class CursesApp:
 
             if key == curses.KEY_F3:
                 self._records_view(win, zone)
+                continue
+
+            if key == curses.KEY_F5:
+                self._zone_secondary_view(win, zone)
                 continue
 
             if key == curses.KEY_F6:
@@ -2975,6 +2981,67 @@ class CursesApp:
                     )
                     self.statuses[zone.name] = status
                     notice = f"Błąd odświeżania: {exc}"
+    def _zone_secondary_view(self, win: curses.window, zone: Zone) -> None:
+        planner = BindZoneSecondaryPlanner(self._bind_root_config())
+        try:
+            pairs = planner.available_pairs()
+            current = set(planner.plan(zone.name, []).old_pairs)
+        except (BindZoneSecondaryError, OSError) as exc:
+            self._message_view(win, title="Secondary strefy", lines=[str(exc)], error=True)
+            return
+        selected = 0
+        chosen = set(current)
+        while True:
+            height, width = win.getmaxyx()
+            win.erase()
+            win.addnstr(0, 0, f" Secondary strefy: {zone.name} ".ljust(width), max(0, width - 1), curses.A_REVERSE | curses.A_BOLD)
+            for row, pair in enumerate(pairs, 3):
+                marker = "[x]" if pair.name.casefold() in chosen else "[ ]"
+                line = f"{marker} {pair.name:<18} notify={','.join(pair.notify_addresses)} transfer={','.join(pair.transfer_addresses)}"
+                attr = curses.A_REVERSE if row - 3 == selected else curses.A_NORMAL
+                win.addnstr(row, 2, line, max(0, width - 4), attr)
+            footer = " Spacja wybierz   F3 plan   F4 dry-run/zastosuj   Esc/F10 powrót "
+            win.addnstr(height - 1, 0, footer.ljust(width), max(0, width - 1), curses.A_REVERSE)
+            win.refresh()
+            key = self._get_key(win)
+            if key in (27, curses.KEY_F10, ord("q"), ord("Q")):
+                return
+            if key in (curses.KEY_DOWN, ord("j")):
+                selected = min(selected + 1, max(0, len(pairs) - 1))
+            elif key in (curses.KEY_UP, ord("k")):
+                selected = max(0, selected - 1)
+            elif key == ord(" ") and pairs:
+                name = pairs[selected].name.casefold()
+                chosen.remove(name) if name in chosen else chosen.add(name)
+            elif key in (curses.KEY_F3, curses.KEY_F4):
+                try:
+                    plan = planner.plan(zone.name, sorted(chosen))
+                except (BindZoneSecondaryError, OSError) as exc:
+                    self._message_view(win, title="Plan zablokowany", lines=[str(exc)], error=True)
+                    continue
+                self._message_view(win, title=f"Plan secondary: {zone.name}", lines=(plan.diff or "Brak zmian.").splitlines())
+                if key == curses.KEY_F3 or not plan.diff:
+                    continue
+                if self.read_only:
+                    self._read_only_message(win, zone)
+                    continue
+                transaction = BindSecondaryTransaction(
+                    Path("/var/backups/zonectl-bind-secondary/backups"),
+                    Path("/var/backups/zonectl-bind-secondary/manifests"),
+                    root_config=self._bind_root_config(),
+                )
+                dry_run = transaction.apply(plan.transaction_plan())
+                self._message_view(win, title="Dry-run przypisania", lines=self._secondary_result_lines(dry_run))
+                confirmation = CursesDialogs.text_input(win, " Wpisz pełną nazwę strefy: ")
+                if (confirmation or "").rstrip(".").casefold() != zone.name.rstrip(".").casefold():
+                    self._message_view(win, title="Anulowano", lines=["Nazwa strefy nie jest zgodna."])
+                    continue
+                if CursesDialogs.confirm(win, f"Zastosować przypisania dla {zone.name}"):
+                    result = transaction.apply(plan.transaction_plan(), commit=True, activate=True)
+                    self._message_view(win, title="Transakcja przypisania", lines=self._secondary_result_lines(result), error=result.status != "COMMIT")
+                    if result.status == "COMMIT":
+                        return
+
     def _bind_root_config(self) -> Path:
         toolkit = self.config.toolkit if self.config is not None else {}
         return Path(toolkit.get("bind_root_config", "/etc/bind/named.conf"))
