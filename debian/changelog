@@ -1,6 +1,6 @@
-zonectl (4.6.0-1) unstable; urgency=medium
+zonectl (4.7.0-1) unstable; urgency=medium
 
-  * Package ZoneCTL 4.6.0 for Debian 13.
-  * Include transactional DNSSEC lifecycle management.
+  * Package ZoneCTL 4.7.0 for Debian 13.
+  * Add managed zone declarations, ACL and secondary administration.
 
- -- Wojciech Lipiński <wojciech.lipinski.elk@gmail.com>  Tue, 11 Aug 2026 13:30:00 +0200
+ -- Wojciech Lipiński <wojciech.lipinski.elk@gmail.com>  Wed, 12 Aug 2026 11:00:00 +0200

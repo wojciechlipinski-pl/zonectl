@@ -1,5 +1,41 @@
 # Changelog
 
+## 4.7.0 - 2026-08-12
+
+### Added
+
+- inventory, planning and transactional migration of legacy zone declarations
+  to one managed file per zone
+- BIND ACL and secondary-group inventory, audit and impact reporting
+- validated full-list ACL and secondary-group editing in CLI and TUI
+- transactional assignment of primary zones to complete notify/transfer pairs
+- Debian package metadata and the single supported `zctl` entry point
+
+### Changed
+
+- TUI exposes BIND access administration under `F9` and zone secondary
+  assignment under `F5`
+- ACL and secondary editors use the Midnight Commander key model
+- managed declarations are indexed by `/etc/bind/zonectl-zones.conf`
+
+### Safety
+
+- all configuration writes use a plan, isolated `named-checkconf`, backup,
+  atomic replacement, controlled `rndc reconfig`, manifest and rollback
+- RPZ, DNSSEC and secondary declarations remain blocked from ordinary legacy
+  migration
+- `trusted` cannot be empty or lose `localhost`; invalid and duplicate ACL
+  entries are rejected
+- zone assignment always changes complete notify/transfer pairs
+
+### Verified
+
+- `zlobek.elk.pl` was migrated transactionally without changing its zone file,
+  SOA serial or availability
+- production `trusted` was corrected transactionally and passed the BIND audit
+- production secondary groups and zone assignments passed read-only validation
+- 556 automated tests passed before release preparation
+
 ## 4.6.0 - 2026-08-11
 
 ### Added

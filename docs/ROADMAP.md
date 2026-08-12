@@ -138,7 +138,7 @@ zrealizowane, a `[ ]` pozostają do wykonania.
   zapisem, kontrolowanym `rndc reconfig`, manifestem i rollbackiem.
 - [x] Dodać edycję `trusted` w CLI i TUI z walidacją adresów IPv4, IPv6,
   prefiksów CIDR, negacji oraz nazw dozwolonych elementów ACL.
-- [ ] Dodać zarządzanie nazwanymi grupami serwerów secondary/slave używanymi
+- [x] Dodać zarządzanie nazwanymi grupami serwerów secondary/slave używanymi
   przez `also-notify`, `allow-transfer`, `allow-notify` i `primaries`, bez
   powielania adresów w deklaracjach poszczególnych stref.
 - [x] Dodać odczytowy, walidowany plan zmiany pełnej listy adresów pojedynczej
@@ -150,7 +150,7 @@ zrealizowane, a `[ ]` pozostają do wykonania.
 - [x] Udostępnić odczytowy raport pokazujący role, adresy i strefy korzystające
   z danego serwera lub grupy secondary.
 - [x] Udostępnić przypisywanie strefy do logicznych par secondary w CLI i TUI.
-- [ ] Każdą zmianę ACL wykonywać przez planowany diff, backup, atomowy zapis,
+- [x] Każdą zmianę ACL wykonywać przez planowany diff, backup, atomowy zapis,
   `named-checkconf`, kontrolowane `rndc reconfig` i automatyczny rollback.
 - [ ] Blokować usunięcie ostatniego wpisu administracyjnego, wpisu wymaganego
   przez aktywny transfer albo całej używanej ACL bez osobnego potwierdzenia i
