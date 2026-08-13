@@ -353,3 +353,5 @@ Szczegółowe kryteria zgodności z opublikowanymi grafikami określa
   lista F5, plan F3 i dry-run F4 bez operacji na kluczach/KASP/DS.
 - [x] Produkcyjny import deklaracji DNSSEC F6 z bramkami PASS przed i po
   `rndc reconfig`, porównaniem polityki/DNSKEY/DS oraz rollbackiem transakcji.
+- [x] Zbiorczy audyt F7 gotowości pozostałych stref DNSSEC, bez zmian i bez
+  importu masowego.
