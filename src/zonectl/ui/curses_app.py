@@ -672,7 +672,7 @@ class CursesApp:
             win.timeout(150)
 
     def _onboarding_candidates_view(self, win, candidates) -> None:
-        """Lista legacy; F3 pokazuje istniejący plan bez wykonywania zmian."""
+        """Lista legacy: plan, dry-run i jawnie potwierdzony import."""
         selected = 0
         planner = self._zone_migration_planner()
         while True:
@@ -695,7 +695,10 @@ class CursesApp:
                 line = f"{item.name:<38} {item.zone_type:<10} {item.declaration}"
                 attr = curses.A_REVERSE if index == selected else curses.A_NORMAL
                 win.addnstr(screen_row, 2, line, max(0, width - 4), attr)
-            footer = " F3 plan migracji   ↑/↓ wybór   q/Esc powrót "
+            footer = (
+                " F3 plan   F4 dry-run   F6 importuj   "
+                "↑/↓ wybór   q/Esc powrót "
+            )
             win.addnstr(
                 height - 1, 0, footer.ljust(width),
                 max(0, width - 1), curses.A_REVERSE,
@@ -712,6 +715,15 @@ class CursesApp:
                 self._show_bind_onboarding_plan(
                     win, candidates[selected].name, planner
                 )
+            elif key == curses.KEY_F4:
+                self._dry_run_bind_onboarding_import(
+                    win, candidates[selected].name, planner
+                )
+            elif key == curses.KEY_F6:
+                if self._commit_bind_onboarding_import(
+                    win, candidates[selected].name, planner
+                ):
+                    return
 
     def _show_bind_onboarding_plan(self, win, zone_name, planner) -> None:
         """Wyświetla diff kandydata; ten przepływ nie ma ścieżki zapisu."""
@@ -734,6 +746,121 @@ class CursesApp:
             self._message_view(
                 win, title="Plan importu zablokowany", lines=[str(exc)], error=True
             )
+
+    def _dry_run_bind_onboarding_import(self, win, zone_name, planner) -> None:
+        """Waliduje transakcję importu bez zapisu plików i aktywacji BIND."""
+        try:
+            plan = planner.plan(zone_name)
+            toolkit = self.config.toolkit if self.config is not None else {}
+            transaction = ManagedZoneMigrationTransaction(
+                Path(
+                    toolkit.get(
+                        "zone_migration_backup_root",
+                        "/var/backups/zonectl-zone-migration/backups",
+                    )
+                ),
+                Path(
+                    toolkit.get(
+                        "zone_migration_manifest_dir",
+                        "/var/backups/zonectl-zone-migration/manifests",
+                    )
+                ),
+                root_config=planner.root_config,
+            )
+            result = transaction.apply(plan)
+            lines = self._migration_result_lines(result)
+            lines.extend(
+                (
+                    "",
+                    "Dry-run — nie zapisano konfiguracji i nie przeładowano BIND.",
+                )
+            )
+            self._message_view(
+                win,
+                title=f"Dry-run importu: {zone_name}",
+                lines=lines,
+                error=result.status not in {"DRY-RUN", "DRY_RUN"},
+            )
+        except (ManagedZoneMigrationError, OSError) as exc:
+            self._message_view(
+                win,
+                title="Dry-run importu zablokowany",
+                lines=[str(exc)],
+                error=True,
+            )
+
+    def _commit_bind_onboarding_import(self, win, zone_name, planner) -> bool:
+        """Importuje jedną deklarację po dwóch niezależnych potwierdzeniach."""
+        if self.read_only:
+            self._message_view(
+                win,
+                title="Tryb tylko do odczytu",
+                lines=["Import środowiska jest zablokowany."],
+                error=True,
+            )
+            return False
+        try:
+            plan = planner.plan(zone_name)
+            toolkit = self.config.toolkit if self.config is not None else {}
+            transaction = ManagedZoneMigrationTransaction(
+                Path(
+                    toolkit.get(
+                        "zone_migration_backup_root",
+                        "/var/backups/zonectl-zone-migration/backups",
+                    )
+                ),
+                Path(
+                    toolkit.get(
+                        "zone_migration_manifest_dir",
+                        "/var/backups/zonectl-zone-migration/manifests",
+                    )
+                ),
+                root_config=planner.root_config,
+            )
+            dry_run = transaction.apply(plan)
+            self._message_view(
+                win,
+                title=f"Kontrola przed importem: {zone_name}",
+                lines=self._migration_result_lines(dry_run),
+                error=dry_run.status not in {"DRY-RUN", "DRY_RUN"},
+            )
+            if dry_run.status not in {"DRY-RUN", "DRY_RUN"}:
+                return False
+            confirmation = CursesDialogs.text_input(
+                win,
+                " Wpisz pełną nazwę strefy, aby importować: ",
+                initial="",
+            )
+            expected = zone_name.rstrip(".").casefold()
+            received = (confirmation or "").strip().rstrip(".").casefold()
+            if received != expected:
+                self._message_view(
+                    win,
+                    title="Import anulowany",
+                    lines=["Potwierdzenie nie odpowiada nazwie strefy."],
+                )
+                return False
+            if not CursesDialogs.confirm(
+                win,
+                f"Importować deklarację {zone_name} i przeładować BIND?",
+            ):
+                return False
+            result = transaction.apply(plan, commit=True, activate=True)
+            self._message_view(
+                win,
+                title=f"Wynik importu: {zone_name}",
+                lines=self._migration_result_lines(result),
+                error=result.status != "COMMIT",
+            )
+            return result.status == "COMMIT"
+        except (ManagedZoneMigrationError, OSError) as exc:
+            self._message_view(
+                win,
+                title="Import środowiska zablokowany",
+                lines=[str(exc)],
+                error=True,
+            )
+            return False
 
     def _toggle_multi_selection(self) -> None:
         """Dodaj lub usuń bieżącą strefę z zestawu wielostrefowego."""

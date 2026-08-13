@@ -16,4 +16,5 @@
 
 - [x] Rozpoznanie istniejącej konfiguracji BIND i klasyfikacja zasobów.
 - [x] Odczytowy ekran gotowości w TUI (F2).
-- [ ] Transakcyjny kreator importu uruchamiany wyłącznie decyzją operatora.
+- [x] Plan i dry-run importu wybranej strefy legacy.
+- [x] Transakcyjny import uruchamiany wyłącznie decyzją operatora (F6).

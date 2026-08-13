@@ -19,11 +19,27 @@ def test_environment_view_has_no_write_workflow() -> None:
         assert forbidden not in source
 
 
-def test_legacy_candidates_only_offer_read_only_plan() -> None:
+def test_legacy_candidates_offer_plan_and_dry_run_only() -> None:
     candidates = inspect.getsource(CursesApp._onboarding_candidates_view)
     plan = inspect.getsource(CursesApp._show_bind_onboarding_plan)
-    assert "F3 plan migracji" in candidates
+    dry_run = inspect.getsource(CursesApp._dry_run_bind_onboarding_import)
+    assert "F3 plan" in candidates
+    assert "F4 dry-run" in candidates
     assert "planner.plan(zone_name)" in plan
     assert "Plan tylko do odczytu" in plan
-    for forbidden in ("ManagedZoneMigrationTransaction", "commit=True", "activate=True"):
-        assert forbidden not in candidates + plan
+    assert "ManagedZoneMigrationTransaction" in dry_run
+    assert "transaction.apply(plan)" in dry_run
+    assert "nie przeładowano BIND" in dry_run
+    for forbidden in ("commit=True", "activate=True"):
+        assert forbidden not in candidates + plan + dry_run
+
+
+def test_guarded_import_requires_dry_run_name_and_confirmation() -> None:
+    candidates = inspect.getsource(CursesApp._onboarding_candidates_view)
+    commit = inspect.getsource(CursesApp._commit_bind_onboarding_import)
+    assert "F6 importuj" in candidates
+    assert "transaction.apply(plan)" in commit
+    assert "Wpisz pełną nazwę strefy" in commit
+    assert "CursesDialogs.confirm" in commit
+    assert "transaction.apply(plan, commit=True, activate=True)" in commit
+    assert "self.read_only" in commit

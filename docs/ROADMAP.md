@@ -342,4 +342,6 @@ Szczegółowe kryteria zgodności z opublikowanymi grafikami określa
 - [x] Odczytowy raport gotowości klasyfikujący strefy jako zarządzane,
   legacy, zewnętrzne lub zablokowane.
 - [x] Widok raportu w TUI pod klawiszem F2, bez automatycznego importu.
-- [ ] Kreator zatwierdzanych planów importu z podglądem diff i rollbackiem.
+- [x] Lista kandydatów z planem F3 i bezpiecznym dry-run F4.
+- [x] Kontrolowany import F6 z ponownym dry-run, potwierdzeniem nazwy,
+  backupem, walidacją, aktywacją i rollbackiem.
