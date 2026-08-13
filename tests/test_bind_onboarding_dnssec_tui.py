@@ -34,3 +34,12 @@ def test_dnssec_commit_has_fresh_gates_and_transactional_rollback_path() -> None
     assert "loaded_verifier=verify_dnssec" in commit
     assert "after == before" in commit
     assert "transaction.apply(plan, commit=True, activate=True)" in commit
+
+
+def test_dnssec_import_results_use_shared_transaction_layout() -> None:
+    dry_run = inspect.getsource(CursesApp._dry_run_dnssec_onboarding_import)
+    commit = inspect.getsource(CursesApp._commit_dnssec_onboarding_import)
+    assert "_onboarding_result_view" in dry_run
+    assert "_onboarding_result_view" in commit
+    assert 'profile="DNSSEC"' in dry_run
+    assert 'profile="DNSSEC"' in commit

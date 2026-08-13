@@ -51,3 +51,18 @@ def test_onboarding_lists_are_refreshed_after_import_views() -> None:
     assert summary.count("self._refresh_onboarding_report") == 2
     assert "BindOnboardingReporter" in refresh
     assert "BindOnboardingView.build" in refresh
+
+
+def test_import_results_use_responsive_48_transaction_layout() -> None:
+    renderer = inspect.getsource(CursesApp._onboarding_result_view)
+    dry_run = inspect.getsource(CursesApp._dry_run_bind_onboarding_import)
+    commit = inspect.getsource(CursesApp._commit_bind_onboarding_import)
+    assert "width >= 100 and height >= 20" in renderer
+    assert "TRANSAKCJA" in renderer
+    assert "ETAPY" in renderer
+    assert "STAN OPERACYJNY" in renderer
+    assert "curses.ACS_VLINE" in renderer
+    assert "OPERACJA ZAKOŃCZONA" in renderer
+    assert "KONTROLA BEZ ZMIAN" in renderer
+    assert "_onboarding_result_view" in dry_run
+    assert "_onboarding_result_view" in commit

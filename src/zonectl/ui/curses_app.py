@@ -46,6 +46,7 @@ from ..core.dnssec_disable_transaction import DnssecDisableTransaction
 from ..core.dnssec_enable_plan import DnssecEnablePlanner
 from ..core.dnssec_enable_transaction import DnssecEnableTransaction
 from ..core.dnssec_report import DnssecReporter
+from ..core.dnssec_onboarding_audit import DnssecOnboardingAuditor
 from ..core.dnssec_withdrawal_backup import DnssecWithdrawalBackup
 from ..core.managed_zone_migration import (
     ManagedZoneMigrationError,
@@ -914,7 +915,7 @@ class CursesApp:
                 line = f"{item.name:<38} {item.reason}"
                 attr = curses.A_REVERSE if index == selected else curses.A_NORMAL
                 win.addnstr(screen_row, 2, line, max(0, width - 4), attr)
-            footer = " F3 plan   F4 dry-run   F6 importuj   ↑/↓ wybór   q/Esc/F10 powrót "
+            footer = " F3 plan   F4 dry-run   F6 importuj   F7 audyt   ↑/↓ wybór   q/Esc/F10 powrót "
             win.addnstr(
                 height - 1, 0, footer.ljust(width),
                 max(0, width - 1), curses.A_REVERSE,
@@ -940,6 +941,8 @@ class CursesApp:
                     win, blockers[selected].name, planner
                 ):
                     return
+            elif key == curses.KEY_F7:
+                self._dnssec_onboarding_audit_view(win, blockers)
 
     def _show_dnssec_onboarding_plan(self, win, zone_name, planner) -> None:
         """Pokazuje deklaracyjny plan DNSSEC bez operacji na kluczach."""
@@ -963,6 +966,53 @@ class CursesApp:
                 win, title="Plan DNSSEC zablokowany", lines=[str(exc)], error=True
             )
 
+    def _dnssec_onboarding_audit_view(self, win, blockers) -> None:
+        """Pokazuje zbiorczą gotowość DNSSEC w koncepcyjnym układzie 4.8."""
+        toolkit = self.config.toolkit if self.config is not None else {}
+        wanted = {item.name.rstrip(".").casefold() for item in blockers}
+        zones = tuple(
+            zone for zone in self.all_zones
+            if zone.name.rstrip(".").casefold() in wanted
+        )
+        resolvers = tuple(
+            item.strip() for item in toolkit.get(
+                "dnssec_resolvers", "1.1.1.1,8.8.8.8,9.9.9.9"
+            ).split(",") if item.strip()
+        )
+        try:
+            results = DnssecOnboardingAuditor(
+                local_server=toolkit.get("dnssec_local_server", "127.0.0.1"),
+                resolvers=resolvers,
+                timeout=int(toolkit.get("dnssec_timeout", "3")),
+            ).audit(
+                zones,
+                Path(toolkit.get("dnssec_key_directory", "/var/lib/bind/keys")),
+            )
+        except (OSError, RuntimeError, ValueError) as exc:
+            self._message_view(
+                win, title="Audyt DNSSEC — błąd", lines=[str(exc)], error=True
+            )
+            return
+        ready = sum(item.status == "READY" for item in results)
+        lines = [
+            "ZBIORCZY AUDYT GOTOWOŚCI DNSSEC — TYLKO ODCZYT",
+            f"Strefy: {len(results)}   Gotowe: {ready}   Zablokowane: {len(results) - ready}",
+            "",
+            f"{'Strefa':<36} {'Stan':<9} {'Raport':<8} Delegacja",
+            "-" * 72,
+        ]
+        lines.extend(
+            f"{item.zone:<36} {item.status:<9} {item.report_status:<8} {item.delegation_status}"
+            for item in results
+        )
+        lines.extend(("", "Audyt nie zmienił BIND, kluczy, KASP ani DS."))
+        self._message_view(
+            win,
+            title="Audyt gotowości importu DNSSEC",
+            lines=lines,
+            error=ready != len(results),
+        )
+
     def _dry_run_dnssec_onboarding_import(self, win, zone_name, planner) -> None:
         """Uruchamia transakcyjny dry-run profilu DNSSEC bez aktywacji."""
         try:
@@ -977,9 +1027,9 @@ class CursesApp:
             lines = self._migration_result_lines(result) + [
                 "", "Dry-run DNSSEC — nie zapisano konfiguracji, kluczy ani stanu KASP."
             ]
-            self._message_view(
-                win, title=f"Dry-run importu DNSSEC: {zone_name}", lines=lines,
-                error=result.status not in {"DRY-RUN", "DRY_RUN"},
+            self._onboarding_result_view(
+                win, title=f"Dry-run importu DNSSEC: {zone_name}",
+                result=result, profile="DNSSEC", note=lines[-1],
             )
         except (ManagedZoneMigrationError, OSError) as exc:
             self._message_view(
@@ -1074,10 +1124,10 @@ class CursesApp:
                 loaded_verifier=verify_dnssec,
             )
             dry_run = transaction.apply(plan)
-            self._message_view(
+            self._onboarding_result_view(
                 win, title=f"Kontrola DNSSEC przed importem: {zone_name}",
-                lines=self._migration_result_lines(dry_run),
-                error=dry_run.status not in {"DRY-RUN", "DRY_RUN"},
+                result=dry_run, profile="DNSSEC",
+                note="Dry-run wykonany przed potwierdzeniem; BIND i KASP bez zmian.",
             )
             if dry_run.status not in {"DRY-RUN", "DRY_RUN"}:
                 return False
@@ -1095,10 +1145,10 @@ class CursesApp:
             ):
                 return False
             result = transaction.apply(plan, commit=True, activate=True)
-            self._message_view(
+            self._onboarding_result_view(
                 win, title=f"Wynik importu DNSSEC: {zone_name}",
-                lines=self._migration_result_lines(result),
-                error=result.status != "COMMIT",
+                result=result, profile="DNSSEC",
+                note="Klucze, DS i stan KASP pozostały niezmienione.",
             )
             return result.status == "COMMIT"
         except (ManagedZoneMigrationError, OSError, RuntimeError, StopIteration) as exc:
@@ -1135,11 +1185,9 @@ class CursesApp:
                     "Dry-run — nie zapisano konfiguracji i nie przeładowano BIND.",
                 )
             )
-            self._message_view(
-                win,
-                title=f"Dry-run importu: {zone_name}",
-                lines=lines,
-                error=result.status not in {"DRY-RUN", "DRY_RUN"},
+            self._onboarding_result_view(
+                win, title=f"Dry-run importu: {zone_name}",
+                result=result, profile="PRIMARY", note=lines[-1],
             )
         except (ManagedZoneMigrationError, OSError) as exc:
             self._message_view(
@@ -1178,11 +1226,10 @@ class CursesApp:
                 root_config=planner.root_config,
             )
             dry_run = transaction.apply(plan)
-            self._message_view(
-                win,
-                title=f"Kontrola przed importem: {zone_name}",
-                lines=self._migration_result_lines(dry_run),
-                error=dry_run.status not in {"DRY-RUN", "DRY_RUN"},
+            self._onboarding_result_view(
+                win, title=f"Kontrola przed importem: {zone_name}",
+                result=dry_run, profile="PRIMARY",
+                note="Dry-run wykonany przed potwierdzeniem; konfiguracja bez zmian.",
             )
             if dry_run.status not in {"DRY-RUN", "DRY_RUN"}:
                 return False
@@ -1206,11 +1253,10 @@ class CursesApp:
             ):
                 return False
             result = transaction.apply(plan, commit=True, activate=True)
-            self._message_view(
-                win,
-                title=f"Wynik importu: {zone_name}",
-                lines=self._migration_result_lines(result),
-                error=result.status != "COMMIT",
+            self._onboarding_result_view(
+                win, title=f"Wynik importu: {zone_name}",
+                result=result, profile="PRIMARY",
+                note="Deklaracja jest teraz zarządzana przez ZoneCTL.",
             )
             return result.status == "COMMIT"
         except (ManagedZoneMigrationError, OSError) as exc:
@@ -2046,6 +2092,106 @@ class CursesApp:
                 elif key == curses.KEY_END:
                     offset = maximum
                 else:
+                    return
+        except curses.error:
+            pass
+        finally:
+            try:
+                win.timeout(150)
+            except curses.error:
+                pass
+
+    def _onboarding_result_view(
+        self,
+        win: curses.window,
+        *,
+        title: str,
+        result,
+        profile: str,
+        note: str = "",
+    ) -> None:
+        """Renderuje wynik importu w dwukolumnowym układzie TUI 4.8."""
+        status = str(result.status).replace("_", "-")
+        ok = status in {"COMMIT", "DRY-RUN"}
+        status_attr = self._color(Health.PASS if ok else Health.FAIL) | curses.A_BOLD
+        heading_attr = curses.A_BOLD | (
+            curses.color_pair(4) if curses.has_colors() else curses.A_NORMAL
+        )
+        steps = tuple(getattr(result, "steps", ()))
+        try:
+            win.timeout(-1)
+            while True:
+                win.erase()
+                height, width = win.getmaxyx()
+                win.addnstr(
+                    0, 0, f" {title} ".ljust(width), max(0, width - 1),
+                    curses.A_REVERSE | curses.A_BOLD,
+                )
+                wide = width >= 100 and height >= 20
+                divider = max(58, width * 2 // 3) if wide else width
+                left_width = max(1, divider - 5)
+                win.addnstr(2, 3, "TRANSAKCJA", left_width, heading_attr)
+                details = (
+                    f"Id             {result.transaction_id}",
+                    f"Strefa         {result.zone}",
+                    f"Profil         {profile}",
+                    f"Commit         {'TAK' if result.committed else 'NIE'}",
+                    f"Rollback       {'TAK' if result.rolled_back else 'NIE'}",
+                )
+                row = 4
+                for line in details:
+                    win.addnstr(row, 3, line, left_width)
+                    row += 1
+                row += 1
+                win.addnstr(row, 3, "ETAPY", left_width, heading_attr)
+                row += 2
+                for step in steps:
+                    marker = "OK" if step.ok else "BŁĄD"
+                    line = f"[{marker}] {step.name}: {step.message}"
+                    for part in self._wrap_message_lines([line], left_width):
+                        if row >= height - 2:
+                            break
+                        attr = self._color(Health.PASS if step.ok else Health.FAIL)
+                        win.addnstr(row, 3, part, left_width, attr)
+                        row += 1
+                if wide:
+                    try:
+                        for line_row in range(2, height - 2):
+                            win.addch(line_row, divider, curses.ACS_VLINE, curses.A_DIM)
+                    except curses.error:
+                        pass
+                    right = divider + 3
+                    right_width = max(1, width - right - 2)
+                    win.addnstr(2, right, "STAN OPERACYJNY", right_width, heading_attr)
+                    win.addnstr(5, right, status, right_width, status_attr)
+                    summary = (
+                        "OPERACJA ZAKOŃCZONA" if status == "COMMIT"
+                        else "KONTROLA BEZ ZMIAN" if status == "DRY-RUN"
+                        else "OPERACJA ZABLOKOWANA"
+                    )
+                    win.addnstr(7, right, summary, right_width, status_attr)
+                    if note:
+                        note_row = 10
+                        for part in self._wrap_message_lines([note], right_width):
+                            if note_row >= height - 2:
+                                break
+                            win.addnstr(note_row, right, part, right_width)
+                            note_row += 1
+                elif note and row < height - 2:
+                    row += 1
+                    for part in self._wrap_message_lines([note], max(1, width - 6)):
+                        if row >= height - 2:
+                            break
+                        win.addnstr(row, 3, part, max(1, width - 6))
+                        row += 1
+                footer = " q/Esc/F10 Powrót "
+                win.addnstr(
+                    height - 1, 0, footer.ljust(width), max(0, width - 1),
+                    curses.A_REVERSE,
+                )
+                win.refresh()
+                key = self._get_key(win)
+                if key in (ord("q"), ord("Q"), 27, curses.KEY_F10, 10, 13):
                     return
         except curses.error:
             pass
