@@ -43,3 +43,11 @@ def test_guarded_import_requires_dry_run_name_and_confirmation() -> None:
     assert "CursesDialogs.confirm" in commit
     assert "transaction.apply(plan, commit=True, activate=True)" in commit
     assert "self.read_only" in commit
+
+
+def test_onboarding_lists_are_refreshed_after_import_views() -> None:
+    summary = inspect.getsource(CursesApp._onboarding_summary_view)
+    refresh = inspect.getsource(CursesApp._refresh_onboarding_report)
+    assert summary.count("self._refresh_onboarding_report") == 2
+    assert "BindOnboardingReporter" in refresh
+    assert "BindOnboardingView.build" in refresh

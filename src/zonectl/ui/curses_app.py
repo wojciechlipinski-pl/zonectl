@@ -774,6 +774,7 @@ class CursesApp:
                 key = self._get_key(win)
                 if key in (10, 13, curses.KEY_ENTER) and report.candidates:
                     self._onboarding_candidates_view(win, report.candidates)
+                    report, view = self._refresh_onboarding_report(report.root_config)
                 elif key == curses.KEY_F5:
                     dnssec = tuple(
                         item for item in report.blockers
@@ -781,6 +782,9 @@ class CursesApp:
                     )
                     if dnssec:
                         self._onboarding_dnssec_view(win, dnssec)
+                        report, view = self._refresh_onboarding_report(
+                            report.root_config
+                        )
                 elif key in (curses.KEY_DOWN, ord("j")):
                     offset = min(offset + 1, maximum)
                 elif key in (curses.KEY_UP, ord("k")):
@@ -793,6 +797,12 @@ class CursesApp:
                     return
         finally:
             win.timeout(150)
+
+    @staticmethod
+    def _refresh_onboarding_report(root_config):
+        """Ponownie odkrywa BIND po wyjściu z listy importu."""
+        report = BindOnboardingReporter(Path(root_config)).collect()
+        return report, BindOnboardingView.build(report)
 
     def _onboarding_candidates_view(self, win, candidates) -> None:
         """Lista legacy: plan, dry-run i jawnie potwierdzony import."""
