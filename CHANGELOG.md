@@ -1,5 +1,43 @@
 # Changelog
 
+## 4.8.0 - 2026-08-13
+
+### Added
+
+- read-only discovery of existing BIND configuration, managed declarations,
+  legacy zones, DNSSEC zones and external RPZ integrations
+- guarded first-run onboarding with plans, dry-runs, backups, validation,
+  activation checks and rollback
+- dedicated DNSSEC onboarding gates preserving policy, keys, KASP and the
+  public chain of trust
+- bulk read-only DNSSEC readiness audit and detailed blocker categories
+- live CERT Polska RPZ freshness, timer, service, serial and node reporting
+
+### Changed
+
+- the complete TUI now follows the ZoneCTL 4.8 two-panel visual contract,
+  including zones, records, environment, DNSSEC and transaction results
+- context-sensitive footers expose only actions that are currently available
+- onboarding lists refresh after every completed import
+
+### Safety
+
+- discovery and readiness reports never modify BIND
+- legacy and DNSSEC imports remain separate, explicitly confirmed workflows
+- existing external RPZ automation is detected and monitored without being
+  overwritten or silently adopted
+- managed CERT Polska RPZ installation is deliberately deferred until its
+  root/systemd transaction and rollback have independent production tests
+
+### Verified
+
+- all legacy primary declarations were imported to per-zone managed files
+  without changing their zone data or served SOA serials
+- an active DNSSEC zone was imported with unchanged DNSKEY, DS, KASP policy
+  and authoritative responses
+- the production CERT Polska RPZ timer remained active and externally managed
+- 613 automated tests passed before release preparation
+
 ## 4.7.0 - 2026-08-12
 
 ### Added

@@ -11,7 +11,7 @@ atomic replacement and rollback.
 
 ## Current release
 
-**4.7.0 — managed BIND declarations, ACL and secondary administration**
+**4.8.0 — BIND discovery, guarded onboarding and redesigned TUI**
 
 ## Highlights
 
@@ -41,7 +41,7 @@ exact patch version.
 Install the Debian package attached to the GitHub release:
 
 ```bash
-sudo apt install ./zonectl_4.7.0-1_all.deb
+sudo apt install ./zonectl_4.8.0-1_all.deb
 zctl --version
 ```
 
@@ -237,7 +237,7 @@ delete DNSSEC keys or recovery packages.
 PYTHONPATH=src .venv/bin/python -m pytest -q
 ```
 
-Release 4.7.0 passed 556 automated tests, including isolated integration tests
+Release 4.8.0 passed 613 automated tests, including isolated integration tests
 using real BIND validators.
 
 ## License

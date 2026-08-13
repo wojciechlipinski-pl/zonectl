@@ -1,6 +1,7 @@
-zonectl (4.7.0-1) unstable; urgency=medium
+zonectl (4.8.0-1) unstable; urgency=medium
 
-  * Package ZoneCTL 4.7.0 for Debian 13.
-  * Add managed zone declarations, ACL and secondary administration.
+  * Package ZoneCTL 4.8.0 for Debian 13.
+  * Discover and safely onboard existing BIND and DNSSEC zones.
+  * Redesign the TUI and report external CERT Polska RPZ integration.
 
- -- Wojciech Lipiński <wojciech.lipinski.elk@gmail.com>  Wed, 12 Aug 2026 11:00:00 +0200
+ -- Wojciech Lipiński <wojciech.lipinski.elk@gmail.com>  Thu, 13 Aug 2026 16:30:00 +0200
