@@ -6,6 +6,7 @@
 - [ ] Test produkcyjnego raportu `zctl bind environment-report` bez zmian w BIND.
 - [ ] Kreator pierwszego uruchomienia i plan bezpiecznego importu konfiguracji.
 - [x] Odczytowy status CERT RPZ pod F3 z zachowaniem liczbowego wieku.
-- [ ] Włączyć panel RPZ do docelowego dwupanelowego układu ekranu głównego.
+- [x] Włączyć szczegóły strefy i RPZ do responsywnego dwupanelowego ekranu głównego.
+- [ ] Dopolerować semantykę kolorów i hierarchię nagłówków prawego panelu.
 - [ ] Opcjonalny, transakcyjny profil `MANAGED` dla aktualizatora CERT RPZ.
 - [ ] Pierwszy etap panelowej przebudowy TUI zgodnej z koncepcją 4.8.

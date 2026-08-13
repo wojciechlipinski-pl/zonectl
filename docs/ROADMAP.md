@@ -275,7 +275,7 @@ generator danych demonstracyjnych został przesunięty poza krytyczny zakres 4.8
 
 ### Docelowy wygląd TUI
 
-- [ ] Przebudować ekran główny na czytelny układ panelowy: lista stref,
+- [x] Rozpocząć przebudowę ekranu głównego na responsywny układ panelowy: lista stref,
   zaznaczenie aktywnego wiersza oraz panel szczegółów wybranej strefy.
 - [ ] Ujednolicić widoki planu, dry-runu, ostrzeżenia, sukcesu i rollbacku,
   zachowując tę samą hierarchię informacji i semantykę kolorów.

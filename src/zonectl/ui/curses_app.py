@@ -11,6 +11,7 @@ from zonectl.ui.records.renderer import RecordRenderer
 from zonectl.ui.zone_create_dialog import ZoneCreateDialog
 from zonectl.ui.dnssec_status_view import DnssecStatusView
 from zonectl.ui.rpz_status_view import RpzStatusView
+from zonectl.ui.zone_details_view import ZoneDetailsView
 
 import curses
 import queue
@@ -305,6 +306,9 @@ class CursesApp:
         )
         win.addnstr(2, 0, subtitle, max(0, width - 1), curses.A_BOLD)
         list_top = 4
+        panel_enabled = width >= 118
+        panel_width = min(48, max(36, width // 3)) if panel_enabled else 0
+        list_width = width - panel_width - 2 if panel_enabled else width
         footer_lines = 3
         visible = max(1, height - list_top - footer_lines)
         if self.selected < self.offset:
@@ -345,12 +349,72 @@ class CursesApp:
                 attr = self._color(status.health)
             if idx == self.selected:
                 attr |= curses.A_REVERSE
-            win.addnstr(screen_row, 0, line.ljust(width), max(0, width - 1), attr)
+            win.addnstr(
+                screen_row,
+                0,
+                line.ljust(list_width),
+                max(0, list_width - 1),
+                attr,
+            )
+
+        if panel_enabled:
+            self._draw_zone_details_panel(
+                win,
+                top=list_top,
+                left=list_width + 1,
+                height=visible,
+                width=panel_width,
+            )
 
         footer = " Enter otwórz  F3 podgląd  Ins nowa strefa  F9 ACL/secondary  Spacja zaznacz  / szukaj  F7 sortuj  r odśwież  F10 wyjście "
         win.addnstr(height - 2, 0, footer.ljust(width), max(0, width - 1), curses.A_REVERSE)
-        draw_project_credits(win)
+        if not panel_enabled:
+            draw_project_credits(win)
         win.refresh()
+
+    def _draw_zone_details_panel(
+        self,
+        win: curses.window,
+        *,
+        top: int,
+        left: int,
+        height: int,
+        width: int,
+    ) -> None:
+        """Rysuje prawy panel bez wpływu na zachowanie małych terminali."""
+        if width < 20 or height < 4:
+            return
+        try:
+            for row in range(top, top + height):
+                win.addch(row, left - 1, curses.ACS_VLINE, curses.A_DIM)
+        except curses.error:
+            pass
+        zone = (
+            self.rows[self.selected].zone
+            if self.rows and 0 <= self.selected < len(self.rows)
+            else None
+        )
+        if zone is None:
+            title = " Szczegóły strefy "
+            lines = ("Wybierz strefę z listy.",)
+        else:
+            status = self.statuses.get(zone.name, ZoneStatus(zone=zone))
+            details = ZoneDetailsView.build(zone, status)
+            title = f" {details.title} "
+            lines = details.lines
+        try:
+            win.addnstr(top, left, title, width - 1, curses.A_BOLD | curses.A_REVERSE)
+            available = max(0, height - 2)
+            row = top + 2
+            for line in lines:
+                wrapped = self._wrap_message_lines([line], max(1, width - 3))
+                for part in wrapped:
+                    if row >= top + 2 + available:
+                        return
+                    win.addnstr(row, left + 1, part, width - 3)
+                    row += 1
+        except curses.error:
+            return
 
     def _activate(self, win: curses.window) -> None:
         if not self.rows:
