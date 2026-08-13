@@ -1,7 +1,6 @@
-zonectl (4.8.0-1) unstable; urgency=medium
+zonectl (4.8.1-1) unstable; urgency=medium
 
-  * Package ZoneCTL 4.8.0 for Debian 13.
-  * Discover and safely onboard existing BIND and DNSSEC zones.
-  * Redesign the TUI and report external CERT Polska RPZ integration.
+  * Anonymize public examples and default TUI values.
+  * Add an automated public-data privacy guard.
 
- -- Wojciech Lipiński <wojciech.lipinski.elk@gmail.com>  Thu, 13 Aug 2026 16:30:00 +0200
+ -- Wojciech Lipiński <wojciech.lipinski.elk@gmail.com>  Thu, 13 Aug 2026 23:00:00 +0200

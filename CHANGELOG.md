@@ -1,5 +1,26 @@
 # Changelog
 
+## 4.8.1 - 2026-08-13
+
+### Changed
+
+- replaced production DNS names in public examples, documentation, defaults
+  and tests with reserved example domains
+- added a mandatory release privacy checklist and an automated GitHub Actions
+  public-data guard
+
+### Safety
+
+- a regression test rejects known production DNS namespaces in public project
+  materials
+- the release process now requires a staged-diff privacy review before tags
+  and packages are published
+
+### Verified
+
+- the public-name audit returned no findings
+- 614 automated tests passed before release preparation
+
 ## 4.8.0 - 2026-08-13
 
 ### Added
