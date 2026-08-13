@@ -1,4 +1,5 @@
 import inspect
+from types import SimpleNamespace
 
 from zonectl.ui.curses_app import CursesApp
 
@@ -17,6 +18,45 @@ def test_environment_view_has_no_write_workflow() -> None:
     assert "BindOnboardingView" in source
     for forbidden in ("--commit", "--activate", ".apply(", ".write_"):
         assert forbidden not in source
+
+
+def test_environment_summary_uses_responsive_48_layout() -> None:
+    summary = inspect.getsource(CursesApp._onboarding_summary_view)
+    renderer = inspect.getsource(CursesApp._draw_onboarding_summary_48)
+    assert "width >= 100 and height >= 24" in summary
+    assert "WYKRYTE ŚRODOWISKO" in renderer
+    assert "KLASYFIKACJA" in renderer
+    assert "STAN OPERACYJNY" in renderer
+    assert "KONFIGURACJA WSPÓŁDZIELONA" in renderer
+    assert "NASTĘPNY KROK" in renderer
+    assert "curses.ACS_HLINE" in renderer
+    assert "curses.ACS_VLINE" in renderer
+    assert "win.erase()" in renderer
+
+
+def test_environment_summary_keeps_compact_fallback_and_read_only_actions() -> None:
+    summary = inspect.getsource(CursesApp._onboarding_summary_view)
+    footer = inspect.getsource(CursesApp._onboarding_footer)
+    assert "self._wrap_message_lines" in summary
+    assert "Enter LEGACY" in footer
+    assert "F5 DNSSEC" in footer
+    assert "self._draw_onboarding_summary_48" in summary
+
+
+def test_environment_footer_hides_unavailable_legacy_action() -> None:
+    dnssec = SimpleNamespace(category="DNSSEC")
+    report = SimpleNamespace(candidates=(), blockers=(dnssec,))
+    footer = CursesApp._onboarding_footer(report)
+    assert "Enter LEGACY" not in footer
+    assert "F5 DNSSEC" in footer
+
+
+def test_environment_footer_hides_all_empty_profile_actions() -> None:
+    report = SimpleNamespace(candidates=(), blockers=())
+    footer = CursesApp._onboarding_footer(report)
+    assert "Enter LEGACY" not in footer
+    assert "F5 DNSSEC" not in footer
+    assert "F10 Powrót" in footer
 
 
 def test_legacy_candidates_offer_plan_and_dry_run_only() -> None:

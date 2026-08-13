@@ -22,6 +22,19 @@ def test_domain_view_uses_terminal_key_decoder() -> None:
     assert "key = win.getch()" not in source
 
 
+def test_dnssec_status_uses_responsive_48_layout() -> None:
+    status = inspect.getsource(CursesApp._dnssec_status_view)
+    renderer = inspect.getsource(CursesApp._draw_dnssec_status_48)
+    assert "width >= 100 and height >= 28" in status
+    assert "self._draw_dnssec_status_48" in status
+    assert "POLITYKA, KASP I DS" in renderer
+    assert "DELEGACJA I STAN OPERACYJNY" in renderer
+    assert "KONTROLA DELEGACJI" in renderer
+    assert "curses.ACS_HLINE" in renderer
+    assert "curses.ACS_VLINE" in renderer
+    assert "view.lines" in renderer
+
+
 def report(*, zone_rrsig: str = "rumoured") -> DnssecReport:
     return DnssecReport(
         zone="example.pl",

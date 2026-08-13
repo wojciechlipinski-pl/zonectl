@@ -33,6 +33,7 @@ def test_acl_plan_cli_is_read_only(monkeypatch, tmp_path: Path, capsys) -> None:
 
 
 def test_acl_plan_accepts_full_entry_list(monkeypatch, tmp_path, capsys) -> None:
+    monkeypatch.setattr(cli.ToolkitConfig, "load", lambda self: _EmptyConfig())
     root = tmp_path / "named.conf"
     root.write_text(
         'acl "trusted" {\n  localhost;\n  192.0.2.0/24;\n};\n'

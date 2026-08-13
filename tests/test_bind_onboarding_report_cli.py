@@ -4,6 +4,11 @@ from zonectl import cli
 from zonectl.core.bind_onboarding_report import BindOnboardingReport, OnboardingClass
 
 
+class _EmptyConfig:
+    def zones(self):
+        return []
+
+
 def _report() -> BindOnboardingReport:
     return BindOnboardingReport(
         root_config="/etc/bind/named.conf",
@@ -24,6 +29,7 @@ def _report() -> BindOnboardingReport:
 
 
 def test_onboarding_report_cli_is_read_only(monkeypatch, capsys) -> None:
+    monkeypatch.setattr(cli.ToolkitConfig, "load", lambda self: _EmptyConfig())
     monkeypatch.setattr(cli.BindOnboardingReporter, "collect", lambda self: _report())
     assert cli.main(["bind", "onboarding-report"]) == 0
     output = capsys.readouterr().out
@@ -32,6 +38,7 @@ def test_onboarding_report_cli_is_read_only(monkeypatch, capsys) -> None:
 
 
 def test_onboarding_report_cli_outputs_json(monkeypatch, capsys) -> None:
+    monkeypatch.setattr(cli.ToolkitConfig, "load", lambda self: _EmptyConfig())
     monkeypatch.setattr(cli.BindOnboardingReporter, "collect", lambda self: _report())
     assert cli.main(["bind", "onboarding-report", "--json"]) == 0
     assert json.loads(capsys.readouterr().out)["import_candidates"] == 7

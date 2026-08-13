@@ -367,6 +367,45 @@ class RecordEditor:
             if message:
                 put(12, 2, message, self._error_attr)
 
+            wide = width >= 100 and height >= 20
+            divider = max(62, min(width - 38, int(width * 0.68)))
+            if wide:
+                try:
+                    has_colors = curses.has_colors()
+                except curses.error:
+                    has_colors = False
+                heading_attr = curses.A_BOLD | (
+                    curses.color_pair(4)
+                    if has_colors else curses.A_NORMAL
+                )
+                try:
+                    for row in range(2, height - 2):
+                        win.addnstr(
+                            row, divider + 1, " " * (width - divider - 2),
+                            width - divider - 2,
+                        )
+                        win.addch(row, divider, curses.ACS_VLINE, curses.A_DIM)
+                except curses.error:
+                    pass
+                right = divider + 3
+                right_width = max(1, width - right - 3)
+                put(2, right, "PODGLĄD REKORDU", heading_attr)
+                preview = (
+                    ("Strefa", zone.name),
+                    ("Nazwa", values[0] or "@"),
+                    ("Typ", values[1] or "-"),
+                    ("TTL", values[2] or "domyślny"),
+                    ("Dane", values[3] or "-"),
+                    ("Stan", "BŁĄD" if message else "EDYCJA"),
+                )
+                panel_row = 4
+                for label, value in preview:
+                    put(panel_row, right, label)
+                    for part in [str(value)[i:i + max(1, right_width - 13)] for i in range(0, max(1, len(str(value))), max(1, right_width - 13))]:
+                        put(panel_row, right + 13, part)
+                        panel_row += 1
+                    panel_row += 1
+
             footer = (
                 " ↑/↓ pole"
                 "   Enter edytuj"
@@ -403,7 +442,11 @@ class RecordEditor:
                     row=row,
                     column=13,
                     initial_value=values[active],
-                    max_width=max(1, width - 14),
+                    max_width=max(
+                        1,
+                        (divider - 15) if width >= 100 and height >= 20
+                        else width - 14,
+                    ),
                 )
 
                 if edited_value is not None:

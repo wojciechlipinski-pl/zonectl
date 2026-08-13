@@ -108,7 +108,10 @@ def test_validation_failure_restores_configuration_and_removes_target(tmp_path: 
     assert not plan.target_zone_file.exists()
 
 
-@pytest.mark.skipif(os.name == "nt", reason="Test metadanych POSIX")
+@pytest.mark.skipif(
+    os.name == "nt" or (hasattr(os, "geteuid") and os.geteuid() != 0),
+    reason="Test metadanych POSIX wymaga uprawnień root",
+)
 def test_rollback_preserves_original_configuration_owner(
     tmp_path: Path,
 ) -> None:

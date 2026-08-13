@@ -5,8 +5,9 @@ from zonectl.ui.curses_app import CursesApp
 
 def test_onboarding_summary_routes_f5_to_dnssec_profile() -> None:
     summary = inspect.getsource(CursesApp._onboarding_summary_view)
+    footer = inspect.getsource(CursesApp._onboarding_footer)
     view = inspect.getsource(CursesApp._onboarding_dnssec_view)
-    assert "F5 DNSSEC" in summary
+    assert "F5 DNSSEC" in footer
     assert "item.category == \"DNSSEC\"" in summary
     assert "F3 plan" in view
     assert "F4 dry-run" in view
@@ -43,3 +44,15 @@ def test_dnssec_import_results_use_shared_transaction_layout() -> None:
     assert "_onboarding_result_view" in commit
     assert 'profile="DNSSEC"' in dry_run
     assert 'profile="DNSSEC"' in commit
+
+
+def test_dnssec_candidate_list_uses_responsive_48_layout() -> None:
+    listing = inspect.getsource(CursesApp._onboarding_dnssec_view)
+    renderer = inspect.getsource(CursesApp._draw_dnssec_onboarding_48)
+    assert "width >= 100 and height >= 24" in listing
+    assert "self._draw_dnssec_onboarding_48" in listing
+    assert "STAN OPERACYJNY" in renderer
+    assert "KASP" in renderer
+    assert "DS" in renderer
+    assert "curses.ACS_HLINE" in renderer
+    assert "curses.ACS_VLINE" in renderer

@@ -12,6 +12,24 @@ class RecordRendererTests(unittest.TestCase):
     def test_visible_rows_for_normal_terminal(self) -> None:
         self.assertEqual(RecordRenderer.visible_rows(30), 21)
 
+    def test_wide_terminal_reserves_responsive_details_panel(self) -> None:
+        self.assertTrue(RecordRenderer.panel_enabled(30, 140))
+        self.assertFalse(RecordRenderer.panel_enabled(30, 100))
+        self.assertLess(
+            RecordRenderer.visible_rows(30, 140),
+            RecordRenderer.visible_rows(30, 100),
+        )
+
+    def test_renderer_contains_published_layout_elements(self) -> None:
+        import inspect
+
+        source = inspect.getsource(RecordRenderer)
+        self.assertIn("Szczegóły rekordu", source)
+        self.assertIn("Stan operacyjny", source)
+        self.assertIn("curses.ACS_VLINE", source)
+        self.assertIn("curses.color_pair(5)", source)
+        self.assertIn("curses.color_pair(6)", source)
+
     def test_summary_without_filter(self) -> None:
         result = RecordRenderer.summary_text(
             visible_count=13,

@@ -4,7 +4,7 @@ import curses
 from collections.abc import Sequence
 
 from zonectl.core.zone_model import ChangeKind, ZoneRecordView
-from zonectl.ui.records.keybindings import render_footer
+from zonectl.ui.records.keybindings import RECORD_VIEW_BINDINGS, render_footer
 
 
 class RecordRenderer:
@@ -14,8 +14,29 @@ class RecordRenderer:
     FOOTER_LINES = 3
 
     @classmethod
-    def visible_rows(cls, height: int) -> int:
-        return max(1, height - cls.LIST_TOP - cls.FOOTER_LINES)
+    def panel_enabled(cls, height: int, width: int) -> bool:
+        return width >= 118 and height >= 28
+
+    @classmethod
+    def details_height(cls, height: int, width: int) -> int:
+        if not cls.panel_enabled(height, width):
+            return 0
+        return max(
+            9,
+            (height - cls.LIST_TOP - cls.FOOTER_LINES) // 3,
+        )
+
+    @classmethod
+    def visible_rows(cls, height: int, width: int = 0) -> int:
+        panel = cls.details_height(height, width)
+        return max(
+            1,
+            height
+            - cls.LIST_TOP
+            - cls.FOOTER_LINES
+            - panel
+            - (1 if panel else 0),
+        )
 
     @staticmethod
     def summary_text(
@@ -86,6 +107,78 @@ class RecordRenderer:
             return curses.A_DIM
 
         return curses.A_NORMAL
+
+    @classmethod
+    def _draw_footer(
+        cls,
+        win: curses.window,
+        row: int,
+        width: int,
+        *,
+        read_only: bool,
+    ) -> None:
+        bindings = tuple(
+            binding for binding in RECORD_VIEW_BINDINGS
+            if not read_only
+            or binding.key not in {"Ins", "F4", "Del", "b", "u", "F2"}
+        )
+        cls._put(win, row, 0, " " * width, curses.A_REVERSE)
+        column = 1
+        key_attr = (
+            curses.color_pair(6) | curses.A_DIM
+            if curses.has_colors()
+            else curses.A_REVERSE | curses.A_BOLD
+        )
+        for binding in bindings:
+            segment = f"{binding.key} {binding.description}  "
+            if column + len(segment) >= width:
+                break
+            cls._put(win, row, column, binding.key, key_attr)
+            column += len(binding.key)
+            label = f" {binding.description}  "
+            cls._put(win, row, column, label, curses.A_REVERSE)
+            column += len(label)
+
+    @classmethod
+    def _draw_details_panel(
+        cls, win: curses.window, *, top: int, height: int, width: int,
+        zone_name: str, view: ZoneRecordView | None, change_count: int,
+    ) -> None:
+        try:
+            for column in range(width - 1):
+                win.addch(top - 1, column, curses.ACS_HLINE, curses.A_DIM)
+        except curses.error:
+            pass
+        divider = min(max(54, width * 2 // 3), width - 28)
+        heading = curses.A_BOLD | (curses.color_pair(4) if curses.has_colors() else 0)
+        cls._put(win, top, 2, " Szczegóły rekordu ", heading)
+        cls._put(win, top, divider + 2, " Stan operacyjny ", heading)
+        try:
+            for row in range(top + 1, top + height):
+                win.addch(row, divider, curses.ACS_VLINE, curses.A_DIM)
+        except curses.error:
+            pass
+        if view is None:
+            cls._put(win, top + 2, 2, "Wybierz rekord z listy.")
+        else:
+            record = view.record
+            lines = (
+                f"Nazwa          {record.relative_owner(zone_name)}",
+                f"Typ            {record.rtype}",
+                f"TTL            {'-' if record.ttl is None else record.ttl}",
+                f"Wartość        {record.rdata}",
+            )
+            for index, line in enumerate(lines, start=2):
+                cls._put(win, top + index, 2, line[: max(1, divider - 4)])
+        state = (
+            "USUNIĘTY"
+            if view and view.deleted
+            else "ZMIENIONY"
+            if view and view.change_kind
+            else "BEZ ZMIAN"
+        )
+        cls._put(win, top + 2, divider + 2, f"Status         {state}", curses.A_BOLD)
+        cls._put(win, top + 3, divider + 2, f"Zmiany strefy  {change_count}")
 
     @classmethod
     def draw(
@@ -209,7 +302,7 @@ class RecordRenderer:
             curses.A_DIM,
         )
 
-        visible = cls.visible_rows(height)
+        visible = cls.visible_rows(height, width)
 
         if records:
             for screen_row, view in enumerate(
@@ -222,7 +315,11 @@ class RecordRenderer:
                 attr = cls._change_attr(view)
 
                 if index == selected:
-                    attr |= curses.A_REVERSE
+                    attr = (
+                        curses.color_pair(5) | curses.A_BOLD
+                        if curses.has_colors()
+                        else attr | curses.A_REVERSE
+                    )
 
                 owner = record.relative_owner(zone_name)
                 ttl = "-" if record.ttl is None else str(record.ttl)
@@ -281,11 +378,16 @@ class RecordRenderer:
                 curses.A_DIM,
             )
 
-        cls._put(
-            win,
-            height - 2,
-            0,
-            cls.footer_text(read_only=read_only).ljust(width),
-            curses.A_REVERSE,
-        )
+        if cls.panel_enabled(height, width):
+            selected_view = (
+                records[selected]
+                if records and 0 <= selected < len(records)
+                else None
+            )
+            cls._draw_details_panel(
+                win, top=cls.LIST_TOP + visible + 1,
+                height=cls.details_height(height, width), width=width,
+                zone_name=zone_name, view=selected_view, change_count=change_count,
+            )
+        cls._draw_footer(win, height - 2, width, read_only=read_only)
         win.refresh()

@@ -461,7 +461,7 @@ class CursesApp:
         try:
             for column in range(left, left + width - 1):
                 win.addch(top - 1, column, curses.ACS_HLINE, curses.A_DIM)
-        except curses.error:
+        except (curses.error, AttributeError):
             pass
         zone = (
             self.rows[self.selected].zone
@@ -762,11 +762,9 @@ class CursesApp:
                     wrapped[offset : offset + visible], start=2
                 ):
                     win.addnstr(row, 2, line, max(0, width - 4))
-                footer = (
-                    " Enter LEGACY   F5 DNSSEC   ↑/↓ PgUp/PgDn   q/Esc powrót "
-                    if report.candidates or report.blockers
-                    else " ↑/↓ PgUp/PgDn   q/Esc powrót "
-                )
+                if width >= 100 and height >= 24:
+                    self._draw_onboarding_summary_48(win, report)
+                footer = self._onboarding_footer(report)
                 win.addnstr(
                     height - 1, 0, footer.ljust(width),
                     max(0, width - 1), curses.A_REVERSE,
@@ -800,6 +798,121 @@ class CursesApp:
             win.timeout(150)
 
     @staticmethod
+    def _onboarding_footer(report) -> str:
+        """Pokazuje wyłącznie akcje mające dostępne elementy docelowe."""
+        actions: list[str] = []
+        if report.candidates:
+            actions.append("Enter LEGACY")
+        if any(item.category == "DNSSEC" for item in report.blockers):
+            actions.append("F5 DNSSEC")
+        actions.extend(("↑/↓ PgUp/PgDn", "F10 Powrót"))
+        return " " + "   ".join(actions) + " "
+
+    def _draw_onboarding_summary_48(self, win, report) -> None:
+        """Rysuje raport środowiska w dwukolumnowym układzie ZoneCTL 4.8."""
+        height, width = win.getmaxyx()
+        heading_attr = curses.A_BOLD | (
+            curses.color_pair(4) if curses.has_colors() else curses.A_NORMAL
+        )
+        win.erase()
+        win.addnstr(
+            0, 0, " Środowisko BIND ".ljust(width), max(0, width - 1),
+            curses.A_REVERSE | curses.A_BOLD,
+        )
+        win.addnstr(
+            2, 2, "Odkrywanie konfiguracji • gotowość importu • tylko odczyt",
+            max(0, width - 4), heading_attr,
+        )
+        try:
+            for column in range(2, width - 2):
+                win.addch(3, column, curses.ACS_HLINE, curses.A_DIM)
+        except (curses.error, AttributeError):
+            pass
+
+        split = max(62, min(width - 42, int(width * 0.67)))
+        try:
+            for row in range(5, height - 2):
+                win.addch(row, split, curses.ACS_VLINE, curses.A_DIM)
+        except curses.error:
+            pass
+
+        left = 4
+        value = 25
+        left_width = max(1, split - left - 2)
+        win.addnstr(5, left, "WYKRYTE ŚRODOWISKO", left_width, heading_attr)
+        environment_rows = (
+            ("Konfiguracja", report.root_config),
+            ("Pliki konfiguracji", str(report.config_files)),
+            ("Strefy", str(report.zones)),
+            ("Strefy DNSSEC", str(report.dnssec_zones)),
+        )
+        row = 7
+        for label, content in environment_rows:
+            win.addnstr(row, left, label, value - left - 1)
+            win.addnstr(row, value, content, max(1, split - value - 2))
+            row += 1
+
+        row += 1
+        win.addnstr(row, left, "KLASYFIKACJA", left_width, heading_attr)
+        row += 2
+        for item in report.classes:
+            if row >= height - 3:
+                break
+            state_attr = heading_attr if item.count else curses.A_DIM
+            win.addnstr(row, left, f"{item.state:<10}", 10, state_attr)
+            win.addnstr(row, left + 12, f"{item.count:>3}", 3)
+            win.addnstr(
+                row, left + 18, item.description,
+                max(1, split - left - 20), curses.A_DIM,
+            )
+            row += 1
+
+        right = split + 3
+        right_width = max(1, width - right - 3)
+        win.addnstr(5, right, "STAN OPERACYJNY", right_width, heading_attr)
+        managed = next(
+            (item.count for item in report.classes if item.state == "MANAGED"), 0
+        )
+        state_rows = (
+            ("Status", "GOTOWY" if not report.blocked else "UWAGA"),
+            ("Managed", str(managed)),
+            ("Kandydaci", str(report.import_candidates)),
+            ("Zablokowane", str(report.blocked)),
+        )
+        row = 7
+        for label, content in state_rows:
+            win.addnstr(row, right, label, 14)
+            attr = heading_attr if label == "Status" else curses.A_NORMAL
+            win.addnstr(row, right + 15, content, max(1, right_width - 15), attr)
+            row += 1
+
+        row += 1
+        win.addnstr(
+            row, right, "KONFIGURACJA WSPÓŁDZIELONA", right_width, heading_attr
+        )
+        row += 2
+        shared_rows = (
+            ("ACL", str(report.acl_definitions)),
+            ("Secondary", str(report.secondary_groups)),
+            ("Integracje RPZ", str(report.rpz_integrations)),
+            ("Tryb RPZ", ", ".join(report.rpz_modes) or "-"),
+        )
+        for label, content in shared_rows:
+            win.addnstr(row, right, label, 14)
+            win.addnstr(row, right + 15, content, max(1, right_width - 15))
+            row += 1
+
+        row += 1
+        if row < height - 4:
+            win.addnstr(row, right, "NASTĘPNY KROK", right_width, heading_attr)
+            row += 2
+            for line in self._wrap_message_lines([report.next_action], right_width):
+                if row >= height - 2:
+                    break
+                win.addnstr(row, right, line, right_width)
+                row += 1
+
+    @staticmethod
     def _refresh_onboarding_report(root_config):
         """Ponownie odkrywa BIND po wyjściu z listy importu."""
         report = BindOnboardingReporter(Path(root_config)).collect()
@@ -829,6 +942,17 @@ class CursesApp:
                 line = f"{item.name:<38} {item.zone_type:<10} {item.declaration}"
                 attr = curses.A_REVERSE if index == selected else curses.A_NORMAL
                 win.addnstr(screen_row, 2, line, max(0, width - 4), attr)
+            current = candidates[selected]
+            self._draw_context_panel_48(
+                win, "SZCZEGÓŁY KANDYDATA",
+                (
+                    ("Strefa", current.name),
+                    ("Typ", current.zone_type),
+                    ("Deklaracja", current.declaration),
+                    ("Plik strefy", current.zone_file or "-"),
+                    ("Tryb", "PLANOWANY IMPORT"),
+                ),
+            )
             footer = (
                 " F3 plan   F4 dry-run   F6 importuj   "
                 "↑/↓ wybór   q/Esc powrót "
@@ -915,6 +1039,10 @@ class CursesApp:
                 line = f"{item.name:<38} {item.reason}"
                 attr = curses.A_REVERSE if index == selected else curses.A_NORMAL
                 win.addnstr(screen_row, 2, line, max(0, width - 4), attr)
+            if width >= 100 and height >= 24:
+                self._draw_dnssec_onboarding_48(
+                    win, blockers, selected, offset, visible
+                )
             footer = " F3 plan   F4 dry-run   F6 importuj   F7 audyt   ↑/↓ wybór   q/Esc/F10 powrót "
             win.addnstr(
                 height - 1, 0, footer.ljust(width),
@@ -943,6 +1071,73 @@ class CursesApp:
                     return
             elif key == curses.KEY_F7:
                 self._dnssec_onboarding_audit_view(win, blockers)
+
+    def _draw_dnssec_onboarding_48(
+        self, win, blockers, selected, offset, visible
+    ) -> None:
+        """Rysuje listę importu DNSSEC zgodnie z wizualnym kontraktem 4.8."""
+        height, width = win.getmaxyx()
+        heading_attr = curses.A_BOLD | (
+            curses.color_pair(4) if curses.has_colors() else curses.A_NORMAL
+        )
+        win.erase()
+        win.addnstr(
+            0, 0, " Import deklaracji DNSSEC ".ljust(width),
+            max(0, width - 1), curses.A_REVERSE | curses.A_BOLD,
+        )
+        win.addnstr(
+            2, 2, "Bezpieczny onboarding • deklaracja BIND • KASP i DS bez zmian",
+            max(0, width - 4), heading_attr,
+        )
+        try:
+            for column in range(2, width - 2):
+                win.addch(3, column, curses.ACS_HLINE, curses.A_DIM)
+        except curses.error:
+            pass
+        split = max(64, min(width - 40, int(width * 0.68)))
+        try:
+            for row in range(5, height - 2):
+                win.addch(row, split, curses.ACS_VLINE, curses.A_DIM)
+        except curses.error:
+            pass
+
+        win.addnstr(5, 3, "STREFA", 38, heading_attr)
+        win.addnstr(5, 43, "PROFIL", 10, heading_attr)
+        win.addnstr(5, 55, "STAN", max(1, split - 57), heading_attr)
+        list_visible = max(1, min(visible, height - 9))
+        for screen_row, item in enumerate(
+            blockers[offset : offset + list_visible], start=7
+        ):
+            index = offset + screen_row - 7
+            attr = curses.A_REVERSE if index == selected else curses.A_NORMAL
+            line = f"{item.name:<38} {'DNSSEC':<10} {'DO AUDYTU':<12}"
+            win.addnstr(screen_row, 3, line, max(1, split - 5), attr)
+
+        current = blockers[selected]
+        right = split + 3
+        right_width = max(1, width - right - 3)
+        win.addnstr(5, right, "STAN OPERACYJNY", right_width, heading_attr)
+        details = (
+            ("Strefa", current.name),
+            ("Profil", "DNSSEC"),
+            ("Operacja", "IMPORT DEKLARACJI"),
+            ("Klucze", "BEZ ZMIAN"),
+            ("KASP", "BEZ ZMIAN"),
+            ("DS", "BEZ ZMIAN"),
+        )
+        row = 7
+        for label, content in details:
+            win.addnstr(row, right, label, 12)
+            win.addnstr(row, right + 13, content, max(1, right_width - 13))
+            row += 1
+        row += 1
+        win.addnstr(row, right, "POWÓD KLASYFIKACJI", right_width, heading_attr)
+        row += 2
+        for line in self._wrap_message_lines([current.reason], right_width):
+            if row >= height - 3:
+                break
+            win.addnstr(row, right, line, right_width)
+            row += 1
 
     def _show_dnssec_onboarding_plan(self, win, zone_name, planner) -> None:
         """Pokazuje deklaracyjny plan DNSSEC bez operacji na kluczach."""
@@ -1006,12 +1201,115 @@ class CursesApp:
             for item in results
         )
         lines.extend(("", "Audyt nie zmienił BIND, kluczy, KASP ani DS."))
-        self._message_view(
-            win,
-            title="Audyt gotowości importu DNSSEC",
-            lines=lines,
-            error=ready != len(results),
-        )
+        self._dnssec_onboarding_audit_result_view(win, results, ready)
+
+    def _dnssec_onboarding_audit_result_view(self, win, results, ready) -> None:
+        """Pokazuje zbiorczy audyt DNSSEC w układzie ZoneCTL 4.8."""
+        selected = 0
+        try:
+            win.timeout(-1)
+            while True:
+                win.erase()
+                height, width = win.getmaxyx()
+                heading_attr = curses.A_BOLD | (
+                    curses.color_pair(4)
+                    if curses.has_colors() else curses.A_NORMAL
+                )
+                win.addnstr(
+                    0, 0, " Audyt gotowości importu DNSSEC ".ljust(width),
+                    max(0, width - 1), curses.A_REVERSE | curses.A_BOLD,
+                )
+                blocked = len(results) - ready
+                win.addnstr(
+                    2, 2,
+                    f"Strefy {len(results)}   Gotowe {ready}   Zablokowane {blocked}",
+                    max(0, width - 4), heading_attr,
+                )
+                try:
+                    for column in range(2, width - 2):
+                        win.addch(3, column, curses.ACS_HLINE, curses.A_DIM)
+                except curses.error:
+                    pass
+
+                wide = width >= 100 and height >= 20
+                split = (
+                    max(66, min(width - 38, int(width * 0.70)))
+                    if wide else width
+                )
+                if wide:
+                    try:
+                        for row in range(5, height - 2):
+                            win.addch(row, split, curses.ACS_VLINE, curses.A_DIM)
+                    except curses.error:
+                        pass
+                win.addnstr(5, 3, "STREFA", 36, heading_attr)
+                win.addnstr(5, 41, "STAN", 9, heading_attr)
+                win.addnstr(5, 52, "RAPORT", 8, heading_attr)
+                win.addnstr(5, 62, "DS", max(1, split - 64), heading_attr)
+                visible = max(1, height - 9)
+                offset = max(0, min(selected, len(results) - visible))
+                for screen_row, item in enumerate(
+                    results[offset : offset + visible], start=7
+                ):
+                    index = offset + screen_row - 7
+                    attr = (
+                        curses.A_REVERSE if index == selected
+                        else curses.A_NORMAL
+                    )
+                    line = (
+                        f"{item.zone:<36} {item.status:<9} "
+                        f"{item.report_status:<8} {item.delegation_status}"
+                    )
+                    win.addnstr(screen_row, 3, line, max(1, split - 5), attr)
+
+                if wide and results:
+                    current = results[selected]
+                    right = split + 3
+                    right_width = max(1, width - right - 3)
+                    win.addnstr(
+                        5, right, "STAN OPERACYJNY", right_width, heading_attr
+                    )
+                    details = (
+                        ("Strefa", current.zone),
+                        ("Gotowość", current.status),
+                        ("Raport", current.report_status),
+                        ("Delegacja", current.delegation_status),
+                    )
+                    row = 7
+                    for label, content in details:
+                        win.addnstr(row, right, label, 12)
+                        win.addnstr(
+                            row, right + 13, content,
+                            max(1, right_width - 13),
+                        )
+                        row += 1
+                    row += 1
+                    win.addnstr(
+                        row, right, "BEZPIECZEŃSTWO", right_width, heading_attr
+                    )
+                    row += 2
+                    for text in (
+                        "BIND bez zmian", "Klucze bez zmian",
+                        "KASP bez zmian", "DS bez zmian",
+                    ):
+                        win.addnstr(row, right, text, right_width)
+                        row += 1
+
+                footer = " ↑/↓ wybór   F10 Powrót "
+                win.addnstr(
+                    height - 1, 0, footer.ljust(width), max(0, width - 1),
+                    curses.A_REVERSE,
+                )
+                win.refresh()
+                key = self._get_key(win)
+                if key in (ord("q"), ord("Q"), 27, curses.KEY_F10):
+                    return
+                if key in (curses.KEY_DOWN, ord("j")) and results:
+                    selected = min(selected + 1, len(results) - 1)
+                elif key in (curses.KEY_UP, ord("k")) and results:
+                    selected = max(0, selected - 1)
+        finally:
+            win.timeout(150)
 
     def _dry_run_dnssec_onboarding_import(self, win, zone_name, planner) -> None:
         """Uruchamia transakcyjny dry-run profilu DNSSEC bez aktywacji."""
@@ -1589,7 +1887,7 @@ class CursesApp:
             visible_records = ordered_records()
 
             height, width = win.getmaxyx()
-            visible = RecordRenderer.visible_rows(height)
+            visible = RecordRenderer.visible_rows(height, width)
 
             if visible_records:
                 selected = min(selected, len(visible_records) - 1)
@@ -2045,7 +2343,10 @@ class CursesApp:
             while True:
                 win.erase()
                 height, width = win.getmaxyx()
-                wrapped = self._wrap_message_lines(lines, max(1, width - 4))
+                wide = width >= 100 and height >= 20
+                divider = max(62, min(width - 38, int(width * 0.70)))
+                content_width = divider - 7 if wide else width - 4
+                wrapped = self._wrap_message_lines(lines, max(1, content_width))
                 visible = max(1, height - 4)
                 maximum = max(0, len(wrapped) - visible)
                 offset = min(offset, maximum)
@@ -2065,6 +2366,10 @@ class CursesApp:
                         line,
                         max(0, width - 4),
                         body_attr,
+                    )
+                if wide:
+                    self._draw_message_view_48(
+                        win, title, wrapped, offset, visible, error, divider
                     )
                 footer = (
                     f" Linie {offset + 1}-{min(len(wrapped), offset + visible)}"
@@ -2100,6 +2405,112 @@ class CursesApp:
                 win.timeout(150)
             except curses.error:
                 pass
+
+    def _draw_message_view_48(
+        self, win, title, wrapped, offset, visible, error, divider
+    ) -> None:
+        """Wspólny renderer komunikatów, planów i wyników w układzie 4.8."""
+        height, width = win.getmaxyx()
+        try:
+            has_colors = curses.has_colors()
+        except curses.error:
+            has_colors = False
+        heading_attr = curses.A_BOLD | (
+            curses.color_pair(4) if has_colors else curses.A_NORMAL
+        )
+        status_attr = (
+            self._color(Health.FAIL if error else Health.PASS)
+            if has_colors else curses.A_NORMAL
+        ) | curses.A_BOLD
+        win.erase()
+        win.addnstr(
+            0, 0, f" {title} ".ljust(width), max(0, width - 1),
+            curses.A_REVERSE | curses.A_BOLD,
+        )
+        win.addnstr(2, 3, "SZCZEGÓŁY", max(1, divider - 6), heading_attr)
+        try:
+            for column in range(2, width - 2):
+                win.addch(3, column, curses.ACS_HLINE, curses.A_DIM)
+            for row in range(5, height - 2):
+                win.addch(row, divider, curses.ACS_VLINE, curses.A_DIM)
+        except (curses.error, AttributeError):
+            pass
+        for row, line in enumerate(
+            wrapped[offset : offset + visible], start=5
+        ):
+            if row >= height - 2:
+                break
+            attr = curses.A_NORMAL
+            stripped = line.strip()
+            if stripped.isupper() and len(stripped) < 54:
+                attr = heading_attr
+            elif (
+                stripped.startswith("[OK]") or "Status: PASS" in line
+                or "Status: COMMIT" in line or "Status: DRY-RUN" in line
+            ):
+                attr = self._color(Health.PASS) if has_colors else curses.A_NORMAL
+            elif (
+                stripped.startswith("[BŁĄD]") or stripped.startswith("BŁĄD")
+                or "Status: BLOCKED" in line or "Status: FAIL" in line
+            ):
+                attr = (
+                    self._color(Health.FAIL) if has_colors else curses.A_NORMAL
+                ) | curses.A_BOLD
+            win.addnstr(row, 3, line, max(1, divider - 6), attr)
+
+        right = divider + 3
+        right_width = max(1, width - right - 3)
+        win.addnstr(2, right, "STAN OPERACYJNY", right_width, heading_attr)
+        win.addnstr(
+            5, right, "BŁĄD" if error else "INFORMACJA", right_width,
+            status_attr,
+        )
+        win.addnstr(7, right, "Tryb", 14)
+        win.addnstr(7, right + 15, "TYLKO PODGLĄD", max(1, right_width - 15))
+        win.addnstr(9, right, "STEROWANIE", right_width, heading_attr)
+        hints = (
+            "↑/↓ przewijanie", "PgUp/PgDn strona",
+            "Home/End początek/koniec", "F10 powrót",
+        )
+        for row, text in enumerate(hints, start=11):
+            win.addnstr(row, right, text, right_width)
+
+    def _draw_context_panel_48(self, win, heading, details) -> None:
+        """Dodaje panel kontekstowy 4.8 do starszych ekranów listowych."""
+        height, width = win.getmaxyx()
+        if width < 100 or height < 20:
+            return
+        split = max(62, min(width - 38, int(width * 0.68)))
+        try:
+            has_colors = curses.has_colors()
+        except curses.error:
+            has_colors = False
+        heading_attr = curses.A_BOLD | (
+            curses.color_pair(4) if has_colors else curses.A_NORMAL
+        )
+        try:
+            for row in range(2, height - 2):
+                win.addnstr(row, split + 1, " " * (width - split - 2), width - split - 2)
+                win.addch(row, split, curses.ACS_VLINE, curses.A_DIM)
+        except (curses.error, AttributeError):
+            pass
+        right = split + 3
+        right_width = max(1, width - right - 3)
+        win.addnstr(2, right, heading, right_width, heading_attr)
+        row = 4
+        for label, content in details:
+            if row >= height - 3:
+                break
+            win.addnstr(row, right, str(label), 14)
+            parts = self._wrap_message_lines([str(content)], max(1, right_width - 15))
+            for index, part in enumerate(parts):
+                if row >= height - 3:
+                    break
+                column = right + 15 if index == 0 else right
+                limit = max(1, right_width - 15) if index == 0 else right_width
+                win.addnstr(row, column, part, limit)
+                row += 1
+            row += 1
 
     def _onboarding_result_view(
         self,
@@ -2422,6 +2833,24 @@ class CursesApp:
                     "   q powrót "
                 )
 
+            if changes:
+                current = changes[selected]
+                record = current.record
+                self._draw_context_panel_48(
+                    win, "SZCZEGÓŁY ZMIANY",
+                    (
+                        ("Operacja", labels[current.kind][1]),
+                        ("Nazwa", record.relative_owner(zone.name)),
+                        ("Typ", record.rtype),
+                        ("TTL", record.ttl if record.ttl is not None else "-"),
+                        ("Wartość", record.rdata),
+                    ),
+                )
+            else:
+                self._draw_context_panel_48(
+                    win, "STAN OPERACYJNY", (("Zmiany", "BRAK"),)
+                )
+
             put(
                 height - 2,
                 0,
@@ -2571,6 +3000,16 @@ class CursesApp:
                         max(0, width - 2),
                         attr,
                     )
+
+                self._draw_context_panel_48(
+                    win, "STAN OPERACYJNY",
+                    (
+                        ("Strefa", session.zone.name),
+                        ("Tryb", "UNIFIED DIFF"),
+                        ("Linie", len(lines)),
+                        ("Zapis", "NIE"),
+                    ),
+                )
 
                 footer = (
                     f" Linie {offset + 1}-"
@@ -2798,6 +3237,16 @@ class CursesApp:
                 )
                 row += 1
 
+            self._draw_context_panel_48(
+                win, "STAN OPERACYJNY",
+                (
+                    ("Tryb", "PODGLĄD"),
+                    ("Zapis", "NIE"),
+                    ("Następny krok", "ENTER — POTWIERDZENIE"),
+                    ("Anulowanie", "ESC / F10"),
+                ),
+            )
+
             footer = " Enter — dalej    q/Esc — anuluj "
             win.addnstr(
                 height - 1,
@@ -2990,6 +3439,17 @@ class CursesApp:
                         max(0, width - 1),
                         attr,
                     )
+                current_zone = selected_zones[selected]
+                current_session = multi.open(current_zone.name)
+                self._draw_context_panel_48(
+                    win, "STAN WYBRANEJ STREFY",
+                    (
+                        ("Strefa", current_zone.name),
+                        ("Zmiany", current_session.change_count),
+                        ("Stan", "ZMIENIONA" if current_session.dirty else "BEZ ZMIAN"),
+                        ("Sesja", "WIELE STREF"),
+                    ),
+                )
                 footer = (
                     " Enter edytuj  F2 waliduj i zapisz wszystkie  "
                     "q/Esc zakończ "
@@ -3381,6 +3841,10 @@ class CursesApp:
                         attr = self._color(Health.PASS)
                     win.addnstr(row, 2, line, max(0, width - 4), attr)
 
+                if width >= 100 and height >= 28:
+                    self._draw_dnssec_status_48(
+                        win, zone, view, error, stage
+                    )
                 footer = (
                     " ↑/↓ przewiń  PgUp/PgDn strona  F3 plan  "
                     f"F4 {view.operation_label if view else 'wskazówki'}  "
@@ -3705,6 +4169,224 @@ class CursesApp:
             except curses.error:
                 pass
 
+    def _draw_dnssec_status_48(self, win, zone, view, error, stage) -> None:
+        """Rysuje status strefy DNSSEC w dwukolumnowym układzie 4.8."""
+        height, width = win.getmaxyx()
+
+        def put(row, column, text, attr=curses.A_NORMAL, limit=None):
+            if 0 <= row < height and 0 <= column < width:
+                try:
+                    available = max(0, width - column - 1)
+                    win.addnstr(
+                        row, column, str(text),
+                        min(available, limit) if limit is not None else available,
+                        attr,
+                    )
+                except curses.error:
+                    pass
+
+        heading_attr = curses.A_BOLD | (
+            curses.color_pair(4) if curses.has_colors() else curses.A_NORMAL
+        )
+        stage_attr = (
+            self._color(Health.PASS)
+            if stage in {"READY_FOR_DS", "ACTIVE"}
+            else self._color(Health.FAIL)
+            if stage == "ERROR"
+            else self._color(Health.WARN)
+        ) | curses.A_BOLD
+        win.erase()
+        put(
+            0, 0, f" DNSSEC: {zone.name} ".ljust(width),
+            curses.A_REVERSE | curses.A_BOLD,
+        )
+        subtitle = view.title if view is not None else (error or "Brak danych")
+        put(2, 3, f"Etap {stage} • {subtitle}", stage_attr)
+        try:
+            for column in range(2, width - 2):
+                win.addch(3, column, curses.ACS_HLINE, curses.A_DIM)
+        except curses.error:
+            pass
+
+        split = max(68, min(width - 54, int(width * 0.60)))
+        try:
+            for row in range(5, height - 2):
+                win.addch(row, split, curses.ACS_VLINE, curses.A_DIM)
+        except curses.error:
+            pass
+        left = 4
+        right = split + 3
+        left_width = max(1, split - left - 3)
+        right_width = max(1, width - right - 3)
+        put(5, left, "POLITYKA, KASP I DS", heading_attr, left_width)
+        put(5, right, "DELEGACJA I STAN OPERACYJNY", heading_attr, right_width)
+
+        raw_lines = list(view.lines) if view is not None else ["BŁĄD ODCZYTU", error or "-"]
+        delegation_at = next(
+            (
+                index for index, line in enumerate(raw_lines)
+                if line.startswith("KONTROLA DELEGACJI")
+            ),
+            len(raw_lines),
+        )
+        left_lines = raw_lines[:delegation_at]
+        right_lines = raw_lines[delegation_at:]
+
+        def draw_lines(lines, top, column, column_width):
+            row = top
+            for text in lines:
+                if row >= height - 3:
+                    break
+                stripped = text.strip()
+                attr = curses.A_NORMAL
+                if stripped in {
+                    "STAN KASP", "DS OCZEKIWANY", "DS PUBLICZNY",
+                    "Resolvery:", "Serwery autorytatywne:",
+                } or stripped.startswith("KONTROLA DELEGACJI"):
+                    attr = heading_attr
+                elif "[MATCH]" in text or "DOZWOLONA" in text:
+                    attr = self._color(Health.PASS)
+                elif (
+                    "JESZCZE ZABLOKOWANA" in text
+                    or "[MISMATCH]" in text
+                    or "[NOT-AUTH]" in text
+                    or stripped.startswith("BŁĄD")
+                ):
+                    attr = self._color(Health.FAIL) | curses.A_BOLD
+                wrapped = self._wrap_message_lines([text], column_width) or [""]
+                for wrapped_line in wrapped:
+                    if row >= height - 3:
+                        break
+                    put(row, column, wrapped_line, attr, column_width)
+                    row += 1
+            return row
+
+        draw_lines(left_lines, 7, left, left_width)
+        if right_lines:
+            draw_lines(right_lines, 7, right, right_width)
+        else:
+            put(7, right, "Brak danych delegacji.", curses.A_DIM, right_width)
+
+    def _draw_domain_view_48(
+        self,
+        win: curses.window,
+        zone: Zone,
+        status: ZoneStatus,
+        notice: str,
+    ) -> None:
+        """Rysuje szczegóły strefy zgodnie z opublikowanym układem 4.8."""
+        win.erase()
+        height, width = win.getmaxyx()
+
+        def put(row, column, text, attr=curses.A_NORMAL):
+            if 0 <= row < height and 0 <= column < width:
+                try:
+                    win.addnstr(
+                        row, column, str(text), max(0, width - column - 1), attr
+                    )
+                except curses.error:
+                    pass
+
+        put(
+            0, 0, f" Strefa DNS: {zone.name} ".ljust(width),
+            curses.A_REVERSE | curses.A_BOLD,
+        )
+        heading = curses.A_BOLD | (
+            curses.color_pair(4) if curses.has_colors() else curses.A_NORMAL
+        )
+        health_attr = self._color(status.health) | curses.A_BOLD
+        wide = width >= 100 and height >= 22
+        divider = min(max(58, width * 2 // 3), width - 30) if wide else width
+        left_value = 21
+        if wide:
+            put(2, 2, " Szczegóły strefy ", heading)
+            put(2, divider + 2, " Stan operacyjny ", heading)
+            try:
+                for column in range(width - 1):
+                    win.addch(3, column, curses.ACS_HLINE, curses.A_DIM)
+                for row in range(4, height - 2):
+                    win.addch(row, divider, curses.ACS_VLINE, curses.A_DIM)
+            except curses.error:
+                pass
+        else:
+            put(2, 2, "SZCZEGÓŁY STREFY", heading)
+
+        transfers = []
+        if zone.dns2:
+            transfers.append("DNS2")
+        if zone.he:
+            transfers.append("HE")
+        dnssec = (
+            "WŁĄCZONY" if status.dnssec is True
+            else "WYŁĄCZONY" if status.dnssec is False
+            else "NIEZNANY"
+        )
+        details = (
+            ("Grupa", zone.group),
+            ("Plik strefy", str(zone.file) if zone.file else "-"),
+            ("Plik istnieje", self._bool_text(status.file_exists)),
+            ("Notify", self._bool_text(zone.notify)),
+            ("Reload", self._bool_text(zone.reload)),
+            ("Transfer", ", ".join(transfers) or "brak"),
+            ("", ""),
+            ("SOA primary", status.local_serial or "-"),
+            ("SOA dns2", status.dns2_serial or "-" if zone.dns2 else "nieużywany"),
+            ("SOA HE", status.he_serial or "-" if zone.he else "nieużywany"),
+            ("DNSSEC", dnssec),
+        )
+        row = 5 if wide else 4
+        for label, value in details:
+            if not label:
+                row += 1
+                continue
+            put(row, 2, label)
+            put(row, left_value, value)
+            row += 1
+        if zone.file:
+            try:
+                put(row + 1, 2, "Rozmiar pliku")
+                put(row + 1, left_value, f"{zone.file.stat().st_size} B")
+            except OSError:
+                pass
+
+        status_column = divider + 2 if wide else 2
+        status_row = 5 if wide else min(row + 3, height - 7)
+        put(
+            status_row, status_column,
+            f"{self._symbol(status.health)} {status.health.value}", health_attr,
+        )
+        put(status_row + 2, status_column, "KOMUNIKAT", heading)
+        message_width = max(1, width - status_column - 3)
+        for index, line in enumerate(
+            self._wrap_message_lines([status.message or "-"], message_width),
+            start=status_row + 3,
+        ):
+            if index >= height - 3:
+                break
+            put(index, status_column, line)
+        if notice:
+            put(height - 4, status_column, notice, curses.A_BOLD)
+
+        actions = (
+            ("F3", "Rekordy"), ("F5", "Secondary"),
+            ("F6", "Migracja"), ("d", "DNSSEC"),
+            ("r", "Odśwież"), ("F10", "Powrót"),
+        )
+        put(height - 2, 0, " " * width, curses.A_REVERSE)
+        column = 1
+        key_attr = (
+            curses.color_pair(6) | curses.A_DIM
+            if curses.has_colors() else curses.A_REVERSE | curses.A_BOLD
+        )
+        for key, label in actions:
+            if column + len(key) + len(label) + 3 >= width:
+                break
+            put(height - 2, column, key, key_attr)
+            column += len(key)
+            text = f" {label}  "
+            put(height - 2, column, text, curses.A_REVERSE)
+            column += len(text)
+
     def _domain_view(self, win: curses.window, zone: Zone) -> None:
         """
         Wyświetla szczegóły wybranej strefy.
@@ -3937,6 +4619,7 @@ class CursesApp:
                 curses.A_REVERSE,
             )
 
+            self._draw_domain_view_48(win, zone, status, notice)
             win.refresh()
             key = self._get_key(win)
 
@@ -4007,6 +4690,18 @@ class CursesApp:
                 line = f"{marker} {pair.name:<18} notify={','.join(pair.notify_addresses)} transfer={','.join(pair.transfer_addresses)}"
                 attr = curses.A_REVERSE if row - 3 == selected else curses.A_NORMAL
                 win.addnstr(row, 2, line, max(0, width - 4), attr)
+            if pairs:
+                current_pair = pairs[selected]
+                self._draw_context_panel_48(
+                    win, "SZCZEGÓŁY SECONDARY",
+                    (
+                        ("Strefa", zone.name),
+                        ("Grupa", current_pair.name),
+                        ("Wybrana", "TAK" if current_pair.name.casefold() in chosen else "NIE"),
+                        ("Notify", ", ".join(current_pair.notify_addresses)),
+                        ("Transfer", ", ".join(current_pair.transfer_addresses)),
+                    ),
+                )
             footer = " Spacja wybierz   F3 plan   F4 dry-run/zastosuj   Esc/F10 powrót "
             win.addnstr(height - 1, 0, footer.ljust(width), max(0, width - 1), curses.A_REVERSE)
             win.refresh()
@@ -4092,6 +4787,16 @@ class CursesApp:
                 line = f"{kind:<10} {item.name:<24} {', '.join(item.entries)}"
                 attr = curses.A_REVERSE if index == selected else curses.A_NORMAL
                 win.addnstr(row, 1, line, max(0, width - 2), attr)
+            current_kind, current_item = items[selected]
+            self._draw_context_panel_48(
+                win, "SZCZEGÓŁY DEFINICJI",
+                (
+                    ("Typ", current_kind.upper()),
+                    ("Nazwa", current_item.name),
+                    ("Elementy", len(current_item.entries)),
+                    ("Źródło", f"{current_item.source}:{current_item.line}"),
+                ),
+            )
             footer = " F3 podgląd   F4 edycja secondary   q/Esc/F10 powrót "
             win.addnstr(height - 1, 0, footer.ljust(width), max(0, width - 1), curses.A_REVERSE)
             win.refresh()
@@ -4204,6 +4909,16 @@ class CursesApp:
                 index = offset + row - 4
                 attr = curses.A_REVERSE if index == selected else curses.A_NORMAL
                 win.addnstr(row, 2, f"{index + 1:>3}. {value}", max(0, width - 4), attr)
+            self._draw_context_panel_48(
+                win, "EDYCJA ACL",
+                (
+                    ("Nazwa", name),
+                    ("Elementy", len(entries)),
+                    ("Wybrany", entries[selected] if entries else "-"),
+                    ("Zmiany", "TAK" if entries != list(current) else "NIE"),
+                    ("Walidacja", "PRZY PLANOWANIU"),
+                ),
+            )
             footer = " Ins dodaj   F4 edytuj   F8/Del usuń   F2 plan/dry-run   Esc/F10 anuluj "
             win.addnstr(height - 1, 0, footer.ljust(width), max(0, width - 1), curses.A_REVERSE)
             win.refresh()
@@ -4308,6 +5023,16 @@ class CursesApp:
                 win.addnstr(row, 2, f"{index + 1:>3}. {address}", max(0, width - 4), attr)
             if not addresses:
                 win.addnstr(4, 2, "(lista pusta — Insert dodaje adres)", max(0, width - 4), curses.A_DIM)
+            self._draw_context_panel_48(
+                win, "EDYCJA SECONDARY",
+                (
+                    ("Grupa", name),
+                    ("Adresy", len(addresses)),
+                    ("Wybrany", addresses[selected] if addresses else "-"),
+                    ("Zmiany", "TAK" if addresses != list(current) else "NIE"),
+                    ("Walidacja", "PRZY PLANOWANIU"),
+                ),
+            )
             footer = " Ins dodaj   F4 edytuj   F8/Del usuń   F2 plan/dry-run   Esc/F10 anuluj "
             win.addnstr(height - 1, 0, footer.ljust(width), max(0, width - 1), curses.A_REVERSE)
             win.refresh()
@@ -4425,6 +5150,17 @@ class CursesApp:
             for row, line in enumerate(lines, start=2):
                 if row < height - 2:
                     win.addnstr(row, 2, line, max(0, width - 4))
+            self._draw_context_panel_48(
+                win, "STAN OPERACYJNY",
+                (
+                    ("Strefa", zone.name),
+                    ("Stan", item.state),
+                    ("Typ", item.zone_type),
+                    ("Zakres", "DEKLARACJA BIND"),
+                    ("Plik strefy", "BEZ ZMIAN"),
+                    ("Serial SOA", "BEZ ZMIAN"),
+                ),
+            )
             footer = " F3 plan   F4 dry-run/migracja   q/Esc powrót "
             win.addnstr(
                 height - 1,
