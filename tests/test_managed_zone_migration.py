@@ -96,3 +96,14 @@ def test_plan_rejects_existing_target(tmp_path: Path) -> None:
 
     with pytest.raises(ManagedZoneMigrationError, match="istnieje"):
         planner.plan("legacy.example")
+
+
+def test_dnssec_plan_requires_explicit_profile(tmp_path: Path) -> None:
+    planner = _tree(tmp_path)
+    with pytest.raises(ManagedZoneMigrationError, match="zablokowana"):
+        planner.plan("signed.example")
+
+    plan = planner.plan("signed.example", allow_dnssec=True)
+    assert "dnssec-policy default;" in plan.declaration_text
+    assert "inline-signing yes;" in plan.declaration_text
+    assert any("stanu KASP" in action for action in plan.actions)

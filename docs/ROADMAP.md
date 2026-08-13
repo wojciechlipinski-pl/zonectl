@@ -345,3 +345,11 @@ Szczegółowe kryteria zgodności z opublikowanymi grafikami określa
 - [x] Lista kandydatów z planem F3 i bezpiecznym dry-run F4.
 - [x] Kontrolowany import F6 z ponownym dry-run, potwierdzeniem nazwy,
   backupem, walidacją, aktywacją i rollbackiem.
+- [x] Szczegółowa klasyfikacja blokad: DNSSEC, RPZ, secondary, duplikaty
+  i pozostałe przypadki wymagające decyzji operatora.
+- [x] Ekran F1 „O programie” zachowujący autorstwo i historię projektu bez
+  odbierania miejsca panelom operacyjnym.
+- [x] Osobny, odczytowy profil importu istniejących deklaracji DNSSEC:
+  lista F5, plan F3 i dry-run F4 bez operacji na kluczach/KASP/DS.
+- [x] Produkcyjny import deklaracji DNSSEC F6 z bramkami PASS przed i po
+  `rndc reconfig`, porównaniem polityki/DNSKEY/DS oraz rollbackiem transakcji.

@@ -18,3 +18,4 @@
 - [x] Odczytowy ekran gotowości w TUI (F2).
 - [x] Plan i dry-run importu wybranej strefy legacy.
 - [x] Transakcyjny import uruchamiany wyłącznie decyzją operatora (F6).
+- [x] Rozbicie zbiorczego stanu BLOCKED na konkretne kategorie.

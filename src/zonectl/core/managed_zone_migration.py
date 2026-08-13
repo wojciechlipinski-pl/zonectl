@@ -114,7 +114,12 @@ class ManagedZoneMigrationPlanner:
             )
         )
 
-    def plan(self, zone_name: str) -> ManagedZoneMigrationPlan:
+    def plan(
+        self,
+        zone_name: str,
+        *,
+        allow_dnssec: bool = False,
+    ) -> ManagedZoneMigrationPlan:
         try:
             wanted = normalize_zone_name(zone_name)
         except ZoneLifecycleError as exc:
@@ -136,7 +141,8 @@ class ManagedZoneMigrationPlanner:
 
         zone = matches[0]
         item = self._inventory_item(zone, 1)
-        if not item.migratable:
+        dnssec_profile = item.state == "BLOCKED_DNSSEC" and allow_dnssec
+        if not item.migratable and not dnssec_profile:
             raise ManagedZoneMigrationError(
                 f"Migracja strefy {wanted} jest zablokowana: {item.reason}"
             )
@@ -226,6 +232,14 @@ class ManagedZoneMigrationPlanner:
                 "zastosuj pliki atomowo i wykonaj rndc reconfig",
                 f"potwierdź strefę {wanted} przez rndc zonestatus",
                 "po każdym błędzie przywróć wszystkie pliki z backupu",
+                *(
+                    (
+                        "nie zmieniaj dnssec-policy, inline-signing, key-directory ani stanu KASP",
+                        "po operacji porównaj stan rndc dnssec -status",
+                    )
+                    if dnssec_profile
+                    else ()
+                ),
             ),
         )
 

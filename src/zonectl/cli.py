@@ -1162,6 +1162,10 @@ def main(argv: list[str] | None = None) -> int:
             print(f"Tryby RPZ:          {', '.join(report.rpz_modes) or '-'}")
             print(f"\nKandydaci:          {report.import_candidates}")
             print(f"Zablokowane:        {report.blocked}")
+            if report.blockers:
+                print("\nSZCZEGÓŁY BLOKAD")
+                for item in report.blockers:
+                    print(f"[{item.category:<9}] {item.name} — {item.reason}")
             print(f"Następny krok:      {report.next_action}")
             print("\nWynik: raport odczytowy — niczego nie zaimportowano")
         return 0

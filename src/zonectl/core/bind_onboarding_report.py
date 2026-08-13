@@ -26,6 +26,13 @@ class OnboardingCandidate:
 
 
 @dataclass(frozen=True, slots=True)
+class OnboardingBlocker:
+    name: str
+    category: str
+    reason: str
+
+
+@dataclass(frozen=True, slots=True)
 class BindOnboardingReport:
     root_config: str
     config_files: int
@@ -37,6 +44,7 @@ class BindOnboardingReport:
     rpz_integrations: int
     rpz_modes: tuple[str, ...]
     candidates: tuple[OnboardingCandidate, ...]
+    blockers: tuple[OnboardingBlocker, ...]
     import_candidates: int
     blocked: int
     next_action: str
@@ -52,7 +60,11 @@ class BindOnboardingReporter:
         "MANAGED": "deklaracje już zarządzane przez ZoneCTL",
         "LEGACY": "kandydaci do planowanego importu",
         "EXTERNAL": "konfiguracja pozostająca pod zarządem zewnętrznym",
-        "BLOCKED": "elementy wymagające osobnego profilu lub decyzji",
+        "DNSSEC": "aktywne strefy DNSSEC — wymagają bezpiecznego profilu",
+        "RPZ": "strefy response-policy zarządzane osobnym mechanizmem",
+        "SECONDARY": "strefy secondary wymagające osobnego profilu",
+        "DUPLICATE": "strefy mające więcej niż jedną deklarację",
+        "OTHER": "pozostałe elementy wymagające decyzji operatora",
     }
 
     def __init__(self, root_config: Path = Path("/etc/bind/named.conf")) -> None:
@@ -85,6 +97,20 @@ class BindOnboardingReporter:
             for item in migration
             if self._normalise_state(item.state) == "LEGACY"
         )
+        blocker_items = tuple(
+            OnboardingBlocker(
+                name=item.name,
+                category=self._normalise_state(item.state),
+                reason=item.reason,
+            )
+            for item in migration
+            if self._normalise_state(item.state)
+            in {"DNSSEC", "RPZ", "SECONDARY", "DUPLICATE", "OTHER"}
+        )
+        blocked = sum(
+            counts[state]
+            for state in ("DNSSEC", "RPZ", "SECONDARY", "DUPLICATE", "OTHER")
+        )
         next_action = (
             "Przejrzyj kandydatów i utwórz osobne plany importu; nic nie jest importowane automatycznie."
             if candidates
@@ -101,8 +127,9 @@ class BindOnboardingReporter:
             rpz_integrations=len(environment.rpz),
             rpz_modes=tuple(sorted({item.mode for item in environment.rpz})),
             candidates=candidate_items,
+            blockers=blocker_items,
             import_candidates=candidates,
-            blocked=counts["BLOCKED"],
+            blocked=blocked,
             next_action=next_action,
         )
 
@@ -115,4 +142,12 @@ class BindOnboardingReporter:
             return "LEGACY"
         if value.startswith("external"):
             return "EXTERNAL"
-        return "BLOCKED"
+        if value == "blocked_dnssec":
+            return "DNSSEC"
+        if value == "blocked_rpz":
+            return "RPZ"
+        if value == "blocked_secondary":
+            return "SECONDARY"
+        if value == "duplicate":
+            return "DUPLICATE"
+        return "OTHER"

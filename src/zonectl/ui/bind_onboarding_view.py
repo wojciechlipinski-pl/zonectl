@@ -38,6 +38,7 @@ class BindOnboardingView:
                 "",
                 f"Kandydaci do importu  {report.import_candidates}",
                 f"Zablokowane           {report.blocked}",
+                "  Enter na raporcie pokazuje kandydatów LEGACY.",
                 "",
                 "NASTĘPNY KROK",
                 report.next_action,

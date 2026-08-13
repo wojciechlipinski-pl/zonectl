@@ -16,6 +16,7 @@ def _report() -> BindOnboardingReport:
         rpz_integrations=1,
         rpz_modes=("EXTERNAL",),
         candidates=(),
+        blockers=(),
         import_candidates=7,
         blocked=14,
         next_action="Utwórz plany.",

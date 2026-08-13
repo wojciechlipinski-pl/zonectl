@@ -12,6 +12,7 @@ from zonectl.ui.zone_create_dialog import ZoneCreateDialog
 from zonectl.ui.dnssec_status_view import DnssecStatusView
 from zonectl.ui.rpz_status_view import RpzStatusView
 from zonectl.ui.bind_onboarding_view import BindOnboardingView
+from zonectl.ui.about_view import AboutView
 from zonectl.ui.zone_details_view import ZoneDetailsView
 
 import curses
@@ -51,6 +52,7 @@ from ..core.managed_zone_migration import (
     ManagedZoneMigrationPlanner,
 )
 from ..core.managed_zone_migration_transaction import (
+    ManagedZoneMigrationStep,
     ManagedZoneMigrationTransaction,
 )
 from ..core.edit_lock import ZoneEditLockedError
@@ -155,6 +157,8 @@ class CursesApp:
             )
             if key in (ord("q"), 27, curses.KEY_F10):
                 break
+            if key == curses.KEY_F1:
+                self._about_view(stdscr)
             if key in (curses.KEY_DOWN, ord("j")):
                 self.selected = min(self.selected + 1, max(0, len(self.rows) - 1))
             elif key in (curses.KEY_UP, ord("k")):
@@ -412,6 +416,7 @@ class CursesApp:
     def _draw_main_footer(self, win: curses.window, row: int, width: int) -> None:
         """Rysuje pasek MC, wyróżniając klawisze zgodnie z koncepcją 4.8."""
         actions = (
+            ("F1", "O programie"),
             ("Enter", "Otwórz"),
             ("F2", "Środowisko"),
             ("F3", "Podgląd"),
@@ -623,6 +628,117 @@ class CursesApp:
             return
         self._onboarding_summary_view(win, view, report)
 
+    def _about_view(self, win: curses.window) -> None:
+        """Pokazuje koncepcyjny ekran autorstwa zgodny wizualnie z TUI 4.8."""
+        view = AboutView.build(__version__)
+        heading_attr = curses.A_BOLD | (
+            curses.color_pair(4) if curses.has_colors() else curses.A_NORMAL
+        )
+        try:
+            win.timeout(-1)
+            while True:
+                win.erase()
+                height, width = win.getmaxyx()
+                win.addnstr(
+                    0, 0, f" {view.title} ".ljust(width),
+                    max(0, width - 1), curses.A_REVERSE | curses.A_BOLD,
+                )
+                subtitle = " Autorstwo • historia • informacje o projekcie "
+                win.addnstr(2, 2, subtitle, max(0, width - 4), heading_attr)
+                try:
+                    for column in range(2, max(2, width - 2)):
+                        win.addch(3, column, curses.ACS_HLINE, curses.A_DIM)
+                except curses.error:
+                    pass
+
+                split = max(48, width // 2)
+                split = min(split, max(48, width - 42))
+                if width >= 100:
+                    for row in range(5, max(5, height - 3)):
+                        win.addch(row, split, curses.ACS_VLINE, curses.A_DIM)
+                    self._draw_about_identity(win, 5, 4, split - 7, heading_attr)
+                    self._draw_about_history(
+                        win, 5, split + 3, width - split - 6, heading_attr
+                    )
+                else:
+                    self._draw_about_compact(
+                        win, 5, 3, max(1, width - 6), heading_attr
+                    )
+                footer = " F1 O programie   q/Esc/F10 Powrót "
+                win.addnstr(
+                    height - 1, 0, footer.ljust(width),
+                    max(0, width - 1), curses.A_REVERSE,
+                )
+                win.refresh()
+                key = self._get_key(win)
+                if key in (
+                    curses.KEY_F1, curses.KEY_F10, ord("q"), ord("Q"), 27,
+                    curses.KEY_BACKSPACE, 127, 8,
+                ):
+                    return
+        except curses.error:
+            return
+        finally:
+            win.timeout(150)
+
+    def _draw_about_identity(self, win, top, left, width, heading_attr) -> None:
+        """Lewa kolumna ekranu F1: człowiek, AI i charakter projektu."""
+        sections = (
+            ("AUTOR I WŁAŚCICIEL PROJEKTU", ("Wojciech Lipiński", "Domain Expert • QA • Product Design")),
+            ("ROZWÓJ WSPOMAGANY PRZEZ AI", ("OpenAI ChatGPT", "Architecture • Development • Documentation")),
+            ("PROJEKT", ("ZoneCTL", "Transactional DNS Management Toolkit", "for BIND 9")),
+        )
+        row = top
+        for title, lines in sections:
+            win.addnstr(row, left, title, width, heading_attr)
+            row += 2
+            for line in lines:
+                win.addnstr(row, left, line, width)
+                row += 1
+            row += 2
+
+    def _draw_about_history(self, win, top, left, width, heading_attr) -> None:
+        """Prawa kolumna ekranu F1: historia i repozytorium."""
+        win.addnstr(top, left, "HISTORIA PROJEKTU", width, heading_attr)
+        history = (
+            "ZoneCTL rozpoczął się od prostego skryptu Python, który miał uporządkować pliki konfiguracyjne domen.",
+            "Z czasem rozwinął się w transakcyjne narzędzie CLI i TUI do zarządzania BIND, DNSSEC, ACL, secondary i RPZ.",
+            "Projekt łączy wieloletnie doświadczenie infrastrukturalne autora z architekturą i rozwojem wspomaganym przez AI.",
+        )
+        row = top + 2
+        for paragraph in history:
+            for line in self._wrap_message_lines([paragraph], width):
+                win.addnstr(row, left, line, width)
+                row += 1
+            row += 1
+        row += 1
+        win.addnstr(row, left, "REPOZYTORIUM", width, heading_attr)
+        row += 2
+        win.addnstr(
+            row, left, "github.com/wojciechlipinski-pl/zonectl", width
+        )
+
+    def _draw_about_compact(self, win, top, left, width, heading_attr) -> None:
+        """Jednokolumnowy wariant F1 dla węższych terminali."""
+        lines = (
+            ("AUTOR", heading_attr),
+            ("Wojciech Lipiński — Domain Expert • QA • Product Design", 0),
+            ("", 0),
+            ("ROZWÓJ WSPOMAGANY PRZEZ AI", heading_attr),
+            ("OpenAI ChatGPT — Architecture • Development • Documentation", 0),
+            ("", 0),
+            ("HISTORIA", heading_attr),
+            ("Od skryptu Python porządkującego konfigurację domen do transakcyjnego CLI i TUI dla BIND 9.", 0),
+            ("", 0),
+            ("REPOZYTORIUM", heading_attr),
+            ("github.com/wojciechlipinski-pl/zonectl", 0),
+        )
+        row = top
+        for text, attr in lines:
+            for line in self._wrap_message_lines([text], width):
+                win.addnstr(row, left, line, width, attr)
+                row += 1
+
     def _onboarding_summary_view(self, win, view, report) -> None:
         """Raport F2 z przejściem do listy kandydatów klawiszem Enter."""
         offset = 0
@@ -646,8 +762,8 @@ class CursesApp:
                 ):
                     win.addnstr(row, 2, line, max(0, width - 4))
                 footer = (
-                    " Enter kandydaci   ↑/↓ PgUp/PgDn   q/Esc powrót "
-                    if report.candidates
+                    " Enter LEGACY   F5 DNSSEC   ↑/↓ PgUp/PgDn   q/Esc powrót "
+                    if report.candidates or report.blockers
                     else " ↑/↓ PgUp/PgDn   q/Esc powrót "
                 )
                 win.addnstr(
@@ -658,6 +774,13 @@ class CursesApp:
                 key = self._get_key(win)
                 if key in (10, 13, curses.KEY_ENTER) and report.candidates:
                     self._onboarding_candidates_view(win, report.candidates)
+                elif key == curses.KEY_F5:
+                    dnssec = tuple(
+                        item for item in report.blockers
+                        if item.category == "DNSSEC"
+                    )
+                    if dnssec:
+                        self._onboarding_dnssec_view(win, dnssec)
                 elif key in (curses.KEY_DOWN, ord("j")):
                     offset = min(offset + 1, maximum)
                 elif key in (curses.KEY_UP, ord("k")):
@@ -746,6 +869,233 @@ class CursesApp:
             self._message_view(
                 win, title="Plan importu zablokowany", lines=[str(exc)], error=True
             )
+
+    def _onboarding_dnssec_view(self, win, blockers) -> None:
+        """Koncepcyjny ekran stref DNSSEC: wyłącznie plan i dry-run."""
+        selected = 0
+        planner = self._zone_migration_planner()
+        while True:
+            win.erase()
+            height, width = win.getmaxyx()
+            win.addnstr(
+                0, 0, " Import deklaracji DNSSEC — tryb ostrożny ".ljust(width),
+                max(0, width - 1), curses.A_REVERSE | curses.A_BOLD,
+            )
+            heading_attr = curses.A_BOLD | (
+                curses.color_pair(4) if curses.has_colors() else curses.A_NORMAL
+            )
+            win.addnstr(2, 2, "STREFY DNSSEC", max(0, width - 4), heading_attr)
+            win.addnstr(
+                3, 2,
+                "Przenoszona jest tylko deklaracja BIND; klucze, KASP i DS pozostają bez zmian.",
+                max(0, width - 4),
+            )
+            try:
+                for column in range(2, max(2, width - 2)):
+                    win.addch(4, column, curses.ACS_HLINE, curses.A_DIM)
+            except curses.error:
+                pass
+            visible = max(1, height - 10)
+            offset = max(0, min(selected, len(blockers) - visible))
+            for screen_row, item in enumerate(
+                blockers[offset : offset + visible], start=6
+            ):
+                index = offset + screen_row - 6
+                line = f"{item.name:<38} {item.reason}"
+                attr = curses.A_REVERSE if index == selected else curses.A_NORMAL
+                win.addnstr(screen_row, 2, line, max(0, width - 4), attr)
+            footer = " F3 plan   F4 dry-run   F6 importuj   ↑/↓ wybór   q/Esc/F10 powrót "
+            win.addnstr(
+                height - 1, 0, footer.ljust(width),
+                max(0, width - 1), curses.A_REVERSE,
+            )
+            win.refresh()
+            key = self._get_key(win)
+            if key in (ord("q"), ord("Q"), 27, curses.KEY_F10):
+                return
+            if key in (curses.KEY_DOWN, ord("j")):
+                selected = min(selected + 1, len(blockers) - 1)
+            elif key in (curses.KEY_UP, ord("k")):
+                selected = max(0, selected - 1)
+            elif key in (curses.KEY_F3, 10, 13, curses.KEY_ENTER):
+                self._show_dnssec_onboarding_plan(
+                    win, blockers[selected].name, planner
+                )
+            elif key == curses.KEY_F4:
+                self._dry_run_dnssec_onboarding_import(
+                    win, blockers[selected].name, planner
+                )
+            elif key == curses.KEY_F6:
+                if self._commit_dnssec_onboarding_import(
+                    win, blockers[selected].name, planner
+                ):
+                    return
+
+    def _show_dnssec_onboarding_plan(self, win, zone_name, planner) -> None:
+        """Pokazuje deklaracyjny plan DNSSEC bez operacji na kluczach."""
+        try:
+            plan = planner.plan(zone_name, allow_dnssec=True)
+            lines = [
+                "PROFIL DNSSEC — TYLKO DEKLARACJA",
+                f"Źródło:     {plan.source_config}",
+                f"Deklaracja: {plan.declaration_file}",
+                f"Indeks:     {plan.managed_config}",
+                "",
+                *(plan.source_diff + plan.declaration_diff + plan.managed_diff).splitlines(),
+                "",
+                "Klucze, dnssec-policy, KASP i DS nie zostaną zmienione.",
+            ]
+            self._message_view(
+                win, title=f"Plan importu DNSSEC: {zone_name}", lines=lines
+            )
+        except (ManagedZoneMigrationError, OSError) as exc:
+            self._message_view(
+                win, title="Plan DNSSEC zablokowany", lines=[str(exc)], error=True
+            )
+
+    def _dry_run_dnssec_onboarding_import(self, win, zone_name, planner) -> None:
+        """Uruchamia transakcyjny dry-run profilu DNSSEC bez aktywacji."""
+        try:
+            plan = planner.plan(zone_name, allow_dnssec=True)
+            toolkit = self.config.toolkit if self.config is not None else {}
+            transaction = ManagedZoneMigrationTransaction(
+                Path(toolkit.get("zone_migration_backup_root", "/var/backups/zonectl-zone-migration/backups")),
+                Path(toolkit.get("zone_migration_manifest_dir", "/var/backups/zonectl-zone-migration/manifests")),
+                root_config=planner.root_config,
+            )
+            result = transaction.apply(plan)
+            lines = self._migration_result_lines(result) + [
+                "", "Dry-run DNSSEC — nie zapisano konfiguracji, kluczy ani stanu KASP."
+            ]
+            self._message_view(
+                win, title=f"Dry-run importu DNSSEC: {zone_name}", lines=lines,
+                error=result.status not in {"DRY-RUN", "DRY_RUN"},
+            )
+        except (ManagedZoneMigrationError, OSError) as exc:
+            self._message_view(
+                win, title="Dry-run DNSSEC zablokowany", lines=[str(exc)], error=True
+            )
+
+    def _dnssec_import_gate(self, zone_name):
+        """Wymaga aktywnego, w pełni zgodnego łańcucha DNSSEC."""
+        zone = next(
+            item for item in self.all_zones
+            if item.name.rstrip(".").casefold() == zone_name.rstrip(".").casefold()
+        )
+        toolkit = self.config.toolkit if self.config is not None else {}
+        local_server = toolkit.get("dnssec_local_server", "127.0.0.1")
+        timeout = int(toolkit.get("dnssec_timeout", "3"))
+        resolvers = tuple(
+            item.strip()
+            for item in toolkit.get(
+                "dnssec_resolvers", "1.1.1.1,8.8.8.8,9.9.9.9"
+            ).split(",")
+            if item.strip()
+        )
+        key_directory = zone.key_directory or Path(
+            toolkit.get("dnssec_key_directory", "/var/lib/bind/keys")
+        )
+        report = DnssecReporter(
+            local_server=local_server,
+            resolver=resolvers[0],
+            timeout=timeout,
+        ).collect(zone, key_directory)
+        delegation = DnssecDsChecker(
+            local_server=local_server, timeout=timeout
+        ).collect(zone.name, resolvers)
+        if report.status != "PASS" or delegation.status != "PASS":
+            raise RuntimeError(
+                "Bramka DNSSEC wymaga raportu PASS i delegacji PASS: "
+                f"raport={report.status}, delegacja={delegation.status}"
+            )
+        if not report.parent_ds_matches or not delegation.kasp_ready:
+            raise RuntimeError("DS lub KASP nie są gotowe do bezpiecznego importu")
+        fingerprint = (
+            report.dnssec_policy,
+            report.inline_signing,
+            report.dnskey_records,
+            report.calculated_ds,
+            report.parent_ds_records,
+        )
+        return zone, resolvers, key_directory, fingerprint
+
+    def _commit_dnssec_onboarding_import(self, win, zone_name, planner) -> bool:
+        """Importuje deklarację DNSSEC z bramką przed i po rndc reconfig."""
+        if self.read_only:
+            self._message_view(
+                win, title="Tryb tylko do odczytu",
+                lines=["Import DNSSEC jest zablokowany."], error=True,
+            )
+            return False
+        try:
+            zone, resolvers, key_directory, before = self._dnssec_import_gate(zone_name)
+            plan = planner.plan(zone_name, allow_dnssec=True)
+            toolkit = self.config.toolkit if self.config is not None else {}
+
+            def verify_dnssec(_zone_name):
+                report = DnssecReporter(
+                    local_server=toolkit.get("dnssec_local_server", "127.0.0.1"),
+                    resolver=resolvers[0],
+                    timeout=int(toolkit.get("dnssec_timeout", "3")),
+                ).collect(zone, key_directory)
+                delegation = DnssecDsChecker(
+                    local_server=toolkit.get("dnssec_local_server", "127.0.0.1"),
+                    timeout=int(toolkit.get("dnssec_timeout", "3")),
+                ).collect(zone.name, resolvers)
+                after = (
+                    report.dnssec_policy,
+                    report.inline_signing,
+                    report.dnskey_records,
+                    report.calculated_ds,
+                    report.parent_ds_records,
+                )
+                ok = report.status == "PASS" and delegation.status == "PASS" and after == before
+                detail = (
+                    "Raport PASS, delegacja PASS, DNSKEY/DS/polityka bez zmian"
+                    if ok else
+                    f"Niezgodność po reconfig: raport={report.status}, delegacja={delegation.status}"
+                )
+                return ManagedZoneMigrationStep("dnssec-post-gate", ok, detail)
+
+            transaction = ManagedZoneMigrationTransaction(
+                Path(toolkit.get("zone_migration_backup_root", "/var/backups/zonectl-zone-migration/backups")),
+                Path(toolkit.get("zone_migration_manifest_dir", "/var/backups/zonectl-zone-migration/manifests")),
+                root_config=planner.root_config,
+                loaded_verifier=verify_dnssec,
+            )
+            dry_run = transaction.apply(plan)
+            self._message_view(
+                win, title=f"Kontrola DNSSEC przed importem: {zone_name}",
+                lines=self._migration_result_lines(dry_run),
+                error=dry_run.status not in {"DRY-RUN", "DRY_RUN"},
+            )
+            if dry_run.status not in {"DRY-RUN", "DRY_RUN"}:
+                return False
+            confirmation = CursesDialogs.text_input(
+                win, " Wpisz pełną nazwę strefy DNSSEC: ", initial=""
+            )
+            if (confirmation or "").strip().rstrip(".").casefold() != zone_name.rstrip(".").casefold():
+                self._message_view(
+                    win, title="Import DNSSEC anulowany",
+                    lines=["Potwierdzenie nie odpowiada nazwie strefy."],
+                )
+                return False
+            if not CursesDialogs.confirm(
+                win, f"Importować deklarację DNSSEC {zone_name} i przeładować BIND?"
+            ):
+                return False
+            result = transaction.apply(plan, commit=True, activate=True)
+            self._message_view(
+                win, title=f"Wynik importu DNSSEC: {zone_name}",
+                lines=self._migration_result_lines(result),
+                error=result.status != "COMMIT",
+            )
+            return result.status == "COMMIT"
+        except (ManagedZoneMigrationError, OSError, RuntimeError, StopIteration) as exc:
+            self._message_view(
+                win, title="Import DNSSEC zablokowany", lines=[str(exc)], error=True
+            )
+            return False
 
     def _dry_run_bind_onboarding_import(self, win, zone_name, planner) -> None:
         """Waliduje transakcję importu bez zapisu plików i aktywacji BIND."""
