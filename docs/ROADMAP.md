@@ -247,6 +247,8 @@ odczytowe; import wymaga osobnego planu, dry-runu i potwierdzenia operatora.
 
 - [x] Zachować dotychczasowy pomiar wieku RPZ w sekundach/minutach i wykrywać
   istniejący timer oraz aktualizator jako tryb `EXTERNAL`.
+- [x] Dodać odczytowy panel F3 integracji RPZ w TUI: tryb zarządzania, stan,
+  wiek, serial, liczba węzłów, timer, usługa i ścieżka aktualizatora.
 - [ ] Pokazywać wspólny stan `ACTIVE`, `DELAYED`, `STALE`, `FAILED` lub
   `DISABLED`, serial, liczbę węzłów, ostatni wynik usługi i następne uruchomienie.
 - [ ] Dodać opcjonalny tryb `MANAGED`: instalacja aktualizatora i unitów systemd

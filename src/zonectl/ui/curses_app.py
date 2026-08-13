@@ -10,6 +10,7 @@ from zonectl.ui.records.controller import natural_name_key
 from zonectl.ui.records.renderer import RecordRenderer
 from zonectl.ui.zone_create_dialog import ZoneCreateDialog
 from zonectl.ui.dnssec_status_view import DnssecStatusView
+from zonectl.ui.rpz_status_view import RpzStatusView
 
 import curses
 import queue
@@ -27,6 +28,7 @@ from ..core.bind_access_inventory import (
 )
 from ..core.bind_acl_plan import BindAclPlanError, BindAclPlanner
 from ..core.bind_acl_transaction import BindAclTransaction
+from ..core.bind_environment_report import BindEnvironmentReporter
 from ..core.bind_secondary_plan import BindSecondaryPlanError, BindSecondaryPlanner
 from ..core.bind_secondary_report import BindSecondaryReporter
 from ..core.bind_secondary_transaction import BindSecondaryTransaction
@@ -174,6 +176,8 @@ class CursesApp:
                 self._create_zone_wizard(stdscr)
             elif key == curses.KEY_F9:
                 self._bind_access_view(stdscr)
+            elif key == curses.KEY_F3:
+                self._selected_zone_preview(stdscr)
         self.stop_event.set()
 
     def _init_colors(self) -> None:
@@ -343,7 +347,7 @@ class CursesApp:
                 attr |= curses.A_REVERSE
             win.addnstr(screen_row, 0, line.ljust(width), max(0, width - 1), attr)
 
-        footer = " Enter otwórz  Ins nowa strefa  F9 ACL/secondary  Spacja zaznacz  / szukaj  F7 sortuj  r odśwież  F10 wyjście "
+        footer = " Enter otwórz  F3 podgląd  Ins nowa strefa  F9 ACL/secondary  Spacja zaznacz  / szukaj  F7 sortuj  r odśwież  F10 wyjście "
         win.addnstr(height - 2, 0, footer.ljust(width), max(0, width - 1), curses.A_REVERSE)
         draw_project_credits(win)
         win.refresh()
@@ -360,6 +364,52 @@ class CursesApp:
             self._rebuild_rows()
         elif row.zone:
             self._domain_view(win, row.zone)
+
+    def _selected_zone_preview(self, win: curses.window) -> None:
+        """Otwiera kontekstowy podgląd F3; dla RPZ pokazuje stan integracji."""
+        if not self.rows:
+            return
+        zone = self.rows[self.selected].zone
+        if zone is None:
+            return
+        if zone.health_profile.casefold() != "rpz":
+            self._domain_view(win, zone)
+            return
+        self._rpz_status_view(win, zone)
+
+    def _rpz_status_view(self, win: curses.window, zone: Zone) -> None:
+        """Pokazuje odczytowy panel RPZ, łącząc wiek pliku z systemd i BIND."""
+        root_config = (
+            self.config.bind_config_path
+            if self.config is not None
+            else Path("/etc/bind/named.conf")
+        )
+        try:
+            report = BindEnvironmentReporter(
+                root_config,
+                rpz_max_age=zone.rpz_max_age,
+            ).collect()
+            environment = next(
+                item
+                for item in report.rpz
+                if item.zone.rstrip(".").casefold()
+                == zone.name.rstrip(".").casefold()
+            )
+            view = RpzStatusView.build(environment)
+        except (OSError, RuntimeError, StopIteration) as exc:
+            self._message_view(
+                win,
+                title=f"RPZ: {zone.name} — błąd raportu",
+                lines=[str(exc)],
+                error=True,
+            )
+            return
+        self._message_view(
+            win,
+            title=view.title,
+            lines=list(view.lines),
+            error=view.health in {"FAILED", "STALE"},
+        )
 
     def _toggle_multi_selection(self) -> None:
         """Dodaj lub usuń bieżącą strefę z zestawu wielostrefowego."""
