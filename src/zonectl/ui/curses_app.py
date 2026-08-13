@@ -11,6 +11,7 @@ from zonectl.ui.records.renderer import RecordRenderer
 from zonectl.ui.zone_create_dialog import ZoneCreateDialog
 from zonectl.ui.dnssec_status_view import DnssecStatusView
 from zonectl.ui.rpz_status_view import RpzStatusView
+from zonectl.ui.bind_onboarding_view import BindOnboardingView
 from zonectl.ui.zone_details_view import ZoneDetailsView
 
 import curses
@@ -30,6 +31,7 @@ from ..core.bind_access_inventory import (
 from ..core.bind_acl_plan import BindAclPlanError, BindAclPlanner
 from ..core.bind_acl_transaction import BindAclTransaction
 from ..core.bind_environment_report import BindEnvironmentReporter
+from ..core.bind_onboarding_report import BindOnboardingReporter
 from ..core.bind_secondary_plan import BindSecondaryPlanError, BindSecondaryPlanner
 from ..core.bind_secondary_report import BindSecondaryReporter
 from ..core.bind_secondary_transaction import BindSecondaryTransaction
@@ -175,6 +177,8 @@ class CursesApp:
                 self._start_refresh(force=True)
             elif key == curses.KEY_IC:
                 self._create_zone_wizard(stdscr)
+            elif key == curses.KEY_F2:
+                self._bind_onboarding_view(stdscr)
             elif key == curses.KEY_F9:
                 self._bind_access_view(stdscr)
             elif key == curses.KEY_F3:
@@ -409,6 +413,7 @@ class CursesApp:
         """Rysuje pasek MC, wyróżniając klawisze zgodnie z koncepcją 4.8."""
         actions = (
             ("Enter", "Otwórz"),
+            ("F2", "Środowisko"),
             ("F3", "Podgląd"),
             ("F4", "Edycja"),
             ("Insert", "Dodaj"),
@@ -597,6 +602,138 @@ class CursesApp:
             lines=list(view.lines),
             error=view.health in {"FAILED", "STALE"},
         )
+
+    def _bind_onboarding_view(self, win: curses.window) -> None:
+        """Pokazuje gotowość istniejącego BIND bez wykonywania importu."""
+        root_config = (
+            self.config.bind_config_path
+            if self.config is not None
+            else Path("/etc/bind/named.conf")
+        )
+        try:
+            report = BindOnboardingReporter(root_config).collect()
+            view = BindOnboardingView.build(report)
+        except (OSError, RuntimeError) as exc:
+            self._message_view(
+                win,
+                title="Pierwsze uruchomienie — błąd rozpoznania BIND",
+                lines=[str(exc)],
+                error=True,
+            )
+            return
+        self._onboarding_summary_view(win, view, report)
+
+    def _onboarding_summary_view(self, win, view, report) -> None:
+        """Raport F2 z przejściem do listy kandydatów klawiszem Enter."""
+        offset = 0
+        try:
+            win.timeout(-1)
+            while True:
+                win.erase()
+                height, width = win.getmaxyx()
+                wrapped = self._wrap_message_lines(
+                    list(view.lines), max(1, width - 4)
+                )
+                visible = max(1, height - 4)
+                maximum = max(0, len(wrapped) - visible)
+                offset = min(offset, maximum)
+                win.addnstr(
+                    0, 0, f" {view.title} ".ljust(width),
+                    max(0, width - 1), curses.A_REVERSE | curses.A_BOLD,
+                )
+                for row, line in enumerate(
+                    wrapped[offset : offset + visible], start=2
+                ):
+                    win.addnstr(row, 2, line, max(0, width - 4))
+                footer = (
+                    " Enter kandydaci   ↑/↓ PgUp/PgDn   q/Esc powrót "
+                    if report.candidates
+                    else " ↑/↓ PgUp/PgDn   q/Esc powrót "
+                )
+                win.addnstr(
+                    height - 1, 0, footer.ljust(width),
+                    max(0, width - 1), curses.A_REVERSE,
+                )
+                win.refresh()
+                key = self._get_key(win)
+                if key in (10, 13, curses.KEY_ENTER) and report.candidates:
+                    self._onboarding_candidates_view(win, report.candidates)
+                elif key in (curses.KEY_DOWN, ord("j")):
+                    offset = min(offset + 1, maximum)
+                elif key in (curses.KEY_UP, ord("k")):
+                    offset = max(0, offset - 1)
+                elif key == curses.KEY_NPAGE:
+                    offset = min(offset + visible, maximum)
+                elif key == curses.KEY_PPAGE:
+                    offset = max(0, offset - visible)
+                elif key in (ord("q"), ord("Q"), 27, curses.KEY_F10):
+                    return
+        finally:
+            win.timeout(150)
+
+    def _onboarding_candidates_view(self, win, candidates) -> None:
+        """Lista legacy; F3 pokazuje istniejący plan bez wykonywania zmian."""
+        selected = 0
+        planner = self._zone_migration_planner()
+        while True:
+            win.erase()
+            height, width = win.getmaxyx()
+            win.addnstr(
+                0, 0, " Kandydaci do importu ZoneCTL ".ljust(width),
+                max(0, width - 1), curses.A_REVERSE | curses.A_BOLD,
+            )
+            win.addnstr(
+                2, 2, f"{'Strefa':<38} {'Typ':<10} Deklaracja",
+                max(0, width - 4), curses.A_BOLD,
+            )
+            visible = max(1, height - 7)
+            offset = max(0, min(selected, len(candidates) - visible))
+            for screen_row, item in enumerate(
+                candidates[offset : offset + visible], start=4
+            ):
+                index = offset + screen_row - 4
+                line = f"{item.name:<38} {item.zone_type:<10} {item.declaration}"
+                attr = curses.A_REVERSE if index == selected else curses.A_NORMAL
+                win.addnstr(screen_row, 2, line, max(0, width - 4), attr)
+            footer = " F3 plan migracji   ↑/↓ wybór   q/Esc powrót "
+            win.addnstr(
+                height - 1, 0, footer.ljust(width),
+                max(0, width - 1), curses.A_REVERSE,
+            )
+            win.refresh()
+            key = self._get_key(win)
+            if key in (ord("q"), ord("Q"), 27, curses.KEY_F10):
+                return
+            if key in (curses.KEY_DOWN, ord("j")):
+                selected = min(selected + 1, len(candidates) - 1)
+            elif key in (curses.KEY_UP, ord("k")):
+                selected = max(0, selected - 1)
+            elif key in (curses.KEY_F3, 10, 13, curses.KEY_ENTER):
+                self._show_bind_onboarding_plan(
+                    win, candidates[selected].name, planner
+                )
+
+    def _show_bind_onboarding_plan(self, win, zone_name, planner) -> None:
+        """Wyświetla diff kandydata; ten przepływ nie ma ścieżki zapisu."""
+        try:
+            plan = planner.plan(zone_name)
+            lines = [
+                f"Źródło:     {plan.source_config}",
+                f"Deklaracja: {plan.declaration_file}",
+                f"Indeks:     {plan.managed_config}",
+                "",
+                "PLANOWANE DIFFY",
+                *(plan.source_diff + plan.declaration_diff + plan.managed_diff).splitlines(),
+                "",
+                "Plan tylko do odczytu — nie zmieniono konfiguracji BIND.",
+            ]
+            self._message_view(
+                win, title=f"Plan importu: {zone_name}", lines=lines
+            )
+        except (ManagedZoneMigrationError, OSError) as exc:
+            self._message_view(
+                win, title="Plan importu zablokowany", lines=[str(exc)], error=True
+            )
 
     def _toggle_multi_selection(self) -> None:
         """Dodaj lub usuń bieżącą strefę z zestawu wielostrefowego."""

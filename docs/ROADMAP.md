@@ -337,3 +337,9 @@ Szczegółowe kryteria zgodności z opublikowanymi grafikami określa
   transakcyjnych ZoneCTL.
 - [ ] Domyślnie wykluczyć automatycznie aktualizowaną strefę RPZ z historii
   Git.
+### Pierwsze uruchomienie i import środowiska
+
+- [x] Odczytowy raport gotowości klasyfikujący strefy jako zarządzane,
+  legacy, zewnętrzne lub zablokowane.
+- [x] Widok raportu w TUI pod klawiszem F2, bez automatycznego importu.
+- [ ] Kreator zatwierdzanych planów importu z podglądem diff i rollbackiem.

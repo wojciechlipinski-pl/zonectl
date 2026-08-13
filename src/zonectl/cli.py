@@ -14,6 +14,7 @@ from .core.bind_access_inventory import (
 )
 from .core.bind_access_audit import BindAccessAuditor
 from .core.bind_environment_report import BindEnvironmentReporter
+from .core.bind_onboarding_report import BindOnboardingReporter
 from .core.discovery import BindDiscoveryError
 from .core.bind_acl_plan import BindAclPlanError, BindAclPlanner
 from .core.bind_acl_transaction import BindAclTransaction
@@ -124,6 +125,14 @@ def parser() -> argparse.ArgumentParser:
         "--service-unit", default="update-cert-rpz.service"
     )
     bind_environment.add_argument("--json", action="store_true")
+    bind_onboarding = bind_sub.add_parser(
+        "onboarding-report",
+        help="oceń gotowość istniejącego BIND do bezpiecznego importu",
+    )
+    bind_onboarding.add_argument(
+        "--root-config", type=Path, default=Path("/etc/bind/named.conf")
+    )
+    bind_onboarding.add_argument("--json", action="store_true")
     bind_acl_plan = bind_sub.add_parser(
         "acl-plan", help="pokaż zwalidowany plan uporządkowania jednej ACL"
     )
@@ -1124,6 +1133,38 @@ def main(argv: list[str] | None = None) -> int:
                 print(f"  {value}")
             print("\nWynik: DRY-RUN — niczego nie zmieniono")
         return 0 if plan.validation_ok else 1
+    if args.command == "bind" and args.bind_command == "onboarding-report":
+        try:
+            report = BindOnboardingReporter(args.root_config).collect()
+        except (
+            BindDiscoveryError,
+            BindAccessInventoryError,
+            ManagedZoneMigrationError,
+            OSError,
+        ) as exc:
+            print(f"BŁĄD: {exc}", file=sys.stderr)
+            return 2
+        if args.json:
+            print(json.dumps(report.to_dict(), ensure_ascii=False, indent=2))
+        else:
+            print("GOTOWOŚĆ ŚRODOWISKA BIND — TYLKO ODCZYT")
+            print(f"Konfiguracja:       {report.root_config}")
+            print(f"Pliki konfiguracji: {report.config_files}")
+            print(f"Strefy:             {report.zones}")
+            print(f"DNSSEC:             {report.dnssec_zones}")
+            print("\nKLASYFIKACJA")
+            for item in report.classes:
+                print(f"[{item.state:<8}] {item.count:>3} — {item.description}")
+            print("\nKONFIGURACJA WSPÓŁDZIELONA")
+            print(f"ACL:                {report.acl_definitions}")
+            print(f"Grupy secondary:    {report.secondary_groups}")
+            print(f"Integracje RPZ:     {report.rpz_integrations}")
+            print(f"Tryby RPZ:          {', '.join(report.rpz_modes) or '-'}")
+            print(f"\nKandydaci:          {report.import_candidates}")
+            print(f"Zablokowane:        {report.blocked}")
+            print(f"Następny krok:      {report.next_action}")
+            print("\nWynik: raport odczytowy — niczego nie zaimportowano")
+        return 0
     if args.command == "bind" and args.bind_command == "environment-report":
         try:
             report = BindEnvironmentReporter(
