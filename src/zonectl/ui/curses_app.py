@@ -179,6 +179,8 @@ class CursesApp:
                 self._bind_access_view(stdscr)
             elif key == curses.KEY_F3:
                 self._selected_zone_preview(stdscr)
+            elif key == curses.KEY_F4:
+                self._selected_zone_edit(stdscr)
         self.stop_event.set()
 
     def _init_colors(self) -> None:
@@ -191,6 +193,16 @@ class CursesApp:
         curses.init_pair(3, curses.COLOR_RED, -1)
         curses.init_pair(4, curses.COLOR_CYAN, -1)
         curses.init_pair(5, curses.COLOR_BLACK, curses.COLOR_CYAN)
+        # Ciemny turkus z opublikowanej koncepcji 4.8. W palecie xterm-256
+        # indeks 30 odpowiada #008787. Przy ograniczonej palecie używamy
+        # podstawowego cyan i przyciemniamy go atrybutem A_DIM w rendererze.
+        footer_key_color = curses.COLOR_CYAN
+        if curses.COLORS >= 256:
+            footer_key_color = 30
+        elif curses.COLORS >= 16 and curses.can_change_color():
+            footer_key_color = 8
+            curses.init_color(footer_key_color, 0, 430, 470)
+        curses.init_pair(6, footer_key_color, curses.COLOR_WHITE)
 
     def _color(self, health: Health) -> int:
         if not curses.has_colors():
@@ -296,7 +308,9 @@ class CursesApp:
         win.erase()
         height, width = win.getmaxyx()
         title = f" ZoneCTL {__version__} "
-        win.addnstr(0, 0, title.ljust(width), width, curses.A_REVERSE | curses.A_BOLD)
+        heading = "Zarządzanie strefami DNS"
+        title_line = title + heading.center(max(0, width - len(title)))
+        win.addnstr(0, 0, title_line.ljust(width), width, curses.A_REVERSE | curses.A_BOLD)
         checked = len(self.statuses)
         subtitle = (
             f" Domeny: {len(self.all_zones)}  Sprawdzone: {checked}/{len(self.all_zones)}  "
@@ -305,12 +319,28 @@ class CursesApp:
             f"Szukaj: {self.query or '-'}"
         )
         win.addnstr(2, 0, subtitle, max(0, width - 1), curses.A_BOLD)
-        list_top = 4
-        panel_enabled = width >= 118
-        panel_width = min(48, max(36, width // 3)) if panel_enabled else 0
-        list_width = width - panel_width - 2 if panel_enabled else width
+        list_header = 4
+        list_top = 6
+        panel_enabled = width >= 118 and height >= 28
+        list_width = width
         footer_lines = 3
-        visible = max(1, height - list_top - footer_lines)
+        content_height = max(1, height - list_top - footer_lines)
+        details_height = max(10, content_height // 3) if panel_enabled else 0
+        visible = content_height - details_height - 1 if panel_enabled else content_height
+        if panel_enabled:
+            header_attr = curses.A_BOLD | (
+                curses.color_pair(4) if curses.has_colors() else curses.A_NORMAL
+            )
+            columns = (
+                f" {'Strefa':<45} {'Status':<7} "
+                f"{'Profil':<10} {'SOA / wiek'}"
+            )
+            win.addnstr(list_header, 0, columns, max(0, width - 1), header_attr)
+            try:
+                for column in range(0, width - 1):
+                    win.addch(list_header + 1, column, curses.ACS_HLINE, curses.A_DIM)
+            except curses.error:
+                pass
         if self.selected < self.offset:
             self.offset = self.selected
         if self.selected >= self.offset + visible:
@@ -348,7 +378,11 @@ class CursesApp:
                     line = f" {selected_marker} {marker} {row.zone.name:<38} {status.health.value:<7} DNSSEC {dnssec}  SOA {serial}"
                 attr = self._color(status.health)
             if idx == self.selected:
-                attr |= curses.A_REVERSE
+                attr = (
+                    curses.color_pair(5) | curses.A_BOLD
+                    if curses.has_colors()
+                    else attr | curses.A_REVERSE
+                )
             win.addnstr(
                 screen_row,
                 0,
@@ -360,17 +394,46 @@ class CursesApp:
         if panel_enabled:
             self._draw_zone_details_panel(
                 win,
-                top=list_top,
-                left=list_width + 1,
-                height=visible,
-                width=panel_width,
+                top=list_top + visible + 1,
+                left=0,
+                height=details_height,
+                width=width,
             )
 
-        footer = " Enter otwórz  F3 podgląd  Ins nowa strefa  F9 ACL/secondary  Spacja zaznacz  / szukaj  F7 sortuj  r odśwież  F10 wyjście "
-        win.addnstr(height - 2, 0, footer.ljust(width), max(0, width - 1), curses.A_REVERSE)
+        self._draw_main_footer(win, height - 2, width)
         if not panel_enabled:
             draw_project_credits(win)
         win.refresh()
+
+    def _draw_main_footer(self, win: curses.window, row: int, width: int) -> None:
+        """Rysuje pasek MC, wyróżniając klawisze zgodnie z koncepcją 4.8."""
+        actions = (
+            ("Enter", "Otwórz"),
+            ("F3", "Podgląd"),
+            ("F4", "Edycja"),
+            ("Insert", "Dodaj"),
+            ("F9", "ACL/secondary"),
+            ("F10", "Wyjście"),
+        )
+        try:
+            win.addnstr(row, 0, " " * width, max(0, width - 1), curses.A_REVERSE)
+            column = 1
+            key_attr = (
+                curses.color_pair(6) | curses.A_DIM
+                if curses.has_colors()
+                else curses.A_REVERSE | curses.A_BOLD
+            )
+            for key, label in actions:
+                segment = f"{key} {label}  "
+                if column + len(segment) >= width:
+                    break
+                win.addnstr(row, column, key, len(key), key_attr)
+                column += len(key)
+                text = f" {label}  "
+                win.addnstr(row, column, text, len(text), curses.A_REVERSE)
+                column += len(text)
+        except curses.error:
+            return
 
     def _draw_zone_details_panel(
         self,
@@ -381,12 +444,12 @@ class CursesApp:
         height: int,
         width: int,
     ) -> None:
-        """Rysuje prawy panel bez wpływu na zachowanie małych terminali."""
+        """Rysuje dolny panel zgodny z opublikowaną koncepcją TUI 4.8."""
         if width < 20 or height < 4:
             return
         try:
-            for row in range(top, top + height):
-                win.addch(row, left - 1, curses.ACS_VLINE, curses.A_DIM)
+            for column in range(left, left + width - 1):
+                win.addch(top - 1, column, curses.ACS_HLINE, curses.A_DIM)
         except curses.error:
             pass
         zone = (
@@ -397,21 +460,60 @@ class CursesApp:
         if zone is None:
             title = " Szczegóły strefy "
             lines = ("Wybierz strefę z listy.",)
+            summary_title = " Stan operacyjny "
+            summary_lines = ("-",)
         else:
             status = self.statuses.get(zone.name, ZoneStatus(zone=zone))
             details = ZoneDetailsView.build(zone, status)
-            title = f" {details.title} "
+            title = f" Szczegóły strefy: {details.title} "
             lines = details.lines
+            summary_title = f" {details.summary_title} "
+            summary_lines = details.summary_lines
         try:
-            win.addnstr(top, left, title, width - 1, curses.A_BOLD | curses.A_REVERSE)
+            divider = left + max(42, width * 2 // 3)
+            divider = min(divider, left + width - 25)
+            heading_attr = curses.A_BOLD | (
+                curses.color_pair(4) if curses.has_colors() else curses.A_NORMAL
+            )
+            win.addnstr(top, left + 2, title, divider - left - 3, heading_attr)
+            win.addnstr(
+                top,
+                divider + 2,
+                summary_title,
+                left + width - divider - 4,
+                heading_attr,
+            )
+            for row_index in range(top + 1, top + height):
+                win.addch(row_index, divider, curses.ACS_VLINE, curses.A_DIM)
             available = max(0, height - 2)
             row = top + 2
             for line in lines:
-                wrapped = self._wrap_message_lines([line], max(1, width - 3))
+                wrapped = self._wrap_message_lines(
+                    [line], max(1, divider - left - 4)
+                )
                 for part in wrapped:
                     if row >= top + 2 + available:
-                        return
-                    win.addnstr(row, left + 1, part, width - 3)
+                        break
+                    win.addnstr(row, left + 2, part, divider - left - 4)
+                    row += 1
+            row = top + 2
+            for line in summary_lines:
+                wrapped = self._wrap_message_lines(
+                    [line], max(1, left + width - divider - 4)
+                )
+                for part in wrapped:
+                    if row >= top + 2 + available:
+                        break
+                    attributes = curses.A_NORMAL
+                    if line.startswith("Status") and zone is not None:
+                        attributes = self._color(status.health) | curses.A_BOLD
+                    win.addnstr(
+                        row,
+                        divider + 2,
+                        part,
+                        left + width - divider - 4,
+                        attributes,
+                    )
                     row += 1
         except curses.error:
             return
@@ -440,6 +542,27 @@ class CursesApp:
             self._domain_view(win, zone)
             return
         self._rpz_status_view(win, zone)
+
+    def _selected_zone_edit(self, win: curses.window) -> None:
+        """Otwiera ekran strefy, zachowując RPZ jako zasób tylko do odczytu."""
+        if not self.rows:
+            return
+        zone = self.rows[self.selected].zone
+        if zone is None:
+            return
+        if zone.health_profile.casefold() == "rpz":
+            self._message_view(
+                win,
+                title="Strefa RPZ — tylko odczyt",
+                lines=[
+                    "Automatycznie aktualizowana strefa RPZ nie może być edytowana",
+                    "jak zwykła strefa autorytatywna.",
+                    "Użyj F3, aby sprawdzić stan integracji.",
+                ],
+                error=True,
+            )
+            return
+        self._domain_view(win, zone)
 
     def _rpz_status_view(self, win: curses.window, zone: Zone) -> None:
         """Pokazuje odczytowy panel RPZ, łącząc wiek pliku z systemd i BIND."""

@@ -18,12 +18,14 @@ def test_authoritative_zone_details() -> None:
         message="Strefa działa poprawnie",
     )
     view = ZoneDetailsView.build(zone, status)
-    text = "\n".join(view.lines)
+    text = "\n".join((*view.lines, *view.summary_lines))
     assert view.title == "example.pl"
-    assert "Stan          PASS" in text
+    assert "Status        PASS" in text
     assert "SOA primary   2026081301" in text
     assert "DNSSEC        AKTYWNY" in text
     assert "Secondary     dns2, HE" in text
+    assert view.summary_title == "Stan operacyjny"
+    assert "Status        PASS" in "\n".join(view.summary_lines)
 
 
 def test_rpz_zone_details_keep_numeric_age_and_f3_hint() -> None:
@@ -40,7 +42,8 @@ def test_rpz_zone_details_keep_numeric_age_and_f3_hint() -> None:
         file_age_seconds=273,
         message="RPZ poprawna",
     )
-    text = "\n".join(ZoneDetailsView.build(zone, status).lines)
+    view = ZoneDetailsView.build(zone, status)
+    text = "\n".join((*view.lines, *view.summary_lines))
     assert "Profil        RPZ" in text
     assert "Wiek RPZ      4 min 33 s" in text
     assert "Limit wieku   10 min 0 s" in text

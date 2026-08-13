@@ -13,13 +13,13 @@ class ZoneDetailsView:
 
     title: str
     lines: tuple[str, ...]
+    summary_title: str
+    summary_lines: tuple[str, ...]
 
     @classmethod
     def build(cls, zone: Zone, status: ZoneStatus) -> "ZoneDetailsView":
         profile = zone.health_profile.upper()
         lines = [
-            f"Stan          {status.health.value}",
-            f"Profil        {profile}",
             f"Grupa         {zone.group}",
             f"Plik          {zone.file or '-'}",
             "",
@@ -43,8 +43,24 @@ class ZoneDetailsView:
                     f"Secondary     {cls._secondary(zone)}",
                 )
             )
-        lines.extend(("", "KOMUNIKAT", status.message or "-"))
-        return cls(title=zone.name, lines=tuple(lines))
+        summary = [
+            f"Status        {status.health.value}",
+            f"Profil        {profile}",
+        ]
+        if zone.health_profile.casefold() != "rpz":
+            summary.extend(
+                (
+                    f"DNSSEC        {cls._dnssec(status.dnssec)}",
+                    f"Secondary     {cls._secondary(zone)}",
+                )
+            )
+        summary.extend(("", "KOMUNIKAT", status.message or "-"))
+        return cls(
+            title=zone.name,
+            lines=tuple(lines),
+            summary_title="Stan operacyjny",
+            summary_lines=tuple(summary),
+        )
 
     @staticmethod
     def _age(seconds: int | None) -> str:

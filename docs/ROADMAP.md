@@ -275,6 +275,9 @@ generator danych demonstracyjnych został przesunięty poza krytyczny zakres 4.8
 
 ### Docelowy wygląd TUI
 
+Szczegółowe kryteria zgodności z opublikowanymi grafikami określa
+`docs/TUI_VISUAL_CONTRACT.md`.
+
 - [x] Rozpocząć przebudowę ekranu głównego na responsywny układ panelowy: lista stref,
   zaznaczenie aktywnego wiersza oraz panel szczegółów wybranej strefy.
 - [ ] Ujednolicić widoki planu, dry-runu, ostrzeżenia, sukcesu i rollbacku,
@@ -282,6 +285,8 @@ generator danych demonstracyjnych został przesunięty poza krytyczny zakres 4.8
 - [ ] Stosować stałe paski tytułu i klawiszy funkcyjnych oraz skróty w stylu
   Midnight Commandera: F3 podgląd, F4 edycja, Insert dodawanie, F8/Delete
   usuwanie i F10 powrót.
+- [x] Ujednolicić ekran główny z kontraktem wizualnym: turkusowe zaznaczenie,
+  nagłówki kolumn, separatory sekcji i pasek klawiszy w stylu MC.
 - [ ] Pokazywać najważniejszy stan operacji, blokady bezpieczeństwa, postęp i
   następny krok bez konieczności analizowania surowego raportu.
 - [ ] Zapewnić poprawne skalowanie, zawijanie i przewijanie na małych

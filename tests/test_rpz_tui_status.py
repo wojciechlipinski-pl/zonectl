@@ -21,5 +21,7 @@ def test_rpz_preview_is_read_only_environment_report() -> None:
 
 
 def test_main_footer_documents_mc_style_f3_preview() -> None:
-    source = inspect.getsource(CursesApp._draw)
-    assert "F3 podgląd" in source
+    draw = inspect.getsource(CursesApp._draw)
+    footer = inspect.getsource(CursesApp._draw_main_footer)
+    assert "self._draw_main_footer" in draw
+    assert '("F3", "Podgląd")' in footer
