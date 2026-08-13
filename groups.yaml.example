@@ -2,16 +2,16 @@
 # Domeny nieujęte poniżej trafią automatycznie do grupy "Pozostałe".
 groups:
   Urząd Miasta:
-    - um.elk.pl
-    - bip.elk.pl
-    - cyfrowy.elk.pl
-    - radny.elk.pl
+    - city.example.pl
+    - portal.example.pl
+    - digital.example.pl
+    - council.example.pl
   Jednostki:
-    - mops.elk.pl
-    - mzk.elk.pl
-    - zlobek.elk.pl
-    - sds.elk.pl
+    - services.example.pl
+    - transit.example.pl
+    - nursery.example.pl
+    - care.example.pl
   Prywatne:
-    - elkman.pl
-    - lipinski.elk.pl
-    - lipinska.elk.pl
+    - example.pl
+    - private-a.example.pl
+    - private-b.example.pl

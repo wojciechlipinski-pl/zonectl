@@ -142,11 +142,11 @@ Kandydat nadal przechodzi przez `named-checkzone` przed COMMIT.
 ## Transakcje
 
 ```bash
-zctl tx check um.elk.pl
-zctl tx apply um.elk.pl --source /root/um.elk.pl.new
-zctl tx apply um.elk.pl --source /root/um.elk.pl.new --commit
-zctl tx backups um.elk.pl
-zctl tx history um.elk.pl
+zctl tx check city.example.pl
+zctl tx apply city.example.pl --source /root/city.example.pl.new
+zctl tx apply city.example.pl --source /root/city.example.pl.new --commit
+zctl tx backups city.example.pl
+zctl tx history city.example.pl
 ```
 
 ## Bulk Operations
@@ -181,10 +181,10 @@ Wersja rozwojowa 4.4 udostępnia pozbawiony skutków ubocznych plan:
 
 ```bash
 zctl zone create-plan example.pl \
-  --primary-ns ns1.elkman.pl. \
-  --admin hostmaster.elkman.pl. \
-  --ns ns1.elkman.pl. \
-  --ns ns2.elkman.pl. \
+  --primary-ns ns1.example.pl. \
+  --admin hostmaster.example.pl. \
+  --ns ns1.example.pl. \
+  --ns ns2.example.pl. \
   --ipv4 192.0.2.10 \
   --www
 ```

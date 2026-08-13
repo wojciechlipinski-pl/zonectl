@@ -68,7 +68,7 @@
 
 ### Verified
 
-- `zlobek.elk.pl` was migrated transactionally without changing its zone file,
+- `nursery.example.pl` was migrated transactionally without changing its zone file,
   SOA serial or availability
 - production `trusted` was corrected transactionally and passed the BIND audit
 - production secondary groups and zone assignments passed read-only validation
@@ -108,8 +108,8 @@
 
 ### Verified
 
-- DNSSEC enablement was completed and externally validated for `mops.elk.pl`
-- DNSSEC withdrawal was completed for `investin.elk.pl`; all seven
+- DNSSEC enablement was completed and externally validated for `services.example.pl`
+- DNSSEC withdrawal was completed for `legacy.example.pl`; all seven
   authoritative servers served unsigned serial `2026081101`, no authoritative
   DNSKEY remained, and DS was absent through three public resolvers
 - 475 automated tests passed before release preparation

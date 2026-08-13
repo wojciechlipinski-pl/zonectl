@@ -43,9 +43,9 @@ def test_tui_wizard_creates_and_adds_zone(monkeypatch) -> None:
         "collect",
         lambda *args, **kwargs: ZoneCreateForm(
             "new.example",
-            "ns1.elkman.pl.",
-            "hostmaster.elkman.pl.",
-            "ns1.elkman.pl., ns2.elkman.pl.",
+            "ns1.example.pl.",
+            "hostmaster.example.pl.",
+            "ns1.example.pl., ns2.example.pl.",
             "192.0.2.44",
             "",
             True,
@@ -109,9 +109,9 @@ def test_tui_wizard_shows_validation_error(monkeypatch) -> None:
         "collect",
         lambda *args, **kwargs: ZoneCreateForm(
             "bad_name",
-            "ns1.elkman.pl.",
-            "hostmaster.elkman.pl.",
-            "ns1.elkman.pl.",
+            "ns1.example.pl.",
+            "hostmaster.example.pl.",
+            "ns1.example.pl.",
         ),
     )
     monkeypatch.setattr(

@@ -24,9 +24,9 @@ def planner(*names: str) -> ZoneLifecyclePlanner:
 def request(**changes) -> ZoneCreateRequest:
     values = {
         "name": "example.pl",
-        "primary_ns": "ns1.elkman.pl.",
-        "admin": "hostmaster.elkman.pl.",
-        "nameservers": ("ns1.elkman.pl.", "ns2.elkman.pl."),
+        "primary_ns": "ns1.example.pl.",
+        "admin": "hostmaster.example.pl.",
+        "nameservers": ("ns1.example.pl.", "ns2.example.pl."),
     }
     values.update(changes)
     return ZoneCreateRequest(**values)
@@ -115,8 +115,8 @@ def test_plan_is_deterministic_and_has_no_side_effects(
     assert plan.zone_name == "example.pl"
     assert plan.serial == 2026073100
     assert plan.zone_file == zone_directory.resolve() / "example.pl"
-    assert "@ IN SOA ns1.elkman.pl. hostmaster.elkman.pl." in plan.zone_text
-    assert "@ IN NS ns2.elkman.pl." in plan.zone_text
+    assert "@ IN SOA ns1.example.pl. hostmaster.example.pl." in plan.zone_text
+    assert "@ IN NS ns2.example.pl." in plan.zone_text
     assert "www IN A 192.0.2.10" in plan.zone_text
     assert "www IN AAAA 2001:db8::10" in plan.zone_text
     assert 'zone "example.pl" IN {' in plan.bind_declaration
@@ -130,7 +130,7 @@ def test_plan_is_deterministic_and_has_no_side_effects(
 def test_primary_ns_must_be_listed() -> None:
     with pytest.raises(ZoneLifecycleError, match="primary_ns"):
         planner().plan_create(
-            request(nameservers=("ns2.elkman.pl.",))
+            request(nameservers=("ns2.example.pl.",))
         )
 
 

@@ -1624,11 +1624,11 @@ class CursesApp:
 
         toolkit = self.config.toolkit if self.config is not None else {}
         defaults = {
-            "primary_ns": toolkit.get("default_primary_ns", "ns1.elkman.pl."),
-            "admin": toolkit.get("default_soa_admin", "hostmaster.elkman.pl."),
+            "primary_ns": toolkit.get("default_primary_ns", "ns1.example.pl."),
+            "admin": toolkit.get("default_soa_admin", "hostmaster.example.pl."),
             "nameservers": toolkit.get(
                 "default_nameservers",
-                "ns1.elkman.pl., ns2.elkman.pl.",
+                "ns1.example.pl., ns2.example.pl.",
             ),
         }
 

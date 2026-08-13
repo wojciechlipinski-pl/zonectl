@@ -765,17 +765,17 @@ drogą powrotu do stanu podpisanego.
 
 ### Produkcyjna weryfikacja procedury 4.6
 
-Pełny proces włączenia DNSSEC zweryfikowano na `mops.elk.pl`: DNSKEY i RRSIG
+Pełny proces włączenia DNSSEC zweryfikowano na `services.example.pl`: DNSKEY i RRSIG
 były zgodne na primary i secondary, DS został potwierdzony przez wiele
 resolverów, a odpowiedzi walidujące posiadały flagę AD.
 
-Pełny proces wycofania zweryfikowano na `investin.elk.pl`. Po usunięciu DS,
+Pełny proces wycofania zweryfikowano na `legacy.example.pl`. Po usunięciu DS,
 potwierdzeniu `withdrawn`, przejściu przez politykę `insecure` i osiągnięciu
 stanów KASP `goal=hidden`, `dnskey=hidden`, `ds=hidden`, finalizacja została
 przepuszczona dopiero po podniesieniu źródłowego seriala ponad serial wariantu
 podpisanego. Po finalizacji:
 
-- primary oraz `ns2.elkman.pl` i pięć serwerów HE.net serwowały serial
+- primary oraz `ns2.example.pl` i pięć serwerów HE.net serwowały serial
   `2026081101`;
 - wszystkie serwery autorytatywne zwracały zero rekordów DNSKEY;
 - DS był nieobecny przez resolvery `1.1.1.1`, `8.8.8.8` i `9.9.9.9`;

@@ -22,9 +22,9 @@ def plan(tmp_path: Path):
     ).plan_create(
         ZoneCreateRequest(
             name="example.pl",
-            primary_ns="ns1.elkman.pl.",
-            admin="hostmaster.elkman.pl.",
-            nameservers=("ns1.elkman.pl.",),
+            primary_ns="ns1.example.pl.",
+            admin="hostmaster.example.pl.",
+            nameservers=("ns1.example.pl.",),
             zone_directory=tmp_path / "zones",
             managed_config=tmp_path / "bind" / "zones.conf",
             managed_zone_directory=tmp_path / "bind" / "zones.d",

@@ -15,7 +15,7 @@ SPEC.loader.exec_module(drill)
 
 def test_drill_rejects_every_other_zone() -> None:
     with pytest.raises(SystemExit, match="wyłącznie"):
-        drill.main(["--zone", "mops.elk.pl"])
+        drill.main(["--zone", "services.example.pl"])
 
 
 def test_execute_requires_exact_confirmation() -> None:

@@ -30,11 +30,11 @@ def plan(tmp_path: Path):
     ).plan_create(
         ZoneCreateRequest(
             name="integration.example",
-            primary_ns="ns1.elkman.pl.",
-            admin="hostmaster.elkman.pl.",
+            primary_ns="ns1.example.pl.",
+            admin="hostmaster.example.pl.",
             nameservers=(
-                "ns1.elkman.pl.",
-                "ns2.elkman.pl.",
+                "ns1.example.pl.",
+                "ns2.example.pl.",
             ),
             zone_directory=tmp_path / "zones",
             managed_config=tmp_path / "bind" / "zones.conf",
