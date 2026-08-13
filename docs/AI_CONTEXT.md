@@ -4,18 +4,18 @@
 
 ## Stan projektu
 - Projekt: **zonectl**
-- Wersja: **4.7.0**
+- Wersja: **4.8.0**
 - Katalog: `/root/elkman-dns`
-- Gałąź: `feature/4.7-debian-package`
-- Commit: `3e6781c`
-- Ostatni commit: `3e6781c | 2026-08-12 10:54:57 +0200 | Wojciech Lipiński | release: prepare ZoneCTL 4.7.0`
-- Wygenerowano: `2026-08-12T10:58:01+02:00`
+- Gałąź: `feature/4.8-bind-discovery-tui`
+- Commit: `7f00d67`
+- Ostatni commit: `7f00d67 | 2026-08-13 19:15:09 +0200 | Wojciech Lipiński | release: prepare ZoneCTL 4.8.0`
+- Wygenerowano: `2026-08-13T19:16:42+02:00`
 
 ## Statystyki
-- Moduły Python: **73**
-- Klasy: **182**
+- Moduły Python: **80**
+- Klasy: **196**
 - Funkcje: **94**
-- Metody: **541**
+- Metody: **601**
 - TODO/FIXME/HACK/XXX: **0**
 
 ## Start nowej sesji
@@ -36,9 +36,40 @@ Nie zgaduj działania kodu. Potwierdzaj je w implementacji, testach i Git.
 ?? elkman-dns.py
 ?? install.sh
 ?? uninstall.sh
+?? zonectl-4.8-bind-onboarding-blocker-categories-20260813.tar.gz
+?? zonectl-4.8-bind-onboarding-blocker-categories-20260813.tar.gz.sha256
+?? zonectl-4.8-bind-onboarding-candidates-20260813.tar.gz
+?? zonectl-4.8-bind-onboarding-candidates-20260813.tar.gz.sha256
+?? zonectl-4.8-bind-onboarding-dnssec-guarded-import-20260813.tar.gz
+?? zonectl-4.8-bind-onboarding-dnssec-guarded-import-20260813.tar.gz.sha256
+?? zonectl-4.8-bind-onboarding-dnssec-plan-dry-run-20260813.tar.gz
+?? zonectl-4.8-bind-onboarding-dnssec-plan-dry-run-20260813.tar.gz.sha256
+?? zonectl-4.8-bind-onboarding-guarded-import-20260813.tar.gz
+?? zonectl-4.8-bind-onboarding-guarded-import-20260813.tar.gz.sha256
+?? zonectl-4.8-bind-onboarding-guarded-import-test-fix-20260813.tar.gz
+?? zonectl-4.8-bind-onboarding-guarded-import-test-fix-20260813.tar.gz.sha256
+?? zonectl-4.8-bind-onboarding-report-tui-20260813.tar.gz
+?? zonectl-4.8-bind-onboarding-report-tui-20260813.tar.gz.sha256
+?? zonectl-4.8-dnssec-onboarding-bulk-audit-20260813.tar.gz
+?? zonectl-4.8-dnssec-onboarding-bulk-audit-20260813.tar.gz.sha256
+?? zonectl-4.8-tui-about-authorship-20260813.tar.gz
+?? zonectl-4.8-tui-about-authorship-20260813.tar.gz.sha256
+?? zonectl-4.8-tui-about-concept-layout-20260813.tar.gz
+?? zonectl-4.8-tui-about-concept-layout-20260813.tar.gz.sha256
+?? zonectl-4.8-tui-onboarding-list-refresh-20260813.tar.gz
+?? zonectl-4.8-tui-onboarding-list-refresh-20260813.tar.gz.sha256
 ```
 
 ## Wynik testów
 ```text
-Nie uruchamiano testów.
+........................................................................ [ 11%]
+........................................................................ [ 23%]
+........................................................................ [ 35%]
+........................................................................ [ 46%]
+........................................................................ [ 58%]
+........................................................................ [ 70%]
+........................................................................ [ 82%]
+........................................................................ [ 93%]
+.....................................                                    [100%]
+613 passed in 2.59s
 ```

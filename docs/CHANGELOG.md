@@ -1,7 +1,22 @@
 # Historia zmian
 
-> Wygenerowano z Git: `2026-08-12T10:58:01+02:00`.
+> Wygenerowano z Git: `2026-08-13T19:16:42+02:00`.
 
+- `2026-08-13` — `7f00d67` — release: prepare ZoneCTL 4.8.0
+- `2026-08-13` — `6437c92` — feat: complete ZoneCTL 4.8 TUI visual redesign
+- `2026-08-13` — `3b7c4d2` — feat: audit DNSSEC onboarding readiness across zones
+- `2026-08-13` — `fff5c9b` — feat: align BIND import results with ZoneCTL 4.8 layout
+- `2026-08-13` — `eacd455` — fix: refresh BIND onboarding lists after imports
+- `2026-08-13` — `eaa50df` — feat: safely onboard existing BIND and DNSSEC zones
+- `2026-08-13` — `1b3d082` — feat: import discovered BIND zones safely from TUI
+- `2026-08-13` — `629fcd9` — feat: inspect BIND import readiness from TUI
+- `2026-08-13` — `ae04839` — feat: align main TUI with ZoneCTL 4.8 visual concept
+- `2026-08-13` — `8b469a5` — feat: add responsive zone details panel to TUI
+- `2026-08-13` — `34a06c3` — feat: show external RPZ integration status in TUI
+- `2026-08-13` — `34cb5d0` — feat: discover BIND environment and external RPZ integration
+- `2026-08-12` — `d5786a6` — docs: define ZoneCTL 4.8 hardening and screenshot plan
+- `2026-08-12` — `03fa87a` — docs: add English project and operations documentation
+- `2026-08-12` — `18c124e` — docs: regenerate documentation for 4.7.0
 - `2026-08-12` — `3e6781c` — release: prepare ZoneCTL 4.7.0
 - `2026-08-12` — `f1a2e2e` — feat: assign zones to BIND secondary groups transactionally
 - `2026-08-12` — `c7e840f` — feat: manage full BIND ACL lists from TUI
@@ -87,18 +102,3 @@
 - `2026-07-31` — `e1c4ebb` — feat: record bulk changes as one transaction
 - `2026-07-31` — `0ee3907` — feat: add session-scoped bulk record operations
 - `2026-07-31` — `4721e80` — feat: validate DNS records and zone consistency
-- `2026-07-30` — `32737cb` — feat: add advanced record filtering
-- `2026-07-30` — `a4ccfc6` — docs: regenerate documentation for 4.2.0
-- `2026-07-30` — `0a481f3` — release: prepare ZoneCTL 4.2.0
-- `2026-07-30` — `a84faba` — feat: lock concurrent zone editing sessions
-- `2026-07-30` — `abeccdf` — feat: add read-only operating mode
-- `2026-07-30` — `abda9db` — feat: undo last change in editing session
-- `2026-07-30` — `dc5d69c` — feat: add transaction manifest history
-- `2026-07-30` — `e040c2d` — fix: preserve record owner and inline comments
-- `2026-07-30` — `ca60873` — feat: export pending changes before commit
-- `2026-07-30` — `e74516a` — feat: add unified diff preview before commit
-- `2026-07-30` — `2bb15fd` — refactor: unify transaction result presentation
-- `2026-07-30` — `171874f` — docs: add manual BIND rollback procedure
-- `2026-07-30` — `0b6a584` — test: cover Pending Changes commit workflow
-- `2026-07-30` — `0e19447` — test: cover transaction validation and reload failures
-- `2026-07-30` — `820d023` — docs: prioritize write safety roadmap

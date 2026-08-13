@@ -1,6 +1,6 @@
 # Dokumentacja modułów
 
-> Wygenerowano z AST: `2026-08-12T10:58:01+02:00`.
+> Wygenerowano z AST: `2026-08-13T19:16:42+02:00`.
 
 ## `src/elkman_dns/__init__.py`
 
@@ -20,43 +20,43 @@ Brak docstringa.
 
 ### `def parser`
 
-Linia: `79`
+Linia: `82`
 
 Brak docstringa.
 
 ### `def legacy_main`
 
-Linia: `753`
+Linia: `779`
 
 Brak docstringa.
 
 ### `def grouped_lines`
 
-Linia: `763`
+Linia: `789`
 
 Brak docstringa.
 
 ### `def print_transaction`
 
-Linia: `777`
+Linia: `803`
 
 Brak docstringa.
 
 ### `def transaction_main`
 
-Linia: `786`
+Linia: `812`
 
 Brak docstringa.
 
 ### `def main`
 
-Linia: `850`
+Linia: `876`
 
 Brak docstringa.
 
 ### `def deprecated_main`
 
-Linia: `2159`
+Linia: `2264`
 
 Brak docstringa.
 
@@ -344,6 +344,87 @@ Odczytuje strefy bezpośrednio z konfiguracji BIND. Obsługuje: - zone "example.
 - `_zone_from_block` — linia 177; brak docstringa.
 - `_group_for` — linia 242; brak docstringa.
 - `_strip_comments` — linia 266; usuń komentarze //, # i /* ... */ bez niszczenia tekstu znajdującego się wewnątrz cudzysłowów.
+
+## `src/zonectl/core/bind_environment_report.py`
+
+Odczytowa autodetekcja środowiska BIND i integracji RPZ.
+
+### `class RpzEnvironment`
+
+Linia: `16`
+
+Stan pojedynczej strefy używanej przez ``response-policy``.
+
+### `class BindEnvironmentReport`
+
+Linia: `38`
+
+Wynik pierwszego, pozbawionego skutków ubocznych rozpoznania BIND.
+
+**Metody:**
+
+- `to_dict` — linia 50; brak docstringa.
+
+### `class BindEnvironmentReporter`
+
+Linia: `54`
+
+Rozpoznaje aktywną konfigurację bez zapisywania plików i wywołań mutujących.
+
+**Metody:**
+
+- `__init__` — linia 67; brak docstringa.
+- `collect` — linia 84; brak docstringa.
+- `_response_policy_zones` — linia 121; brak docstringa.
+- `_rpz_environment` — linia 136; brak docstringa.
+- `_systemctl_bool` — linia 190; brak docstringa.
+- `_systemctl_property` — linia 193; brak docstringa.
+- `_systemctl_exec_path` — linia 200; brak docstringa.
+- `_status_values` — linia 210; brak docstringa.
+
+## `src/zonectl/core/bind_onboarding_report.py`
+
+Odczytowy raport gotowości istniejącego BIND do importu przez ZoneCTL.
+
+### `class OnboardingClass`
+
+Linia: `14`
+
+Brak docstringa.
+
+### `class OnboardingCandidate`
+
+Linia: `21`
+
+Brak docstringa.
+
+### `class OnboardingBlocker`
+
+Linia: `29`
+
+Brak docstringa.
+
+### `class BindOnboardingReport`
+
+Linia: `36`
+
+Brak docstringa.
+
+**Metody:**
+
+- `to_dict` — linia 52; brak docstringa.
+
+### `class BindOnboardingReporter`
+
+Linia: `56`
+
+Łączy istniejące inwentaryzacje bez modyfikowania konfiguracji.
+
+**Metody:**
+
+- `__init__` — linia 70; brak docstringa.
+- `collect` — linia 73; brak docstringa.
+- `_normalise_state` — linia 137; brak docstringa.
 
 ## `src/zonectl/core/bind_secondary_plan.py`
 
@@ -931,6 +1012,31 @@ Linia: `53`
 
 Return one unambiguous next step without changing BIND.
 
+## `src/zonectl/core/dnssec_onboarding_audit.py`
+
+Zbiorczy, odczytowy audyt gotowości deklaracji DNSSEC do importu.
+
+### `class DnssecOnboardingAuditItem`
+
+Linia: `15`
+
+Brak docstringa.
+
+**Metody:**
+
+- `to_dict` — linia 22; brak docstringa.
+
+### `class DnssecOnboardingAuditor`
+
+Linia: `26`
+
+Sprawdza wiele stref kolejno, nie modyfikując BIND, KASP ani DS.
+
+**Metody:**
+
+- `__init__` — linia 29; brak docstringa.
+- `audit` — linia 44; brak docstringa.
+
 ## `src/zonectl/core/dnssec_report.py`
 
 Odczytowy raport konfiguracji i stanu DNSSEC strefy.
@@ -1161,16 +1267,16 @@ Build migration inventory and unified diffs without writing files.
 - `__init__` — linia 81; brak docstringa.
 - `inventory` — linia 96; brak docstringa.
 - `plan` — linia 117; brak docstringa.
-- `_discover` — linia 232; brak docstringa.
-- `_inventory_item` — linia 238; brak docstringa.
-- `_is_rpz` — linia 302; brak docstringa.
-- `_key` — linia 308; brak docstringa.
-- `_read` — linia 312; brak docstringa.
-- `_zone_spans` — linia 323; brak docstringa.
-- `_mask_comments` — linia 359; brak docstringa.
-- `_included_paths` — linia 406; brak docstringa.
-- `_append_include` — linia 417; brak docstringa.
-- `_diff` — linia 424; brak docstringa.
+- `_discover` — linia 246; brak docstringa.
+- `_inventory_item` — linia 252; brak docstringa.
+- `_is_rpz` — linia 316; brak docstringa.
+- `_key` — linia 322; brak docstringa.
+- `_read` — linia 326; brak docstringa.
+- `_zone_spans` — linia 337; brak docstringa.
+- `_mask_comments` — linia 373; brak docstringa.
+- `_included_paths` — linia 420; brak docstringa.
+- `_append_include` — linia 431; brak docstringa.
+- `_diff` — linia 438; brak docstringa.
 
 ## `src/zonectl/core/managed_zone_migration_transaction.py`
 
@@ -2501,6 +2607,34 @@ Terminal UI for ZoneCTL.
 
 Brak klas i funkcji na poziomie modułu.
 
+## `src/zonectl/ui/about_view.py`
+
+Treść ekranu F1 prezentującego projekt i jego autorstwo.
+
+### `class AboutView`
+
+Linia: `9`
+
+Brak docstringa.
+
+**Metody:**
+
+- `build` — linia 14; brak docstringa.
+
+## `src/zonectl/ui/bind_onboarding_view.py`
+
+Prezentacja raportu pierwszego uruchomienia w TUI.
+
+### `class BindOnboardingView`
+
+Linia: `11`
+
+Brak docstringa.
+
+**Metody:**
+
+- `build` — linia 16; brak docstringa.
+
 ## `src/zonectl/ui/credits.py`
 
 Dyskretny podpis twórców projektu w głównym widoku TUI.
@@ -2523,83 +2657,114 @@ Brak docstringa.
 
 ### `class Row`
 
-Linia: `78`
+Linia: `86`
 
 Brak docstringa.
 
 ### `class CursesApp`
 
-Linia: `85`
+Linia: `93`
 
 Brak docstringa.
 
 **Metody:**
 
-- `__init__` — linia 88; brak docstringa.
-- `run` — linia 133; brak docstringa.
-- `_main` — linia 136; brak docstringa.
-- `_init_colors` — linia 179; brak docstringa.
-- `_color` — linia 190; brak docstringa.
-- `_symbol` — linia 201; brak docstringa.
-- `_start_refresh` — linia 204; brak docstringa.
-- `_refresh_worker` — linia 212; brak docstringa.
-- `_consume_results` — linia 226; brak docstringa.
-- `_zone_key` — linia 237; brak docstringa.
-- `_ordered_groups` — linia 254; brak docstringa.
-- `_rebuild_rows` — linia 261; brak docstringa.
-- `_selected_zone_name` — linia 285; brak docstringa.
-- `_draw` — linia 290; brak docstringa.
-- `_activate` — linia 351; brak docstringa.
-- `_toggle_multi_selection` — linia 364; dodaj lub usuń bieżącą strefę z zestawu wielostrefowego.
-- `_activate_group_selection` — linia 377; zachowaj dotychczasowe działanie spacji dla nagłówka grupy.
-- `_search` — linia 390; filtruje domeny na głównej liście.
-- `_create_zone_wizard` — linia 406; collect, preview and transactionally create a primary zone.
-- `_records_view` — linia 510; wyświetla i edytuje źródłowy dokument strefy.
-- `_message_view` — linia 1120; wyświetla zawijany i przewijany modalny komunikat.
-- `_wrap_message_lines` — linia 1198; zawijaj tekst, zachowując puste linie i wcięcie kontynuacji.
-- `_function_key_sequence` — linia 1222; brak docstringa.
-- `_get_key` — linia 1228; odczytuje klawisz i rozpoznaje f2 wysyłane jako esc [ 12 ~.
-- `_transaction_result_view` — linia 1272; wyświetla wynik zapisu lub rollbacku transakcji.
-- `_pending_changes_view` — linia 1285; wyświetla oczekujące zmiany w rekordach strefy.
-- `_diff_view` — linia 1515; wyświetl przewijany unified diff bez zapisywania strefy.
-- `_export_diff` — linia 1616; wyeksportuj oczekujące zmiany bez wykonywania commit.
-- `_read_only_message` — linia 1644; brak docstringa.
-- `_bulk_operation_view` — linia 1658; brak docstringa.
-- `_bulk_preview_view` — linia 1761; pokaż podgląd; enter przechodzi do potwierdzenia.
-- `_approve_zone_change` — linia 1821; odrzuć nowe błędy i wymagaj potwierdzenia nowych ostrzeżeń.
-- `_multi_zone_view` — linia 1883; edytuj kilka zaznaczonych stref w jednej sesji tui.
-- `_collect_dnssec_status` — linia 2094; brak docstringa.
-- `_ensure_dnssec_tui_allowed` — linia 2126; brak docstringa.
-- `_dnssec_disable_plan` — linia 2132; brak docstringa.
-- `_dnssec_enable_plan` — linia 2143; brak docstringa.
-- `_dnssec_enable_dry_run` — linia 2154; brak docstringa.
-- `_dnssec_enable_commit` — linia 2161; brak docstringa.
-- `_dnssec_confirm_ds` — linia 2168; brak docstringa.
-- `_dnssec_finalize_dry_run` — linia 2192; brak docstringa.
-- `_dnssec_finalize_commit` — linia 2199; brak docstringa.
-- `_dnssec_withdrawal_backup` — linia 2206; brak docstringa.
-- `_dnssec_backup_result_lines` — linia 2238; brak docstringa.
-- `_dnssec_enable_result_lines` — linia 2254; brak docstringa.
-- `_dnssec_confirm_result_lines` — linia 2267; brak docstringa.
-- `_dnssec_disable_result_lines` — linia 2281; brak docstringa.
-- `_dnssec_status_view` — linia 2295; read-only dnssec workflow status with explicit operator guidance.
-- `_domain_view` — linia 2701; wyświetla szczegóły wybranej strefy. klawisze: - r: ponowne sprawdzenie strefy, - q / esc / backspace: powrót do listy.
-- `_zone_secondary_view` — linia 2984; brak docstringa.
-- `_bind_root_config` — linia 3045; brak docstringa.
-- `_bind_access_view` — linia 3049; f9 browser for named acls and secondary groups.
-- `_show_bind_access_item` — linia 3112; brak docstringa.
-- `_secondary_result_lines` — linia 3128; brak docstringa.
-- `_edit_acl` — linia 3140; brak docstringa.
-- `_acl_entry_editor` — linia 3179; full-screen editor for hosts, networks and named acl elements.
-- `_edit_secondary_group` — linia 3233; brak docstringa.
-- `_secondary_address_editor` — linia 3278; full-screen mc-style editor for a secondary address list.
-- `_zone_migration_planner` — linia 3344; brak docstringa.
-- `_migration_result_lines` — linia 3362; brak docstringa.
-- `_zone_migration_view` — linia 3380; f3 shows a plan; f4 runs dry-run and guarded migration.
-- `_show_zone_migration_plan` — linia 3448; brak docstringa.
-- `_apply_zone_migration` — linia 3473; brak docstringa.
-- `_serial_ok` — linia 3531; brak docstringa.
-- `_bool_text` — linia 3541; brak docstringa.
+- `__init__` — linia 96; brak docstringa.
+- `run` — linia 141; brak docstringa.
+- `_main` — linia 144; brak docstringa.
+- `_init_colors` — linia 195; brak docstringa.
+- `_color` — linia 216; brak docstringa.
+- `_symbol` — linia 227; brak docstringa.
+- `_start_refresh` — linia 230; brak docstringa.
+- `_refresh_worker` — linia 238; brak docstringa.
+- `_consume_results` — linia 252; brak docstringa.
+- `_zone_key` — linia 263; brak docstringa.
+- `_ordered_groups` — linia 280; brak docstringa.
+- `_rebuild_rows` — linia 287; brak docstringa.
+- `_selected_zone_name` — linia 311; brak docstringa.
+- `_draw` — linia 316; brak docstringa.
+- `_draw_main_footer` — linia 417; rysuje pasek mc, wyróżniając klawisze zgodnie z koncepcją 4.8.
+- `_draw_zone_details_panel` — linia 449; rysuje dolny panel zgodny z opublikowaną koncepcją tui 4.8.
+- `_activate` — linia 532; brak docstringa.
+- `_selected_zone_preview` — linia 545; otwiera kontekstowy podgląd f3; dla rpz pokazuje stan integracji.
+- `_selected_zone_edit` — linia 557; otwiera ekran strefy, zachowując rpz jako zasób tylko do odczytu.
+- `_rpz_status_view` — linia 578; pokazuje odczytowy panel rpz, łącząc wiek pliku z systemd i bind.
+- `_bind_onboarding_view` — linia 612; pokazuje gotowość istniejącego bind bez wykonywania importu.
+- `_about_view` — linia 632; pokazuje koncepcyjny ekran autorstwa zgodny wizualnie z tui 4.8.
+- `_draw_about_identity` — linia 685; lewa kolumna ekranu f1: człowiek, ai i charakter projektu.
+- `_draw_about_history` — linia 701; prawa kolumna ekranu f1: historia i repozytorium.
+- `_draw_about_compact` — linia 722; jednokolumnowy wariant f1 dla węższych terminali.
+- `_onboarding_summary_view` — linia 743; raport f2 z przejściem do listy kandydatów klawiszem enter.
+- `_onboarding_footer` — linia 801; pokazuje wyłącznie akcje mające dostępne elementy docelowe.
+- `_draw_onboarding_summary_48` — linia 811; rysuje raport środowiska w dwukolumnowym układzie zonectl 4.8.
+- `_refresh_onboarding_report` — linia 916; ponownie odkrywa bind po wyjściu z listy importu.
+- `_onboarding_candidates_view` — linia 921; lista legacy: plan, dry-run i jawnie potwierdzony import.
+- `_show_bind_onboarding_plan` — linia 986; wyświetla diff kandydata; ten przepływ nie ma ścieżki zapisu.
+- `_onboarding_dnssec_view` — linia 1008; koncepcyjny ekran stref dnssec: wyłącznie plan i dry-run.
+- `_draw_dnssec_onboarding_48` — linia 1075; rysuje listę importu dnssec zgodnie z wizualnym kontraktem 4.8.
+- `_show_dnssec_onboarding_plan` — linia 1142; pokazuje deklaracyjny plan dnssec bez operacji na kluczach.
+- `_dnssec_onboarding_audit_view` — linia 1164; pokazuje zbiorczą gotowość dnssec w koncepcyjnym układzie 4.8.
+- `_dnssec_onboarding_audit_result_view` — linia 1206; pokazuje zbiorczy audyt dnssec w układzie zonectl 4.8.
+- `_dry_run_dnssec_onboarding_import` — linia 1314; uruchamia transakcyjny dry-run profilu dnssec bez aktywacji.
+- `_dnssec_import_gate` — linia 1337; wymaga aktywnego, w pełni zgodnego łańcucha dnssec.
+- `_commit_dnssec_onboarding_import` — linia 1380; importuje deklarację dnssec z bramką przed i po rndc reconfig.
+- `_dry_run_bind_onboarding_import` — linia 1458; waliduje transakcję importu bez zapisu plików i aktywacji bind.
+- `_commit_bind_onboarding_import` — linia 1498; importuje jedną deklarację po dwóch niezależnych potwierdzeniach.
+- `_toggle_multi_selection` — linia 1569; dodaj lub usuń bieżącą strefę z zestawu wielostrefowego.
+- `_activate_group_selection` — linia 1582; zachowaj dotychczasowe działanie spacji dla nagłówka grupy.
+- `_search` — linia 1595; filtruje domeny na głównej liście.
+- `_create_zone_wizard` — linia 1611; collect, preview and transactionally create a primary zone.
+- `_records_view` — linia 1715; wyświetla i edytuje źródłowy dokument strefy.
+- `_message_view` — linia 2325; wyświetla zawijany i przewijany modalny komunikat.
+- `_draw_message_view_48` — linia 2409; wspólny renderer komunikatów, planów i wyników w układzie 4.8.
+- `_draw_context_panel_48` — linia 2478; dodaje panel kontekstowy 4.8 do starszych ekranów listowych.
+- `_onboarding_result_view` — linia 2515; renderuje wynik importu w dwukolumnowym układzie tui 4.8.
+- `_wrap_message_lines` — linia 2616; zawijaj tekst, zachowując puste linie i wcięcie kontynuacji.
+- `_function_key_sequence` — linia 2640; brak docstringa.
+- `_get_key` — linia 2646; odczytuje klawisz i rozpoznaje f2 wysyłane jako esc [ 12 ~.
+- `_transaction_result_view` — linia 2690; wyświetla wynik zapisu lub rollbacku transakcji.
+- `_pending_changes_view` — linia 2703; wyświetla oczekujące zmiany w rekordach strefy.
+- `_diff_view` — linia 2951; wyświetl przewijany unified diff bez zapisywania strefy.
+- `_export_diff` — linia 3062; wyeksportuj oczekujące zmiany bez wykonywania commit.
+- `_read_only_message` — linia 3090; brak docstringa.
+- `_bulk_operation_view` — linia 3104; brak docstringa.
+- `_bulk_preview_view` — linia 3207; pokaż podgląd; enter przechodzi do potwierdzenia.
+- `_approve_zone_change` — linia 3277; odrzuć nowe błędy i wymagaj potwierdzenia nowych ostrzeżeń.
+- `_multi_zone_view` — linia 3339; edytuj kilka zaznaczonych stref w jednej sesji tui.
+- `_collect_dnssec_status` — linia 3561; brak docstringa.
+- `_ensure_dnssec_tui_allowed` — linia 3593; brak docstringa.
+- `_dnssec_disable_plan` — linia 3599; brak docstringa.
+- `_dnssec_enable_plan` — linia 3610; brak docstringa.
+- `_dnssec_enable_dry_run` — linia 3621; brak docstringa.
+- `_dnssec_enable_commit` — linia 3628; brak docstringa.
+- `_dnssec_confirm_ds` — linia 3635; brak docstringa.
+- `_dnssec_finalize_dry_run` — linia 3659; brak docstringa.
+- `_dnssec_finalize_commit` — linia 3666; brak docstringa.
+- `_dnssec_withdrawal_backup` — linia 3673; brak docstringa.
+- `_dnssec_backup_result_lines` — linia 3705; brak docstringa.
+- `_dnssec_enable_result_lines` — linia 3721; brak docstringa.
+- `_dnssec_confirm_result_lines` — linia 3734; brak docstringa.
+- `_dnssec_disable_result_lines` — linia 3748; brak docstringa.
+- `_dnssec_status_view` — linia 3762; read-only dnssec workflow status with explicit operator guidance.
+- `_draw_dnssec_status_48` — linia 4172; rysuje status strefy dnssec w dwukolumnowym układzie 4.8.
+- `_draw_domain_view_48` — linia 4270; rysuje szczegóły strefy zgodnie z opublikowanym układem 4.8.
+- `_domain_view` — linia 4390; wyświetla szczegóły wybranej strefy. klawisze: - r: ponowne sprawdzenie strefy, - q / esc / backspace: powrót do listy.
+- `_zone_secondary_view` — linia 4674; brak docstringa.
+- `_bind_root_config` — linia 4747; brak docstringa.
+- `_bind_access_view` — linia 4751; f9 browser for named acls and secondary groups.
+- `_show_bind_access_item` — linia 4824; brak docstringa.
+- `_secondary_result_lines` — linia 4840; brak docstringa.
+- `_edit_acl` — linia 4852; brak docstringa.
+- `_acl_entry_editor` — linia 4891; full-screen editor for hosts, networks and named acl elements.
+- `_edit_secondary_group` — linia 4955; brak docstringa.
+- `_secondary_address_editor` — linia 5000; full-screen mc-style editor for a secondary address list.
+- `_zone_migration_planner` — linia 5076; brak docstringa.
+- `_migration_result_lines` — linia 5094; brak docstringa.
+- `_zone_migration_view` — linia 5112; f3 shows a plan; f4 runs dry-run and guarded migration.
+- `_show_zone_migration_plan` — linia 5191; brak docstringa.
+- `_apply_zone_migration` — linia 5216; brak docstringa.
+- `_serial_ok` — linia 5274; brak docstringa.
+- `_bool_text` — linia 5284; brak docstringa.
 
 ## `src/zonectl/ui/dialogs.py`
 
@@ -2773,12 +2938,31 @@ Renderuje ekran rekordów DNS bez obsługi klawiatury.
 
 **Metody:**
 
-- `visible_rows` — linia 17; brak docstringa.
-- `summary_text` — linia 21; brak docstringa.
-- `footer_text` — linia 45; brak docstringa.
-- `_put` — linia 49; brak docstringa.
-- `_change_attr` — linia 78; brak docstringa.
-- `draw` — linia 91; brak docstringa.
+- `panel_enabled` — linia 17; brak docstringa.
+- `details_height` — linia 21; brak docstringa.
+- `visible_rows` — linia 30; brak docstringa.
+- `summary_text` — linia 42; brak docstringa.
+- `footer_text` — linia 66; brak docstringa.
+- `_put` — linia 70; brak docstringa.
+- `_change_attr` — linia 99; brak docstringa.
+- `_draw_footer` — linia 112; brak docstringa.
+- `_draw_details_panel` — linia 143; brak docstringa.
+- `draw` — linia 184; brak docstringa.
+
+## `src/zonectl/ui/rpz_status_view.py`
+
+Model prezentacyjny panelu stanu integracji RPZ.
+
+### `class RpzStatusView`
+
+Linia: `11`
+
+Gotowe do renderowania, niezależne od curses dane stanu RPZ.
+
+**Metody:**
+
+- `build` — linia 20; brak docstringa.
+- `_age` — linia 58; brak docstringa.
 
 ## `src/zonectl/ui/zone_create_dialog.py`
 
@@ -2802,3 +2986,21 @@ Pełnoekranowy formularz parametrów nowej strefy DNS.
 - `_put` — linia 60; brak docstringa.
 - `_edit_line` — linia 69; brak docstringa.
 - `collect` — linia 121; brak docstringa.
+
+## `src/zonectl/ui/zone_details_view.py`
+
+Model prezentacyjny stałego panelu szczegółów strefy.
+
+### `class ZoneDetailsView`
+
+Linia: `11`
+
+Zwięzłe szczegóły aktywnej strefy do prawego panelu TUI.
+
+**Metody:**
+
+- `build` — linia 20; brak docstringa.
+- `_age` — linia 66; brak docstringa.
+- `_yes_no` — linia 73; brak docstringa.
+- `_dnssec` — linia 79; brak docstringa.
+- `_secondary` — linia 85; brak docstringa.

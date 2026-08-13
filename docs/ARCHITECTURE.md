@@ -1,6 +1,6 @@
 # Architektura
 
-> Wygenerowano z importów AST: `2026-08-12T10:58:01+02:00`.
+> Wygenerowano z importów AST: `2026-08-13T19:16:42+02:00`.
 
 ## `src/elkman_dns/__init__.py`
 
@@ -31,6 +31,9 @@ Brak docstringa.
 - `core.bind: BindService`
 - `core.bind_access_inventory: BindAccessInventoryError, BindAccessInventoryReader`
 - `core.bind_access_audit: BindAccessAuditor`
+- `core.bind_environment_report: BindEnvironmentReporter`
+- `core.bind_onboarding_report: BindOnboardingReporter`
+- `core.discovery: BindDiscoveryError`
 - `core.bind_acl_plan: BindAclPlanError, BindAclPlanner`
 - `core.bind_acl_transaction: BindAclTransaction`
 - `core.bind_secondary_report: BindSecondaryReporter`
@@ -186,6 +189,34 @@ Brak docstringa.
 - `re`
 - `pathlib: Path`
 - `models: Zone`
+
+## `src/zonectl/core/bind_environment_report.py`
+
+Odczytowa autodetekcja środowiska BIND i integracji RPZ.
+
+**Importy:**
+
+- `__future__: annotations`
+- `re`
+- `time`
+- `dataclasses: asdict, dataclass`
+- `pathlib: Path`
+- `typing: Callable`
+- `discovery: BindConfigDiscovery, BindDiscoveryError, ZoneConfig`
+- `runner: CommandResult, run`
+
+## `src/zonectl/core/bind_onboarding_report.py`
+
+Odczytowy raport gotowości istniejącego BIND do importu przez ZoneCTL.
+
+**Importy:**
+
+- `__future__: annotations`
+- `dataclasses: asdict, dataclass`
+- `pathlib: Path`
+- `bind_access_inventory: BindAccessInventoryReader`
+- `bind_environment_report: BindEnvironmentReporter`
+- `managed_zone_migration: ManagedZoneMigrationPlanner`
 
 ## `src/zonectl/core/bind_secondary_plan.py`
 
@@ -423,6 +454,20 @@ Operator guidance derived from the read-only DNSSEC report.
 - `dataclasses: asdict, dataclass`
 - `email.utils: parsedate_to_datetime`
 - `typing: TYPE_CHECKING`
+
+## `src/zonectl/core/dnssec_onboarding_audit.py`
+
+Zbiorczy, odczytowy audyt gotowości deklaracji DNSSEC do importu.
+
+**Importy:**
+
+- `__future__: annotations`
+- `dataclasses: asdict, dataclass`
+- `pathlib: Path`
+- `typing: Callable`
+- `dnssec_ds_check: DnssecDsChecker`
+- `dnssec_report: DnssecReporter`
+- `models: Zone`
 
 ## `src/zonectl/core/dnssec_report.py`
 
@@ -910,6 +955,25 @@ Brak docstringa.
 
 Terminal UI for ZoneCTL.
 
+## `src/zonectl/ui/about_view.py`
+
+Treść ekranu F1 prezentującego projekt i jego autorstwo.
+
+**Importy:**
+
+- `__future__: annotations`
+- `dataclasses: dataclass`
+
+## `src/zonectl/ui/bind_onboarding_view.py`
+
+Prezentacja raportu pierwszego uruchomienia w TUI.
+
+**Importy:**
+
+- `__future__: annotations`
+- `dataclasses: dataclass`
+- `core.bind_onboarding_report: BindOnboardingReport`
+
 ## `src/zonectl/ui/credits.py`
 
 Dyskretny podpis twórców projektu w głównym widoku TUI.
@@ -936,6 +1000,10 @@ Brak docstringa.
 - `zonectl.ui.records.renderer: RecordRenderer`
 - `zonectl.ui.zone_create_dialog: ZoneCreateDialog`
 - `zonectl.ui.dnssec_status_view: DnssecStatusView`
+- `zonectl.ui.rpz_status_view: RpzStatusView`
+- `zonectl.ui.bind_onboarding_view: BindOnboardingView`
+- `zonectl.ui.about_view: AboutView`
+- `zonectl.ui.zone_details_view: ZoneDetailsView`
 - `curses`
 - `queue`
 - `threading`
@@ -948,6 +1016,8 @@ Brak docstringa.
 - `core.bind_access_inventory: BindAccessInventoryError, BindAccessInventoryReader`
 - `core.bind_acl_plan: BindAclPlanError, BindAclPlanner`
 - `core.bind_acl_transaction: BindAclTransaction`
+- `core.bind_environment_report: BindEnvironmentReporter`
+- `core.bind_onboarding_report: BindOnboardingReporter`
 - `core.bind_secondary_plan: BindSecondaryPlanError, BindSecondaryPlanner`
 - `core.bind_secondary_report: BindSecondaryReporter`
 - `core.bind_secondary_transaction: BindSecondaryTransaction`
@@ -961,20 +1031,14 @@ Brak docstringa.
 - `core.dnssec_enable_plan: DnssecEnablePlanner`
 - `core.dnssec_enable_transaction: DnssecEnableTransaction`
 - `core.dnssec_report: DnssecReporter`
+- `core.dnssec_onboarding_audit: DnssecOnboardingAuditor`
 - `core.dnssec_withdrawal_backup: DnssecWithdrawalBackup`
 - `core.managed_zone_migration: ManagedZoneMigrationError, ManagedZoneMigrationPlanner`
-- `core.managed_zone_migration_transaction: ManagedZoneMigrationTransaction`
+- `core.managed_zone_migration_transaction: ManagedZoneMigrationStep, ManagedZoneMigrationTransaction`
 - `core.edit_lock: ZoneEditLockedError`
 - `core.models: Health, Zone, ZoneStatus`
 - `core.multi_zone_session: MultiZoneEditSession, MultiZoneSessionError`
 - `core.paths: EDIT_LOCK_DIR`
-- `core.record_filter: RecordFilter, RecordFilterError`
-- `core.record_validation: ValidationSeverity, validate_zone`
-- `core.transaction: TransactionEngine, TransactionResult`
-- `core.zone_edit_session: ZoneEditSession, ZoneEditSessionError`
-- `core.zone_create_transaction: ZoneCreateTransaction`
-- `core.zone_lifecycle: ZoneCreateRequest, ZoneLifecycleError, ZoneLifecyclePlanner`
-- `presentation: transaction_lines, transaction_title`
 
 ## `src/zonectl/ui/dialogs.py`
 
@@ -1089,7 +1153,17 @@ Brak docstringa.
 - `curses`
 - `collections.abc: Sequence`
 - `zonectl.core.zone_model: ChangeKind, ZoneRecordView`
-- `zonectl.ui.records.keybindings: render_footer`
+- `zonectl.ui.records.keybindings: RECORD_VIEW_BINDINGS, render_footer`
+
+## `src/zonectl/ui/rpz_status_view.py`
+
+Model prezentacyjny panelu stanu integracji RPZ.
+
+**Importy:**
+
+- `__future__: annotations`
+- `dataclasses: dataclass`
+- `core.bind_environment_report: RpzEnvironment`
 
 ## `src/zonectl/ui/zone_create_dialog.py`
 
@@ -1102,3 +1176,13 @@ Brak docstringa.
 - `dataclasses: dataclass`
 - `function_keys: decode_function_key`
 - `form_style: active_field_attr, field_marker`
+
+## `src/zonectl/ui/zone_details_view.py`
+
+Model prezentacyjny stałego panelu szczegółów strefy.
+
+**Importy:**
+
+- `__future__: annotations`
+- `dataclasses: dataclass`
+- `core.models: Zone, ZoneStatus`
