@@ -13,6 +13,8 @@ from .core.bind_access_inventory import (
     BindAccessInventoryReader,
 )
 from .core.bind_access_audit import BindAccessAuditor
+from .core.bind_environment_report import BindEnvironmentReporter
+from .core.discovery import BindDiscoveryError
 from .core.bind_acl_plan import BindAclPlanError, BindAclPlanner
 from .core.bind_acl_transaction import BindAclTransaction
 from .core.bind_secondary_report import BindSecondaryReporter
@@ -107,6 +109,21 @@ def parser() -> argparse.ArgumentParser:
         "--root-config", type=Path, default=Path("/etc/bind/named.conf")
     )
     bind_audit.add_argument("--json", action="store_true")
+    bind_environment = bind_sub.add_parser(
+        "environment-report",
+        help="rozpoznaj BIND i integrację RPZ bez zmian w systemie",
+    )
+    bind_environment.add_argument(
+        "--root-config", type=Path, default=Path("/etc/bind/named.conf")
+    )
+    bind_environment.add_argument("--rpz-max-age", type=int, default=600)
+    bind_environment.add_argument(
+        "--timer-unit", default="update-cert-rpz.timer"
+    )
+    bind_environment.add_argument(
+        "--service-unit", default="update-cert-rpz.service"
+    )
+    bind_environment.add_argument("--json", action="store_true")
     bind_acl_plan = bind_sub.add_parser(
         "acl-plan", help="pokaż zwalidowany plan uporządkowania jednej ACL"
     )
@@ -1107,6 +1124,49 @@ def main(argv: list[str] | None = None) -> int:
                 print(f"  {value}")
             print("\nWynik: DRY-RUN — niczego nie zmieniono")
         return 0 if plan.validation_ok else 1
+    if args.command == "bind" and args.bind_command == "environment-report":
+        try:
+            report = BindEnvironmentReporter(
+                args.root_config,
+                timer_unit=args.timer_unit,
+                service_unit=args.service_unit,
+                rpz_max_age=args.rpz_max_age,
+            ).collect()
+        except (BindDiscoveryError, OSError) as exc:
+            print(f"BŁĄD: {exc}", file=sys.stderr)
+            return 2
+        if args.json:
+            print(json.dumps(report.to_dict(), ensure_ascii=False, indent=2))
+        else:
+            print("RAPORT ŚRODOWISKA BIND — TYLKO ODCZYT")
+            print(f"Konfiguracja:       {report.root_config}")
+            print(f"Pliki konfiguracji: {len(report.config_files)}")
+            print(f"Strefy:             {report.zone_count}")
+            print(f"Primary:            {report.primary_count}")
+            print(f"Secondary:          {report.secondary_count}")
+            print(f"DNSSEC:             {report.dnssec_count}")
+            print("\nINTEGRACJE RPZ")
+            if not report.rpz:
+                print("- brak aktywnej strefy response-policy")
+            for rpz in report.rpz:
+                age = f"{rpz.age_seconds} s" if rpz.age_seconds is not None else "-"
+                print(f"[{rpz.health}] {rpz.zone}")
+                print(f"  Tryb zarządzania: {rpz.mode}")
+                print(f"  Plik:             {rpz.source_file or '-'}")
+                print(f"  Wiek:             {age} (limit {rpz.max_age_seconds} s)")
+                print(f"  Serial / węzły:   {rpz.serial or '-'} / {rpz.nodes or '-'}")
+                print(
+                    "  Timer:            "
+                    f"{'enabled' if rpz.timer_enabled else 'disabled'}, "
+                    f"{'active' if rpz.timer_active else 'inactive'}"
+                )
+                print(f"  Aktualizator:      {rpz.updater_path or '-'}")
+                for finding in rpz.findings:
+                    print(f"  UWAGA: {finding}")
+            for finding in report.findings:
+                print(f"UWAGA: {finding}")
+            print("\nWynik: raport odczytowy — niczego nie zmieniono")
+        return 1 if any(item.health in {"FAILED", "STALE"} for item in report.rpz) else 0
     if args.command == "bind" and args.bind_command in {"inventory", "audit"}:
         try:
             report = BindAccessInventoryReader(args.root_config).collect()

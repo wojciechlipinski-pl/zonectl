@@ -226,20 +226,67 @@ zrealizowane, a `[ ]` pozostają do wykonania.
 - [x] Ustawić angielski `README.md`, zachować `README.pl.md` oraz dodać
   angielską instrukcję operatorską w `docs/en/OPERATIONS.md`.
 
-## ZoneCTL 4.8 — hardening, automation and safe demonstrations
+## ZoneCTL 4.8 — autodetekcja, integracje i nowy TUI
 
-Zakres 4.8 jest zamknięty. Nowe pomysły trafiają do późniejszych wydań, aby
-nie rozciągać prac nad stabilizacją.
+Priorytetem 4.8 jest bezpieczne uruchomienie ZoneCTL w istniejącym środowisku
+BIND oraz stopniowa przebudowa TUI. Każde rozpoznanie jest najpierw tylko
+odczytowe; import wymaga osobnego planu, dry-runu i potwierdzenia operatora.
+
+### Pierwsze uruchomienie i autodetekcja BIND
+
+- [x] Rozpocząć odczytowy raport środowiska: aktywny graf `include`, liczba i
+  typy stref, DNSSEC oraz strefy używane przez `response-policy`.
+- [ ] Dodać kreator pierwszego uruchomienia w TUI z podsumowaniem wykrytej
+  konfiguracji i możliwością pominięcia importu.
+- [ ] Przygotować plan importu istniejących stref, ACL, grup secondary i RPZ;
+  nie modyfikować automatycznie obcych plików konfiguracyjnych.
+- [ ] Każdy import wykonywać przez diff, backup, `named-checkconf`, dry-run,
+  jawne potwierdzenie, manifest i rollback.
+
+### Opcjonalna integracja CERT Polska RPZ
+
+- [x] Zachować dotychczasowy pomiar wieku RPZ w sekundach/minutach i wykrywać
+  istniejący timer oraz aktualizator jako tryb `EXTERNAL`.
+- [ ] Pokazywać wspólny stan `ACTIVE`, `DELAYED`, `STALE`, `FAILED` lub
+  `DISABLED`, serial, liczbę węzłów, ostatni wynik usługi i następne uruchomienie.
+- [ ] Dodać opcjonalny tryb `MANAGED`: instalacja aktualizatora i unitów systemd
+  wyłącznie po planie, dry-runie oraz jawnym zatwierdzeniu.
+- [ ] Zachować zalecany interwał pięciu minut, walidację `named-checkzone`,
+  ochronę seriala, atomową podmianę, backup, kontrolowany reload i rollback.
+- [ ] Nie przejmować istniejącego mechanizmu `EXTERNAL` bez osobnej migracji.
 
 ### Bezpieczne materiały demonstracyjne
 
-- [ ] Dodać deterministyczny generator demonstracyjnego stanu TUI, który nie
+Materiały promocyjne i koncepcyjne zostały przygotowane. Deterministyczny
+generator danych demonstracyjnych został przesunięty poza krytyczny zakres 4.8.
+
+- [ ] (później) Dodać deterministyczny generator demonstracyjnego stanu TUI, który nie
   czyta `/etc/bind`, `/var/lib/bind`, nazw hostów ani danych operatora.
+- [ ] Przygotować porównawczy zestaw publikacyjny: dwa wierne, zanonimizowane
+  zrzuty bieżącego TUI oraz dwa obrazy jednoznacznie opisane jako koncepcja
+  docelowego interfejsu.
 - [ ] Wygenerować ekrany: lista stref, rekordy, DNSSEC, ACL, secondary oraz
   wynik transakcji.
 - [ ] Zapisać obrazy w `docs/images/` i osadzić je w obu wersjach README.
 - [ ] Dodać test wykrywający w obrazach/metadanych i plikach demonstracyjnych
   zabronione nazwy produkcyjne.
+
+### Docelowy wygląd TUI
+
+- [ ] Przebudować ekran główny na czytelny układ panelowy: lista stref,
+  zaznaczenie aktywnego wiersza oraz panel szczegółów wybranej strefy.
+- [ ] Ujednolicić widoki planu, dry-runu, ostrzeżenia, sukcesu i rollbacku,
+  zachowując tę samą hierarchię informacji i semantykę kolorów.
+- [ ] Stosować stałe paski tytułu i klawiszy funkcyjnych oraz skróty w stylu
+  Midnight Commandera: F3 podgląd, F4 edycja, Insert dodawanie, F8/Delete
+  usuwanie i F10 powrót.
+- [ ] Pokazywać najważniejszy stan operacji, blokady bezpieczeństwa, postęp i
+  następny krok bez konieczności analizowania surowego raportu.
+- [ ] Zapewnić poprawne skalowanie, zawijanie i przewijanie na małych
+  terminalach, bez utraty dostępu do potwierdzeń i komunikatów błędów.
+- [ ] Traktować grafiki koncepcyjne wyłącznie jako wzorzec projektu; publiczne
+  zrzuty oznaczane jako działająca aplikacja muszą pochodzić z rzeczywistego
+  renderera ZoneCTL na danych demonstracyjnych.
 
 ### Zabezpieczenia ACL i secondary
 
