@@ -118,6 +118,12 @@ class DnssecStatusView:
 
     @staticmethod
     def _operation_for_stage(stage: str) -> str:
+        if stage == "PROPAGATING":
+            return "REFRESH"
+        if stage in {"READY_FOR_DS", "DS_PROPAGATING"}:
+            return "CHECK_DS"
+        if stage in {"ERROR", "INDETERMINATE"}:
+            return "REFRESH"
         if stage in {"WITHDRAWING", "READY_TO_FINALIZE"}:
             return "FINALIZE"
         if stage == "ACTIVE":
@@ -135,6 +141,8 @@ class DnssecStatusView:
             "WITHDRAWAL": "wycofanie",
             "CONFIRM_DS": "potwierdzenie DS",
             "ENABLE": "włączenie",
+            "REFRESH": "sprawdź gotowość",
+            "CHECK_DS": "sprawdź DS",
             "STATUS": "wskazówki",
         }[cls._operation_for_stage(stage)]
 

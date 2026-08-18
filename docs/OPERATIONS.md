@@ -782,3 +782,28 @@ podpisanego. Po finalizacji:
 - BIND raportował `secure: no`, a deklaracja nie zawierała `dnssec-policy`,
   `inline-signing` ani `key-directory`;
 - klucze, manifesty, snapshoty i pakiety odtworzeniowe pozostały zachowane.
+## Opcjonalna świeża instalacja CERT Polska RPZ
+
+Pakiet ZoneCTL nie uruchamia RPZ automatycznie. Na systemie bez istniejącej
+integracji operator najpierw wykonuje plan i izolowany dry-run:
+
+```bash
+zctl bind rpz-managed-plan
+zctl bind rpz-managed-dry-run
+zctl bind rpz-managed-apply
+```
+
+Każde z tych poleceń jest domyślnie pozbawione skutków ubocznych. Właściwa
+instalacja wymaga jednocześnie obu flag oraz dokładnej nazwy strefy:
+
+```bash
+zctl bind rpz-managed-apply \
+  --commit \
+  --activate \
+  --confirm cert-rpz.local
+```
+
+Transakcja pobiera źródło wyłącznie przez HTTPS, waliduje strefę i konfigurację,
+tworzy backup oraz manifest, zapisuje pliki atomowo, uruchamia timer co pięć
+minut i sprawdza BIND, usługę oraz świeżość strefy. Każdy błąd po rozpoczęciu
+zapisu powoduje wyłączenie nowych unitów i odtworzenie konfiguracji.

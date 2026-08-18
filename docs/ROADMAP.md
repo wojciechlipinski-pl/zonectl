@@ -196,6 +196,10 @@ zrealizowane, a `[ ]` pozostają do wykonania.
   wyniku `PASS` z pełnej kontroli delegacji.
 - [x] Dodać w TUI odczytowy ekran etapu DNSSEC, KASP, propagacji DS oraz
   zgodności serwerów autorytatywnych.
+- [x] Prowadzić operatora przez kolejne etapy DNSSEC bez opuszczania TUI:
+  kontekstowe odświeżenie gotowości, kontrolę publikacji DS oraz strzeżone
+  potwierdzenie DS w KASP; po każdej operacji ponownie odczytywać deklarację
+  BIND, aby nie prezentować nieaktualnego etapu.
 - [x] Dodać osobną, wieloetapową i bezpieczną procedurę wyłączenia DNSSEC:
   odczytowy plan, zweryfikowany backup, odczytowa kontrola zniknięcia DS na
   wielu resolwerach i strzeżone wykonanie `rndc dnssec -checkds withdrawn`
@@ -249,13 +253,33 @@ odczytowe; import wymaga osobnego planu, dry-runu i potwierdzenia operatora.
   istniejący timer oraz aktualizator jako tryb `EXTERNAL`.
 - [x] Dodać odczytowy panel F3 integracji RPZ w TUI: tryb zarządzania, stan,
   wiek, serial, liczba węzłów, timer, usługa i ścieżka aktualizatora.
-- [ ] Pokazywać wspólny stan `ACTIVE`, `DELAYED`, `STALE`, `FAILED` lub
+- [x] Pokazywać wspólny stan `ACTIVE`, `DELAYED`, `STALE`, `FAILED` lub
   `DISABLED`, serial, liczbę węzłów, ostatni wynik usługi i następne uruchomienie.
-- [ ] Dodać opcjonalny tryb `MANAGED`: instalacja aktualizatora i unitów systemd
+- [ ] Dodać opcjonalny tryb `MANAGED` na świeżym systemie: instalacja aktualizatora i unitów systemd
   wyłącznie po planie, dry-runie oraz jawnym zatwierdzeniu.
-- [ ] Zachować zalecany interwał pięciu minut, walidację `named-checkzone`,
+  - [x] Odczytowy plan instalacji i blokada cichego przejęcia trybu `EXTERNAL`.
+  - [x] Odczytowa inwentaryzacja i plan migracji `EXTERNAL → MANAGED` z SHA-256.
+  - [x] Transakcyjny dry-run migracji w izolowanym katalogu tymczasowym.
+  - [x] Produkcyjna transakcja przełączenia z manifestem i rollbackiem.
+    - [x] Silnik transakcji, potrójna bramka i wymuszony test rollbacku.
+    - [x] Bramka powdrożeniowa: unity, wynik usługi, serial, świeżość i BIND.
+    - [x] Kontrolowane przełączenie zweryfikowane na aktywnym środowisku.
+- [x] W migracji `EXTERNAL → MANAGED` zachować interwał pięciu minut,
+  walidację `named-checkzone`, ochronę seriala, atomową podmianę, backup,
+  kontrolowany reload i rollback.
+- [ ] W instalatorze świeżego systemu zachować walidację `named-checkzone`,
   ochronę seriala, atomową podmianę, backup, kontrolowany reload i rollback.
-- [ ] Nie przejmować istniejącego mechanizmu `EXTERNAL` bez osobnej migracji.
+- [x] Nie przejmować istniejącego mechanizmu `EXTERNAL` bez osobnej migracji.
+- [ ] Dodać plan, dry-run i transakcję świeżej instalacji, która jednoznacznie
+  wskazuje blok `options`, dodaje `response-policy` i nigdy nie uruchamia się
+  automatycznie podczas instalacji pakietu `.deb`.
+  - [x] Jednoznaczne wykrywanie pliku z blokiem `options` i blokada konfliktów.
+  - [x] Izolowany dry-run: HTTPS, kandydaci w `/tmp`, `named-checkzone`,
+    `named-checkconf`, kontrola skryptu i unitów bez zapisu systemowego.
+  - [x] Silnik transakcji z trzema warunkami zgody, backupem, manifestem,
+    atomowym zapisem, bramką powdrożeniową i wymuszonym testem rollbacku.
+  - [ ] Zweryfikować dry-run oraz wymuszony rollback na świeżym Debianie.
+  - [ ] Zweryfikować kontrolowaną instalację na świeżym środowisku testowym.
 
 ### Bezpieczne materiały demonstracyjne
 

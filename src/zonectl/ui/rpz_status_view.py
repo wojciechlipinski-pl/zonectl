@@ -41,11 +41,14 @@ class RpzStatusView:
             f"Stan timera           {timer}",
             f"Usługa                {rpz.service_unit}",
             f"Ostatni wynik         {rpz.service_result or 'nieznany'}",
+            f"Ostatnie uruchomienie {rpz.timer_last_trigger or '-'}",
+            f"Następne uruchomienie {rpz.timer_next_elapse or '-'}",
             f"Aktualizator          {rpz.updater_path or '-'}",
         ]
         if rpz.findings:
             lines.extend(("", "OSTRZEŻENIA"))
             lines.extend(f"- {finding}" for finding in rpz.findings)
+        lines.extend(("", "NASTĘPNY KROK", cls._next_action(rpz.health)))
         lines.extend(("", "Widok tylko do odczytu — F3 nie zmienia konfiguracji."))
         return cls(
             zone=rpz.zone,
@@ -62,3 +65,13 @@ class RpzStatusView:
         if minutes:
             return f"{minutes} min {remainder} s"
         return f"{remainder} s"
+
+    @staticmethod
+    def _next_action(health: str) -> str:
+        return {
+            "ACTIVE": "Monitoruj automatyczne aktualizacje RPZ.",
+            "DELAYED": "Poczekaj do następnego uruchomienia timera i odśwież raport.",
+            "STALE": "Sprawdź timer, usługę i dziennik aktualizatora.",
+            "FAILED": "Usuń zgłoszone błędy; integracja wymaga interwencji.",
+            "DISABLED": "Włącz zewnętrzny timer albo pozostaw integrację świadomie wyłączoną.",
+        }.get(health, "Sprawdź stan integracji RPZ.")

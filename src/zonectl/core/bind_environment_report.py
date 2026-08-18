@@ -30,6 +30,8 @@ class RpzEnvironment:
     timer_active: bool
     service_unit: str
     service_result: str | None
+    timer_last_trigger: str | None
+    timer_next_elapse: str | None
     updater_path: str | None
     findings: tuple[str, ...]
 
@@ -72,6 +74,8 @@ class BindEnvironmentReporter:
         clock: Callable[[], float] = time.time,
         timer_unit: str = "update-cert-rpz.timer",
         service_unit: str = "update-cert-rpz.service",
+        managed_timer_unit: str = "zonectl-cert-rpz.timer",
+        managed_service_unit: str = "zonectl-cert-rpz.service",
         rpz_max_age: int = 600,
     ) -> None:
         self.root_config = root_config
@@ -79,6 +83,8 @@ class BindEnvironmentReporter:
         self.clock = clock
         self.timer_unit = timer_unit
         self.service_unit = service_unit
+        self.managed_timer_unit = managed_timer_unit
+        self.managed_service_unit = managed_service_unit
         self.rpz_max_age = rpz_max_age
 
     def collect(self) -> BindEnvironmentReport:
@@ -141,10 +147,22 @@ class BindEnvironmentReporter:
         else:
             findings.append("Plik strefy RPZ nie istnieje")
 
-        timer_enabled = self._systemctl_bool("is-enabled", self.timer_unit)
-        timer_active = self._systemctl_bool("is-active", self.timer_unit)
-        service_result = self._systemctl_property(self.service_unit, "Result")
-        updater_path = self._systemctl_exec_path(self.service_unit)
+        managed = bool(
+            self._systemctl_property(self.managed_timer_unit, "FragmentPath")
+            and self._systemctl_property(self.managed_service_unit, "FragmentPath")
+        )
+        timer_unit = self.managed_timer_unit if managed else self.timer_unit
+        service_unit = self.managed_service_unit if managed else self.service_unit
+        timer_enabled = self._systemctl_bool("is-enabled", timer_unit)
+        timer_active = self._systemctl_bool("is-active", timer_unit)
+        service_result = self._systemctl_property(service_unit, "Result")
+        timer_last_trigger = self._systemctl_property(
+            timer_unit, "LastTriggerUSec"
+        )
+        timer_next_elapse = self._systemctl_property(
+            timer_unit, "NextElapseUSecRealtime"
+        )
+        updater_path = self._systemctl_exec_path(service_unit)
         status = self.command_runner(["rndc", "zonestatus", zone.name], 10)
         values = self._status_values(status.stdout) if status.returncode == 0 else {}
         loaded = status.returncode == 0
@@ -157,6 +175,8 @@ class BindEnvironmentReporter:
 
         if not loaded or age is None or service_result not in {None, "success"}:
             health = "FAILED"
+        elif not timer_enabled or not timer_active:
+            health = "DISABLED"
         elif age <= self.rpz_max_age:
             health = "ACTIVE"
         elif age <= self.rpz_max_age * 2:
@@ -164,7 +184,7 @@ class BindEnvironmentReporter:
         else:
             health = "STALE"
 
-        mode = "EXTERNAL" if timer_enabled or updater_path else "OFF"
+        mode = "MANAGED" if managed else "EXTERNAL" if timer_enabled or updater_path else "OFF"
         serial = values.get("serial")
         raw_nodes = values.get("nodes")
         nodes = int(raw_nodes) if raw_nodes and raw_nodes.isdigit() else None
@@ -178,11 +198,13 @@ class BindEnvironmentReporter:
             serial=serial,
             nodes=nodes,
             loaded=loaded,
-            timer_unit=self.timer_unit,
+            timer_unit=timer_unit,
             timer_enabled=timer_enabled,
             timer_active=timer_active,
-            service_unit=self.service_unit,
+            service_unit=service_unit,
             service_result=service_result,
+            timer_last_trigger=timer_last_trigger,
+            timer_next_elapse=timer_next_elapse,
             updater_path=updater_path,
             findings=tuple(findings),
         )
@@ -195,7 +217,9 @@ class BindEnvironmentReporter:
             ["systemctl", "show", unit, f"--property={name}", "--value"], 10
         )
         value = result.stdout.strip()
-        return value or None if result.returncode == 0 else None
+        if result.returncode != 0 or not value or value.casefold() == "n/a":
+            return None
+        return value
 
     def _systemctl_exec_path(self, unit: str) -> str | None:
         result = self.command_runner(

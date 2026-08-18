@@ -37,6 +37,8 @@ def _report() -> BindEnvironmentReport:
                 timer_active=True,
                 service_unit="update-cert-rpz.service",
                 service_result="success",
+                timer_last_trigger="Tue 2026-08-18 10:35:24 CEST",
+                timer_next_elapse="Tue 2026-08-18 10:40:02 CEST",
                 updater_path="/usr/local/sbin/update-cert-rpz.sh",
                 findings=(),
             ),
@@ -65,3 +67,6 @@ def test_environment_report_cli_text(monkeypatch, capsys) -> None:
     assert "[ACTIVE] cert-rpz.local" in output
     assert "Tryb zarządzania: EXTERNAL" in output
     assert "Wiek:             180 s" in output
+    assert "Ostatni przebieg: Tue 2026-08-18 10:35:24 CEST" in output
+    assert "Następny przebieg: Tue 2026-08-18 10:40:02 CEST" in output
+    assert "Wynik usługi:     success" in output

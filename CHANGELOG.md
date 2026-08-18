@@ -1,5 +1,30 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+- the read-only RPZ panel now distinguishes `ACTIVE`, `DELAYED`, `STALE`,
+  `FAILED` and `DISABLED`, shows the previous and next timer runs, and gives a
+  contextual operator recommendation
+- a new read-only `bind rpz-managed-plan` command describes the future managed
+  installation and blocks silent takeover of an existing external updater
+- `bind rpz-external-migration-plan` inventories external artifacts by metadata
+  and SHA-256 and designs a reversible cutover without stopping the live timer
+- an isolated RPZ migration dry-run validates copied updater and unit candidates,
+  the active zone and BIND configuration without writing system paths or switching timers
+- the guarded RPZ migration transaction requires commit, activation and exact
+  zone confirmation, verifies source hashes and restores the external timer on failure
+- the post-activation gate verifies managed timer state, service result, RPZ
+  serial and freshness, external timer shutdown and continued BIND availability
+- environment discovery and the TUI automatically prefer installed ZoneCTL
+  RPZ units and report `MANAGED` after a successful migration
+- DNSSEC workflows can advance through readiness refresh, DS publication
+  checks and guarded KASP confirmation directly from the contextual TUI action
+- the DNSSEC screen rediscovers the active BIND declaration after every
+  operation, preventing a successfully enabled zone from remaining displayed
+  as `UNSIGNED`
+
 ## 4.8.1 - 2026-08-13
 
 ### Changed

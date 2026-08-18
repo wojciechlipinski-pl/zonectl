@@ -91,8 +91,8 @@ def test_view_shows_stage_time_delegation_and_block() -> None:
     text = "\n".join(view.lines)
 
     assert view.stage == "PROPAGATING"
-    assert view.operation == "STATUS"
-    assert view.operation_label == "wskazówki"
+    assert view.operation == "REFRESH"
+    assert view.operation_label == "sprawdź gotowość"
     assert view.publication_allowed is False
     assert "2026-08-05" in text
     assert "[MATCH] ns1.example.pl" in text
@@ -117,7 +117,8 @@ def test_view_allows_ds_when_kasp_is_ready() -> None:
     )
 
     assert view.stage == "READY_FOR_DS"
-    assert view.operation == "STATUS"
+    assert view.operation == "CHECK_DS"
+    assert view.operation_label == "sprawdź DS"
     assert view.publication_allowed is True
     assert "DOZWOLONA" in "\n".join(view.lines)
 
@@ -181,6 +182,56 @@ def test_tui_collects_report_and_delegation_with_configured_resolvers(
     assert view.stage == "PROPAGATING"
     assert ("check", "example.pl", ("r1", "r2")) in calls
     assert ("report", "example.pl", Path("/test/keys")) in calls
+
+
+def test_tui_refreshes_discovered_zone_before_dnssec_report(monkeypatch) -> None:
+    calls = []
+    stale = Zone("example.pl", Path("zone.db"))
+    current = replace(stale, dnssec_policy="default", inline_signing=True)
+
+    class Config:
+        toolkit = {}
+
+        def _discover_bind_zones(self):
+            calls.append("discover")
+
+        def zones(self):
+            return [current]
+
+    class FakeReporter:
+        def __init__(self, **_kwargs):
+            pass
+
+        def collect(self, zone, _key_directory):
+            calls.append(("report", zone))
+            return report()
+
+    class FakeChecker:
+        def __init__(self, **_kwargs):
+            pass
+
+        def collect(self, _zone, _resolvers):
+            return delegation()
+
+    monkeypatch.setattr("zonectl.ui.curses_app.DnssecReporter", FakeReporter)
+    monkeypatch.setattr("zonectl.ui.curses_app.DnssecDsChecker", FakeChecker)
+    app = CursesApp.__new__(CursesApp)
+    app.config = Config()
+
+    app._collect_dnssec_status(stale)
+
+    assert calls[0] == "discover"
+    assert calls[1][1].dnssec_policy == "default"
+    assert calls[1][1].inline_signing is True
+
+
+def test_dnssec_tui_exposes_contextual_next_step_on_enter() -> None:
+    source = inspect.getsource(CursesApp._dnssec_status_view)
+
+    assert "Enter {view.operation_label" in source
+    assert 'view.operation in {"REFRESH", "CHECK_DS", "STATUS"}' in source
+    assert 'view.operation in {"ENABLE", "CONFIRM_DS", "FINALIZE"}' in source
+    assert "key = curses.KEY_F4" in source
 
 
 def test_view_labels_insecure_policy_as_withdrawing() -> None:

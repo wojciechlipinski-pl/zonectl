@@ -18,6 +18,8 @@ def _rpz(**changes) -> RpzEnvironment:
         "timer_active": True,
         "service_unit": "update-cert-rpz.service",
         "service_result": "success",
+        "timer_last_trigger": "Tue 2026-08-18 10:35:24 CEST",
+        "timer_next_elapse": "Tue 2026-08-18 10:40:02 CEST",
         "updater_path": "/usr/local/sbin/update-cert-rpz.sh",
         "findings": (),
     }
@@ -34,6 +36,9 @@ def test_builds_external_active_rpz_panel() -> None:
     assert "Serial                1786608925" in text
     assert "Liczba węzłów         278030" in text
     assert "Stan timera           enabled, active" in text
+    assert "Ostatnie uruchomienie Tue 2026-08-18 10:35:24 CEST" in text
+    assert "Następne uruchomienie Tue 2026-08-18 10:40:02 CEST" in text
+    assert "Monitoruj automatyczne aktualizacje RPZ." in text
     assert "Widok tylko do odczytu" in text
 
 
@@ -52,3 +57,15 @@ def test_panel_shows_failures_and_warnings() -> None:
     assert "enabled, inactive" in text
     assert "OSTRZEŻENIA" in text
     assert "BIND nie potwierdził" in text
+
+
+def test_panel_explains_each_operational_state() -> None:
+    actions = {
+        "ACTIVE": "Monitoruj automatyczne aktualizacje",
+        "DELAYED": "Poczekaj do następnego uruchomienia",
+        "STALE": "Sprawdź timer, usługę i dziennik",
+        "FAILED": "integracja wymaga interwencji",
+        "DISABLED": "pozostaw integrację świadomie wyłączoną",
+    }
+    for health, expected in actions.items():
+        assert expected in "\n".join(RpzStatusView.build(_rpz(health=health)).lines)

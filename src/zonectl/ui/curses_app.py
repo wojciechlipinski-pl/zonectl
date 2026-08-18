@@ -3559,6 +3559,24 @@ class CursesApp:
                 pass
 
     def _collect_dnssec_status(self, zone: Zone) -> DnssecStatusView:
+        # Operacje DNSSEC zmieniają deklarację BIND w czasie działania TUI.
+        # Odśwież autodetekcję, aby raport nie korzystał ze starego obiektu
+        # Zone i nie pokazywał UNSIGNED po poprawnym włączeniu polityki.
+        if self.config is not None and hasattr(
+            self.config, "_discover_bind_zones"
+        ):
+            self.config._discover_bind_zones()
+            current = next(
+                (
+                    item
+                    for item in self.config.zones()
+                    if item.name.rstrip(".").casefold()
+                    == zone.name.rstrip(".").casefold()
+                ),
+                None,
+            )
+            if current is not None:
+                zone = current
         toolkit = self.config.toolkit if self.config is not None else {}
         local_server = toolkit.get("local_server", "127.0.0.1")
         timeout = int(toolkit.get("dig_timeout", "3"))
@@ -3846,7 +3864,8 @@ class CursesApp:
                         win, zone, view, error, stage
                     )
                 footer = (
-                    " ↑/↓ przewiń  PgUp/PgDn strona  F3 plan  "
+                    f" Enter {view.operation_label if view else 'odśwież'}  "
+                    "↑/↓ przewiń  PgUp/PgDn strona  F3 plan  "
                     f"F4 {view.operation_label if view else 'wskazówki'}  "
                     "r odśwież  q/Esc powrót "
                 )
@@ -3861,6 +3880,15 @@ class CursesApp:
                 key = self._get_key(win)
                 if key in (ord("q"), ord("Q"), 27, curses.KEY_BACKSPACE, 127, 8):
                     return
+                if key in (10, 13, curses.KEY_ENTER) and view is not None:
+                    if view.operation in {"REFRESH", "CHECK_DS", "STATUS"}:
+                        refresh = True
+                        continue
+                    if view.operation in {"ENABLE", "CONFIRM_DS", "FINALIZE"}:
+                        key = curses.KEY_F4
+                    else:
+                        refresh = True
+                        continue
                 if key in (ord("r"), ord("R")):
                     refresh = True
                 elif key == curses.KEY_F3:
@@ -3921,6 +3949,9 @@ class CursesApp:
                     refresh = True
                 elif key == curses.KEY_F4:
                     if view is None:
+                        refresh = True
+                        continue
+                    if view.operation in {"REFRESH", "CHECK_DS", "STATUS"}:
                         refresh = True
                         continue
                     if view.operation == "WITHDRAWAL":

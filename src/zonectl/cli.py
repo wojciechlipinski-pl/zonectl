@@ -14,6 +14,14 @@ from .core.bind_access_inventory import (
 )
 from .core.bind_access_audit import BindAccessAuditor
 from .core.bind_environment_report import BindEnvironmentReporter
+from .core.rpz_managed_plan import RpzManagedPlanner
+from .core.rpz_managed_install import (
+    RpzManagedInstallDryRun,
+    RpzManagedInstallTransaction,
+)
+from .core.rpz_external_migration_plan import RpzExternalMigrationPlanner
+from .core.rpz_external_migration_dry_run import RpzExternalMigrationDryRun
+from .core.rpz_external_migration_transaction import RpzExternalMigrationTransaction
 from .core.bind_onboarding_report import BindOnboardingReporter
 from .core.discovery import BindDiscoveryError
 from .core.bind_acl_plan import BindAclPlanError, BindAclPlanner
@@ -125,6 +133,87 @@ def parser() -> argparse.ArgumentParser:
         "--service-unit", default="update-cert-rpz.service"
     )
     bind_environment.add_argument("--json", action="store_true")
+    rpz_managed_plan = bind_sub.add_parser(
+        "rpz-managed-plan",
+        help="pokaż odczytowy plan opcjonalnej integracji CERT Polska RPZ",
+    )
+    rpz_managed_plan.add_argument(
+        "--root-config", type=Path, default=Path("/etc/bind/named.conf")
+    )
+    rpz_managed_plan.add_argument("--zone", default="cert-rpz.local")
+    rpz_managed_plan.add_argument(
+        "--source-url",
+        default="https://hole.cert.pl/domains/v2/domains_rpz.db",
+    )
+    rpz_managed_plan.add_argument("--json", action="store_true")
+    rpz_managed_dry_run = bind_sub.add_parser(
+        "rpz-managed-dry-run",
+        help="pobierz i zweryfikuj kandydatów świeżej instalacji RPZ bez zmian",
+    )
+    rpz_managed_dry_run.add_argument(
+        "--root-config", type=Path, default=Path("/etc/bind/named.conf")
+    )
+    rpz_managed_dry_run.add_argument("--zone", default="cert-rpz.local")
+    rpz_managed_dry_run.add_argument(
+        "--source-url",
+        default="https://hole.cert.pl/domains/v2/domains_rpz.db",
+    )
+    rpz_managed_dry_run.add_argument("--json", action="store_true")
+    rpz_managed_apply = bind_sub.add_parser(
+        "rpz-managed-apply",
+        help="zainstaluj opcjonalną RPZ; domyślnie wykonaj wyłącznie dry-run",
+    )
+    rpz_managed_apply.add_argument(
+        "--root-config", type=Path, default=Path("/etc/bind/named.conf")
+    )
+    rpz_managed_apply.add_argument("--zone", default="cert-rpz.local")
+    rpz_managed_apply.add_argument(
+        "--source-url",
+        default="https://hole.cert.pl/domains/v2/domains_rpz.db",
+    )
+    rpz_managed_apply.add_argument("--commit", action="store_true")
+    rpz_managed_apply.add_argument("--activate", action="store_true")
+    rpz_managed_apply.add_argument("--confirm")
+    rpz_managed_apply.add_argument(
+        "--manifest-directory", type=Path,
+        default=Path("/var/backups/zonectl-rpz/manifests"),
+    )
+    rpz_managed_apply.add_argument("--json", action="store_true")
+    rpz_migration_plan = bind_sub.add_parser(
+        "rpz-external-migration-plan",
+        help="zinwentaryzuj odczytowo migrację RPZ z EXTERNAL do MANAGED",
+    )
+    rpz_migration_plan.add_argument(
+        "--root-config", type=Path, default=Path("/etc/bind/named.conf")
+    )
+    rpz_migration_plan.add_argument("--json", action="store_true")
+    rpz_migration_dry_run = bind_sub.add_parser(
+        "rpz-external-migration-dry-run",
+        help="zweryfikuj migrację RPZ w katalogu tymczasowym bez przełączenia",
+    )
+    rpz_migration_dry_run.add_argument(
+        "--root-config", type=Path, default=Path("/etc/bind/named.conf")
+    )
+    rpz_migration_dry_run.add_argument("--json", action="store_true")
+    rpz_migration_apply = bind_sub.add_parser(
+        "rpz-external-migration-apply",
+        help="migracja RPZ EXTERNAL do MANAGED; domyślnie bezpieczny dry-run",
+    )
+    rpz_migration_apply.add_argument(
+        "--root-config", type=Path, default=Path("/etc/bind/named.conf")
+    )
+    rpz_migration_apply.add_argument("--commit", action="store_true")
+    rpz_migration_apply.add_argument("--activate", action="store_true")
+    rpz_migration_apply.add_argument("--confirm")
+    rpz_migration_apply.add_argument(
+        "--backup-root", type=Path,
+        default=Path("/var/backups/zonectl-rpz/migrations"),
+    )
+    rpz_migration_apply.add_argument(
+        "--manifest-directory", type=Path,
+        default=Path("/var/backups/zonectl-rpz/manifests"),
+    )
+    rpz_migration_apply.add_argument("--json", action="store_true")
     bind_onboarding = bind_sub.add_parser(
         "onboarding-report",
         help="oceń gotowość istniejącego BIND do bezpiecznego importu",
@@ -1205,13 +1294,223 @@ def main(argv: list[str] | None = None) -> int:
                     f"{'enabled' if rpz.timer_enabled else 'disabled'}, "
                     f"{'active' if rpz.timer_active else 'inactive'}"
                 )
+                print(f"  Ostatni przebieg: {rpz.timer_last_trigger or '-'}")
+                print(f"  Następny przebieg: {rpz.timer_next_elapse or '-'}")
+                print(f"  Wynik usługi:     {rpz.service_result or 'nieznany'}")
                 print(f"  Aktualizator:      {rpz.updater_path or '-'}")
                 for finding in rpz.findings:
                     print(f"  UWAGA: {finding}")
             for finding in report.findings:
                 print(f"UWAGA: {finding}")
             print("\nWynik: raport odczytowy — niczego nie zmieniono")
-        return 1 if any(item.health in {"FAILED", "STALE"} for item in report.rpz) else 0
+        return 1 if any(
+            item.health in {"FAILED", "STALE", "DISABLED"} for item in report.rpz
+        ) else 0
+    if args.command == "bind" and args.bind_command == "rpz-managed-plan":
+        try:
+            plan = RpzManagedPlanner(
+                args.root_config, zone=args.zone, source_url=args.source_url
+            ).plan()
+        except (BindDiscoveryError, OSError) as exc:
+            print(f"BŁĄD: {exc}", file=sys.stderr)
+            return 2
+        if args.json:
+            print(json.dumps(plan.to_dict(), ensure_ascii=False, indent=2))
+        else:
+            print("PLAN OPCJONALNEJ INTEGRACJI CERT POLSKA RPZ — TYLKO ODCZYT")
+            print(f"Status:       {plan.status}")
+            print(f"Strefa:       {plan.zone}")
+            print(f"Źródło:       {plan.source_url}")
+            print(f"Plik strefy:  {plan.zone_file}")
+            print(f"Deklaracja:   {plan.declaration_file}")
+            print(f"Opcje BIND:   {plan.options_file or '-'}")
+            print(f"Aktualizator: {plan.updater_file}")
+            print(f"Usługa:       {plan.service_file}")
+            print(f"Timer:        {plan.timer_file}")
+            print(f"Backup:       {plan.backup_root}")
+            print("\nKONFLIKTY")
+            for conflict in plan.conflicts or ("-",):
+                print(f"- {conflict}")
+            print("\nPLANOWANE ETAPY PRZYSZŁEJ TRANSAKCJI")
+            for step in plan.steps:
+                print(f"- {step}")
+            print(f"\nNastępny krok: {plan.next_action}")
+            print("\nWynik: PLAN — niczego nie zapisano i nie zmieniono BIND")
+        return 0 if plan.status == "READY" else 1
+    if args.command == "bind" and args.bind_command == "rpz-managed-dry-run":
+        try:
+            plan = RpzManagedPlanner(
+                args.root_config, zone=args.zone, source_url=args.source_url
+            ).plan()
+            result = RpzManagedInstallDryRun().execute(plan)
+        except (BindDiscoveryError, OSError) as exc:
+            print(f"BŁĄD: {exc}", file=sys.stderr)
+            return 2
+        if args.json:
+            print(json.dumps(result.to_dict(), ensure_ascii=False, indent=2))
+        else:
+            print("DRY-RUN ŚWIEŻEJ INSTALACJI CERT POLSKA RPZ")
+            print(f"Strefa:       {result.zone}")
+            print(f"Status:       {result.status}")
+            print(f"Commit:       {'TAK' if result.committed else 'NIE'}")
+            print(f"Aktywacja:    {'TAK' if result.activated else 'NIE'}")
+            print("\nETAPY")
+            for step in result.steps:
+                print(f"[{'OK' if step.ok else 'BŁĄD'}] {step.name}: {step.message}")
+            if result.candidate_hashes:
+                print("\nSUMY KANDYDATÓW")
+                for name, digest in result.candidate_hashes.items():
+                    print(f"- {name}: {digest}")
+            print(
+                "\nWynik: DRY-RUN — nie zapisano plików systemowych, "
+                "nie uruchomiono timera i nie zmieniono BIND"
+            )
+        return 0 if result.status == "DRY-RUN" else 1
+    if args.command == "bind" and args.bind_command == "rpz-managed-apply":
+        try:
+            plan = RpzManagedPlanner(
+                args.root_config, zone=args.zone, source_url=args.source_url
+            ).plan()
+            result = RpzManagedInstallTransaction(
+                manifest_directory=args.manifest_directory
+            ).apply(
+                plan,
+                commit=args.commit,
+                activate=args.activate,
+                confirm=args.confirm,
+            )
+        except (BindDiscoveryError, OSError) as exc:
+            print(f"BŁĄD: {exc}", file=sys.stderr)
+            return 2
+        if args.json:
+            print(json.dumps(result.to_dict(), ensure_ascii=False, indent=2))
+        else:
+            print("TRANSAKCJA ŚWIEŻEJ INSTALACJI CERT POLSKA RPZ")
+            print(f"Transakcja: {result.transaction_id or '-'}")
+            print(f"Strefa:     {result.zone}")
+            print(f"Status:     {result.status}")
+            print(f"Commit:     {'TAK' if result.committed else 'NIE'}")
+            print(f"Aktywacja:  {'TAK' if result.activated else 'NIE'}")
+            print(f"Rollback:   {'TAK' if result.rolled_back else 'NIE'}")
+            if result.backup:
+                print(f"Backup:     {result.backup}")
+            if result.manifest:
+                print(f"Manifest:   {result.manifest}")
+            print("\nETAPY")
+            for step in result.steps:
+                print(f"[{'OK' if step.ok else 'BŁĄD'}] {step.name}: {step.message}")
+        if result.status == "REJECTED":
+            return 2
+        return 0 if result.status in {"DRY-RUN", "COMMIT"} else 1
+    if args.command == "bind" and args.bind_command == "rpz-external-migration-plan":
+        try:
+            plan = RpzExternalMigrationPlanner(args.root_config).plan()
+        except (BindDiscoveryError, OSError) as exc:
+            print(f"BŁĄD: {exc}", file=sys.stderr)
+            return 2
+        if args.json:
+            print(json.dumps(plan.to_dict(), ensure_ascii=False, indent=2))
+        else:
+            print("PLAN MIGRACJI RPZ EXTERNAL → MANAGED — TYLKO ODCZYT")
+            print(f"Status:          {plan.status}")
+            print(f"Strefa:          {plan.zone}")
+            print(f"Timer EXTERNAL:  {plan.current_timer or '-'}")
+            print(f"Usługa EXTERNAL: {plan.current_service or '-'}")
+            print(
+                "Stan timera:     "
+                f"{'enabled' if plan.current_enabled else 'disabled'}, "
+                f"{'active' if plan.current_active else 'inactive'}"
+            )
+            print("\nINWENTARYZACJA — BEZ WYŚWIETLANIA TREŚCI")
+            for item in plan.artifacts:
+                print(
+                    f"[{item.role:<12}] {item.path or '-'} — "
+                    f"{'OK' if item.exists else 'BRAK'}"
+                )
+                if item.exists:
+                    print(
+                        f"  uid/gid {item.owner}/{item.group}, {item.mode}, "
+                        f"SHA-256 {item.sha256}"
+                    )
+            print("\nCELE MANAGED")
+            print(f"Aktualizator: {plan.managed_updater}")
+            print(f"Usługa:       {plan.managed_service}")
+            print(f"Timer:        {plan.managed_timer}")
+            print(f"Backup:       {plan.backup_root}")
+            print("\nBLOKADY")
+            for blocker in plan.blockers or ("-",):
+                print(f"- {blocker}")
+            print("\nPLANOWANE ETAPY")
+            for step in plan.steps:
+                print(f"- {step}")
+            print(f"\nNastępny krok: {plan.next_action}")
+            print("\nWynik: PLAN — nie zatrzymano timera i nie zmieniono BIND")
+        return 0 if plan.status == "READY" else 1
+    if args.command == "bind" and args.bind_command == "rpz-external-migration-dry-run":
+        try:
+            plan = RpzExternalMigrationPlanner(args.root_config).plan()
+            result = RpzExternalMigrationDryRun(
+                root_config=args.root_config
+            ).execute(plan)
+        except (BindDiscoveryError, OSError) as exc:
+            print(f"BŁĄD: {exc}", file=sys.stderr)
+            return 2
+        if args.json:
+            print(json.dumps(result.to_dict(), ensure_ascii=False, indent=2))
+        else:
+            print("DRY-RUN MIGRACJI RPZ EXTERNAL → MANAGED")
+            print(f"Strefa:          {result.zone}")
+            print(f"Status:          {result.status}")
+            print(f"Commit:          {'TAK' if result.committed else 'NIE'}")
+            print(f"Przełączenie:    {'TAK' if result.timer_switched else 'NIE'}")
+            print("\nETAPY")
+            for step in result.steps:
+                print(f"[{'OK' if step.ok else 'BŁĄD'}] {step.name}: {step.message}")
+            if result.candidate_hashes:
+                print("\nSUMY KANDYDATÓW")
+                for name, digest in result.candidate_hashes.items():
+                    print(f"- {name}: {digest}")
+            print(
+                "\nWynik: DRY-RUN — nie zapisano plików systemowych, "
+                "nie zatrzymano timera i nie zmieniono BIND"
+            )
+        return 0 if result.status == "DRY-RUN" else 1
+    if args.command == "bind" and args.bind_command == "rpz-external-migration-apply":
+        try:
+            plan = RpzExternalMigrationPlanner(args.root_config).plan()
+            result = RpzExternalMigrationTransaction(
+                args.backup_root,
+                args.manifest_directory,
+                root_config=args.root_config,
+            ).apply(
+                plan,
+                commit=args.commit,
+                activate=args.activate,
+                confirm=args.confirm,
+            )
+        except (BindDiscoveryError, OSError) as exc:
+            print(f"BŁĄD: {exc}", file=sys.stderr)
+            return 2
+        if args.json:
+            print(json.dumps(result.to_dict(), ensure_ascii=False, indent=2))
+        else:
+            print("TRANSAKCJA MIGRACJI RPZ EXTERNAL → MANAGED")
+            print(f"Transakcja:  {result.transaction_id}")
+            print(f"Strefa:      {result.zone}")
+            print(f"Status:      {result.status}")
+            print(f"Commit:      {'TAK' if result.committed else 'NIE'}")
+            print(f"Aktywacja:   {'TAK' if result.activated else 'NIE'}")
+            print(f"Rollback:    {'TAK' if result.rolled_back else 'NIE'}")
+            if result.backup:
+                print(f"Backup:      {result.backup}")
+            if result.manifest:
+                print(f"Manifest:    {result.manifest}")
+            print("\nETAPY")
+            for step in result.steps:
+                print(f"[{'OK' if step.ok else 'BŁĄD'}] {step.name}: {step.message}")
+        if result.status == "REJECTED":
+            return 2
+        return 0 if result.status in {"DRY-RUN", "COMMIT"} else 1
     if args.command == "bind" and args.bind_command in {"inventory", "audit"}:
         try:
             report = BindAccessInventoryReader(args.root_config).collect()
