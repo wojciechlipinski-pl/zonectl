@@ -21,7 +21,7 @@ def test_required_debian_packaging_files_exist() -> None:
 
 def test_debian_version_matches_release() -> None:
     changelog = (DEBIAN / "changelog").read_text(encoding="utf-8")
-    assert changelog.startswith("zonectl (4.8.1-1) ")
+    assert changelog.startswith("zonectl (4.8.2-1) ")
 
 
 def test_bind_dependencies_use_supported_lower_bound_without_exact_pin() -> None:

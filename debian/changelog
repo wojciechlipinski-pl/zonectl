@@ -1,6 +1,7 @@
-zonectl (4.8.1-1) unstable; urgency=medium
+zonectl (4.8.2-1) unstable; urgency=medium
 
-  * Anonymize public examples and default TUI values.
-  * Add an automated public-data privacy guard.
+  * Add transactional installation and migration of CERT Polska RPZ.
+  * Validate timer state, serial, freshness, BIND and rollback after cutover.
+  * Verify fresh installation on Debian 13 with a functional sinkhole query.
 
- -- Wojciech Lipiński <wojciech.lipinski.elk@gmail.com>  Thu, 13 Aug 2026 23:00:00 +0200
+ -- Wojciech Lipiński <wojciech.lipinski.elk@gmail.com>  Tue, 18 Aug 2026 13:00:00 +0200

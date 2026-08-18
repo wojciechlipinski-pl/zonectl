@@ -11,7 +11,7 @@ atomic replacement and rollback.
 
 ## Current release
 
-**4.8.1 — BIND discovery, guarded onboarding and redesigned TUI**
+**4.8.2 — transactional CERT Polska RPZ integration**
 
 ## Highlights
 
@@ -24,6 +24,8 @@ atomic replacement and rollback.
 - assign primary zones to complete notify/transfer secondary pairs;
 - create backups and JSON manifests for configuration-changing operations;
 - use read-only plans and dry-runs before every material change.
+- install or migrate the optional CERT Polska RPZ integration transactionally,
+  with five-minute updates, validation, monitoring and rollback.
 
 ## Requirements
 
@@ -41,7 +43,7 @@ exact patch version.
 Install the Debian package attached to the GitHub release:
 
 ```bash
-sudo apt install ./zonectl_4.8.1-1_all.deb
+sudo apt install ./zonectl_4.8.2-1_all.deb
 zctl --version
 ```
 
@@ -237,8 +239,8 @@ delete DNSSEC keys or recovery packages.
 PYTHONPATH=src .venv/bin/python -m pytest -q
 ```
 
-Release 4.8.1 passed 614 automated tests, including isolated integration tests
-using real BIND validators.
+Release 4.8.2 passed 658 automated tests, including a clean Debian 13
+installation and functional verification against the CERT Polska sinkhole.
 
 ## License
 
