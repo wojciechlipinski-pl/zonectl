@@ -1,6 +1,6 @@
 # Dokumentacja modułów
 
-> Wygenerowano z AST: `2026-08-13T19:16:42+02:00`.
+> Wygenerowano z AST: `2026-08-18T12:59:46+02:00`.
 
 ## `src/elkman_dns/__init__.py`
 
@@ -20,43 +20,43 @@ Brak docstringa.
 
 ### `def parser`
 
-Linia: `82`
+Linia: `90`
 
 Brak docstringa.
 
 ### `def legacy_main`
 
-Linia: `779`
+Linia: `868`
 
 Brak docstringa.
 
 ### `def grouped_lines`
 
-Linia: `789`
+Linia: `878`
 
 Brak docstringa.
 
 ### `def print_transaction`
 
-Linia: `803`
+Linia: `892`
 
 Brak docstringa.
 
 ### `def transaction_main`
 
-Linia: `812`
+Linia: `901`
 
 Brak docstringa.
 
 ### `def main`
 
-Linia: `876`
+Linia: `965`
 
 Brak docstringa.
 
 ### `def deprecated_main`
 
-Linia: `2264`
+Linia: `2563`
 
 Brak docstringa.
 
@@ -357,30 +357,30 @@ Stan pojedynczej strefy używanej przez ``response-policy``.
 
 ### `class BindEnvironmentReport`
 
-Linia: `38`
+Linia: `40`
 
 Wynik pierwszego, pozbawionego skutków ubocznych rozpoznania BIND.
 
 **Metody:**
 
-- `to_dict` — linia 50; brak docstringa.
+- `to_dict` — linia 52; brak docstringa.
 
 ### `class BindEnvironmentReporter`
 
-Linia: `54`
+Linia: `56`
 
 Rozpoznaje aktywną konfigurację bez zapisywania plików i wywołań mutujących.
 
 **Metody:**
 
-- `__init__` — linia 67; brak docstringa.
-- `collect` — linia 84; brak docstringa.
-- `_response_policy_zones` — linia 121; brak docstringa.
-- `_rpz_environment` — linia 136; brak docstringa.
-- `_systemctl_bool` — linia 190; brak docstringa.
-- `_systemctl_property` — linia 193; brak docstringa.
-- `_systemctl_exec_path` — linia 200; brak docstringa.
-- `_status_values` — linia 210; brak docstringa.
+- `__init__` — linia 69; brak docstringa.
+- `collect` — linia 90; brak docstringa.
+- `_response_policy_zones` — linia 127; brak docstringa.
+- `_rpz_environment` — linia 142; brak docstringa.
+- `_systemctl_bool` — linia 212; brak docstringa.
+- `_systemctl_property` — linia 215; brak docstringa.
+- `_systemctl_exec_path` — linia 224; brak docstringa.
+- `_status_values` — linia 234; brak docstringa.
 
 ## `src/zonectl/core/bind_onboarding_report.py`
 
@@ -1483,6 +1483,230 @@ Brak docstringa.
 Linia: `337`
 
 Brak docstringa.
+
+## `src/zonectl/core/rpz_external_migration_dry_run.py`
+
+Isolated dry-run for migration of an EXTERNAL RPZ integration.
+
+### `class RpzMigrationDryRunStep`
+
+Linia: `16`
+
+Brak docstringa.
+
+### `class RpzMigrationDryRunResult`
+
+Linia: `23`
+
+Brak docstringa.
+
+**Metody:**
+
+- `to_dict` — linia 31; brak docstringa.
+
+### `class RpzExternalMigrationDryRun`
+
+Linia: `35`
+
+Build and validate candidates only inside a temporary directory.
+
+**Metody:**
+
+- `__init__` — linia 38; brak docstringa.
+- `execute` — linia 47; brak docstringa.
+- `_command_step` — linia 142; brak docstringa.
+- `_unit_step` — linia 150; brak docstringa.
+- `_digest` — linia 173; brak docstringa.
+
+## `src/zonectl/core/rpz_external_migration_plan.py`
+
+Read-only migration plan from an external RPZ updater to ZoneCTL MANAGED.
+
+### `def _exists_or_inaccessible`
+
+Linia: `15`
+
+Brak docstringa.
+
+### `class RpzMigrationArtifact`
+
+Linia: `23`
+
+Brak docstringa.
+
+**Metody:**
+
+- `to_dict` — linia 32; brak docstringa.
+
+### `class RpzExternalMigrationPlan`
+
+Linia: `39`
+
+Brak docstringa.
+
+**Metody:**
+
+- `to_dict` — linia 55; brak docstringa.
+
+### `class RpzExternalMigrationPlanner`
+
+Linia: `74`
+
+Inventory an existing EXTERNAL integration without exposing its content.
+
+**Metody:**
+
+- `__init__` — linia 77; brak docstringa.
+- `plan` — linia 96; brak docstringa.
+- `_fragment_path` — linia 167; brak docstringa.
+- `_artifact` — linia 177; brak docstringa.
+
+## `src/zonectl/core/rpz_external_migration_transaction.py`
+
+Guarded transaction migrating an external RPZ updater to MANAGED mode.
+
+### `class RpzMigrationTransactionStep`
+
+Linia: `23`
+
+Brak docstringa.
+
+### `class RpzMigrationTransactionResult`
+
+Linia: `30`
+
+Brak docstringa.
+
+**Metody:**
+
+- `to_dict` — linia 41; brak docstringa.
+
+### `class RpzExternalMigrationTransaction`
+
+Linia: `45`
+
+Install parallel MANAGED artifacts and switch timers with rollback.
+
+**Metody:**
+
+- `__init__` — linia 48; brak docstringa.
+- `apply` — linia 65; brak docstringa.
+- `_blocked` — linia 187; brak docstringa.
+- `_rejected` — linia 195; brak docstringa.
+- `_integrity_error` — linia 203; brak docstringa.
+- `_must_run` — linia 212; brak docstringa.
+- `_post_activation_gate` — linia 223; brak docstringa.
+- `_zone_serial` — linia 290; brak docstringa.
+- `_rollback` — linia 300; brak docstringa.
+- `_atomic_copy` — linia 340; brak docstringa.
+- `_atomic_write` — linia 346; brak docstringa.
+- `_write_manifest` — linia 363; brak docstringa.
+
+## `src/zonectl/core/rpz_managed_install.py`
+
+Isolated dry-run for a fresh optional CERT Polska RPZ installation.
+
+### `class RpzManagedInstallStep`
+
+Linia: `25`
+
+Brak docstringa.
+
+### `class RpzManagedInstallResult`
+
+Linia: `32`
+
+Brak docstringa.
+
+**Metody:**
+
+- `to_dict` — linia 44; brak docstringa.
+
+### `def normalize_cert_rpz_payload`
+
+Linia: `52`
+
+Rebase the published CERT Polska RPZ tree under the local zone name.
+
+### `def _short_command_message`
+
+Linia: `69`
+
+Brak docstringa.
+
+### `class RpzManagedInstallDryRun`
+
+Linia: `77`
+
+Download and validate every candidate without writing system paths.
+
+**Metody:**
+
+- `__init__` — linia 80; brak docstringa.
+- `execute` — linia 89; brak docstringa.
+- `_build_candidates` — linia 139; brak docstringa.
+- `_inject_response_policy` — linia 182; brak docstringa.
+- `_redirect_direct_include` — linia 197; brak docstringa.
+- `_updater` — linia 211; brak docstringa.
+- `_service` — linia 245; brak docstringa.
+- `_timer` — linia 264; brak docstringa.
+- `_command` — linia 279; brak docstringa.
+- `_validate_units` — linia 287; brak docstringa.
+- `_blocked` — linia 306; brak docstringa.
+- `_fetch` — linia 314; brak docstringa.
+
+### `class RpzManagedInstallTransaction`
+
+Linia: `319`
+
+Install fresh MANAGED RPZ artifacts atomically and roll back on failure.
+
+**Metody:**
+
+- `__init__` — linia 322; brak docstringa.
+- `apply` — linia 339; brak docstringa.
+- `_targets` — linia 467; brak docstringa.
+- `_must_run` — linia 473; brak docstringa.
+- `_must_run_retry` — linia 483; brak docstringa.
+- `_post_gate` — linia 509; brak docstringa.
+- `_rollback` — linia 525; brak docstringa.
+- `_prepare_zone_directory` — linia 576; brak docstringa.
+- `_atomic_write` — linia 588; brak docstringa.
+- `_write_manifest` — linia 603; brak docstringa.
+- `_blocked` — linia 612; brak docstringa.
+- `_rejected` — linia 620; brak docstringa.
+
+## `src/zonectl/core/rpz_managed_plan.py`
+
+Read-only plan for an optional ZoneCTL-managed CERT Polska RPZ.
+
+### `def _exists_or_inaccessible`
+
+Linia: `12`
+
+Brak docstringa.
+
+### `class RpzManagedPlan`
+
+Linia: `23`
+
+A proposed installation; creating it never writes to the system.
+
+**Metody:**
+
+- `to_dict` — linia 41; brak docstringa.
+
+### `class RpzManagedPlanner`
+
+Linia: `59`
+
+Detect conflicts and describe a future guarded MANAGED transaction.
+
+**Metody:**
+
+- `__init__` — linia 62; brak docstringa.
+- `plan` — linia 85; brak docstringa.
+- `_options_file` — linia 153; return the sole file containing the active top-level options block.
 
 ## `src/zonectl/core/runner.py`
 
@@ -2732,39 +2956,39 @@ Brak docstringa.
 - `_approve_zone_change` — linia 3277; odrzuć nowe błędy i wymagaj potwierdzenia nowych ostrzeżeń.
 - `_multi_zone_view` — linia 3339; edytuj kilka zaznaczonych stref w jednej sesji tui.
 - `_collect_dnssec_status` — linia 3561; brak docstringa.
-- `_ensure_dnssec_tui_allowed` — linia 3593; brak docstringa.
-- `_dnssec_disable_plan` — linia 3599; brak docstringa.
-- `_dnssec_enable_plan` — linia 3610; brak docstringa.
-- `_dnssec_enable_dry_run` — linia 3621; brak docstringa.
-- `_dnssec_enable_commit` — linia 3628; brak docstringa.
-- `_dnssec_confirm_ds` — linia 3635; brak docstringa.
-- `_dnssec_finalize_dry_run` — linia 3659; brak docstringa.
-- `_dnssec_finalize_commit` — linia 3666; brak docstringa.
-- `_dnssec_withdrawal_backup` — linia 3673; brak docstringa.
-- `_dnssec_backup_result_lines` — linia 3705; brak docstringa.
-- `_dnssec_enable_result_lines` — linia 3721; brak docstringa.
-- `_dnssec_confirm_result_lines` — linia 3734; brak docstringa.
-- `_dnssec_disable_result_lines` — linia 3748; brak docstringa.
-- `_dnssec_status_view` — linia 3762; read-only dnssec workflow status with explicit operator guidance.
-- `_draw_dnssec_status_48` — linia 4172; rysuje status strefy dnssec w dwukolumnowym układzie 4.8.
-- `_draw_domain_view_48` — linia 4270; rysuje szczegóły strefy zgodnie z opublikowanym układem 4.8.
-- `_domain_view` — linia 4390; wyświetla szczegóły wybranej strefy. klawisze: - r: ponowne sprawdzenie strefy, - q / esc / backspace: powrót do listy.
-- `_zone_secondary_view` — linia 4674; brak docstringa.
-- `_bind_root_config` — linia 4747; brak docstringa.
-- `_bind_access_view` — linia 4751; f9 browser for named acls and secondary groups.
-- `_show_bind_access_item` — linia 4824; brak docstringa.
-- `_secondary_result_lines` — linia 4840; brak docstringa.
-- `_edit_acl` — linia 4852; brak docstringa.
-- `_acl_entry_editor` — linia 4891; full-screen editor for hosts, networks and named acl elements.
-- `_edit_secondary_group` — linia 4955; brak docstringa.
-- `_secondary_address_editor` — linia 5000; full-screen mc-style editor for a secondary address list.
-- `_zone_migration_planner` — linia 5076; brak docstringa.
-- `_migration_result_lines` — linia 5094; brak docstringa.
-- `_zone_migration_view` — linia 5112; f3 shows a plan; f4 runs dry-run and guarded migration.
-- `_show_zone_migration_plan` — linia 5191; brak docstringa.
-- `_apply_zone_migration` — linia 5216; brak docstringa.
-- `_serial_ok` — linia 5274; brak docstringa.
-- `_bool_text` — linia 5284; brak docstringa.
+- `_ensure_dnssec_tui_allowed` — linia 3611; brak docstringa.
+- `_dnssec_disable_plan` — linia 3617; brak docstringa.
+- `_dnssec_enable_plan` — linia 3628; brak docstringa.
+- `_dnssec_enable_dry_run` — linia 3639; brak docstringa.
+- `_dnssec_enable_commit` — linia 3646; brak docstringa.
+- `_dnssec_confirm_ds` — linia 3653; brak docstringa.
+- `_dnssec_finalize_dry_run` — linia 3677; brak docstringa.
+- `_dnssec_finalize_commit` — linia 3684; brak docstringa.
+- `_dnssec_withdrawal_backup` — linia 3691; brak docstringa.
+- `_dnssec_backup_result_lines` — linia 3723; brak docstringa.
+- `_dnssec_enable_result_lines` — linia 3739; brak docstringa.
+- `_dnssec_confirm_result_lines` — linia 3752; brak docstringa.
+- `_dnssec_disable_result_lines` — linia 3766; brak docstringa.
+- `_dnssec_status_view` — linia 3780; read-only dnssec workflow status with explicit operator guidance.
+- `_draw_dnssec_status_48` — linia 4203; rysuje status strefy dnssec w dwukolumnowym układzie 4.8.
+- `_draw_domain_view_48` — linia 4301; rysuje szczegóły strefy zgodnie z opublikowanym układem 4.8.
+- `_domain_view` — linia 4421; wyświetla szczegóły wybranej strefy. klawisze: - r: ponowne sprawdzenie strefy, - q / esc / backspace: powrót do listy.
+- `_zone_secondary_view` — linia 4705; brak docstringa.
+- `_bind_root_config` — linia 4778; brak docstringa.
+- `_bind_access_view` — linia 4782; f9 browser for named acls and secondary groups.
+- `_show_bind_access_item` — linia 4855; brak docstringa.
+- `_secondary_result_lines` — linia 4871; brak docstringa.
+- `_edit_acl` — linia 4883; brak docstringa.
+- `_acl_entry_editor` — linia 4922; full-screen editor for hosts, networks and named acl elements.
+- `_edit_secondary_group` — linia 4986; brak docstringa.
+- `_secondary_address_editor` — linia 5031; full-screen mc-style editor for a secondary address list.
+- `_zone_migration_planner` — linia 5107; brak docstringa.
+- `_migration_result_lines` — linia 5125; brak docstringa.
+- `_zone_migration_view` — linia 5143; f3 shows a plan; f4 runs dry-run and guarded migration.
+- `_show_zone_migration_plan` — linia 5222; brak docstringa.
+- `_apply_zone_migration` — linia 5247; brak docstringa.
+- `_serial_ok` — linia 5305; brak docstringa.
+- `_bool_text` — linia 5315; brak docstringa.
 
 ## `src/zonectl/ui/dialogs.py`
 
@@ -2797,9 +3021,9 @@ Brak docstringa.
 
 - `build` — linia 24; brak docstringa.
 - `_operation_for_stage` — linia 120; brak docstringa.
-- `_operation_label` — linia 132; brak docstringa.
-- `_kasp_ds_state` — linia 142; brak docstringa.
-- `_yes_no` — linia 150; brak docstringa.
+- `_operation_label` — linia 138; brak docstringa.
+- `_kasp_ds_state` — linia 150; brak docstringa.
+- `_yes_no` — linia 158; brak docstringa.
 
 ## `src/zonectl/ui/form_style.py`
 
@@ -2962,7 +3186,8 @@ Gotowe do renderowania, niezależne od curses dane stanu RPZ.
 **Metody:**
 
 - `build` — linia 20; brak docstringa.
-- `_age` — linia 58; brak docstringa.
+- `_age` — linia 61; brak docstringa.
+- `_next_action` — linia 70; brak docstringa.
 
 ## `src/zonectl/ui/zone_create_dialog.py`
 

@@ -1,6 +1,6 @@
 # Architektura
 
-> Wygenerowano z importów AST: `2026-08-13T19:16:42+02:00`.
+> Wygenerowano z importów AST: `2026-08-18T12:59:46+02:00`.
 
 ## `src/elkman_dns/__init__.py`
 
@@ -32,6 +32,11 @@ Brak docstringa.
 - `core.bind_access_inventory: BindAccessInventoryError, BindAccessInventoryReader`
 - `core.bind_access_audit: BindAccessAuditor`
 - `core.bind_environment_report: BindEnvironmentReporter`
+- `core.rpz_managed_plan: RpzManagedPlanner`
+- `core.rpz_managed_install: RpzManagedInstallDryRun, RpzManagedInstallTransaction`
+- `core.rpz_external_migration_plan: RpzExternalMigrationPlanner`
+- `core.rpz_external_migration_dry_run: RpzExternalMigrationDryRun`
+- `core.rpz_external_migration_transaction: RpzExternalMigrationTransaction`
 - `core.bind_onboarding_report: BindOnboardingReporter`
 - `core.discovery: BindDiscoveryError`
 - `core.bind_acl_plan: BindAclPlanError, BindAclPlanner`
@@ -643,6 +648,94 @@ Brak docstringa.
 - `enum: Enum`
 - `typing: Iterable`
 - `zone_parser: DNSRecord`
+
+## `src/zonectl/core/rpz_external_migration_dry_run.py`
+
+Isolated dry-run for migration of an EXTERNAL RPZ integration.
+
+**Importy:**
+
+- `__future__: annotations`
+- `hashlib`
+- `tempfile`
+- `dataclasses: asdict, dataclass, field`
+- `pathlib: Path`
+- `typing: Callable`
+- `rpz_external_migration_plan: RpzExternalMigrationPlan`
+- `runner: CommandResult, run`
+
+## `src/zonectl/core/rpz_external_migration_plan.py`
+
+Read-only migration plan from an external RPZ updater to ZoneCTL MANAGED.
+
+**Importy:**
+
+- `__future__: annotations`
+- `hashlib`
+- `stat`
+- `dataclasses: asdict, dataclass`
+- `pathlib: Path`
+- `typing: Callable`
+- `bind_environment_report: BindEnvironmentReporter, RpzEnvironment`
+- `runner: CommandResult, run`
+
+## `src/zonectl/core/rpz_external_migration_transaction.py`
+
+Guarded transaction migrating an external RPZ updater to MANAGED mode.
+
+**Importy:**
+
+- `__future__: annotations`
+- `hashlib`
+- `json`
+- `os`
+- `shutil`
+- `tempfile`
+- `time`
+- `uuid`
+- `dataclasses: asdict, dataclass, field`
+- `datetime: datetime, timezone`
+- `pathlib: Path`
+- `typing: Callable`
+- `rpz_external_migration_dry_run: RpzExternalMigrationDryRun`
+- `rpz_external_migration_plan: RpzExternalMigrationPlan`
+- `runner: CommandResult, run`
+
+## `src/zonectl/core/rpz_managed_install.py`
+
+Isolated dry-run for a fresh optional CERT Polska RPZ installation.
+
+**Importy:**
+
+- `__future__: annotations`
+- `hashlib`
+- `json`
+- `os`
+- `re`
+- `shutil`
+- `tempfile`
+- `time`
+- `uuid`
+- `dataclasses: asdict, dataclass, field`
+- `datetime: datetime, timezone`
+- `pathlib: Path`
+- `typing: Callable`
+- `urllib.request: urlopen`
+- `bind_config: BindConfigDiscovery`
+- `rpz_managed_plan: RpzManagedPlan`
+- `runner: CommandResult, run`
+
+## `src/zonectl/core/rpz_managed_plan.py`
+
+Read-only plan for an optional ZoneCTL-managed CERT Polska RPZ.
+
+**Importy:**
+
+- `__future__: annotations`
+- `dataclasses: asdict, dataclass`
+- `pathlib: Path`
+- `re`
+- `bind_environment_report: BindEnvironmentReporter`
 
 ## `src/zonectl/core/runner.py`
 

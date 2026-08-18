@@ -1,7 +1,13 @@
 # Historia zmian
 
-> Wygenerowano z Git: `2026-08-13T19:16:42+02:00`.
+> Wygenerowano z Git: `2026-08-18T12:59:46+02:00`.
 
+- `2026-08-18` — `a3540b6` — release: prepare ZoneCTL 4.8.2
+- `2026-08-18` — `e3316db` — fix: validate fresh CERT Polska RPZ installation
+- `2026-08-18` — `158a875` — feat: manage CERT Polska RPZ transactionally
+- `2026-08-13` — `648c3f9` — release: prepare ZoneCTL 4.8.1
+- `2026-08-13` — `ce0171b` — fix: anonymize public examples and prevent infrastructure disclosure
+- `2026-08-13` — `6ed81fc` — docs: regenerate documentation for 4.8.0
 - `2026-08-13` — `7f00d67` — release: prepare ZoneCTL 4.8.0
 - `2026-08-13` — `6437c92` — feat: complete ZoneCTL 4.8 TUI visual redesign
 - `2026-08-13` — `3b7c4d2` — feat: audit DNSSEC onboarding readiness across zones
@@ -96,9 +102,3 @@
 - `2026-07-31` — `d2c62f6` — feat: add transactional zone creation engine
 - `2026-07-31` — `016697f` — feat: add side-effect-free zone creation plans
 - `2026-07-31` — `19107cc` — docs: plan DNS zone lifecycle management
-- `2026-07-31` — `4b2cf0c` — docs: regenerate documentation for 4.3.0
-- `2026-07-31` — `6545089` — release: prepare ZoneCTL 4.3.0
-- `2026-07-31` — `728d7b3` — feat: add multi-zone editing sessions
-- `2026-07-31` — `e1c4ebb` — feat: record bulk changes as one transaction
-- `2026-07-31` — `0ee3907` — feat: add session-scoped bulk record operations
-- `2026-07-31` — `4721e80` — feat: validate DNS records and zone consistency
