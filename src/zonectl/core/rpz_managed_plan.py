@@ -9,6 +9,13 @@ import re
 from .bind_environment_report import BindEnvironmentReporter
 
 
+def _exists_or_inaccessible(path: Path) -> bool:
+    try:
+        return path.exists()
+    except OSError:
+        return True
+
+
 CERT_POLSKA_RPZ_URL = "https://hole.cert.pl/domains/v2/domains_rpz.db"
 
 
@@ -97,7 +104,7 @@ class RpzManagedPlanner:
             self.service_file,
             self.timer_file,
         ):
-            if target.exists():
+            if _exists_or_inaccessible(target):
                 conflicts.append(f"Istnieje plik docelowy: {target}")
 
         if report.config_files and options_file is None:

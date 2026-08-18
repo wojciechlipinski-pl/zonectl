@@ -19,11 +19,24 @@
   serial and freshness, external timer shutdown and continued BIND availability
 - environment discovery and the TUI automatically prefer installed ZoneCTL
   RPZ units and report `MANAGED` after a successful migration
+- fresh installation rebases only the published `$ORIGIN hole.cert.pl.` onto
+  the private RPZ zone, preserving relative triggers and the public sinkhole
+- inaccessible root-owned MANAGED paths are reported as conflicts instead of
+  raising `PermissionError` in read-only planning
+
+### Verified
+
+- a live external CERT Polska RPZ updater was migrated to `MANAGED`; the new
+  timer remained enabled and active, the service returned `success`, the RPZ
+  serial advanced, BIND stayed active and the previous timer was disabled
 - DNSSEC workflows can advance through readiness refresh, DS publication
   checks and guarded KASP confirmation directly from the contextual TUI action
 - the DNSSEC screen rediscovers the active BIND declaration after every
   operation, preventing a successfully enabled zone from remaining displayed
   as `UNSIGNED`
+- fresh installation was verified on Debian 13: guarded commit, BIND load,
+  277k+ nodes, active timer, successful updater, freshness gate and a real RPZ
+  rewrite to the CERT Polska sinkhole
 
 ## 4.8.1 - 2026-08-13
 

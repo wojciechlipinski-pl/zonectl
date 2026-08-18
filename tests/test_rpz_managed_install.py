@@ -3,6 +3,7 @@ from pathlib import Path
 from zonectl.core.rpz_managed_install import (
     RpzManagedInstallDryRun,
     RpzManagedInstallTransaction,
+    normalize_cert_rpz_payload,
 )
 from zonectl.core.rpz_managed_plan import RpzManagedPlan
 from zonectl.core.runner import CommandResult
@@ -41,7 +42,7 @@ def test_dry_run_builds_and_validates_candidates_without_system_writes(tmp_path:
     plan = _plan(tmp_path)
     result = RpzManagedInstallDryRun(
         command_runner=runner,
-        fetcher=lambda _url: b"$TTL 60\n@ IN SOA localhost. root.localhost. 1 60 60 60 60\n",
+        fetcher=lambda _url: b"$ORIGIN hole.cert.pl.\n@ IN SOA hole.cert.pl. hostmaster.hole.cert.pl. 1 60 60 60 60\n",
     ).execute(plan)
 
     assert result.status == "DRY-RUN"
@@ -95,6 +96,41 @@ def test_updater_guards_serial_and_creates_backup(tmp_path: Path) -> None:
     assert "named-checkzone -D" in updater
     assert "cp -p" in updater
     assert "rndc reload" in updater
+    assert "sed -E" in updater
+    assert "\\1cert-rpz.local." in updater
+    assert 'install -o root -g bind -m 0644 "$checked"' in updater
+
+
+def test_cert_payload_is_rebased_under_local_zone() -> None:
+    payload = (
+        b"$ORIGIN hole.cert.pl.\n"
+        b"@ IN SOA hole.cert.pl. hostmaster.hole.cert.pl. 1 60 60 60 60\n"
+        b"bad.example.hole.cert.pl. CNAME hole-sinkhole.cert.pl.\n"
+    )
+    normalized = normalize_cert_rpz_payload(payload, "cert-rpz.local").decode()
+    assert "$ORIGIN cert-rpz.local." in normalized
+    assert "bad.example.hole.cert.pl." in normalized
+    assert "hole-sinkhole.cert.pl." in normalized
+
+
+def test_cert_payload_rejects_unexpected_origin() -> None:
+    try:
+        normalize_cert_rpz_payload(b"$ORIGIN unexpected.example.\n", "cert-rpz.local")
+    except ValueError as exc:
+        assert "oczekiwanego originu" in str(exc)
+    else:
+        raise AssertionError("unexpected source origin must be rejected")
+
+
+def test_zone_directory_is_traversable_by_bind_group(tmp_path: Path) -> None:
+    zone_directory = tmp_path / "var" / "lib" / "zonectl" / "rpz"
+    parent = zone_directory.parent
+    parent.mkdir(parents=True)
+    created = RpzManagedInstallTransaction._prepare_zone_directory(
+        zone_directory, parent.stat().st_uid, parent.stat().st_gid
+    )
+    assert zone_directory in created
+    assert zone_directory.stat().st_mode & 0o777 == 0o750
 
 
 def _simple_atomic(path: Path, content: bytes, mode: int, uid: int, gid: int) -> None:
@@ -112,7 +148,7 @@ def test_transaction_defaults_to_dry_run(tmp_path: Path, monkeypatch) -> None:
     plan = _plan(tmp_path)
     transaction = RpzManagedInstallTransaction(
         command_runner=_ok_runner,
-        fetcher=lambda _url: b"$TTL 60\n@ IN SOA localhost. root.localhost. 1 60 60 60 60\n",
+        fetcher=lambda _url: b"$ORIGIN hole.cert.pl.\n@ IN SOA hole.cert.pl. hostmaster.hole.cert.pl. 1 60 60 60 60\n",
         manifest_directory=tmp_path / "manifests",
     )
     result = transaction.apply(plan)
@@ -140,7 +176,7 @@ def test_transaction_commits_after_all_gates(tmp_path: Path, monkeypatch) -> Non
     plan = _plan(tmp_path)
     transaction = RpzManagedInstallTransaction(
         command_runner=_ok_runner,
-        fetcher=lambda _url: b"$TTL 60\n@ IN SOA localhost. root.localhost. 1 60 60 60 60\n",
+        fetcher=lambda _url: b"$ORIGIN hole.cert.pl.\n@ IN SOA hole.cert.pl. hostmaster.hole.cert.pl. 1 60 60 60 60\n",
         manifest_directory=tmp_path / "manifests",
         clock=lambda: plan.zone_file.stat().st_mtime,
     )
@@ -172,7 +208,7 @@ def test_transaction_rolls_back_configuration_after_activation_failure(
 
     result = RpzManagedInstallTransaction(
         command_runner=failing_runner,
-        fetcher=lambda _url: b"$TTL 60\n@ IN SOA localhost. root.localhost. 1 60 60 60 60\n",
+        fetcher=lambda _url: b"$ORIGIN hole.cert.pl.\n@ IN SOA hole.cert.pl. hostmaster.hole.cert.pl. 1 60 60 60 60\n",
         manifest_directory=tmp_path / "manifests",
     ).apply(plan, commit=True, activate=True, confirm="cert-rpz.local")
     assert result.status == "ROLLED-BACK"
@@ -180,3 +216,36 @@ def test_transaction_rolls_back_configuration_after_activation_failure(
     assert plan.options_file.read_bytes() == original_options
     assert plan.root_config.read_bytes() == original_root
     assert not any(path.exists() for path in RpzManagedInstallTransaction._targets(plan))
+
+
+def test_transaction_retries_zonestatus_until_large_zone_is_loaded(
+    tmp_path: Path, monkeypatch
+) -> None:
+    monkeypatch.setattr(
+        RpzManagedInstallTransaction, "_atomic_write", staticmethod(_simple_atomic)
+    )
+    plan = _plan(tmp_path)
+    zonestatus_calls = 0
+
+    def delayed_runner(command: list[str], timeout: int) -> CommandResult:
+        nonlocal zonestatus_calls
+        if command[:2] == ["rndc", "zonestatus"]:
+            zonestatus_calls += 1
+            if zonestatus_calls < 3:
+                return CommandResult(1, "", "zone not loaded")
+        return _ok_runner(command, timeout)
+
+    result = RpzManagedInstallTransaction(
+        command_runner=delayed_runner,
+        fetcher=lambda _url: b"$ORIGIN hole.cert.pl.\n@ IN SOA hole.cert.pl. hostmaster.hole.cert.pl. 1 60 60 60 60\n",
+        manifest_directory=tmp_path / "manifests",
+        sleeper=lambda _seconds: None,
+        clock=lambda: plan.zone_file.stat().st_mtime,
+    ).apply(plan, commit=True, activate=True, confirm="cert-rpz.local")
+
+    assert result.status == "COMMIT"
+    assert zonestatus_calls == 3
+    assert any(
+        step.name == "rndc-zonestatus" and "próba 3/30" in step.message
+        for step in result.steps
+    )

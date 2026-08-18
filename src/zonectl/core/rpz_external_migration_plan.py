@@ -12,6 +12,13 @@ from .bind_environment_report import BindEnvironmentReporter, RpzEnvironment
 from .runner import CommandResult, run
 
 
+def _exists_or_inaccessible(path: Path) -> bool:
+    try:
+        return path.exists()
+    except OSError:
+        return True
+
+
 @dataclass(frozen=True, slots=True)
 class RpzMigrationArtifact:
     role: str
@@ -123,7 +130,7 @@ class RpzExternalMigrationPlanner:
                 elif not artifact.exists:
                     blockers.append(f"Brak wymaganego pliku: {artifact.path}")
         for target in (self.managed_updater, self.managed_service, self.managed_timer):
-            if target.exists():
+            if _exists_or_inaccessible(target):
                 blockers.append(f"Istnieje docelowy plik MANAGED: {target}")
 
         status = "READY" if integration and not blockers else "BLOCKED"

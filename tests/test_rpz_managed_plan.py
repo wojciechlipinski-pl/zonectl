@@ -53,7 +53,15 @@ def test_existing_target_blocks_plan(monkeypatch, tmp_path: Path) -> None:
     )
     target = tmp_path / "updater"
     target.write_text("external", encoding="utf-8")
-    plan = RpzManagedPlanner(updater_file=target).plan()
+    plan = RpzManagedPlanner(
+        tmp_path / "named.conf",
+        zone_file=tmp_path / "zone",
+        declaration_file=tmp_path / "declaration",
+        updater_file=target,
+        service_file=tmp_path / "service",
+        timer_file=tmp_path / "timer",
+        backup_root=tmp_path / "backup",
+    ).plan()
     assert plan.status == "BLOCKED_CONFLICT"
     assert str(target) in plan.conflicts[0]
 

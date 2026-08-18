@@ -255,7 +255,7 @@ odczytowe; import wymaga osobnego planu, dry-runu i potwierdzenia operatora.
   wiek, serial, liczba węzłów, timer, usługa i ścieżka aktualizatora.
 - [x] Pokazywać wspólny stan `ACTIVE`, `DELAYED`, `STALE`, `FAILED` lub
   `DISABLED`, serial, liczbę węzłów, ostatni wynik usługi i następne uruchomienie.
-- [ ] Dodać opcjonalny tryb `MANAGED` na świeżym systemie: instalacja aktualizatora i unitów systemd
+- [x] Dodać opcjonalny tryb `MANAGED` na świeżym systemie: instalacja aktualizatora i unitów systemd
   wyłącznie po planie, dry-runie oraz jawnym zatwierdzeniu.
   - [x] Odczytowy plan instalacji i blokada cichego przejęcia trybu `EXTERNAL`.
   - [x] Odczytowa inwentaryzacja i plan migracji `EXTERNAL → MANAGED` z SHA-256.
@@ -267,10 +267,10 @@ odczytowe; import wymaga osobnego planu, dry-runu i potwierdzenia operatora.
 - [x] W migracji `EXTERNAL → MANAGED` zachować interwał pięciu minut,
   walidację `named-checkzone`, ochronę seriala, atomową podmianę, backup,
   kontrolowany reload i rollback.
-- [ ] W instalatorze świeżego systemu zachować walidację `named-checkzone`,
+- [x] W instalatorze świeżego systemu zachować walidację `named-checkzone`,
   ochronę seriala, atomową podmianę, backup, kontrolowany reload i rollback.
 - [x] Nie przejmować istniejącego mechanizmu `EXTERNAL` bez osobnej migracji.
-- [ ] Dodać plan, dry-run i transakcję świeżej instalacji, która jednoznacznie
+- [x] Dodać plan, dry-run i transakcję świeżej instalacji, która jednoznacznie
   wskazuje blok `options`, dodaje `response-policy` i nigdy nie uruchamia się
   automatycznie podczas instalacji pakietu `.deb`.
   - [x] Jednoznaczne wykrywanie pliku z blokiem `options` i blokada konfliktów.
@@ -278,8 +278,8 @@ odczytowe; import wymaga osobnego planu, dry-runu i potwierdzenia operatora.
     `named-checkconf`, kontrola skryptu i unitów bez zapisu systemowego.
   - [x] Silnik transakcji z trzema warunkami zgody, backupem, manifestem,
     atomowym zapisem, bramką powdrożeniową i wymuszonym testem rollbacku.
-  - [ ] Zweryfikować dry-run oraz wymuszony rollback na świeżym Debianie.
-  - [ ] Zweryfikować kontrolowaną instalację na świeżym środowisku testowym.
+  - [x] Zweryfikować dry-run oraz wymuszony rollback na świeżym Debianie.
+  - [x] Zweryfikować kontrolowaną instalację na świeżym środowisku testowym.
 
 ### Bezpieczne materiały demonstracyjne
 
