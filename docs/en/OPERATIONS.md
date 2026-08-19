@@ -164,10 +164,10 @@ Replacement/cleanup workflow:
 
 ```bash
 zctl bind acl-plan trusted \
-  --replace 192.168.200/24=192.168.200.0/24
+  --replace 198.51.100/24=198.51.100.0/24
 
 zctl bind acl-apply trusted \
-  --replace 192.168.200/24=192.168.200.0/24
+  --replace 198.51.100/24=198.51.100.0/24
 ```
 
 Full target list workflow:

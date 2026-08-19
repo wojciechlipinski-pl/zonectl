@@ -16,7 +16,7 @@ def test_detects_duplicate_invalid_and_noncanonical_entries(tmp_path: Path) -> N
     audit = _audit(
         tmp_path,
         'acl "trusted" { 192.0.2.0/24; 192.0.2.0/24; '
-        '192.168.200/24; 10.0.0.1/8; };\n'
+        '198.51.100/24; 192.0.2.1/24; };\n'
         'options { allow-recursion { trusted; }; };\n',
     )
     codes = [item.code for item in audit.findings]

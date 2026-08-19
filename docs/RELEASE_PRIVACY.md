@@ -17,6 +17,10 @@ Przed utworzeniem tagu należy dodatkowo wykonać pełny zestaw testów i sprawd
 że staging nie zawiera konfiguracji lokalnej, archiwów roboczych, kluczy,
 tokenów, haseł ani nazw infrastruktury produkcyjnej.
 
+Test automatyczny odrzuca również znane produkcyjne adresy IPv4. Przegląd
+operatorski musi dodatkowo wychwytywać nowe adresy, nazwy hostów, ścieżki,
+identyfikatory i metadane, których nie ma jeszcze na liście blokowanej.
+
 Workflow `Public data guard` wykonuje test prywatności automatycznie przy każdym
 pushu i pull requeście. Kontrola automatyczna nie zastępuje przeglądu staged
 diffu przez operatora.

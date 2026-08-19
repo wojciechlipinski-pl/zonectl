@@ -10,14 +10,14 @@ from zonectl.core.bind_acl_transaction import (
 def _plan(tmp_path: Path):
     root = tmp_path / "named.conf"
     root.write_text(
-        'acl "trusted" {\n  192.168.200/24;\n  172.24.0.0/16;\n'
-        '  172.24.0.0/16;\n};\noptions { allow-query { trusted; }; };\n',
+        'acl "trusted" {\n  198.51.100/24;\n  203.0.113.0/24;\n'
+        '  203.0.113.0/24;\n};\noptions { allow-query { trusted; }; };\n',
         encoding="utf-8",
     )
     planner = BindAclPlanner(root)
     planner._validate_candidate = lambda source, candidate: (True, "kod 0")
     return planner.plan(
-        "trusted", replacements={"192.168.200/24": "192.168.200.0/24"}
+        "trusted", replacements={"198.51.100/24": "198.51.100.0/24"}
     ), root
 
 

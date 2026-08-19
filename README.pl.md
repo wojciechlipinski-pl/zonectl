@@ -226,8 +226,8 @@ zctl bind inventory
 zctl bind inventory --json
 zctl bind audit
 zctl bind secondary-report
-zctl bind secondary-plan dns2-notify --address 5.172.189.198
-zctl bind secondary-apply dns2-notify --address 5.172.189.198
+zctl bind secondary-plan dns2-notify --address 192.0.2.53
+zctl bind secondary-apply dns2-notify --address 192.0.2.53
 
 W TUI klawisz `F9` otwiera listę ACL i grup secondary. `F3` pokazuje wpływ
 wybranej definicji, a `F4` prowadzi przez plan, dry-run i transakcyjną zmianę
@@ -236,10 +236,10 @@ Edytory ACL i secondary używają tych samych klawiszy co rekordy: `Insert`,
 `F4`, `F8/Delete` oraz `F2` do przejścia do planu i dry-runu.
 W szczegółach strefy `F5` zarządza przypisaniem do logicznych par secondary.
 zctl bind acl-plan trusted \
-  --replace 192.168.200/24=192.168.200.0/24
-zctl bind acl-plan trusted --entry localhost --entry 192.168.200.0/24
+  --replace 198.51.100/24=198.51.100.0/24
+zctl bind acl-plan trusted --entry localhost --entry 198.51.100.0/24
 zctl bind acl-apply trusted \
-  --replace 192.168.200/24=192.168.200.0/24
+  --replace 198.51.100/24=198.51.100.0/24
 ```
 
 ## Testy

@@ -10,9 +10,9 @@ def _config(tmp_path: Path) -> tuple[Path, Path]:
     options.write_text(
         'acl "trusted" {\n'
         '    localhost; // zachowaj komentarz\n'
-        '    192.168.200/24;\n'
-        '    172.24.0.0/16;\n'
-        '    172.24.0.0/16;\n'
+        '    198.51.100/24;\n'
+        '    203.0.113.0/24;\n'
+        '    203.0.113.0/24;\n'
         '};\n'
         'options { allow-query { trusted; }; };\n',
         encoding="utf-8",
@@ -32,20 +32,20 @@ def test_plan_replaces_value_removes_later_duplicate_and_preserves_comment(
     before = options.read_bytes()
 
     plan = BindAclPlanner(root).plan(
-        "trusted", replacements={"192.168.200/24": "192.168.200.0/24"}
+        "trusted", replacements={"198.51.100/24": "198.51.100.0/24"}
     )
 
-    assert "192.168.200.0/24" in plan.candidate_text
-    assert plan.candidate_text.count("172.24.0.0/16") == 1
+    assert "198.51.100.0/24" in plan.candidate_text
+    assert plan.candidate_text.count("203.0.113.0/24") == 1
     assert "// zachowaj komentarz" in plan.candidate_text
-    assert plan.replacements == ("192.168.200/24 -> 192.168.200.0/24",)
-    assert plan.removed_duplicates == ("172.24.0.0/16",)
-    assert "-    172.24.0.0/16;" in plan.diff
-    assert "+    172.24.0.0/16;" not in plan.diff
+    assert plan.replacements == ("198.51.100/24 -> 198.51.100.0/24",)
+    assert plan.removed_duplicates == ("203.0.113.0/24",)
+    assert "-    203.0.113.0/24;" in plan.diff
+    assert "+    203.0.113.0/24;" not in plan.diff
     assert "\n-    localhost;" not in plan.diff
     assert "\n+    localhost;" not in plan.diff
     assert "\n- \n" not in plan.diff
-    assert "\n-    172.24.0.0/16;\n+    172.24.0.0/16;" not in plan.diff
+    assert "\n-    203.0.113.0/24;\n+    203.0.113.0/24;" not in plan.diff
     assert options.read_bytes() == before
 
 
@@ -58,10 +58,10 @@ def test_keep_duplicates_only_applies_replacement(tmp_path: Path, monkeypatch) -
     )
     plan = BindAclPlanner(root).plan(
         "trusted",
-        replacements={"192.168.200/24": "192.168.200.0/24"},
+        replacements={"198.51.100/24": "198.51.100.0/24"},
         remove_duplicates=False,
     )
-    assert plan.candidate_text.count("172.24.0.0/16") == 2
+    assert plan.candidate_text.count("203.0.113.0/24") == 2
     assert plan.removed_duplicates == ()
 
 
@@ -78,7 +78,7 @@ def test_full_list_plan_preserves_unchanged_inline_comment(
     )
     assert "localhost; // zachowaj komentarz" in plan.candidate_text
     assert "192.0.2.0/24;" in plan.candidate_text
-    assert "172.24.0.0/16" not in plan.candidate_text
+    assert "203.0.113.0/24" not in plan.candidate_text
 
 
 def test_full_list_rejects_empty_duplicate_invalid_and_missing_localhost(

@@ -17,6 +17,11 @@ FORBIDDEN_NAMES = (
     "egosa" ".org",
     "xn--ek-xqa" ".pl",
 )
+FORBIDDEN_IPV4 = (
+    "5" ".172.189.198",
+    "216" ".218.133.2",
+    "216" ".218.130.2",
+)
 
 
 def _public_text_files() -> list[Path]:
@@ -44,3 +49,13 @@ def test_public_materials_do_not_contain_production_dns_names() -> None:
             if forbidden in text:
                 findings.append(f"{path.relative_to(ROOT)}: {forbidden}")
     assert not findings, "Production DNS names found:\n" + "\n".join(findings)
+
+
+def test_public_materials_do_not_contain_production_ipv4_addresses() -> None:
+    findings: list[str] = []
+    for path in _public_text_files():
+        text = path.read_text(encoding="utf-8", errors="replace")
+        for forbidden in FORBIDDEN_IPV4:
+            if forbidden in text:
+                findings.append(f"{path.relative_to(ROOT)}: {forbidden}")
+    assert not findings, "Production IPv4 addresses found:\n" + "\n".join(findings)

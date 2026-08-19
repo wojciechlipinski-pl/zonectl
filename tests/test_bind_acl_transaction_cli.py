@@ -12,7 +12,7 @@ class _EmptyConfig:
 def _root(tmp_path: Path) -> Path:
     root = tmp_path / "named.conf"
     root.write_text(
-        'acl "trusted" { 192.168.200/24; };\n', encoding="utf-8"
+        'acl "trusted" { 198.51.100/24; };\n', encoding="utf-8"
     )
     return root
 
@@ -27,7 +27,7 @@ def test_acl_apply_cli_dry_run(monkeypatch, tmp_path: Path, capsys) -> None:
     before = root.read_bytes()
     code = cli.main([
         "bind", "acl-apply", "trusted", "--root-config", str(root),
-        "--replace", "192.168.200/24=192.168.200.0/24",
+        "--replace", "198.51.100/24=198.51.100.0/24",
     ])
     assert code == 0
     assert "Status:      DRY-RUN" in capsys.readouterr().out

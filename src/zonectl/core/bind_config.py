@@ -207,7 +207,6 @@ class BindConfigDiscovery:
             for marker in (
                 "dns2-transfer",
                 "dns2-notify",
-                "5.172.189.198",
             )
         )
 
@@ -216,8 +215,6 @@ class BindConfigDiscovery:
             for marker in (
                 "he-transfer",
                 "he-notify",
-                "216.218.133.2",
-                "216.218.130.2",
             )
         )
 

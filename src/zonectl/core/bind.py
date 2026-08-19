@@ -15,8 +15,8 @@ class BindService:
         self.config = config
         t = config.toolkit
         self.local_server = t.get("local_server", "127.0.0.1")
-        self.dns2_server = t.get("dns2_server", "5.172.189.198")
-        self.he_server = t.get("he_server", "216.218.133.2")
+        self.dns2_server = t.get("dns2_server", "192.0.2.53")
+        self.he_server = t.get("he_server", "192.0.2.54")
         self.timeout = int(t.get("dig_timeout", "3"))
 
     def serial(self, server: str, zone: str) -> str | None:

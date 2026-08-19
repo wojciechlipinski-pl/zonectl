@@ -330,7 +330,7 @@ Plan uporządkowania pojedynczej ACL również nie zapisuje pliku:
 
 ```bash
 zctl bind acl-plan trusted \
-  --replace 192.168.200/24=192.168.200.0/24
+  --replace 198.51.100/24=198.51.100.0/24
 ```
 
 Planner zachowuje pierwsze wystąpienie każdego wpisu, usuwa wyłącznie dalsze
@@ -341,7 +341,7 @@ Właściwe zastosowanie identycznego planu wymaga trzech jawnych zabezpieczeń:
 
 ```bash
 zctl bind acl-apply trusted \
-  --replace 192.168.200/24=192.168.200.0/24 \
+  --replace 198.51.100/24=198.51.100.0/24 \
   --commit --activate --confirm trusted
 ```
 
@@ -364,12 +364,12 @@ adresy notify i transfer są dozwolone; ostrzeżeniem jest brak jednej z ról.
 Plan zmiany jednej grupy przyjmuje pełną docelową listę adresów:
 
 ```bash
-zctl bind secondary-plan dns2-notify --address 5.172.189.198
-zctl bind secondary-plan he-transfer --address 216.218.133.2
-zctl bind secondary-apply dns2-notify --address 5.172.189.198
-zctl bind secondary-apply dns2-notify --address 5.172.189.198 \
+zctl bind secondary-plan dns2-notify --address 192.0.2.53
+zctl bind secondary-plan he-transfer --address 192.0.2.54
+zctl bind secondary-apply dns2-notify --address 192.0.2.53
+zctl bind secondary-apply dns2-notify --address 192.0.2.53 \
   --commit --activate --confirm dns2-notify
-zctl bind acl-plan trusted --entry localhost --entry 192.168.200.0/24
+zctl bind acl-plan trusted --entry localhost --entry 198.51.100.0/24
 ```
 
 Planner odrzuca pustą listę, duplikaty oraz błędne IPv4/IPv6. Pokazuje

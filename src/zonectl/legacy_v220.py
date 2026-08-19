@@ -159,7 +159,7 @@ def cmd_check(cfg,zones,args):
     return 1 if failures else 0
 
 def cmd_sync(cfg,zones,args):
-    t=cfg['toolkit']; local=t.get('local_server','127.0.0.1'); dns2=t.get('dns2_server','5.172.189.198'); he=t.get('he_server','216.218.133.2'); timeout=int(t.get('dig_timeout','3'))
+    t=cfg['toolkit']; local=t.get('local_server','127.0.0.1'); dns2=t.get('dns2_server','192.0.2.53'); he=t.get('he_server','192.0.2.54'); timeout=int(t.get('dig_timeout','3'))
     rows=[]; failures=0
     for zone,item in sync_zone_items(zones):
         cd=yes(item.get('dns2','yes'),True); ch=yes(item.get('he','no'),False)
@@ -591,7 +591,7 @@ def latest_backup(cfg):
 
 def zone_quick_status(cfg,zones,zone):
     t=cfg['toolkit']; item=zones[zone]; timeout=int(t.get('dig_timeout','3'))
-    local=t.get('local_server','127.0.0.1'); dns2=t.get('dns2_server','5.172.189.198'); he=t.get('he_server','216.218.133.2')
+    local=t.get('local_server','127.0.0.1'); dns2=t.get('dns2_server','192.0.2.53'); he=t.get('he_server','192.0.2.54')
     ls=dig_serial(local,zone,timeout)
     dns2_enabled=yes(item.get('dns2','yes'),True); he_enabled=yes(item.get('he','no'),False)
     ds=dig_serial(dns2,zone,timeout) if dns2_enabled else None

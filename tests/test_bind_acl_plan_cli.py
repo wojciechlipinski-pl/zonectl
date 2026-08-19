@@ -18,16 +18,16 @@ def test_acl_plan_cli_is_read_only(monkeypatch, tmp_path: Path, capsys) -> None:
     )
     root = tmp_path / "named.conf"
     root.write_text(
-        'acl "trusted" { 192.168.200/24; };\n', encoding="utf-8"
+        'acl "trusted" { 198.51.100/24; };\n', encoding="utf-8"
     )
     before = root.read_bytes()
     code = cli.main([
         "bind", "acl-plan", "trusted", "--root-config", str(root),
-        "--replace", "192.168.200/24=192.168.200.0/24",
+        "--replace", "198.51.100/24=198.51.100.0/24",
     ])
     output = capsys.readouterr().out
     assert code == 0
-    assert "192.168.200.0/24" in output
+    assert "198.51.100.0/24" in output
     assert "DRY-RUN" in output
     assert root.read_bytes() == before
 
