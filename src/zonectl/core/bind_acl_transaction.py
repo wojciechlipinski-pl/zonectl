@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import json
+import getpass
+import hashlib
 import os
 import shutil
 import tempfile
@@ -32,6 +34,13 @@ class BindAclResult:
     rolled_back: bool = False
     backup: str | None = None
     manifest: str | None = None
+    operator: str = ""
+    reason: str = ""
+    risk: str = "NONE"
+    roles: tuple[str, ...] = ()
+    zones: tuple[str, ...] = ()
+    state_before: dict[str, object] = field(default_factory=dict)
+    state_after: dict[str, object] = field(default_factory=dict)
     steps: list[BindAclStep] = field(default_factory=list)
 
 
@@ -56,13 +65,23 @@ class BindAclTransaction:
         self.activator = activator or self._activate
 
     def apply(
-        self, plan: BindAclPlan, *, commit: bool = False, activate: bool = False
+        self, plan: BindAclPlan, *, commit: bool = False, activate: bool = False,
+        reason: str | None = None,
     ) -> BindAclResult:
         txid = (
             datetime.now().strftime("%Y%m%d-%H%M%S")
             + f"-acl-{plan.name}-{uuid.uuid4().hex[:8]}"
         )
-        result = BindAclResult(txid, plan.name, "PLAN")
+        risk = plan.impact.risk if plan.impact is not None else "INDETERMINATE"
+        before_entries = plan.impact.current_entries if plan.impact else ()
+        result = BindAclResult(
+            txid, plan.name, "PLAN", operator=getpass.getuser(),
+            reason=(reason or "nie podano").strip() or "nie podano",
+            risk=risk,
+            roles=plan.impact.roles if plan.impact else (),
+            zones=plan.impact.zones if plan.impact else (),
+            state_before=self._audit_state(plan.original_text, before_entries),
+        )
         if plan.source.read_text(encoding="utf-8", errors="replace") != plan.original_text:
             result.status = "CONFLICT"
             result.steps.append(BindAclStep(
@@ -147,8 +166,24 @@ class BindAclTransaction:
                 ))
             result.rolled_back = rollback_ok
             result.status = "ROLLED-BACK" if rollback_ok else "ROLLBACK-FAILED"
+        after_entries = (
+            plan.impact.candidate_entries
+            if result.status == "COMMIT" and plan.impact is not None
+            else before_entries
+        )
+        result.state_after = self._audit_state(
+            plan.source.read_text(encoding="utf-8", errors="replace"),
+            after_entries,
+        )
         self._write_manifest(result)
         return result
+
+    @staticmethod
+    def _audit_state(text: str, entries: tuple[str, ...]) -> dict[str, object]:
+        return {
+            "sha256": hashlib.sha256(text.encode("utf-8")).hexdigest(),
+            "entries": list(entries),
+        }
 
     def _write_manifest(self, result: BindAclResult) -> None:
         self.manifest_directory.mkdir(parents=True, exist_ok=True, mode=0o750)

@@ -4783,7 +4783,10 @@ class CursesApp:
                     self._message_view(win, title="Anulowano", lines=["Nazwa strefy nie jest zgodna."])
                     continue
                 if CursesDialogs.confirm(win, f"Zastosować przypisania dla {zone.name}"):
-                    result = transaction.apply(plan.transaction_plan(), commit=True, activate=True)
+                    result = transaction.apply(
+                        plan.transaction_plan(), commit=True, activate=True,
+                        reason="Zmiana przypisania secondary zatwierdzona w TUI",
+                    )
                     self._message_view(win, title="Transakcja przypisania", lines=self._secondary_result_lines(result), error=result.status != "COMMIT")
                     if result.status == "COMMIT":
                         return
@@ -4925,7 +4928,10 @@ class CursesApp:
             return
         if not CursesDialogs.confirm(win, f"Zastosować zmianę ACL {name}"):
             return
-        result = transaction.apply(plan, commit=True, activate=True)
+        result = transaction.apply(
+            plan, commit=True, activate=True,
+            reason="Zmiana ACL zatwierdzona w TUI",
+        )
         self._message_view(
             win, title=f"Transakcja ACL: {name}",
             lines=self._secondary_result_lines(result),
@@ -5034,7 +5040,10 @@ class CursesApp:
             return
         if not CursesDialogs.confirm(win, f"Zastosować zmianę grupy {name}"):
             return
-        result = transaction.apply(plan, commit=True, activate=True)
+        result = transaction.apply(
+            plan, commit=True, activate=True,
+            reason="Zmiana grupy secondary zatwierdzona w TUI",
+        )
         self._message_view(
             win, title=f"Transakcja secondary: {name}",
             lines=self._secondary_result_lines(result),

@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 from zonectl.core.bind_acl_plan import BindAclPlanner
@@ -43,12 +44,21 @@ def test_commit_preserves_metadata_and_writes_manifest(tmp_path: Path) -> None:
         tmp_path / "backups", tmp_path / "manifests",
         root_config=root, config_validator=_ok("named-checkconf"),
         activator=_ok("rndc-reconfig"),
-    ).apply(plan, commit=True, activate=True)
+    ).apply(plan, commit=True, activate=True, reason="kontrolowana zmiana ACL")
     assert result.status == "COMMIT"
     assert root.read_text() == plan.candidate_text
     assert root.stat().st_mode & 0o777 == mode
     assert Path(result.backup).is_file()
     assert Path(result.manifest).is_file()
+    manifest = json.loads(Path(result.manifest).read_text(encoding="utf-8"))
+    assert manifest["operator"]
+    assert manifest["reason"] == "kontrolowana zmiana ACL"
+    assert manifest["risk"] == plan.impact.risk
+    assert manifest["roles"] == list(plan.impact.roles)
+    assert manifest["zones"] == list(plan.impact.zones)
+    assert manifest["state_before"]["sha256"] != manifest["state_after"]["sha256"]
+    assert manifest["state_before"]["entries"] == list(plan.impact.current_entries)
+    assert manifest["state_after"]["entries"] == list(plan.impact.candidate_entries)
 
 
 def test_validation_failure_rolls_back(tmp_path: Path) -> None:

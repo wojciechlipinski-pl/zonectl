@@ -3,6 +3,8 @@
 Status: etapy 1–3 wdrożone — odczytowy raport wpływu `bind access-impact`,
 integracja z plannerami, klasyfikacja przypisań stref oraz bramka blokująca
 zwykły commit ryzyka `HIGH`, w tym odłączenie ostatniej pary secondary.
+Manifesty wykonanych transakcji zapisują operatora, uzasadnienie, ryzyko,
+role, strefy oraz sumy SHA-256 i wpisy przed/po operacji.
 Dry-run pozostaje dostępny, a obejście awaryjne nie jest jeszcze udostępnione.
 
 ## Stan obecny
@@ -101,7 +103,8 @@ spoza plików objętych transakcją.
 3. Bramka grup secondary oraz przypisań stref — plan, dry-run i blokada
    zwykłego commitu ryzyka `HIGH`.
 4. Rozszerzone potwierdzenia TUI i równoważne parametry CLI.
-5. Rozszerzony manifest z kontrolą braku sekretów.
+5. Rozszerzony manifest z kontrolą braku sekretów — wdrożony; automatyczna
+   bramka prywatności manifestu pozostaje częścią dalszych testów wydania.
 6. Bramki powdrożeniowe i wymuszone testy rollbacku.
 7. Próba na izolowanej konfiguracji BIND, następnie jedna kontrolowana zmiana
    produkcyjna o małym wpływie.

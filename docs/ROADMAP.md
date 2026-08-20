@@ -350,7 +350,7 @@ zaczynając od raportu wpływu tylko do odczytu.
   wymaganego przez aktywny transfer.
 - [ ] Wymagać rozszerzonego potwierdzenia przy opróżnianiu używanej ACL lub
   odłączaniu ostatniej pary secondary od strefy.
-- [ ] Rozszerzyć manifest o operatora, przyczynę, stan przed i po operacji oraz
+- [x] Rozszerzyć manifest o operatora, przyczynę, ryzyko, stan przed i po operacji oraz
   pełną listę dotkniętych stref.
 
 ### Testy awarii i jakość

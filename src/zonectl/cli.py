@@ -268,6 +268,7 @@ def parser() -> argparse.ArgumentParser:
     )
     bind_acl_apply.add_argument("--keep-duplicates", action="store_true")
     bind_acl_apply.add_argument("--confirm")
+    bind_acl_apply.add_argument("--reason", help="uzasadnienie zapisywane w manifeście")
     bind_acl_apply.add_argument("--commit", action="store_true")
     bind_acl_apply.add_argument("--activate", action="store_true")
     bind_acl_apply.add_argument(
@@ -310,6 +311,7 @@ def parser() -> argparse.ArgumentParser:
         "--address", action="append", required=True, dest="addresses"
     )
     bind_secondary_apply.add_argument("--confirm")
+    bind_secondary_apply.add_argument("--reason", help="uzasadnienie zapisywane w manifeście")
     bind_secondary_apply.add_argument("--commit", action="store_true")
     bind_secondary_apply.add_argument("--activate", action="store_true")
     bind_secondary_apply.add_argument(
@@ -337,6 +339,7 @@ def parser() -> argparse.ArgumentParser:
     bind_zone_secondary_apply.add_argument("zone")
     bind_zone_secondary_apply.add_argument("--pair", action="append", default=[], dest="pairs")
     bind_zone_secondary_apply.add_argument("--confirm")
+    bind_zone_secondary_apply.add_argument("--reason", help="uzasadnienie zapisywane w manifeście")
     bind_zone_secondary_apply.add_argument("--commit", action="store_true")
     bind_zone_secondary_apply.add_argument("--activate", action="store_true")
     bind_zone_secondary_apply.add_argument("--root-config", type=Path, default=Path("/etc/bind/named.conf"))
@@ -1007,7 +1010,10 @@ def main(argv: list[str] | None = None) -> int:
                 result = BindSecondaryTransaction(
                     args.backup_root, args.manifest_directory,
                     root_config=args.root_config,
-                ).apply(plan.transaction_plan(), commit=args.commit, activate=args.activate)
+                ).apply(
+                    plan.transaction_plan(), commit=args.commit,
+                    activate=args.activate, reason=args.reason,
+                )
         except (BindZoneSecondaryError, OSError) as exc:
             print(f"BŁĄD: {exc}", file=sys.stderr)
             return 2
@@ -1059,7 +1065,10 @@ def main(argv: list[str] | None = None) -> int:
                 args.backup_root,
                 args.manifest_directory,
                 root_config=args.root_config,
-            ).apply(plan, commit=args.commit, activate=args.activate)
+            ).apply(
+                plan, commit=args.commit, activate=args.activate,
+                reason=args.reason,
+            )
         except (BindSecondaryPlanError, OSError) as exc:
             print(f"BŁĄD: {exc}", file=sys.stderr)
             return 2
@@ -1224,7 +1233,10 @@ def main(argv: list[str] | None = None) -> int:
                 args.backup_root,
                 args.manifest_directory,
                 root_config=args.root_config,
-            ).apply(plan, commit=args.commit, activate=args.activate)
+            ).apply(
+                plan, commit=args.commit, activate=args.activate,
+                reason=args.reason,
+            )
         except (BindAclPlanError, OSError, ValueError) as exc:
             print(f"BŁĄD: {str(exc) or 'nieprawidłowe --replace'}", file=sys.stderr)
             return 2

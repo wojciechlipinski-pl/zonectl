@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import json
+import getpass
+import hashlib
 import os
 import shutil
 import tempfile
@@ -36,6 +38,11 @@ class BindSecondaryResult:
     rolled_back: bool = False
     backup: str | None = None
     manifest: str | None = None
+    operator: str = ""
+    reason: str = ""
+    risk: str = "NONE"
+    state_before: dict[str, object] = field(default_factory=dict)
+    state_after: dict[str, object] = field(default_factory=dict)
     steps: list[BindSecondaryStep] = field(default_factory=list)
 
 
@@ -65,6 +72,7 @@ class BindSecondaryTransaction:
         *,
         commit: bool = False,
         activate: bool = False,
+        reason: str | None = None,
     ) -> BindSecondaryResult:
         txid = (
             datetime.now().strftime("%Y%m%d-%H%M%S")
@@ -78,6 +86,10 @@ class BindSecondaryTransaction:
             old_addresses=plan.old_addresses,
             new_addresses=plan.new_addresses,
             zones=plan.zones,
+            operator=getpass.getuser(),
+            reason=(reason or "nie podano").strip() or "nie podano",
+            risk=plan.impact.risk if plan.impact is not None else "INDETERMINATE",
+            state_before=self._audit_state(plan.original_text, plan.old_addresses),
         )
         current = plan.source.read_text(encoding="utf-8", errors="replace")
         if current != plan.original_text:
@@ -168,8 +180,22 @@ class BindSecondaryTransaction:
                 ))
             result.rolled_back = rollback_ok
             result.status = "ROLLED-BACK" if rollback_ok else "ROLLBACK-FAILED"
+        after_entries = (
+            plan.new_addresses if result.status == "COMMIT" else plan.old_addresses
+        )
+        result.state_after = self._audit_state(
+            plan.source.read_text(encoding="utf-8", errors="replace"),
+            after_entries,
+        )
         self._write_manifest(result)
         return result
+
+    @staticmethod
+    def _audit_state(text: str, entries: tuple[str, ...]) -> dict[str, object]:
+        return {
+            "sha256": hashlib.sha256(text.encode("utf-8")).hexdigest(),
+            "entries": list(entries),
+        }
 
     def _write_manifest(self, result: BindSecondaryResult) -> None:
         self.manifest_directory.mkdir(parents=True, exist_ok=True, mode=0o750)

@@ -26,7 +26,8 @@ def test_secondary_edit_requires_plan_dry_run_and_exact_name() -> None:
     assert "planner.plan(name, addresses)" in source
     assert "dry_run = transaction.apply(plan)" in source
     assert "Wpisz pełną nazwę grupy" in source
-    assert "transaction.apply(plan, commit=True, activate=True)" in source
+    assert "commit=True, activate=True" in source
+    assert 'reason="Zmiana grupy secondary zatwierdzona w TUI"' in source
 
 
 def test_secondary_address_editor_uses_mc_keybindings() -> None:
@@ -56,7 +57,8 @@ def test_acl_editor_uses_mc_keys_and_guarded_transaction() -> None:
     assert "entries=entries" in workflow
     assert "dry_run = transaction.apply(plan)" in workflow
     assert "Wpisz pełną nazwę ACL" in workflow
-    assert "transaction.apply(plan, commit=True, activate=True)" in workflow
+    assert "commit=True, activate=True" in workflow
+    assert 'reason="Zmiana ACL zatwierdzona w TUI"' in workflow
 
 
 def test_zone_details_open_secondary_assignment_with_f5() -> None:

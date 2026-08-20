@@ -41,7 +41,10 @@ def test_commit_writes_backup_manifest_and_audit_context(tmp_path: Path) -> None
     result = BindSecondaryTransaction(
         tmp_path / "backups", tmp_path / "manifests", root_config=root,
         config_validator=_ok("named-checkconf"), activator=_ok("rndc-reconfig"),
-    ).apply(plan, commit=True, activate=True)
+    ).apply(
+        plan, commit=True, activate=True,
+        reason="planowana zmiana adresu secondary",
+    )
     assert result.status == "COMMIT"
     assert result.old_addresses == ("192.0.2.53",)
     assert result.new_addresses == ("192.0.2.60",)
@@ -53,6 +56,12 @@ def test_commit_writes_backup_manifest_and_audit_context(tmp_path: Path) -> None
     assert manifest["old_addresses"] == ["192.0.2.53"]
     assert manifest["new_addresses"] == ["192.0.2.60"]
     assert manifest["zones"] == ["a"]
+    assert manifest["operator"]
+    assert manifest["reason"] == "planowana zmiana adresu secondary"
+    assert manifest["risk"] == plan.impact.risk
+    assert manifest["state_before"]["sha256"] != manifest["state_after"]["sha256"]
+    assert manifest["state_before"]["entries"] == ["192.0.2.53"]
+    assert manifest["state_after"]["entries"] == ["192.0.2.60"]
 
 
 def test_validation_failure_rolls_back(tmp_path: Path) -> None:
