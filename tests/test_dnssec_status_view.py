@@ -123,6 +123,46 @@ def test_view_allows_ds_when_kasp_is_ready() -> None:
     assert "DOZWOLONA" in "\n".join(view.lines)
 
 
+def test_view_describes_ds_fields_for_registrar_form() -> None:
+    described = replace(
+        report(zone_rrsig="omnipresent"),
+        calculated_ds=(
+            "43811 13 2 "
+            "6e960215ec4d8316be3941994dfc665a3866dbbcd5cb288a5d195cebc9ece85c",
+        ),
+    )
+
+    text = "\n".join(DnssecStatusView.build(described).lines)
+
+    assert "DS DO PUBLIKACJI U REJESTRATORA" in text
+    assert "ID klucza          43811" in text
+    assert "Algorytm klucza    13 — ECDSAP256SHA256" in text
+    assert "Algorytm skrótu    2 — SHA-256" in text
+    assert (
+        "Skrót klucza       "
+        "6E960215EC4D8316BE3941994DFC665A3866DBBCD5CB288A5D195CEBC9ECE85C"
+        in text
+    )
+    assert (
+        "Pełny rekord DS    43811 13 2 "
+        "6E960215EC4D8316BE3941994DFC665A3866DBBCD5CB288A5D195CEBC9ECE85C"
+        in text
+    )
+
+
+def test_view_keeps_unusual_or_malformed_ds_record_visible() -> None:
+    unusual = replace(
+        report(),
+        calculated_ds=("12345 253 99 ABCD", "niepełny-rekord"),
+    )
+
+    text = "\n".join(DnssecStatusView.build(unusual).lines)
+
+    assert "253 — algorytm nierozpoznany" in text
+    assert "99 — algorytm nierozpoznany" in text
+    assert "Pełny rekord       niepełny-rekord" in text
+
+
 def test_active_report_waits_when_ds_is_only_partially_visible() -> None:
     active_report = replace(
         report(zone_rrsig="omnipresent"),

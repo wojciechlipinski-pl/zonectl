@@ -4283,7 +4283,8 @@ class CursesApp:
                 stripped = text.strip()
                 attr = curses.A_NORMAL
                 if stripped in {
-                    "STAN KASP", "DS OCZEKIWANY", "DS PUBLICZNY",
+                    "STAN KASP", "DS DO PUBLIKACJI U REJESTRATORA",
+                    "DS PUBLICZNY",
                     "Resolvery:", "Serwery autorytatywne:",
                 } or stripped.startswith("KONTROLA DELEGACJI"):
                     attr = heading_attr

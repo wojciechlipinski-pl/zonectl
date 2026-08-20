@@ -12,6 +12,22 @@ from ..core.dnssec_report import DnssecReport
 
 @dataclass(frozen=True, slots=True)
 class DnssecStatusView:
+    DNSSEC_ALGORITHMS = {
+        5: "RSASHA1",
+        7: "RSASHA1-NSEC3-SHA1",
+        8: "RSASHA256",
+        10: "RSASHA512",
+        13: "ECDSAP256SHA256",
+        14: "ECDSAP384SHA384",
+        15: "ED25519",
+        16: "ED448",
+    }
+    DS_DIGEST_ALGORITHMS = {
+        1: "SHA-1",
+        2: "SHA-256",
+        3: "GOST R 34.11-94",
+        4: "SHA-384",
+    }
     zone: str
     stage: str
     title: str
@@ -67,10 +83,10 @@ class DnssecStatusView:
             if line.strip().startswith("-")
         ]
         lines.extend(kasp_lines or ["- brak danych KASP"])
-        lines.extend(("", "DS OCZEKIWANY"))
-        lines.extend(f"  {record}" for record in report.calculated_ds or ("-",))
+        lines.extend(("", "DS DO PUBLIKACJI U REJESTRATORA"))
+        lines.extend(cls._ds_record_lines(report.calculated_ds))
         lines.extend(("", "DS PUBLICZNY"))
-        lines.extend(f"  {record}" for record in report.parent_ds_records or ("-",))
+        lines.extend(cls._ds_record_lines(report.parent_ds_records))
 
         if delegation is not None:
             lines.extend(("", f"KONTROLA DELEGACJI: {delegation.status}", "Resolvery:"))
@@ -133,6 +149,48 @@ class DnssecStatusView:
         if stage == "UNSIGNED":
             return "ENABLE"
         return "STATUS"
+
+    @classmethod
+    def _ds_record_lines(cls, records: tuple[str, ...]) -> list[str]:
+        """Rozpisz rekord DS na pola spotykane w panelach rejestratorów."""
+        if not records:
+            return ["  -"]
+        lines: list[str] = []
+        for index, record in enumerate(records):
+            fields = str(record).split()
+            if len(fields) < 4:
+                lines.append(f"  Pełny rekord       {record}")
+                continue
+            key_tag, algorithm, digest_type = fields[:3]
+            digest = "".join(fields[3:]).upper()
+            algorithm_label = cls._algorithm_label(
+                algorithm, cls.DNSSEC_ALGORITHMS
+            )
+            digest_label = cls._algorithm_label(
+                digest_type, cls.DS_DIGEST_ALGORITHMS
+            )
+            if index:
+                lines.append("")
+            lines.extend(
+                (
+                    f"  ID klucza          {key_tag}",
+                    f"  Algorytm klucza    {algorithm_label}",
+                    f"  Algorytm skrótu    {digest_label}",
+                    f"  Skrót klucza       {digest}",
+                    "  Pełny rekord DS    "
+                    f"{key_tag} {algorithm} {digest_type} {digest}",
+                )
+            )
+        return lines
+
+    @staticmethod
+    def _algorithm_label(value: str, names: dict[int, str]) -> str:
+        try:
+            number = int(value)
+        except ValueError:
+            return f"{value} — algorytm nierozpoznany"
+        name = names.get(number, "algorytm nierozpoznany")
+        return f"{number} — {name}"
 
     @classmethod
     def _operation_label(cls, stage: str) -> str:

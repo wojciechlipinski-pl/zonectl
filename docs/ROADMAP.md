@@ -187,7 +187,7 @@ zrealizowane, a `[ ]` pozostają do wykonania.
   z walidacją `named-checkconf`, kontrolowanym `rndc reconfig` i rollbackiem.
 - [x] Monitorować utworzenie kluczy, podpisanie strefy i stan rekordów DNSKEY.
 - [x] Wyświetlać rekord DS przeznaczony do przekazania rejestratorowi.
-- [ ] Rozbić prezentowany rekord DS na pola zgodne z formularzami rejestratorów:
+- [x] Rozbić prezentowany rekord DS na pola zgodne z formularzami rejestratorów:
   ID klucza (key tag), algorytm klucza, algorytm skrótu i skrót klucza;
   pokazywać nazwy algorytmów IANA oraz pełny rekord do skopiowania.
 - [x] Dodać do raportu CLI etap procesu, postęp, lokalny termin następnej
@@ -318,7 +318,7 @@ Szczegółowe kryteria zgodności z opublikowanymi grafikami określa
   następny krok bez konieczności analizowania surowego raportu.
 - [ ] Zapewnić poprawne skalowanie, zawijanie i przewijanie na małych
   terminalach, bez utraty dostępu do potwierdzeń i komunikatów błędów.
-- [ ] Poprawić responsywne zawijanie ekranów szczegółów i wyników transakcji:
+- [x] Poprawić responsywne zawijanie ekranów szczegółów i wyników transakcji:
   ograniczać tekst do szerokości lewego panelu, zachowywać wcięcia wyników
   BIND, przeliczać linie po zmianie rozmiaru i przewijać po liniach już
   zawiniętych; testować ochronę przed wejściem tekstu w prawy panel.
@@ -355,7 +355,29 @@ Szczegółowe kryteria zgodności z opublikowanymi grafikami określa
 - [ ] Publikować artefakty dopiero dla podpisanego lub jawnie zatwierdzonego
   tagu wydania.
 
-## Przyszłe rozszerzenie — internationalization (i18n)
+## Rozwój po osiągnięciu pełnej funkcjonalności podstawowej
+
+Poniższe rozszerzenia nie mogą opóźniać stabilizacji podstawowych operacji
+ZoneCTL: zarządzania strefami i rekordami, DNSSEC, secondary, ACL, RPZ,
+walidacji, backupu i rollbacku.
+
+### Konfigurowalne polityki DNSSEC/KASP
+
+- [ ] Wykrywać nazwane polityki `dnssec-policy` dostępne w konfiguracji BIND
+  i prezentować je operatorowi bez ujawniania kluczy prywatnych.
+- [ ] Umożliwić wybór całej, wcześniej zdefiniowanej polityki KASP podczas
+  włączania DNSSEC zamiast prostego, podatnego na błędy wyboru algorytmu.
+- [ ] Przed zatwierdzeniem pokazywać algorytm, model kluczy KSK/ZSK lub CSK,
+  parametry publikacji, harmonogram rolloveru oraz zgodność z możliwościami
+  używanej wersji BIND.
+- [ ] Ostrzegać i domyślnie blokować polityki używające algorytmów
+  przestarzałych, niezalecanych lub nieobsługiwanych przez strefę nadrzędną.
+- [ ] Migrację aktywnej strefy pomiędzy politykami realizować wyłącznie jako
+  osobną transakcję z planem, dry-runem, kontrolą DNSKEY/DS/KASP, okresem
+  przejściowym i rollbackiem.
+- [ ] Zachować `dnssec-policy default` jako bezpieczną i prostą opcję domyślną.
+
+### Internationalization (i18n)
 
 - [ ] Oddzielić komunikaty użytkownika od kodu programu.
 - [ ] Zachować język polski jako domyślny i dodać język angielski.
