@@ -41,6 +41,7 @@ def test_commit_writes_backup_manifest_and_audit_context(tmp_path: Path) -> None
     result = BindSecondaryTransaction(
         tmp_path / "backups", tmp_path / "manifests", root_config=root,
         config_validator=_ok("named-checkconf"), activator=_ok("rndc-reconfig"),
+        operational_validator=_ok("secondary-operational"),
     ).apply(
         plan, commit=True, activate=True,
         reason="planowana zmiana adresu secondary",

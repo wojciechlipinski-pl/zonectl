@@ -30,6 +30,7 @@ class BindZoneSecondaryPlan:
     diff: str
     validation_ok: bool
     validation_message: str
+    operational_addresses: tuple[str, ...]
     impact: BindAccessImpactReport
 
     def transaction_plan(self) -> BindSecondaryPlan:
@@ -40,6 +41,7 @@ class BindZoneSecondaryPlan:
             original_text=self.original_text, candidate_text=self.candidate_text,
             diff=self.diff, validation_ok=self.validation_ok,
             validation_message=self.validation_message,
+            operational_addresses=self.operational_addresses,
             impact=self.impact,
         )
 
@@ -86,6 +88,14 @@ class BindZoneSecondaryPlanner:
         ))
         notify = [group for key in selected for group in pairs[key].notify_groups]
         transfer = [group for key in selected for group in pairs[key].transfer_groups]
+        operational_addresses = tuple(dict.fromkeys(
+            address
+            for key in selected
+            for address in (
+                *pairs[key].notify_addresses,
+                *pairs[key].transfer_addresses,
+            )
+        ))
         candidate_block = self._set_directive(block, "also-notify", notify)
         candidate_block = self._set_directive(candidate_block, "allow-transfer", transfer)
         candidate = original[:span.start] + candidate_block + original[span.start + len(block):]
@@ -120,6 +130,7 @@ class BindZoneSecondaryPlanner:
             new_pairs=tuple(selected), original_text=original,
             candidate_text=candidate, diff=diff,
             validation_ok=ok, validation_message=message,
+            operational_addresses=operational_addresses,
             impact=impact,
         )
 

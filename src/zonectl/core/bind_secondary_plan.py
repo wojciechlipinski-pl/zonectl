@@ -35,6 +35,7 @@ class BindSecondaryPlan:
     diff: str
     validation_ok: bool
     validation_message: str
+    operational_addresses: tuple[str, ...] = ()
     impact: BindAccessImpactReport | None = None
 
     def to_dict(self) -> dict[str, object]:
@@ -120,6 +121,7 @@ class BindSecondaryPlanner:
             new_addresses=normalized,
             roles=group.roles,
             zones=group.zones,
+            operational_addresses=normalized,
             original_text=original,
             candidate_text=candidate,
             diff=diff,

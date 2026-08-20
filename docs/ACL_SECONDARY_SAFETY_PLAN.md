@@ -8,6 +8,9 @@ role, strefy oraz sumy SHA-256 i wpisy przed/po operacji.
 Po aktywacji transakcja ponownie odczytuje konfigurację i porównuje stan z
 planem; rozbieżność uruchamia rollback, ponowny `rndc reconfig` i kontrolę
 przywrócenia pliku źródłowego.
+Operacyjna bramka secondary porównuje autorytatywność i SOA dotkniętych stref.
+Brak `AA`, brak SOA albo serial wyższy niż primary uruchamia rollback; niższy
+serial secondary pozostaje stanem `PENDING`, ponieważ transfer może trwać.
 Dry-run pozostaje dostępny, a obejście awaryjne nie jest jeszcze udostępnione.
 
 ## Stan obecny

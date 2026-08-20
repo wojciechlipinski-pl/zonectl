@@ -355,6 +355,9 @@ zaczynając od raportu wpływu tylko do odczytu.
 - [x] Po `rndc reconfig` ponownie odczytywać konfigurację ACL/secondary,
   porównywać ją z zatwierdzonym planem i przy rozbieżności wykonywać rollback
   wraz z kontrolą przywróconego pliku.
+- [x] Dla dotkniętych stref sprawdzać po aktywacji flagę AA i serial SOA na
+  primary oraz secondary; brak AA i serial wyższy od primary traktować jako
+  błąd, a niższy serial secondary jako kontrolowany stan PENDING.
 
 ### Testy awarii i jakość
 

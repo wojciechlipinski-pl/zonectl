@@ -51,6 +51,7 @@ def test_transaction_adapter_preserves_audit_context(tmp_path: Path, monkeypatch
     assert adapted.old_addresses == ("dns2",)
     assert adapted.new_addresses == ("dns2",)
     assert adapted.impact is plan.impact
+    assert adapted.operational_addresses == ("192.0.2.53",)
 
 
 def test_removing_last_secondary_pair_is_high_risk(

@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Callable
 
 from .bind_access_inventory import BindAccessInventoryReader
+from .bind_secondary_health import BindSecondaryHealthGate
 from .bind_secondary_plan import BindSecondaryPlan
 from .runner import run
 
@@ -50,6 +51,7 @@ class BindSecondaryResult:
 ConfigValidator = Callable[[Path], BindSecondaryStep]
 Activator = Callable[[], BindSecondaryStep]
 PostValidator = Callable[[BindSecondaryPlan], BindSecondaryStep]
+OperationalValidator = Callable[[BindSecondaryPlan], BindSecondaryStep]
 
 
 class BindSecondaryTransaction:
@@ -62,6 +64,7 @@ class BindSecondaryTransaction:
         config_validator: ConfigValidator | None = None,
         activator: Activator | None = None,
         post_validator: PostValidator | None = None,
+        operational_validator: OperationalValidator | None = None,
     ) -> None:
         self.backup_root = backup_root
         self.manifest_directory = manifest_directory
@@ -69,6 +72,9 @@ class BindSecondaryTransaction:
         self.config_validator = config_validator or self._validate_config
         self.activator = activator or self._activate
         self.post_validator = post_validator or self._validate_applied_state
+        self.operational_validator = (
+            operational_validator or self._validate_operational_state
+        )
 
     def apply(
         self,
@@ -156,6 +162,10 @@ class BindSecondaryTransaction:
                 result.steps.append(post_gate)
                 if not post_gate.ok:
                     raise RuntimeError(post_gate.message)
+                operational_gate = self.operational_validator(plan)
+                result.steps.append(operational_gate)
+                if not operational_gate.ok:
+                    raise RuntimeError(operational_gate.message)
             result.committed = True
             result.status = "COMMIT"
         except Exception as exc:
@@ -233,6 +243,35 @@ class BindSecondaryTransaction:
             "Aktywna konfiguracja secondary nie odpowiada zatwierdzonemu planowi"
         )
         return BindSecondaryStep("post-config-state", ok, detail)
+
+    @staticmethod
+    def _validate_operational_state(plan: BindSecondaryPlan) -> BindSecondaryStep:
+        if not plan.zones or not plan.operational_addresses:
+            return BindSecondaryStep(
+                "secondary-operational", True,
+                "Brak stref lub adresów wymagających kontroli SOA",
+            )
+        reports = BindSecondaryHealthGate().check(
+            plan.zones, plan.operational_addresses
+        )
+        failed = tuple(report for report in reports if report.status == "FAIL")
+        pending = tuple(report for report in reports if report.status == "PENDING")
+        if failed:
+            return BindSecondaryStep(
+                "secondary-operational", False,
+                "Błąd autorytatywności/SOA: "
+                + ", ".join(report.zone for report in failed),
+            )
+        if pending:
+            return BindSecondaryStep(
+                "secondary-operational", True,
+                "PENDING — transfer SOA trwa dla: "
+                + ", ".join(report.zone for report in pending),
+            )
+        return BindSecondaryStep(
+            "secondary-operational", True,
+            "PASS — secondary zwracają autorytatywne SOA zgodne z primary",
+        )
 
     def _write_manifest(self, result: BindSecondaryResult) -> None:
         self.manifest_directory.mkdir(parents=True, exist_ok=True, mode=0o750)
