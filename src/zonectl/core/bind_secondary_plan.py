@@ -121,7 +121,7 @@ class BindSecondaryPlanner:
             new_addresses=normalized,
             roles=group.roles,
             zones=group.zones,
-            operational_addresses=normalized,
+            operational_addresses=(normalized if "notify" in group.roles else ()),
             original_text=original,
             candidate_text=candidate,
             diff=diff,

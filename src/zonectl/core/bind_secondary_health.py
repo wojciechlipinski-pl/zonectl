@@ -42,31 +42,51 @@ class BindSecondaryHealthGate:
     def check(
         self, zones: tuple[str, ...], servers: tuple[str, ...]
     ) -> tuple[SecondaryZoneHealth, ...]:
-        return tuple(self._check_zone(zone, servers) for zone in zones)
+        primary = {zone: self.query("127.0.0.1", zone) for zone in zones}
+        latest: dict[str, tuple[SecondarySoaObservation, ...]] = {}
+        unresolved = set(zones)
+        for attempt in range(self.attempts):
+            for zone in tuple(unresolved):
+                observations = tuple(self.query(server, zone) for server in servers)
+                latest[zone] = observations
+                local = primary[zone]
+                if (
+                    local.authoritative and local.serial is not None
+                    and all(
+                        item.authoritative and item.serial == local.serial
+                        for item in observations
+                    )
+                ):
+                    unresolved.discard(zone)
+            if unresolved and attempt + 1 < self.attempts:
+                time.sleep(self.interval_seconds)
+        return tuple(
+            self._classify(zone, primary[zone], latest.get(zone, ()))
+            for zone in zones
+        )
 
-    def _check_zone(
-        self, zone: str, servers: tuple[str, ...]
+    @staticmethod
+    def _classify(
+        zone: str, primary: SecondarySoaObservation,
+        observations: tuple[SecondarySoaObservation, ...],
     ) -> SecondaryZoneHealth:
-        primary = self.query("127.0.0.1", zone)
         if not primary.authoritative or primary.serial is None:
             return SecondaryZoneHealth(
                 zone, "FAIL", primary.serial, (),
                 "Lokalny primary nie zwrócił autorytatywnego SOA",
             )
-        observations: tuple[SecondarySoaObservation, ...] = ()
-        for attempt in range(self.attempts):
-            observations = tuple(self.query(server, zone) for server in servers)
-            if all(
-                item.authoritative and item.serial == primary.serial
-                for item in observations
-            ):
-                return SecondaryZoneHealth(
-                    zone, "PASS", primary.serial, observations,
-                    "Secondary zwracają autorytatywny SOA zgodny z primary",
-                )
-            if attempt + 1 < self.attempts:
-                time.sleep(self.interval_seconds)
-        if any(not item.authoritative or item.serial is None for item in observations):
+        if observations and all(
+            item.authoritative and item.serial == primary.serial
+            for item in observations
+        ):
+            return SecondaryZoneHealth(
+                zone, "PASS", primary.serial, observations,
+                "Secondary zwracają autorytatywny SOA zgodny z primary",
+            )
+        if not observations or any(
+            not item.authoritative or item.serial is None
+            for item in observations
+        ):
             return SecondaryZoneHealth(
                 zone, "FAIL", primary.serial, observations,
                 "Co najmniej jeden secondary nie zwraca autorytatywnego SOA",
@@ -85,7 +105,7 @@ class BindSecondaryHealthGate:
     def _query_soa(server: str, zone: str) -> SecondarySoaObservation:
         outcome = run([
             "dig", f"@{server}", zone, "SOA", "+norecurse",
-            "+comments", "+answer",
+            "+comments", "+answer", "+time=2", "+tries=1",
         ], 10)
         output = "\n".join((outcome.stdout, outcome.stderr)).strip()
         flags = re.search(r"flags:\s*([^;]+);", output, re.IGNORECASE)

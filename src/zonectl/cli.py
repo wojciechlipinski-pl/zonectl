@@ -31,6 +31,7 @@ from .core.discovery import BindDiscoveryError
 from .core.bind_acl_plan import BindAclPlanError, BindAclPlanner
 from .core.bind_acl_transaction import BindAclTransaction
 from .core.bind_secondary_report import BindSecondaryReporter
+from .core.bind_secondary_health import BindSecondaryHealthGate
 from .core.bind_secondary_plan import (
     BindSecondaryPlanError,
     BindSecondaryPlanner,
@@ -291,6 +292,18 @@ def parser() -> argparse.ArgumentParser:
         "--root-config", type=Path, default=Path("/etc/bind/named.conf")
     )
     bind_secondary.add_argument("--json", action="store_true")
+    bind_secondary_health = bind_sub.add_parser(
+        "secondary-health",
+        help="sprawdź AA i SOA stref na skonfigurowanych secondary bez zmian",
+    )
+    bind_secondary_health.add_argument(
+        "--pair", action="append", dest="pairs",
+        help="ogranicz audyt do wskazanej pary logicznej; można powtarzać",
+    )
+    bind_secondary_health.add_argument(
+        "--root-config", type=Path, default=Path("/etc/bind/named.conf")
+    )
+    bind_secondary_health.add_argument("--json", action="store_true")
     bind_secondary_plan = bind_sub.add_parser(
         "secondary-plan", help="pokaż zwalidowany plan zmiany jednej grupy"
     )
@@ -1162,6 +1175,64 @@ def main(argv: list[str] | None = None) -> int:
             print(plan.diff or "Brak zmian.")
             print("\nWynik: DRY-RUN — niczego nie zmieniono")
         return 0 if plan.validation_ok else 1
+    if args.command == "bind" and args.bind_command == "secondary-health":
+        try:
+            inventory = BindAccessInventoryReader(args.root_config).collect()
+            secondary = BindSecondaryReporter().build(inventory)
+        except (BindAccessInventoryError, OSError) as exc:
+            print(f"BŁĄD: {exc}", file=sys.stderr)
+            return 2
+        selected = {item.casefold() for item in (args.pairs or [])}
+        known = {pair.name.casefold() for pair in secondary.pairs}
+        missing = sorted(selected - known)
+        if missing:
+            print("BŁĄD: Nieznane pary secondary: " + ", ".join(missing), file=sys.stderr)
+            return 2
+        pairs = tuple(
+            pair for pair in secondary.pairs
+            if pair.status == "PASS"
+            and (not selected or pair.name.casefold() in selected)
+        )
+        gate = BindSecondaryHealthGate()
+        payload = []
+        failed = False
+        for pair in pairs:
+            servers = tuple(dict.fromkeys(pair.notify_addresses))
+            skipped_zones = tuple(
+                zone for zone in pair.zones if "rpz" in zone.casefold()
+            )
+            auditable_zones = tuple(
+                zone for zone in pair.zones if zone not in skipped_zones
+            )
+            results = gate.check(auditable_zones, servers)
+            failed = failed or any(item.status == "FAIL" for item in results)
+            payload.append({
+                "pair": pair.name, "servers": list(servers),
+                "skipped_zones": list(skipped_zones),
+                "results": [asdict(item) for item in results],
+            })
+        if args.json:
+            print(json.dumps(payload, ensure_ascii=False, indent=2))
+        else:
+            print("AUDYT OPERACYJNY SECONDARY — TYLKO ODCZYT")
+            for item in payload:
+                print(f"\nPARA {item['pair']}")
+                print("Serwery: " + (", ".join(item["servers"]) or "-"))
+                for zone in item["skipped_zones"]:
+                    print(f"[SKIP] {zone} — osobny profil RPZ")
+                for result in item["results"]:
+                    serials = ", ".join(
+                        f"{obs['server']}={obs['serial'] or '-'}"
+                        for obs in result["observations"]
+                    ) or "-"
+                    print(
+                        f"[{result['status']}] {result['zone']} — "
+                        f"primary={result['primary_serial'] or '-'}; "
+                        f"secondary: {serials}"
+                    )
+                    print(f"  {result['message']}")
+            print("\nWynik: audyt odczytowy — niczego nie zmieniono")
+        return 1 if failed else 0
     if args.command == "bind" and args.bind_command == "secondary-report":
         try:
             inventory = BindAccessInventoryReader(args.root_config).collect()

@@ -358,6 +358,8 @@ zaczynając od raportu wpływu tylko do odczytu.
 - [x] Dla dotkniętych stref sprawdzać po aktywacji flagę AA i serial SOA na
   primary oraz secondary; brak AA i serial wyższy od primary traktować jako
   błąd, a niższy serial secondary jako kontrolowany stan PENDING.
+- [x] Udostępnić tę samą kontrolę jako odczytowy audyt
+  `bind secondary-health`, możliwy do uruchomienia przed zmianą produkcyjną.
 
 ### Testy awarii i jakość
 

@@ -11,6 +11,8 @@ przywrócenia pliku źródłowego.
 Operacyjna bramka secondary porównuje autorytatywność i SOA dotkniętych stref.
 Brak `AA`, brak SOA albo serial wyższy niż primary uruchamia rollback; niższy
 serial secondary pozostaje stanem `PENDING`, ponieważ transfer może trwać.
+Polecenie `bind secondary-health` uruchamia tę samą kontrolę bez zapisu,
+aktywacji ani tworzenia manifestu i może ograniczyć audyt do wskazanej pary.
 Dry-run pozostaje dostępny, a obejście awaryjne nie jest jeszcze udostępnione.
 
 ## Stan obecny

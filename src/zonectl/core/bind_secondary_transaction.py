@@ -246,13 +246,14 @@ class BindSecondaryTransaction:
 
     @staticmethod
     def _validate_operational_state(plan: BindSecondaryPlan) -> BindSecondaryStep:
-        if not plan.zones or not plan.operational_addresses:
+        zones = tuple(zone for zone in plan.zones if "rpz" not in zone.casefold())
+        if not zones or not plan.operational_addresses:
             return BindSecondaryStep(
                 "secondary-operational", True,
                 "Brak stref lub adresów wymagających kontroli SOA",
             )
         reports = BindSecondaryHealthGate().check(
-            plan.zones, plan.operational_addresses
+            zones, plan.operational_addresses
         )
         failed = tuple(report for report in reports if report.status == "FAIL")
         pending = tuple(report for report in reports if report.status == "PENDING")

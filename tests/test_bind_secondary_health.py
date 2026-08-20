@@ -78,3 +78,18 @@ def test_dig_output_parser_reads_aa_and_soa_serial(monkeypatch) -> None:
 
     assert observation.authoritative is True
     assert observation.serial == 2026082003
+
+
+def test_dig_query_has_bounded_timeout_and_single_try(monkeypatch) -> None:
+    commands = []
+    monkeypatch.setattr(
+        "zonectl.core.bind_secondary_health.run",
+        lambda command, timeout: (
+            commands.append(command) or CommandResult(1, "", "timeout")
+        ),
+    )
+
+    BindSecondaryHealthGate._query_soa("192.0.2.53", "example.test")
+
+    assert "+time=2" in commands[0]
+    assert "+tries=1" in commands[0]

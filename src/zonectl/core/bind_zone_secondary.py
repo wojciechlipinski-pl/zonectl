@@ -91,10 +91,7 @@ class BindZoneSecondaryPlanner:
         operational_addresses = tuple(dict.fromkeys(
             address
             for key in selected
-            for address in (
-                *pairs[key].notify_addresses,
-                *pairs[key].transfer_addresses,
-            )
+            for address in pairs[key].notify_addresses
         ))
         candidate_block = self._set_directive(block, "also-notify", notify)
         candidate_block = self._set_directive(candidate_block, "allow-transfer", transfer)
