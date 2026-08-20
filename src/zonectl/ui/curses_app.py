@@ -751,7 +751,10 @@ class CursesApp:
                 wrapped = self._wrap_message_lines(
                     list(view.lines), max(1, width - 4)
                 )
-                visible = max(1, height - 4)
+                # The 4.8 renderer starts content at row 5 and reserves the
+                # final two rows for spacing and the footer.  Scroll offsets
+                # must therefore be calculated from visual, not source, rows.
+                visible = max(1, height - 7 if wide else height - 4)
                 maximum = max(0, len(wrapped) - visible)
                 offset = min(offset, maximum)
                 win.addnstr(
@@ -2615,26 +2618,34 @@ class CursesApp:
 
     @staticmethod
     def _wrap_message_lines(lines: list[str], width: int) -> list[str]:
-        """Zawijaj tekst, zachowując puste linie i wcięcie kontynuacji."""
+        """Zawijaj wiersze wizualne bez wypuszczania tekstu poza panel.
+
+        Komunikaty narzędzi BIND często trafiają do pojedynczego elementu
+        listy razem ze znakami nowej linii.  Przekazanie takiego tekstu wprost
+        do ``curses.addnstr`` przestawia kursor i omija limit szerokości.
+        Najpierw rozbijamy więc każdy element na wiersze logiczne, a dopiero
+        potem wykonujemy reflow z zachowaniem wcięcia kontynuacji.
+        """
         wrapped: list[str] = []
         for value in lines:
-            line = str(value)
-            if not line:
-                wrapped.append("")
-                continue
-            indentation = line[: len(line) - len(line.lstrip())]
-            wrapped.extend(
-                textwrap.wrap(
-                    line,
-                    width=max(1, width),
-                    subsequent_indent=indentation,
-                    replace_whitespace=False,
-                    drop_whitespace=True,
-                    break_long_words=True,
-                    break_on_hyphens=False,
+            logical_lines = str(value).split("\n")
+            for line in logical_lines:
+                if not line:
+                    wrapped.append("")
+                    continue
+                indentation = line[: len(line) - len(line.lstrip())]
+                wrapped.extend(
+                    textwrap.wrap(
+                        line,
+                        width=max(1, width),
+                        subsequent_indent=indentation,
+                        replace_whitespace=False,
+                        drop_whitespace=True,
+                        break_long_words=True,
+                        break_on_hyphens=False,
+                    )
+                    or [""]
                 )
-                or [""]
-            )
         return wrapped
 
     @staticmethod

@@ -56,3 +56,24 @@ def test_message_lines_wrap_and_preserve_indentation_and_blanks() -> None:
         "",
         "ABCDEFGHIJ",
     ]
+
+
+def test_message_lines_split_embedded_newlines_before_wrapping() -> None:
+    wrapped = CursesApp._wrap_message_lines(
+        [
+            "[OK] rndc-zonestatus: name: example.invalid\n"
+            "type: primary\n"
+            "  key signing: yes - since a deliberately long timestamp"
+        ],
+        24,
+    )
+
+    assert wrapped == [
+        "[OK] rndc-zonestatus:",
+        "name: example.invalid",
+        "type: primary",
+        "  key signing: yes -",
+        "  since a deliberately",
+        "  long timestamp",
+    ]
+    assert all("\n" not in line and len(line) <= 24 for line in wrapped)
