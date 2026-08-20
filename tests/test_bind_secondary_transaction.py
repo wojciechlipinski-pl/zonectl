@@ -131,3 +131,30 @@ def test_high_risk_secondary_commit_is_blocked_before_backup(
     assert blocked.steps[0].name == "impact-gate"
     assert root.read_bytes() == before
     assert not (tmp_path / "backups").exists()
+
+
+def test_post_config_gate_failure_rolls_back_secondary_and_rechecks_state(
+    tmp_path: Path,
+) -> None:
+    plan, root = _plan(tmp_path)
+    calls = 0
+
+    def activate() -> BindSecondaryStep:
+        nonlocal calls
+        calls += 1
+        return BindSecondaryStep("rndc-reconfig", True, "OK")
+
+    result = BindSecondaryTransaction(
+        tmp_path / "backups", tmp_path / "manifests",
+        root_config=root, config_validator=_ok("named-checkconf"),
+        activator=activate,
+        post_validator=lambda _plan: BindSecondaryStep(
+            "post-config-state", False, "stan secondary niezgodny"
+        ),
+    ).apply(plan, commit=True, activate=True)
+
+    assert result.status == "ROLLED-BACK"
+    assert result.rolled_back is True
+    assert calls == 2
+    assert root.read_text() == plan.original_text
+    assert any(step.name == "post-rollback-state" and step.ok for step in result.steps)

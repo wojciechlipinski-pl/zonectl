@@ -107,3 +107,30 @@ def test_high_risk_commit_is_blocked_before_backup(tmp_path: Path) -> None:
     assert blocked.steps[0].name == "impact-gate"
     assert root.read_bytes() == before
     assert not (tmp_path / "backups").exists()
+
+
+def test_post_config_gate_failure_rolls_back_and_verifies_restored_state(
+    tmp_path: Path,
+) -> None:
+    plan, root = _plan(tmp_path)
+    calls = 0
+
+    def activate() -> BindAclStep:
+        nonlocal calls
+        calls += 1
+        return BindAclStep("rndc-reconfig", True, "OK")
+
+    result = BindAclTransaction(
+        tmp_path / "backups", tmp_path / "manifests",
+        root_config=root, config_validator=_ok("named-checkconf"),
+        activator=activate,
+        post_validator=lambda _plan: BindAclStep(
+            "post-config-state", False, "stan ACL niezgodny"
+        ),
+    ).apply(plan, commit=True, activate=True)
+
+    assert result.status == "ROLLED-BACK"
+    assert result.rolled_back is True
+    assert calls == 2
+    assert root.read_text() == plan.original_text
+    assert any(step.name == "post-rollback-state" and step.ok for step in result.steps)

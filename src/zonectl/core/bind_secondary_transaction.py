@@ -14,6 +14,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable
 
+from .bind_access_inventory import BindAccessInventoryReader
 from .bind_secondary_plan import BindSecondaryPlan
 from .runner import run
 
@@ -48,6 +49,7 @@ class BindSecondaryResult:
 
 ConfigValidator = Callable[[Path], BindSecondaryStep]
 Activator = Callable[[], BindSecondaryStep]
+PostValidator = Callable[[BindSecondaryPlan], BindSecondaryStep]
 
 
 class BindSecondaryTransaction:
@@ -59,12 +61,14 @@ class BindSecondaryTransaction:
         root_config: Path = Path("/etc/bind/named.conf"),
         config_validator: ConfigValidator | None = None,
         activator: Activator | None = None,
+        post_validator: PostValidator | None = None,
     ) -> None:
         self.backup_root = backup_root
         self.manifest_directory = manifest_directory
         self.root_config = root_config
         self.config_validator = config_validator or self._validate_config
         self.activator = activator or self._activate
+        self.post_validator = post_validator or self._validate_applied_state
 
     def apply(
         self,
@@ -148,6 +152,10 @@ class BindSecondaryTransaction:
                 result.steps.append(reload_step)
                 if not reload_step.ok:
                     raise RuntimeError(reload_step.message)
+                post_gate = self.post_validator(plan)
+                result.steps.append(post_gate)
+                if not post_gate.ok:
+                    raise RuntimeError(post_gate.message)
             result.committed = True
             result.status = "COMMIT"
         except Exception as exc:
@@ -169,6 +177,14 @@ class BindSecondaryTransaction:
                         rollback_reload.message,
                     ))
                     rollback_ok = rollback_reload.ok
+                rollback_state = BindSecondaryStep(
+                    "post-rollback-state",
+                    plan.source.read_text(encoding="utf-8", errors="replace")
+                    == plan.original_text,
+                    "Przywrócono stan konfiguracji sprzed transakcji",
+                )
+                result.steps.append(rollback_state)
+                rollback_ok = rollback_ok and rollback_state.ok
             except OSError as rollback_error:
                 rollback_ok = False
                 result.steps.append(BindSecondaryStep(
@@ -196,6 +212,27 @@ class BindSecondaryTransaction:
             "sha256": hashlib.sha256(text.encode("utf-8")).hexdigest(),
             "entries": list(entries),
         }
+
+    def _validate_applied_state(self, plan: BindSecondaryPlan) -> BindSecondaryStep:
+        if plan.kind == "zone-assignment":
+            ok = (
+                plan.source.read_text(encoding="utf-8", errors="replace")
+                == plan.candidate_text
+            )
+        else:
+            inventory = BindAccessInventoryReader(self.root_config).collect()
+            matches = [
+                item for item in inventory.definitions
+                if item.kind == plan.kind
+                and item.name.casefold() == plan.name.casefold()
+            ]
+            ok = len(matches) == 1 and matches[0].entries == plan.new_addresses
+        detail = (
+            "Aktywna konfiguracja secondary odpowiada zatwierdzonemu planowi"
+            if ok else
+            "Aktywna konfiguracja secondary nie odpowiada zatwierdzonemu planowi"
+        )
+        return BindSecondaryStep("post-config-state", ok, detail)
 
     def _write_manifest(self, result: BindSecondaryResult) -> None:
         self.manifest_directory.mkdir(parents=True, exist_ok=True, mode=0o750)

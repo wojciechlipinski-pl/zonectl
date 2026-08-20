@@ -5,6 +5,9 @@ integracja z plannerami, klasyfikacja przypisań stref oraz bramka blokująca
 zwykły commit ryzyka `HIGH`, w tym odłączenie ostatniej pary secondary.
 Manifesty wykonanych transakcji zapisują operatora, uzasadnienie, ryzyko,
 role, strefy oraz sumy SHA-256 i wpisy przed/po operacji.
+Po aktywacji transakcja ponownie odczytuje konfigurację i porównuje stan z
+planem; rozbieżność uruchamia rollback, ponowny `rndc reconfig` i kontrolę
+przywrócenia pliku źródłowego.
 Dry-run pozostaje dostępny, a obejście awaryjne nie jest jeszcze udostępnione.
 
 ## Stan obecny

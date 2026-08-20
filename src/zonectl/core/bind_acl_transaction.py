@@ -14,6 +14,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable
 
+from .bind_access_inventory import BindAccessInventoryReader
 from .bind_acl_plan import BindAclPlan
 from .runner import run
 
@@ -46,6 +47,7 @@ class BindAclResult:
 
 ConfigValidator = Callable[[Path], BindAclStep]
 Activator = Callable[[], BindAclStep]
+PostValidator = Callable[[BindAclPlan], BindAclStep]
 
 
 class BindAclTransaction:
@@ -57,12 +59,14 @@ class BindAclTransaction:
         root_config: Path = Path("/etc/bind/named.conf"),
         config_validator: ConfigValidator | None = None,
         activator: Activator | None = None,
+        post_validator: PostValidator | None = None,
     ) -> None:
         self.backup_root = backup_root
         self.manifest_directory = manifest_directory
         self.root_config = root_config
         self.config_validator = config_validator or self._validate_config
         self.activator = activator or self._activate
+        self.post_validator = post_validator or self._validate_applied_state
 
     def apply(
         self, plan: BindAclPlan, *, commit: bool = False, activate: bool = False,
@@ -138,6 +142,10 @@ class BindAclTransaction:
                 result.steps.append(activation)
                 if not activation.ok:
                     raise RuntimeError(activation.message)
+                post_gate = self.post_validator(plan)
+                result.steps.append(post_gate)
+                if not post_gate.ok:
+                    raise RuntimeError(post_gate.message)
             result.status = "COMMIT"
             result.committed = True
         except Exception as exc:
@@ -157,6 +165,14 @@ class BindAclTransaction:
                         "rndc-reconfig-rollback", reload_step.ok, reload_step.message
                     ))
                     rollback_ok = reload_step.ok
+                rollback_state = BindAclStep(
+                    "post-rollback-state",
+                    plan.source.read_text(encoding="utf-8", errors="replace")
+                    == plan.original_text,
+                    "Przywrócono stan konfiguracji sprzed transakcji",
+                )
+                result.steps.append(rollback_state)
+                rollback_ok = rollback_ok and rollback_state.ok
             except OSError as rollback_error:
                 rollback_ok = False
                 result.steps.append(BindAclStep("rollback", False, str(rollback_error)))
@@ -184,6 +200,21 @@ class BindAclTransaction:
             "sha256": hashlib.sha256(text.encode("utf-8")).hexdigest(),
             "entries": list(entries),
         }
+
+    def _validate_applied_state(self, plan: BindAclPlan) -> BindAclStep:
+        inventory = BindAccessInventoryReader(self.root_config).collect()
+        matches = [
+            item for item in inventory.definitions
+            if item.kind == "acl" and item.name.casefold() == plan.name.casefold()
+        ]
+        expected = plan.impact.candidate_entries if plan.impact else ()
+        ok = len(matches) == 1 and matches[0].entries == expected
+        detail = (
+            "Aktywna konfiguracja ACL odpowiada zatwierdzonemu planowi"
+            if ok else
+            "Aktywna konfiguracja ACL nie odpowiada zatwierdzonemu planowi"
+        )
+        return BindAclStep("post-config-state", ok, detail)
 
     def _write_manifest(self, result: BindAclResult) -> None:
         self.manifest_directory.mkdir(parents=True, exist_ok=True, mode=0o750)

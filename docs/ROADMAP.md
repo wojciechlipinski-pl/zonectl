@@ -352,6 +352,9 @@ zaczynając od raportu wpływu tylko do odczytu.
   odłączaniu ostatniej pary secondary od strefy.
 - [x] Rozszerzyć manifest o operatora, przyczynę, ryzyko, stan przed i po operacji oraz
   pełną listę dotkniętych stref.
+- [x] Po `rndc reconfig` ponownie odczytywać konfigurację ACL/secondary,
+  porównywać ją z zatwierdzonym planem i przy rozbieżności wykonywać rollback
+  wraz z kontrolą przywróconego pliku.
 
 ### Testy awarii i jakość
 
