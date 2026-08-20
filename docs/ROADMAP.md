@@ -344,6 +344,8 @@ zaczynając od raportu wpływu tylko do odczytu.
 - [x] Zezwalać na dry-run ryzyka HIGH, ale blokować zwykły commit ACL lub
   secondary przed backupem i zapisem; nie udostępniać obejścia awaryjnego
   przed wdrożeniem rozszerzonego potwierdzenia i przyczyny w manifeście.
+- [x] Klasyfikować usunięcie ostatniej logicznej pary secondary ze strefy jako
+  HIGH i blokować commit przed utworzeniem backupu oraz zmianą konfiguracji.
 - [ ] Blokować usunięcie ostatniego wpisu administracyjnego oraz wpisu
   wymaganego przez aktywny transfer.
 - [ ] Wymagać rozszerzonego potwierdzenia przy opróżnianiu używanej ACL lub

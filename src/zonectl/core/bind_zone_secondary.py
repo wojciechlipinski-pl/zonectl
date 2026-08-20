@@ -7,6 +7,7 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 
+from .bind_access_impact import BindAccessImpactReport
 from .bind_access_inventory import BindAccessInventoryReader
 from .bind_secondary_plan import BindSecondaryPlan, BindSecondaryPlanner
 from .bind_secondary_report import BindSecondaryReporter
@@ -29,6 +30,7 @@ class BindZoneSecondaryPlan:
     diff: str
     validation_ok: bool
     validation_message: str
+    impact: BindAccessImpactReport
 
     def transaction_plan(self) -> BindSecondaryPlan:
         return BindSecondaryPlan(
@@ -38,6 +40,7 @@ class BindZoneSecondaryPlan:
             original_text=self.original_text, candidate_text=self.candidate_text,
             diff=self.diff, validation_ok=self.validation_ok,
             validation_message=self.validation_message,
+            impact=self.impact,
         )
 
 
@@ -91,11 +94,33 @@ class BindZoneSecondaryPlanner:
             fromfile=str(zone.config_file), tofile=f"{zone.config_file} (kandydat secondary strefy)",
         ))
         ok, message = BindSecondaryPlanner(self.root_config)._validate_candidate(zone.config_file, candidate)
+        current_keys = {item.casefold() for item in current}
+        selected_keys = {item.casefold() for item in selected}
+        added = tuple(item for item in selected if item.casefold() not in current_keys)
+        removed = tuple(item for item in current if item.casefold() not in selected_keys)
+        if removed and not selected:
+            risk = "HIGH"
+        elif removed:
+            risk = "MEDIUM"
+        elif added:
+            risk = "LOW"
+        else:
+            risk = "NONE"
+        impact = BindAccessImpactReport(
+            name=f"zone-{wanted}", kind="zone-assignment",
+            source=str(zone.config_file),
+            line=original.count("\n", 0, span.start) + 1,
+            current_entries=current, candidate_entries=tuple(selected),
+            added_entries=added, removed_entries=removed,
+            roles=("notify", "transfer"), zones=(wanted,), usages=(),
+            dependent_definitions=(), risk=risk, blockers=(),
+        )
         return BindZoneSecondaryPlan(
             zone=wanted, source=zone.config_file, old_pairs=current,
             new_pairs=tuple(selected), original_text=original,
             candidate_text=candidate, diff=diff,
             validation_ok=ok, validation_message=message,
+            impact=impact,
         )
 
     @classmethod

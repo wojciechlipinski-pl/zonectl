@@ -39,3 +39,30 @@ def test_zone_secondary_apply_requires_both_flags(monkeypatch, tmp_path, capsys)
     code = cli.main(["bind", "zone-secondary-apply", "example.pl", "--pair", "dns2", "--root-config", str(_root(tmp_path)), "--commit"])
     assert code == 2
     assert "--commit i --activate" in capsys.readouterr().err
+
+
+def test_zone_secondary_last_pair_commit_is_blocked_before_write(
+    monkeypatch, tmp_path, capsys
+) -> None:
+    monkeypatch.setattr(cli.ToolkitConfig, "load", lambda self: _EmptyConfig())
+    monkeypatch.setattr(
+        "zonectl.core.bind_secondary_plan.BindSecondaryPlanner._validate_candidate",
+        lambda self, source, candidate: (True, "kod 0"),
+    )
+    root = _root(tmp_path)
+    before = root.read_bytes()
+
+    code = cli.main([
+        "bind", "zone-secondary-apply", "example.pl",
+        "--root-config", str(root),
+        "--backup-root", str(tmp_path / "backups"),
+        "--manifest-directory", str(tmp_path / "manifests"),
+        "--commit", "--activate", "--confirm", "example.pl",
+    ])
+
+    output = capsys.readouterr().out
+    assert code == 1
+    assert "Status:     BLOCKED" in output
+    assert "impact-gate" in output
+    assert root.read_bytes() == before
+    assert not (tmp_path / "backups").exists()

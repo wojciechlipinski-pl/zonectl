@@ -1,7 +1,8 @@
 # Plan zabezpieczeń ACL i secondary
 
 Status: etapy 1–3 wdrożone — odczytowy raport wpływu `bind access-impact`,
-integracja z plannerami oraz bramka blokująca zwykły commit ryzyka `HIGH`.
+integracja z plannerami, klasyfikacja przypisań stref oraz bramka blokująca
+zwykły commit ryzyka `HIGH`, w tym odłączenie ostatniej pary secondary.
 Dry-run pozostaje dostępny, a obejście awaryjne nie jest jeszcze udostępnione.
 
 ## Stan obecny
@@ -97,7 +98,8 @@ spoza plików objętych transakcją.
 
 1. Odczytowy model zależności i raport wpływu wraz z testami parsera.
 2. Bramka ACL w plannerze — bez zmian w transakcji i TUI.
-3. Bramka grup secondary oraz przypisań stref — nadal tylko plan/dry-run.
+3. Bramka grup secondary oraz przypisań stref — plan, dry-run i blokada
+   zwykłego commitu ryzyka `HIGH`.
 4. Rozszerzone potwierdzenia TUI i równoważne parametry CLI.
 5. Rozszerzony manifest z kontrolą braku sekretów.
 6. Bramki powdrożeniowe i wymuszone testy rollbacku.
