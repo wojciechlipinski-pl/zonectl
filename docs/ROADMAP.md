@@ -331,6 +331,10 @@ Szczegółowe kryteria zgodności z opublikowanymi grafikami określa
 
 ### Zabezpieczenia ACL i secondary
 
+Kontrakt bramek, manifestu i testów opisuje
+`docs/ACL_SECONDARY_SAFETY_PLAN.md`. Implementację należy prowadzić etapami,
+zaczynając od raportu wpływu tylko do odczytu.
+
 - [ ] Blokować usunięcie ostatniego wpisu administracyjnego oraz wpisu
   wymaganego przez aktywny transfer.
 - [ ] Wymagać rozszerzonego potwierdzenia przy opróżnianiu używanej ACL lub
