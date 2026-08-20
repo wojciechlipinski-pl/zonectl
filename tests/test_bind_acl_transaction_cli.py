@@ -77,3 +77,15 @@ def test_acl_apply_requires_exact_confirmation(
     ])
     assert code == 2
     assert "pełnej nazwie ACL" in capsys.readouterr().err
+
+
+def test_acl_apply_commit_requires_reason(monkeypatch, tmp_path, capsys) -> None:
+    monkeypatch.setattr(cli.ToolkitConfig, "load", lambda self: _EmptyConfig())
+
+    code = cli.main([
+        "bind", "acl-apply", "trusted", "--root-config", str(_root(tmp_path)),
+        "--commit", "--activate", "--confirm", "trusted",
+    ])
+
+    assert code == 2
+    assert "--reason" in capsys.readouterr().err

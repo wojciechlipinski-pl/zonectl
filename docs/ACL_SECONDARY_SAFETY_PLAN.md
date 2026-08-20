@@ -13,6 +13,8 @@ Brak `AA`, brak SOA albo serial wyższy niż primary uruchamia rollback; niższy
 serial secondary pozostaje stanem `PENDING`, ponieważ transfer może trwać.
 Polecenie `bind secondary-health` uruchamia tę samą kontrolę bez zapisu,
 aktywacji ani tworzenia manifestu i może ograniczyć audyt do wskazanej pary.
+Commit z CLI wymaga niepustego `--reason`; dry-run nie wymaga uzasadnienia,
+a TUI zapisuje w manifeście kanał i rodzaj zatwierdzonej operacji.
 Dry-run pozostaje dostępny, a obejście awaryjne nie jest jeszcze udostępnione.
 
 ## Stan obecny

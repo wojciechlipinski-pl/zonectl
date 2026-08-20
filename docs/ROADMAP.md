@@ -360,6 +360,8 @@ zaczynając od raportu wpływu tylko do odczytu.
   błąd, a niższy serial secondary jako kontrolowany stan PENDING.
 - [x] Udostępnić tę samą kontrolę jako odczytowy audyt
   `bind secondary-health`, możliwy do uruchomienia przed zmianą produkcyjną.
+- [x] Wymagać niepustego uzasadnienia `--reason` dla każdego commitu ACL,
+  grupy secondary i przypisania secondary wykonywanego z CLI.
 
 ### Testy awarii i jakość
 

@@ -59,3 +59,18 @@ def test_secondary_apply_requires_exact_confirmation(
     ])
     assert code == 2
     assert "pełnej nazwie grupy" in capsys.readouterr().err
+
+
+def test_secondary_apply_commit_requires_reason(
+    monkeypatch, tmp_path: Path, capsys
+) -> None:
+    monkeypatch.setattr(cli.ToolkitConfig, "load", lambda self: _EmptyConfig())
+
+    code = cli.main([
+        "bind", "secondary-apply", "dns2-notify",
+        "--address", "192.0.2.53", "--root-config", str(_root(tmp_path)),
+        "--commit", "--activate", "--confirm", "dns2-notify",
+    ])
+
+    assert code == 2
+    assert "--reason" in capsys.readouterr().err

@@ -1017,6 +1017,9 @@ def main(argv: list[str] | None = None) -> int:
         if applying and args.commit and (args.confirm or "").rstrip(".").casefold() != args.zone.rstrip(".").casefold():
             print("BŁĄD: --confirm musi odpowiadać pełnej nazwie strefy.", file=sys.stderr)
             return 2
+        if applying and args.commit and not (args.reason or "").strip():
+            print("BŁĄD: właściwa zmiana wymaga niepustego --reason.", file=sys.stderr)
+            return 2
         try:
             plan = BindZoneSecondaryPlanner(args.root_config).plan(args.zone, args.pairs)
             if applying:
@@ -1069,6 +1072,9 @@ def main(argv: list[str] | None = None) -> int:
                 "BŁĄD: --confirm musi odpowiadać pełnej nazwie grupy.",
                 file=sys.stderr,
             )
+            return 2
+        if args.commit and not (args.reason or "").strip():
+            print("BŁĄD: właściwa zmiana wymaga niepustego --reason.", file=sys.stderr)
             return 2
         try:
             plan = BindSecondaryPlanner(args.root_config).plan(
@@ -1282,6 +1288,9 @@ def main(argv: list[str] | None = None) -> int:
                 "BŁĄD: --confirm musi odpowiadać pełnej nazwie ACL.",
                 file=sys.stderr,
             )
+            return 2
+        if args.commit and not (args.reason or "").strip():
+            print("BŁĄD: właściwa zmiana wymaga niepustego --reason.", file=sys.stderr)
             return 2
         replacements: dict[str, str] = {}
         try:

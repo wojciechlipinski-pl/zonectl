@@ -58,6 +58,7 @@ def test_zone_secondary_last_pair_commit_is_blocked_before_write(
         "--backup-root", str(tmp_path / "backups"),
         "--manifest-directory", str(tmp_path / "manifests"),
         "--commit", "--activate", "--confirm", "example.pl",
+        "--reason", "test ochrony ostatniej pary",
     ])
 
     output = capsys.readouterr().out
@@ -66,3 +67,16 @@ def test_zone_secondary_last_pair_commit_is_blocked_before_write(
     assert "impact-gate" in output
     assert root.read_bytes() == before
     assert not (tmp_path / "backups").exists()
+
+
+def test_zone_secondary_commit_requires_reason(monkeypatch, tmp_path, capsys) -> None:
+    monkeypatch.setattr(cli.ToolkitConfig, "load", lambda self: _EmptyConfig())
+
+    code = cli.main([
+        "bind", "zone-secondary-apply", "example.pl", "--pair", "dns2",
+        "--root-config", str(_root(tmp_path)), "--commit", "--activate",
+        "--confirm", "example.pl",
+    ])
+
+    assert code == 2
+    assert "--reason" in capsys.readouterr().err
