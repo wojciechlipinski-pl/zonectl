@@ -61,7 +61,9 @@ class BindAccessInventoryReader:
         re.IGNORECASE,
     )
     _usage = re.compile(
-        r"\b(?P<directive>allow-query|allow-recursion|allow-transfer|allow-notify|also-notify|primaries)\s*\{",
+        r"\b(?P<directive>allow-query|allow-query-cache|allow-recursion|"
+        r"allow-transfer|allow-notify|allow-update|"
+        r"also-notify|primaries)\s*\{",
         re.IGNORECASE,
     )
 

@@ -1,7 +1,7 @@
 # Plan zabezpieczeń ACL i secondary
 
-Status: projekt implementacyjny. Ten dokument nie rozszerza jeszcze uprawnień
-żadnej operacji zapisującej.
+Status: etap 1 wdrożony — odczytowy raport wpływu `bind access-impact`.
+Dokument nie rozszerza jeszcze uprawnień żadnej operacji zapisującej.
 
 ## Stan obecny
 
@@ -29,6 +29,11 @@ Przed przygotowaniem planu zapisu należy zbudować niezmienny raport zawierają
 
 Raport musi korzystać z pełnego drzewa aktywnych `include`, a nie z wyszukiwania
 tekstowego w jednym pliku.
+
+Poziom ryzyka opisuje rozważaną różnicę, a nie sam fakt używania definicji:
+`NONE` oznacza brak zmiany, `LOW` zmianę bez usuwania wpisów, `MEDIUM` usuwanie
+z używanej listy, `HIGH` usuwanie z roli administracyjnej, a `INDETERMINATE`
+brak możliwości wiarygodnej oceny.
 
 ## Bramka ACL
 

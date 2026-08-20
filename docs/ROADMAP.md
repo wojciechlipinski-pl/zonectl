@@ -335,6 +335,9 @@ Kontrakt bramek, manifestu i testów opisuje
 `docs/ACL_SECONDARY_SAFETY_PLAN.md`. Implementację należy prowadzić etapami,
 zaczynając od raportu wpływu tylko do odczytu.
 
+- [x] Dodać wspólny, odczytowy raport wpływu `bind access-impact`, który
+  rozwija zależności pomiędzy nazwanymi listami, pokazuje role, użycia,
+  dotknięte strefy, różnicę wpisów, poziom ryzyka i cykle zależności.
 - [ ] Blokować usunięcie ostatniego wpisu administracyjnego oraz wpisu
   wymaganego przez aktywny transfer.
 - [ ] Wymagać rozszerzonego potwierdzenia przy opróżnianiu używanej ACL lub

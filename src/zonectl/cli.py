@@ -13,6 +13,10 @@ from .core.bind_access_inventory import (
     BindAccessInventoryReader,
 )
 from .core.bind_access_audit import BindAccessAuditor
+from .core.bind_access_impact import (
+    BindAccessImpactError,
+    BindAccessImpactReporter,
+)
 from .core.bind_environment_report import BindEnvironmentReporter
 from .core.rpz_managed_plan import RpzManagedPlanner
 from .core.rpz_managed_install import (
@@ -238,6 +242,19 @@ def parser() -> argparse.ArgumentParser:
         "--root-config", type=Path, default=Path("/etc/bind/named.conf")
     )
     bind_acl_plan.add_argument("--json", action="store_true")
+    bind_access_impact = bind_sub.add_parser(
+        "access-impact",
+        help="pokaż odczytowo zależności i wpływ zmiany ACL/secondary",
+    )
+    bind_access_impact.add_argument("name")
+    bind_access_impact.add_argument(
+        "--entry", action="append", dest="entries",
+        help="element rozważanej listy docelowej; opcję można powtarzać",
+    )
+    bind_access_impact.add_argument(
+        "--root-config", type=Path, default=Path("/etc/bind/named.conf")
+    )
+    bind_access_impact.add_argument("--json", action="store_true")
     bind_acl_apply = bind_sub.add_parser(
         "acl-apply", help="transakcyjnie zastosuj plan ACL; domyślnie dry-run"
     )
@@ -1064,6 +1081,43 @@ def main(argv: list[str] | None = None) -> int:
             for step in result.steps:
                 print(f"[{'OK' if step.ok else 'BŁĄD'}] {step.name}: {step.message}")
         return 0 if result.status in {"DRY-RUN", "COMMIT"} else 1
+    if args.command == "bind" and args.bind_command == "access-impact":
+        try:
+            inventory = BindAccessInventoryReader(args.root_config).collect()
+            report = BindAccessImpactReporter().build(
+                inventory, args.name, args.entries
+            )
+        except (BindAccessInventoryError, BindAccessImpactError, OSError) as exc:
+            print(f"BŁĄD: {exc}", file=sys.stderr)
+            return 2
+        if args.json:
+            print(json.dumps(report.to_dict(), ensure_ascii=False, indent=2))
+        else:
+            print("RAPORT WPŁYWU ACL/SECONDARY — TYLKO ODCZYT")
+            print(f"Definicja:    {report.name} ({report.kind})")
+            print(f"Źródło:       {report.source}:{report.line}")
+            print(f"Ryzyko:       {report.risk}")
+            print("Role:         " + (", ".join(report.roles) or "nieużywana"))
+            print("Strefy:       " + (", ".join(report.zones) or "-"))
+            print("Zależne ACL:  " + (", ".join(report.dependent_definitions) or "-"))
+            print("Wpisy obecne: " + (", ".join(report.current_entries) or "-"))
+            print("Kandydat:     " + (", ".join(report.candidate_entries) or "-"))
+            print("Dodawane:     " + (", ".join(report.added_entries) or "-"))
+            print("Usuwane:      " + (", ".join(report.removed_entries) or "-"))
+            print("\nUŻYCIA")
+            for usage in report.usages:
+                location = f"{usage.source}:{usage.line}"
+                zone = f" — strefa {usage.zone}" if usage.zone else ""
+                print(
+                    f"[{usage.role}] {usage.directive} — {location}{zone}"
+                    f" — przez {', '.join(usage.via)}"
+                )
+            if report.blockers:
+                print("\nBLOKADY")
+                for blocker in report.blockers:
+                    print(f"- {blocker}")
+            print("\nWynik: raport odczytowy — niczego nie zmieniono")
+        return 1 if report.blockers else 0
     if args.command == "bind" and args.bind_command == "secondary-plan":
         try:
             plan = BindSecondaryPlanner(args.root_config).plan(
