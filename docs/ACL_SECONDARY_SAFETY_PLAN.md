@@ -1,8 +1,8 @@
 # Plan zabezpieczeń ACL i secondary
 
-Status: etapy 1–2 wdrożone — odczytowy raport wpływu `bind access-impact`
-oraz jego integracja z plannerami ACL/secondary. Dokument nie rozszerza jeszcze
-uprawnień żadnej operacji zapisującej; tylko wpływ `INDETERMINATE` blokuje plan.
+Status: etapy 1–3 wdrożone — odczytowy raport wpływu `bind access-impact`,
+integracja z plannerami oraz bramka blokująca zwykły commit ryzyka `HIGH`.
+Dry-run pozostaje dostępny, a obejście awaryjne nie jest jeszcze udostępnione.
 
 ## Stan obecny
 

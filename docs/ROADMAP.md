@@ -341,6 +341,9 @@ zaczynając od raportu wpływu tylko do odczytu.
 - [x] Dołączyć raport wpływu do planów ACL i secondary oraz blokować plan,
   gdy zależności są cykliczne lub wpływu nie można wiarygodnie ustalić;
   poziomy LOW/MEDIUM/HIGH pozostają informacyjne do czasu wdrożenia bramek.
+- [x] Zezwalać na dry-run ryzyka HIGH, ale blokować zwykły commit ACL lub
+  secondary przed backupem i zapisem; nie udostępniać obejścia awaryjnego
+  przed wdrożeniem rozszerzonego potwierdzenia i przyczyny w manifeście.
 - [ ] Blokować usunięcie ostatniego wpisu administracyjnego oraz wpisu
   wymaganego przez aktywny transfer.
 - [ ] Wymagać rozszerzonego potwierdzenia przy opróżnianiu używanej ACL lub

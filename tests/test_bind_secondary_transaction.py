@@ -1,4 +1,5 @@
 import json
+from dataclasses import replace
 from pathlib import Path
 
 from zonectl.core.bind_secondary_plan import BindSecondaryPlanner
@@ -98,4 +99,26 @@ def test_changed_file_is_rejected_before_backup(tmp_path: Path) -> None:
         tmp_path / "backups", tmp_path / "manifests", root_config=root
     ).apply(plan, commit=True, activate=True)
     assert result.status == "CONFLICT"
+    assert not (tmp_path / "backups").exists()
+
+
+def test_high_risk_secondary_commit_is_blocked_before_backup(
+    tmp_path: Path,
+) -> None:
+    plan, root = _plan(tmp_path)
+    assert plan.impact is not None
+    high = replace(plan, impact=replace(plan.impact, risk="HIGH"))
+    before = root.read_bytes()
+
+    dry_run = BindSecondaryTransaction(
+        tmp_path / "backups", tmp_path / "manifests", root_config=root
+    ).apply(high)
+    blocked = BindSecondaryTransaction(
+        tmp_path / "backups", tmp_path / "manifests", root_config=root
+    ).apply(high, commit=True, activate=True)
+
+    assert dry_run.status == "DRY-RUN"
+    assert blocked.status == "BLOCKED"
+    assert blocked.steps[0].name == "impact-gate"
+    assert root.read_bytes() == before
     assert not (tmp_path / "backups").exists()

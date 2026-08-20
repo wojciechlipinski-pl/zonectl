@@ -98,6 +98,15 @@ class BindSecondaryTransaction:
                 "dry-run", True, "Nie zmieniono konfiguracji ani BIND"
             ))
             return result
+        if plan.impact is not None and plan.impact.risk == "HIGH":
+            result.status = "BLOCKED"
+            result.steps.append(BindSecondaryStep(
+                "impact-gate",
+                False,
+                "Zmiana HIGH jest zablokowana; użyj planu do usunięcia "
+                "przyczyny ryzyka. Tryb awaryjny nie jest jeszcze dostępny.",
+            ))
+            return result
 
         self.backup_root.mkdir(parents=True, exist_ok=True, mode=0o750)
         backup = self.backup_root / f"{txid}-{plan.source.name}"
