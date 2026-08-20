@@ -187,6 +187,9 @@ zrealizowane, a `[ ]` pozostają do wykonania.
   z walidacją `named-checkconf`, kontrolowanym `rndc reconfig` i rollbackiem.
 - [x] Monitorować utworzenie kluczy, podpisanie strefy i stan rekordów DNSKEY.
 - [x] Wyświetlać rekord DS przeznaczony do przekazania rejestratorowi.
+- [ ] Rozbić prezentowany rekord DS na pola zgodne z formularzami rejestratorów:
+  ID klucza (key tag), algorytm klucza, algorytm skrótu i skrót klucza;
+  pokazywać nazwy algorytmów IANA oraz pełny rekord do skopiowania.
 - [x] Dodać do raportu CLI etap procesu, postęp, lokalny termin następnej
   kontroli i jednoznaczną blokadę publikacji DS do osiągnięcia gotowości KASP.
 - [x] Sprawdzać publikację DS oraz pełny łańcuch zaufania DNSSEC.
@@ -240,11 +243,11 @@ odczytowe; import wymaga osobnego planu, dry-runu i potwierdzenia operatora.
 
 - [x] Rozpocząć odczytowy raport środowiska: aktywny graf `include`, liczba i
   typy stref, DNSSEC oraz strefy używane przez `response-policy`.
-- [ ] Dodać kreator pierwszego uruchomienia w TUI z podsumowaniem wykrytej
+- [x] Dodać kreator pierwszego uruchomienia w TUI z podsumowaniem wykrytej
   konfiguracji i możliwością pominięcia importu.
-- [ ] Przygotować plan importu istniejących stref, ACL, grup secondary i RPZ;
+- [x] Przygotować plan importu istniejących stref, ACL, grup secondary i RPZ;
   nie modyfikować automatycznie obcych plików konfiguracyjnych.
-- [ ] Każdy import wykonywać przez diff, backup, `named-checkconf`, dry-run,
+- [x] Każdy wspierany import wykonywać przez diff, backup, `named-checkconf`, dry-run,
   jawne potwierdzenie, manifest i rollback.
 
 ### Opcjonalna integracja CERT Polska RPZ
@@ -315,6 +318,13 @@ Szczegółowe kryteria zgodności z opublikowanymi grafikami określa
   następny krok bez konieczności analizowania surowego raportu.
 - [ ] Zapewnić poprawne skalowanie, zawijanie i przewijanie na małych
   terminalach, bez utraty dostępu do potwierdzeń i komunikatów błędów.
+- [ ] Poprawić responsywne zawijanie ekranów szczegółów i wyników transakcji:
+  ograniczać tekst do szerokości lewego panelu, zachowywać wcięcia wyników
+  BIND, przeliczać linie po zmianie rozmiaru i przewijać po liniach już
+  zawiniętych; testować ochronę przed wejściem tekstu w prawy panel.
+- [x] Po udanym zapisie rekordów bezwarunkowo przeładowywać aktywny plik
+  strefy w bieżącej sesji TUI oraz obsługiwać zgodnie z belką oba klawisze
+  usuwania: `F8` i `Delete`.
 - [ ] Traktować grafiki koncepcyjne wyłącznie jako wzorzec projektu; publiczne
   zrzuty oznaczane jako działająca aplikacja muszą pochodzić z rzeczywistego
   renderera ZoneCTL na danych demonstracyjnych.

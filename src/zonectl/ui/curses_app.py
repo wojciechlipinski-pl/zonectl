@@ -2001,13 +2001,14 @@ class CursesApp:
                     or save_result.transaction.status
                     == "NO-CHANGE"
                 ):
-                    if (
-                        save_result.transaction.status
-                        == "NO-CHANGE"
-                    ):
-                        session.reload()
+                    # TransactionEngine może podmienić plik i przeładować
+                    # BIND poza bieżącym modelem TUI. Zawsze czytamy ponownie
+                    # aktywny plik, także po COMMIT, aby usunięte rekordy nie
+                    # pozostawały w widoku do restartu aplikacji.
+                    session.reload()
 
                     model = session.model
+                    visible_records = ordered_records()
                     selected = 0
                     offset = 0
                     search_query = ""
@@ -2232,7 +2233,7 @@ class CursesApp:
 
                 continue
 
-            if key == curses.KEY_DC:
+            if key in (curses.KEY_F8, curses.KEY_DC):
                 if self.read_only:
                     self._read_only_message(win, zone)
                     continue
