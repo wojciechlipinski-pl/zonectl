@@ -47,6 +47,9 @@ def test_plan_replaces_value_removes_later_duplicate_and_preserves_comment(
     assert "\n- \n" not in plan.diff
     assert "\n-    203.0.113.0/24;\n+    203.0.113.0/24;" not in plan.diff
     assert options.read_bytes() == before
+    assert plan.impact is not None
+    assert plan.impact.roles == ("query",)
+    assert plan.impact.risk == "MEDIUM"
 
 
 def test_keep_duplicates_only_applies_replacement(tmp_path: Path, monkeypatch) -> None:
@@ -98,3 +101,23 @@ def test_full_list_rejects_empty_duplicate_invalid_and_missing_localhost(
             assert "ACL" in str(exc) or "element" in str(exc)
         else:
             raise AssertionError(f"Nie odrzucono: {entries}")
+
+
+def test_plan_blocks_indeterminate_cyclic_acl_impact(
+    tmp_path: Path, monkeypatch
+) -> None:
+    root = tmp_path / "named.conf"
+    root.write_text(
+        'acl "a" { b; };\nacl "b" { a; };\n'
+        'options { allow-query { a; }; };\n',
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(
+        BindAclPlanner, "_validate_candidate",
+        lambda self, source, candidate: (True, "kod 0"),
+    )
+    plan = BindAclPlanner(root).plan("a", entries=["b"])
+    assert plan.validation_ok is False
+    assert plan.impact is not None
+    assert plan.impact.risk == "INDETERMINATE"
+    assert "Cykliczne odwołanie ACL" in plan.validation_message

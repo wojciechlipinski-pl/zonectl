@@ -70,3 +70,28 @@ def test_unchanged_used_definition_has_no_change_risk(tmp_path: Path) -> None:
     assert report.risk == "NONE"
     assert report.added_entries == ()
     assert report.removed_entries == ()
+
+
+def test_removing_all_remote_query_clients_is_high_risk(tmp_path: Path) -> None:
+    report = _impact(
+        tmp_path,
+        'acl "trusted" { localhost; 192.0.2.0/24; 2001:db8::/32; };\n'
+        'options { allow-query { trusted; }; allow-recursion { trusted; }; };\n',
+        "trusted",
+        ("localhost",),
+    )
+    assert report.removed_entries == ("192.0.2.0/24", "2001:db8::/32")
+    assert report.risk == "HIGH"
+
+
+def test_query_acl_with_remaining_remote_network_is_medium_risk(
+    tmp_path: Path,
+) -> None:
+    report = _impact(
+        tmp_path,
+        'acl "trusted" { localhost; 192.0.2.0/24; 198.51.100.0/24; };\n'
+        'options { allow-recursion { trusted; }; };\n',
+        "trusted",
+        ("localhost", "198.51.100.0/24"),
+    )
+    assert report.risk == "MEDIUM"

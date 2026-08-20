@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
+import ipaddress
 
 from .bind_access_inventory import BindAccessInventory, BindListUsage
 
@@ -133,7 +134,15 @@ class BindAccessImpactReporter:
             risk = "INDETERMINATE"
         elif not added and not removed:
             risk = "NONE"
-        elif removed and "administration" in roles:
+        elif removed and (
+            "administration" in roles
+            or (
+                {"query", "recursion"} & set(roles)
+                and not self._has_remote_capable_entry(
+                    candidate, definitions, set()
+                )
+            )
+        ):
             risk = "HIGH"
         elif removed and usages:
             risk = "MEDIUM"
@@ -163,6 +172,39 @@ class BindAccessImpactReporter:
     @staticmethod
     def _normalize(value: str) -> str:
         return value.strip().casefold()
+
+    @classmethod
+    def _has_remote_capable_entry(
+        cls, entries, definitions, visited: set[str]
+    ) -> bool:
+        """Czy dodatni wpis może dopuścić klienta spoza hosta lokalnego."""
+        for raw in entries:
+            value = raw.strip()
+            if not value or value.startswith("!"):
+                continue
+            key = value.casefold()
+            if key in {"localhost", "none"}:
+                continue
+            if key in {"any", "localnets"}:
+                return True
+            nested = definitions.get(key)
+            if nested is not None:
+                if key in visited:
+                    continue
+                if cls._has_remote_capable_entry(
+                    nested.entries, definitions, visited | {key}
+                ):
+                    return True
+                continue
+            try:
+                network = ipaddress.ip_network(value, strict=False)
+            except ValueError:
+                # A positive symbolic item not resolved as a named ACL cannot
+                # safely be treated as local-only.
+                return True
+            if not network.is_loopback:
+                return True
+        return False
 
     @staticmethod
     def _reverse_closure(graph: dict[str, tuple[str, ...]], target: str) -> set[str]:

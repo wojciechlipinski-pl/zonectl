@@ -338,6 +338,9 @@ zaczynając od raportu wpływu tylko do odczytu.
 - [x] Dodać wspólny, odczytowy raport wpływu `bind access-impact`, który
   rozwija zależności pomiędzy nazwanymi listami, pokazuje role, użycia,
   dotknięte strefy, różnicę wpisów, poziom ryzyka i cykle zależności.
+- [x] Dołączyć raport wpływu do planów ACL i secondary oraz blokować plan,
+  gdy zależności są cykliczne lub wpływu nie można wiarygodnie ustalić;
+  poziomy LOW/MEDIUM/HIGH pozostają informacyjne do czasu wdrożenia bramek.
 - [ ] Blokować usunięcie ostatniego wpisu administracyjnego oraz wpisu
   wymaganego przez aktywny transfer.
 - [ ] Wymagać rozszerzonego potwierdzenia przy opróżnianiu używanej ACL lub

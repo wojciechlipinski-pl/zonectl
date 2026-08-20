@@ -11,6 +11,7 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 
 from .bind_access_inventory import BindAccessInventoryReader
+from .bind_access_impact import BindAccessImpactReport, BindAccessImpactReporter
 from .bind_secondary_report import BindSecondaryReporter
 from .discovery import BindConfigDiscovery
 from .runner import run
@@ -34,6 +35,7 @@ class BindSecondaryPlan:
     diff: str
     validation_ok: bool
     validation_message: str
+    impact: BindAccessImpactReport | None = None
 
     def to_dict(self) -> dict[str, object]:
         data = asdict(self)
@@ -102,6 +104,14 @@ class BindSecondaryPlanner:
         validation_ok, validation_message = self._validate_candidate(
             definition.source, candidate
         )
+        impact = BindAccessImpactReporter().build(
+            inventory, definition.name, normalized
+        )
+        if impact.blockers:
+            validation_ok = False
+            validation_message = (
+                validation_message + "; " if validation_message else ""
+            ) + "raport wpływu: " + "; ".join(impact.blockers)
         return BindSecondaryPlan(
             name=definition.name,
             kind=definition.kind,
@@ -115,6 +125,7 @@ class BindSecondaryPlanner:
             diff=diff,
             validation_ok=validation_ok,
             validation_message=validation_message,
+            impact=impact,
         )
 
     @staticmethod

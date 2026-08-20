@@ -22,6 +22,6 @@ def test_cli_outputs_read_only_impact_report(tmp_path: Path, capsys, monkeypatch
     output = capsys.readouterr().out
     assert code == 0
     assert "RAPORT WPŁYWU ACL/SECONDARY — TYLKO ODCZYT" in output
-    assert "Ryzyko:       MEDIUM" in output
+    assert "Ryzyko:       HIGH" in output
     assert "Usuwane:      192.0.2.0/24" in output
     assert "niczego nie zmieniono" in output

@@ -11,6 +11,7 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 
 from .bind_access_inventory import BindAccessInventoryReader
+from .bind_access_impact import BindAccessImpactReport, BindAccessImpactReporter
 from .runner import run
 from .discovery import BindConfigDiscovery
 
@@ -30,6 +31,7 @@ class BindAclPlan:
     removed_duplicates: tuple[str, ...]
     validation_ok: bool
     validation_message: str
+    impact: BindAccessImpactReport | None = None
 
     def to_dict(self) -> dict[str, object]:
         data = asdict(self)
@@ -102,6 +104,15 @@ class BindAclPlanner:
         validation_ok, validation_message = self._validate_candidate(
             definition.source, candidate
         )
+        candidate_entries = BindAccessInventoryReader._entries(candidate_body)
+        impact = BindAccessImpactReporter().build(
+            inventory, definition.name, candidate_entries
+        )
+        if impact.blockers:
+            validation_ok = False
+            validation_message = (
+                validation_message + "; " if validation_message else ""
+            ) + "raport wpływu: " + "; ".join(impact.blockers)
         return BindAclPlan(
             name=name,
             source=definition.source,
@@ -112,6 +123,7 @@ class BindAclPlanner:
             removed_duplicates=tuple(removed),
             validation_ok=validation_ok,
             validation_message=validation_message,
+            impact=impact,
         )
 
     @classmethod

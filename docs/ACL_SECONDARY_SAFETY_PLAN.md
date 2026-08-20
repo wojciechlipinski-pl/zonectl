@@ -1,7 +1,8 @@
 # Plan zabezpieczeń ACL i secondary
 
-Status: etap 1 wdrożony — odczytowy raport wpływu `bind access-impact`.
-Dokument nie rozszerza jeszcze uprawnień żadnej operacji zapisującej.
+Status: etapy 1–2 wdrożone — odczytowy raport wpływu `bind access-impact`
+oraz jego integracja z plannerami ACL/secondary. Dokument nie rozszerza jeszcze
+uprawnień żadnej operacji zapisującej; tylko wpływ `INDETERMINATE` blokuje plan.
 
 ## Stan obecny
 
@@ -32,7 +33,8 @@ tekstowego w jednym pliku.
 
 Poziom ryzyka opisuje rozważaną różnicę, a nie sam fakt używania definicji:
 `NONE` oznacza brak zmiany, `LOW` zmianę bez usuwania wpisów, `MEDIUM` usuwanie
-z używanej listy, `HIGH` usuwanie z roli administracyjnej, a `INDETERMINATE`
+z używanej listy, `HIGH` usuwanie z roli administracyjnej albo pozostawienie
+globalnej ACL query/recursion bez żadnego klienta zdalnego, a `INDETERMINATE`
 brak możliwości wiarygodnej oceny.
 
 ## Bramka ACL

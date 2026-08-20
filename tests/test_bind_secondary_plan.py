@@ -36,6 +36,10 @@ def test_plan_reports_impact_and_minimal_diff(tmp_path: Path, monkeypatch) -> No
     assert plan.zones == ("a",)
     assert "192.0.2.60" in plan.diff
     assert root.read_bytes() == before
+    assert plan.impact is not None
+    assert plan.impact.roles == ("notify",)
+    assert plan.impact.zones == ("a",)
+    assert plan.impact.risk == "MEDIUM"
 
 
 @pytest.mark.parametrize("addresses", [[], ["bad"], ["192.0.2.1", "192.0.2.1"]])

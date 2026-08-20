@@ -1141,6 +1141,12 @@ def main(argv: list[str] | None = None) -> int:
                 print(f"  {zone}")
             print(f"Walidacja:   {'OK' if plan.validation_ok else 'BŁĄD'}")
             print(f"named-checkconf: {plan.validation_message}")
+            if plan.impact:
+                print(f"Ryzyko wpływu: {plan.impact.risk}")
+                print(
+                    "Usuwane wpisy: "
+                    + (", ".join(plan.impact.removed_entries) or "-")
+                )
             print("\nPlanowany diff:\n")
             print(plan.diff or "Brak zmian.")
             print("\nWynik: DRY-RUN — niczego nie zmieniono")
@@ -1266,6 +1272,18 @@ def main(argv: list[str] | None = None) -> int:
             print(f"Plik:        {plan.source}")
             print(f"Walidacja:   {'OK' if plan.validation_ok else 'BŁĄD'}")
             print(f"named-checkconf: {plan.validation_message}")
+            if plan.impact:
+                print(f"Ryzyko wpływu: {plan.impact.risk}")
+                print("Role:        " + (", ".join(plan.impact.roles) or "nieużywana"))
+                print("Strefy:      " + (", ".join(plan.impact.zones) or "-"))
+                print(
+                    "Usuwane:      "
+                    + (", ".join(plan.impact.removed_entries) or "-")
+                )
+                if plan.impact.blockers:
+                    print("Blokady wpływu:")
+                    for blocker in plan.impact.blockers:
+                        print(f"  {blocker}")
             print("\nPlanowany diff:\n")
             print(plan.diff or "Brak zmian.")
             print("\nZamiany:")
