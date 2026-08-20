@@ -118,8 +118,9 @@ spoza plików objętych transakcją.
 6. Bramki powdrożeniowe i wymuszone testy rollbacku — pokryto awarie
    walidacji, aktywacji, zgodności konfiguracji, kontroli operacyjnej oraz
    ponownej aktywacji po odtworzeniu pliku.
-7. Próba na izolowanej konfiguracji BIND, następnie jedna kontrolowana zmiana
-   produkcyjna o małym wpływie.
+7. Próba na izolowanej konfiguracji BIND — wdrożona z prawdziwym
+   `named-checkconf` i wymuszonym rollbackiem ACL oraz secondary. Następnie
+   jedna kontrolowana zmiana produkcyjna o małym wpływie.
 
 ## Minimalna macierz testów
 

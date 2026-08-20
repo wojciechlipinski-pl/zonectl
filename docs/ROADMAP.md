@@ -374,6 +374,8 @@ zaczynając od raportu wpływu tylko do odczytu.
 - [x] Wymuszać testami rollback po awarii walidacji, aktywacji, bramki
   semantycznej i kontroli operacyjnej secondary oraz raportować
   `ROLLBACK-FAILED`, gdy ponowna aktywacja nie powiedzie się.
+- [x] Wykonywać izolowany drill ACL i secondary z prawdziwym
+  `named-checkconf`, wymuszoną awarią po aktywacji i pełnym odtworzeniem.
 - [ ] Uzupełnić docstringi publicznego API i zwiększyć pokrycie krytycznych
   ścieżek zapisu.
 
