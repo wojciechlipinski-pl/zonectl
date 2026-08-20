@@ -113,8 +113,8 @@ spoza plików objętych transakcją.
 3. Bramka grup secondary oraz przypisań stref — plan, dry-run i blokada
    zwykłego commitu ryzyka `HIGH`.
 4. Rozszerzone potwierdzenia TUI i równoważne parametry CLI.
-5. Rozszerzony manifest z kontrolą braku sekretów — wdrożony; automatyczna
-   bramka prywatności manifestu pozostaje częścią dalszych testów wydania.
+5. Rozszerzony manifest z kontrolą braku sekretów — wdrożony wraz z jawną
+   listą dozwolonych pól i automatyczną redakcją materiału sekretnego.
 6. Bramki powdrożeniowe i wymuszone testy rollbacku.
 7. Próba na izolowanej konfiguracji BIND, następnie jedna kontrolowana zmiana
    produkcyjna o małym wpływie.

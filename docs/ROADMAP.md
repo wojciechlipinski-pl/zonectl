@@ -369,6 +369,8 @@ zaczynając od raportu wpływu tylko do odczytu.
   rollbacku cyklu życia stref, ACL oraz secondary.
 - [ ] Sprawdzać zachowanie właściciela, grupy i trybu pliku po sukcesie oraz
   rollbacku.
+- [x] Ograniczyć manifesty ACL/secondary do jawnej listy pól i automatycznie
+  redagować sekret TSIG oraz materiał klucza prywatnego.
 - [ ] Uzupełnić docstringi publicznego API i zwiększyć pokrycie krytycznych
   ścieżek zapisu.
 

@@ -9,12 +9,13 @@ import os
 import shutil
 import tempfile
 import uuid
-from dataclasses import asdict, dataclass, field
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable
 
 from .bind_access_inventory import BindAccessInventoryReader
+from .bind_audit_manifest import safe_manifest_payload
 from .bind_acl_plan import BindAclPlan
 from .runner import run
 
@@ -220,7 +221,11 @@ class BindAclTransaction:
         self.manifest_directory.mkdir(parents=True, exist_ok=True, mode=0o750)
         path = self.manifest_directory / f"{result.transaction_id}.json"
         result.manifest = str(path)
-        payload = asdict(result)
+        payload = safe_manifest_payload(result, (
+            "transaction_id", "acl", "status", "committed", "rolled_back",
+            "backup", "manifest", "operator", "reason", "risk", "roles",
+            "zones", "state_before", "state_after", "steps",
+        ))
         payload["saved_at"] = datetime.now(timezone.utc).astimezone().isoformat(
             timespec="seconds"
         )
