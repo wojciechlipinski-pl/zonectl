@@ -73,6 +73,34 @@ def test_validation_failure_rolls_back(tmp_path: Path) -> None:
     assert root.read_text() == plan.original_text
 
 
+def test_activation_failure_rolls_back_and_records_final_manifest(
+    tmp_path: Path,
+) -> None:
+    plan, root = _plan(tmp_path)
+    calls = 0
+
+    def activate() -> BindAclStep:
+        nonlocal calls
+        calls += 1
+        return BindAclStep(
+            "rndc-reconfig", calls > 1, "OK" if calls > 1 else "failure"
+        )
+
+    result = BindAclTransaction(
+        tmp_path / "backups", tmp_path / "manifests",
+        root_config=root, config_validator=_ok("named-checkconf"),
+        activator=activate,
+    ).apply(plan, commit=True, activate=True, reason="test awarii aktywacji")
+
+    assert result.status == "ROLLED-BACK"
+    assert calls == 2
+    assert root.read_text() == plan.original_text
+    manifest = json.loads(Path(result.manifest).read_text(encoding="utf-8"))
+    assert manifest["status"] == "ROLLED-BACK"
+    assert manifest["rolled_back"] is True
+    assert manifest["state_before"] == manifest["state_after"]
+
+
 def test_changed_file_is_rejected(tmp_path: Path) -> None:
     plan, root = _plan(tmp_path)
     root.write_text(plan.original_text + "# changed\n")
@@ -134,3 +162,23 @@ def test_post_config_gate_failure_rolls_back_and_verifies_restored_state(
     assert calls == 2
     assert root.read_text() == plan.original_text
     assert any(step.name == "post-rollback-state" and step.ok for step in result.steps)
+
+
+def test_failed_rollback_activation_is_reported_as_rollback_failed(
+    tmp_path: Path,
+) -> None:
+    plan, root = _plan(tmp_path)
+
+    result = BindAclTransaction(
+        tmp_path / "backups", tmp_path / "manifests",
+        root_config=root, config_validator=_ok("named-checkconf"),
+        activator=lambda: BindAclStep("rndc-reconfig", False, "failure"),
+    ).apply(plan, commit=True, activate=True, reason="test rollbacku")
+
+    assert result.status == "ROLLBACK-FAILED"
+    assert result.rolled_back is False
+    assert root.read_text() == plan.original_text
+    assert any(
+        step.name == "rndc-reconfig-rollback" and not step.ok
+        for step in result.steps
+    )

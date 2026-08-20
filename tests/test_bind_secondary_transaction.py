@@ -159,3 +159,62 @@ def test_post_config_gate_failure_rolls_back_secondary_and_rechecks_state(
     assert calls == 2
     assert root.read_text() == plan.original_text
     assert any(step.name == "post-rollback-state" and step.ok for step in result.steps)
+
+
+def test_operational_gate_failure_rolls_back_and_records_final_manifest(
+    tmp_path: Path,
+) -> None:
+    plan, root = _plan(tmp_path)
+    calls = 0
+
+    def activate() -> BindSecondaryStep:
+        nonlocal calls
+        calls += 1
+        return BindSecondaryStep("rndc-reconfig", True, "OK")
+
+    result = BindSecondaryTransaction(
+        tmp_path / "backups", tmp_path / "manifests",
+        root_config=root, config_validator=_ok("named-checkconf"),
+        activator=activate, post_validator=_ok("post-config-state"),
+        operational_validator=lambda _plan: BindSecondaryStep(
+            "secondary-operational", False, "brak AA"
+        ),
+    ).apply(
+        plan, commit=True, activate=True,
+        reason="test awarii bramki operacyjnej",
+    )
+
+    assert result.status == "ROLLED-BACK"
+    assert calls == 2
+    assert root.read_text() == plan.original_text
+    manifest = json.loads(Path(result.manifest).read_text(encoding="utf-8"))
+    assert manifest["status"] == "ROLLED-BACK"
+    assert manifest["rolled_back"] is True
+    assert manifest["state_before"] == manifest["state_after"]
+    assert any(
+        step["name"] == "secondary-operational" and not step["ok"]
+        for step in manifest["steps"]
+    )
+
+
+def test_failed_secondary_rollback_activation_is_reported(
+    tmp_path: Path,
+) -> None:
+    plan, root = _plan(tmp_path)
+
+    result = BindSecondaryTransaction(
+        tmp_path / "backups", tmp_path / "manifests",
+        root_config=root, config_validator=_ok("named-checkconf"),
+        activator=lambda: BindSecondaryStep("rndc-reconfig", False, "failure"),
+    ).apply(
+        plan, commit=True, activate=True,
+        reason="test nieudanego rollbacku",
+    )
+
+    assert result.status == "ROLLBACK-FAILED"
+    assert result.rolled_back is False
+    assert root.read_text() == plan.original_text
+    assert any(
+        step.name == "rndc-reconfig-rollback" and not step.ok
+        for step in result.steps
+    )

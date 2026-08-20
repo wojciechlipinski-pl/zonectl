@@ -115,7 +115,9 @@ spoza plików objętych transakcją.
 4. Rozszerzone potwierdzenia TUI i równoważne parametry CLI.
 5. Rozszerzony manifest z kontrolą braku sekretów — wdrożony wraz z jawną
    listą dozwolonych pól i automatyczną redakcją materiału sekretnego.
-6. Bramki powdrożeniowe i wymuszone testy rollbacku.
+6. Bramki powdrożeniowe i wymuszone testy rollbacku — pokryto awarie
+   walidacji, aktywacji, zgodności konfiguracji, kontroli operacyjnej oraz
+   ponownej aktywacji po odtworzeniu pliku.
 7. Próba na izolowanej konfiguracji BIND, następnie jedna kontrolowana zmiana
    produkcyjna o małym wpływie.
 

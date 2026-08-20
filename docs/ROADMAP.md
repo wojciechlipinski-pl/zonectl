@@ -371,6 +371,9 @@ zaczynając od raportu wpływu tylko do odczytu.
   rollbacku.
 - [x] Ograniczyć manifesty ACL/secondary do jawnej listy pól i automatycznie
   redagować sekret TSIG oraz materiał klucza prywatnego.
+- [x] Wymuszać testami rollback po awarii walidacji, aktywacji, bramki
+  semantycznej i kontroli operacyjnej secondary oraz raportować
+  `ROLLBACK-FAILED`, gdy ponowna aktywacja nie powiedzie się.
 - [ ] Uzupełnić docstringi publicznego API i zwiększyć pokrycie krytycznych
   ścieżek zapisu.
 
