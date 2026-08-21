@@ -1,3 +1,11 @@
+zonectl (4.8.3-1) unstable; urgency=medium
+
+  * Add guarded impact analysis and operational health checks for BIND access.
+  * Protect final ACL and secondary endpoints before configuration writes.
+  * Extend audit manifests, rollback gates and TUI editing consistency.
+
+ -- Wojciech Lipiński <wojciech.lipinski.elk@gmail.com>  Fri, 21 Aug 2026 10:00:00 +0200
+
 zonectl (4.8.2-1) unstable; urgency=medium
 
   * Add transactional installation and migration of CERT Polska RPZ.

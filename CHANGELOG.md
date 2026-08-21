@@ -1,5 +1,42 @@
 # Changelog
 
+## 4.8.3 - 2026-08-21
+
+### Added
+
+- read-only ACL and secondary impact reports with affected roles, zones,
+  candidate differences, dependency blockers and explicit risk levels
+- operational secondary audits verifying authoritative SOA answers and serial
+  agreement while keeping RPZ zones in their separate profile
+- isolated rollback drills using the real `named-checkconf` validator without
+  contacting production `rndc`
+
+### Changed
+
+- ACL, secondary-group and zone-assignment commits require an operator reason
+- the TUI presents impact, risk and AA/SOA health before guarded changes
+- the shared TUI text editor now handles the initial value, cursor movement,
+  Home, End, Delete and xterm/PuTTY escape sequences consistently
+
+### Safety
+
+- high-risk removal of the final administration, query, recursion, transfer or
+  notify endpoint is blocked before backup and configuration writes
+- post-activation gates verify the active configuration and secondary SOA/AA
+  state, with automatic rollback on failure
+- audit manifests use an explicit field allowlist, redact secret material and
+  record SHA-256, entries, UID, GID and file mode before and after operations
+- forced-failure tests cover validation, activation, semantic and operational
+  gates, successful rollback and `ROLLBACK-FAILED`
+
+### Verified
+
+- production validation used impact analysis, a no-change plan, dry-run,
+  secondary health audit and configuration checksums without modifying BIND
+- the DNSSEC test zone reached a fully active chain of trust with all KASP
+  states and DS at `omnipresent`
+- more than 700 automated tests pass before release packaging
+
 ## 4.8.2 - 2026-08-18
 
 ### Changed

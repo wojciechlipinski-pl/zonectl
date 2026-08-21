@@ -11,7 +11,7 @@ atomic replacement and rollback.
 
 ## Current release
 
-**4.8.2 — transactional CERT Polska RPZ integration**
+**4.8.3 — guarded BIND ACL and secondary operations**
 
 ## Highlights
 
@@ -43,7 +43,7 @@ exact patch version.
 Install the Debian package attached to the GitHub release:
 
 ```bash
-sudo apt install ./zonectl_4.8.2-1_all.deb
+sudo apt install ./zonectl_4.8.3-1_all.deb
 zctl --version
 ```
 
@@ -239,8 +239,8 @@ delete DNSSEC keys or recovery packages.
 PYTHONPATH=src .venv/bin/python -m pytest -q
 ```
 
-Release 4.8.2 passed 658 automated tests, including a clean Debian 13
-installation and functional verification against the CERT Polska sinkhole.
+Release 4.8.3 passes more than 700 automated tests, including isolated BIND
+validation, forced rollback gates and production read-only secondary audits.
 
 ## License
 
