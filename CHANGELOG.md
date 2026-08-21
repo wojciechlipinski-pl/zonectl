@@ -10,6 +10,8 @@
   agreement while keeping RPZ zones in their separate profile
 - isolated rollback drills using the real `named-checkconf` validator without
   contacting production `rndc`
+- guarded relocation of zone files whose declarations are already managed in
+  `zonectl-zones.d` but still reference a legacy storage directory
 
 ### Changed
 
@@ -28,6 +30,9 @@
   record SHA-256, entries, UID, GID and file mode before and after operations
 - forced-failure tests cover validation, activation, semantic and operational
   gates, successful rollback and `ROLLBACK-FAILED`
+- managed file relocation validates the zone candidate and BIND configuration,
+  confirms the active path through `rndc zonestatus` and retires the old file
+  only after all post-activation gates pass
 
 ### Verified
 

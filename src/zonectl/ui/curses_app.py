@@ -58,6 +58,13 @@ from ..core.managed_zone_migration_transaction import (
     ManagedZoneMigrationStep,
     ManagedZoneMigrationTransaction,
 )
+from ..core.managed_zone_relocation import (
+    ManagedZoneRelocationError,
+    ManagedZoneRelocationPlanner,
+)
+from ..core.managed_zone_relocation_transaction import (
+    ManagedZoneRelocationTransaction,
+)
 from ..core.edit_lock import ZoneEditLockedError
 from ..core.models import Health, Zone, ZoneStatus
 from ..core.multi_zone_session import (
@@ -5224,6 +5231,20 @@ class CursesApp:
             ),
         )
 
+    def _zone_relocation_planner(self) -> ManagedZoneRelocationPlanner:
+        toolkit = self.config.toolkit if self.config is not None else {}
+        return ManagedZoneRelocationPlanner(
+            root_config=Path(
+                toolkit.get("bind_root_config", "/etc/bind/named.conf")
+            ),
+            managed_zone_directory=Path(
+                toolkit.get("managed_zone_dir", "/etc/bind/zonectl-zones.d")
+            ),
+            target_directory=Path(
+                toolkit.get("primary_zone_dir", "/var/lib/bind/Primary")
+            ),
+        )
+
     @staticmethod
     def _migration_result_lines(result) -> list[str]:
         lines = [
@@ -5262,6 +5283,14 @@ class CursesApp:
             )
             return
 
+        relocation_planner = self._zone_relocation_planner()
+        relocation_plan = None
+        if item.state == "MANAGED":
+            try:
+                relocation_plan = relocation_planner.plan(zone.name)
+            except ManagedZoneRelocationError:
+                pass
+
         while True:
             height, width = win.getmaxyx()
             win.erase()
@@ -5272,15 +5301,25 @@ class CursesApp:
                 max(0, width - 1),
                 curses.A_REVERSE | curses.A_BOLD,
             )
+            state = "MANAGED_LEGACY_PATH" if relocation_plan else item.state
             lines = [
-                f"Stan:       {item.state}",
+                f"Stan:       {state}",
                 f"Typ:        {item.zone_type}",
                 f"Deklaracja: {item.config_file}",
-                f"Powód:      {item.reason}",
+                f"Powód:      {'plik strefy wymaga relokacji' if relocation_plan else item.reason}",
                 "",
-                "Migracja obejmuje wyłącznie deklarację BIND.",
-                "Plik strefy i serial SOA nie zostaną zmienione.",
             ]
+            if relocation_plan:
+                lines += [
+                    f"Plik obecny:   {relocation_plan.source_file}",
+                    f"Plik docelowy: {relocation_plan.target_file}",
+                    "Relokacja zachowa zawartość pliku i serial SOA.",
+                ]
+            else:
+                lines += [
+                    "Migracja obejmuje wyłącznie deklarację BIND.",
+                    "Plik strefy i serial SOA nie zostaną zmienione.",
+                ]
             for row, line in enumerate(lines, start=2):
                 if row < height - 2:
                     win.addnstr(row, 2, line, max(0, width - 4))
@@ -5288,10 +5327,10 @@ class CursesApp:
                 win, "STAN OPERACYJNY",
                 (
                     ("Strefa", zone.name),
-                    ("Stan", item.state),
+                    ("Stan", state),
                     ("Typ", item.zone_type),
-                    ("Zakres", "DEKLARACJA BIND"),
-                    ("Plik strefy", "BEZ ZMIAN"),
+                    ("Zakres", "RELOKACJA PLIKU" if relocation_plan else "DEKLARACJA BIND"),
+                    ("Plik strefy", "PRZENOSZONY" if relocation_plan else "BEZ ZMIAN"),
                     ("Serial SOA", "BEZ ZMIAN"),
                 ),
             )
@@ -5308,7 +5347,10 @@ class CursesApp:
             if key in (ord("q"), ord("Q"), 27, curses.KEY_BACKSPACE, 127, 8):
                 return
             if key == curses.KEY_F3:
-                self._show_zone_migration_plan(win, zone, planner)
+                if relocation_plan:
+                    self._show_zone_relocation_plan(win, zone, relocation_planner)
+                else:
+                    self._show_zone_migration_plan(win, zone, planner)
                 continue
             if key == curses.KEY_F4:
                 if self.read_only:
@@ -5319,8 +5361,68 @@ class CursesApp:
                         error=True,
                     )
                     continue
-                if self._apply_zone_migration(win, zone, planner):
+                applied = (
+                    self._apply_zone_relocation(win, zone, relocation_planner)
+                    if relocation_plan
+                    else self._apply_zone_migration(win, zone, planner)
+                )
+                if applied:
                     return
+
+    def _show_zone_relocation_plan(self, win, zone, planner) -> None:
+        try:
+            plan = planner.plan(zone.name)
+            lines = [
+                f"Źródło: {plan.source_file}",
+                f"Cel: {plan.target_file}",
+                f"Deklaracja: {plan.declaration_file}",
+                "",
+                *plan.declaration_diff.splitlines(),
+                "",
+                "Planowane etapy:",
+                *(f"- {action}" for action in plan.actions),
+            ]
+            self._message_view(win, title=f"Plan relokacji: {zone.name}", lines=lines)
+        except (ManagedZoneRelocationError, OSError) as exc:
+            self._message_view(win, title="Relokacja zablokowana", lines=[str(exc)], error=True)
+
+    def _apply_zone_relocation(self, win, zone, planner) -> bool:
+        try:
+            plan = planner.plan(zone.name)
+            toolkit = self.config.toolkit if self.config is not None else {}
+            transaction = ManagedZoneRelocationTransaction(
+                Path(toolkit.get("zone_migration_backup_root", "/var/backups/zonectl-zone-migration/backups")),
+                Path(toolkit.get("zone_migration_manifest_dir", "/var/backups/zonectl-zone-migration/manifests")),
+                root_config=planner.root_config,
+            )
+            dry_run = transaction.apply(plan)
+            self._message_view(
+                win, title=f"Dry-run relokacji: {zone.name}",
+                lines=self._migration_result_lines(dry_run),
+                error=dry_run.status != "DRY-RUN",
+            )
+            if dry_run.status != "DRY-RUN":
+                return False
+            confirmation = CursesDialogs.text_input(
+                win, " Wpisz pełną nazwę strefy, aby relokować: ", initial=""
+            )
+            expected = zone.name.rstrip(".").casefold()
+            received = (confirmation or "").strip().rstrip(".").casefold()
+            if received != expected:
+                self._message_view(win, title="Relokacja anulowana", lines=["Potwierdzenie nie odpowiada nazwie strefy."])
+                return False
+            if not CursesDialogs.confirm(win, f"Relokować plik i przeładować BIND dla {zone.name}?"):
+                return False
+            result = transaction.apply(plan, commit=True, activate=True)
+            self._message_view(
+                win, title=f"Wynik relokacji: {zone.name}",
+                lines=self._migration_result_lines(result),
+                error=result.status != "COMMIT",
+            )
+            return result.status == "COMMIT"
+        except (ManagedZoneRelocationError, OSError) as exc:
+            self._message_view(win, title="Błąd relokacji", lines=[str(exc)], error=True)
+            return False
 
     def _show_zone_migration_plan(self, win, zone, planner) -> None:
         try:

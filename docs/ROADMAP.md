@@ -409,7 +409,9 @@ zaczynając od raportu wpływu tylko do odczytu.
   `PASS`, KASP oraz DS `omnipresent`.
 - [x] Uruchomić końcową regresję, bramkę prywatności i kontrolę dokumentacji.
 - [x] Ustawić wersję 4.8.3 oraz przygotować changelog i notatkę wydania.
-- [ ] Zbudować wheel i pakiet Debian, uruchomić Lintian oraz sprawdzić brak
+- [x] Dodać transakcyjną relokację pliku już zarządzanej strefy ze starego
+  katalogu, bez ponownego importowania deklaracji i bez zmiany serialu SOA.
+- [x] Zbudować wheel i pakiet Debian, uruchomić Lintian oraz sprawdzić brak
   plików `/etc/bind` w pakiecie.
 - [ ] Przetestować aktualizację na aktywnym środowisku bez zmiany BIND,
   opublikować zatwierdzony tag i artefakty.

@@ -37,6 +37,17 @@ def test_migration_view_uses_mc_keys_and_explicit_confirmation() -> None:
     assert "commit=True, activate=True" in apply
 
 
+def test_migration_view_routes_managed_legacy_path_to_relocation() -> None:
+    view = inspect.getsource(CursesApp._zone_migration_view)
+    apply = inspect.getsource(CursesApp._apply_zone_relocation)
+
+    assert "MANAGED_LEGACY_PATH" in view
+    assert "_show_zone_relocation_plan" in view
+    assert "_apply_zone_relocation" in view
+    assert "transaction.apply(plan)" in apply
+    assert "commit=True, activate=True" in apply
+
+
 def test_tui_planner_uses_configured_paths() -> None:
     app = CursesApp.__new__(CursesApp)
     app.config = _Config()
