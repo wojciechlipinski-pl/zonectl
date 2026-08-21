@@ -3,6 +3,8 @@ from __future__ import annotations
 import curses
 from collections.abc import Callable
 
+from .function_keys import decode_function_key
+
 
 class CursesDialogs:
     """Wspólne dialogi tekstowe interfejsu curses."""
@@ -59,7 +61,7 @@ class CursesDialogs:
                 win.nodelay(False)
 
             win.timeout(-1)
-            curses.echo()
+            curses.noecho()
             curses.curs_set(1)
 
             win.move(row, 0)
@@ -73,32 +75,8 @@ class CursesDialogs:
                 curses.A_BOLD,
             )
 
-            if initial:
-                win.addnstr(
-                    row,
-                    len(prompt),
-                    initial,
-                    available,
-                )
-
-            win.move(
-                row,
-                min(
-                    width - 1,
-                    len(prompt) + len(initial),
-                ),
-            )
-            win.refresh()
-
-            raw = win.getstr(
-                row,
-                len(prompt),
-                available,
-            )
-
-            return raw.decode(
-                "utf-8",
-                errors="replace",
+            return CursesDialogs._edit_line(
+                win, row, len(prompt), initial, available,
             )
 
         except KeyboardInterrupt:
@@ -210,3 +188,76 @@ class CursesDialogs:
                 win.refresh()
             except curses.error:
                 pass
+    @staticmethod
+    def _get_key(win: curses.window) -> int:
+        """Read one key, normalizing xterm/PuTTY escape sequences."""
+        key = win.getch()
+        if key != 27:
+            return key
+        sequence: list[int] = []
+        try:
+            win.timeout(80)
+            for _ in range(4):
+                item = win.getch()
+                if item == -1:
+                    break
+                sequence.append(item)
+        finally:
+            try:
+                win.timeout(-1)
+            except curses.error:
+                pass
+        decoded = decode_function_key(sequence)
+        if decoded is not None:
+            return decoded
+        for item in reversed(sequence):
+            try:
+                curses.ungetch(item)
+            except curses.error:
+                break
+        return 27
+
+    @classmethod
+    def _edit_line(
+        cls, win: curses.window, row: int, column: int,
+        initial: str, available: int,
+    ) -> str | None:
+        """Edit a real initial buffer with cursor, Delete and Home/End."""
+        value = list(initial)
+        cursor = len(value)
+        offset = 0
+        while True:
+            if cursor < offset:
+                offset = cursor
+            elif cursor >= offset + available:
+                offset = cursor - available + 1
+            offset = max(0, offset)
+            visible = "".join(value[offset:offset + available])
+            win.move(row, column)
+            win.clrtoeol()
+            win.addnstr(row, column, visible.ljust(available), available)
+            win.move(row, min(column + available - 1, column + cursor - offset))
+            win.refresh()
+            key = cls._get_key(win)
+            if key in (10, 13, curses.KEY_ENTER):
+                return "".join(value)
+            if key == 27:
+                return None
+            if key == curses.KEY_LEFT:
+                cursor = max(0, cursor - 1)
+            elif key == curses.KEY_RIGHT:
+                cursor = min(len(value), cursor + 1)
+            elif key == curses.KEY_HOME:
+                cursor = 0
+            elif key == curses.KEY_END:
+                cursor = len(value)
+            elif key in (curses.KEY_BACKSPACE, 8, 127):
+                if cursor:
+                    del value[cursor - 1]
+                    cursor -= 1
+            elif key == curses.KEY_DC:
+                if cursor < len(value):
+                    del value[cursor]
+            elif 32 <= key <= 126:
+                value.insert(cursor, chr(key))
+                cursor += 1

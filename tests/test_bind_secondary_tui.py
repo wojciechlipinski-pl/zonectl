@@ -16,7 +16,9 @@ def test_bind_access_browser_uses_midnight_commander_keys() -> None:
 
     assert "curses.KEY_F3" in source
     assert "curses.KEY_F4" in source
+    assert "curses.KEY_F5" in source
     assert "_show_bind_access_item" in source
+    assert "_show_secondary_health" in source
     assert "_edit_secondary_group" in source
 
 
@@ -27,7 +29,8 @@ def test_secondary_edit_requires_plan_dry_run_and_exact_name() -> None:
     assert "dry_run = transaction.apply(plan)" in source
     assert "Wpisz pełną nazwę grupy" in source
     assert "commit=True, activate=True" in source
-    assert 'reason="Zmiana grupy secondary zatwierdzona w TUI"' in source
+    assert "Powód zmiany secondary" in source
+    assert "reason=reason.strip()" in source
 
 
 def test_secondary_address_editor_uses_mc_keybindings() -> None:
@@ -58,7 +61,20 @@ def test_acl_editor_uses_mc_keys_and_guarded_transaction() -> None:
     assert "dry_run = transaction.apply(plan)" in workflow
     assert "Wpisz pełną nazwę ACL" in workflow
     assert "commit=True, activate=True" in workflow
-    assert 'reason="Zmiana ACL zatwierdzona w TUI"' in workflow
+    assert "Powód zmiany ACL" in workflow
+    assert "reason=reason.strip()" in workflow
+
+
+def test_bind_access_tui_presents_impact_risk_and_operational_health() -> None:
+    impact = inspect.getsource(CursesApp._impact_lines)
+    health = inspect.getsource(CursesApp._show_secondary_health)
+
+    assert "Ryzyko" in impact
+    assert "Dodawane" in impact
+    assert "Usuwane" in impact
+    assert "BLOKADY" in impact
+    assert "BindSecondaryHealthGate" in health
+    assert "TYLKO ODCZYT" in health
 
 
 def test_zone_details_open_secondary_assignment_with_f5() -> None:

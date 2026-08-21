@@ -29,11 +29,13 @@ from ..core.bind_access_inventory import (
     BindAccessInventoryError,
     BindAccessInventoryReader,
 )
+from ..core.bind_access_impact import BindAccessImpactError, BindAccessImpactReporter
 from ..core.bind_acl_plan import BindAclPlanError, BindAclPlanner
 from ..core.bind_acl_transaction import BindAclTransaction
 from ..core.bind_environment_report import BindEnvironmentReporter
 from ..core.bind_onboarding_report import BindOnboardingReporter
 from ..core.bind_secondary_plan import BindSecondaryPlanError, BindSecondaryPlanner
+from ..core.bind_secondary_health import BindSecondaryHealthGate
 from ..core.bind_secondary_report import BindSecondaryReporter
 from ..core.bind_secondary_transaction import BindSecondaryTransaction
 from ..core.bind_zone_secondary import BindZoneSecondaryError, BindZoneSecondaryPlanner
@@ -4844,7 +4846,11 @@ class CursesApp:
                     ("Źródło", f"{current_item.source}:{current_item.line}"),
                 ),
             )
-            footer = " F3 podgląd   F4 edycja secondary   q/Esc/F10 powrót "
+            footer = (
+                " F3 wpływ   F4 edycja   F5 audyt secondary   q/Esc/F10 powrót "
+                if current_kind == "secondary"
+                else " F3 wpływ   F4 edycja   q/Esc/F10 powrót "
+            )
             win.addnstr(height - 1, 0, footer.ljust(width), max(0, width - 1), curses.A_REVERSE)
             win.refresh()
             key = self._get_key(win)
@@ -4867,21 +4873,79 @@ class CursesApp:
                     self._edit_acl(win, item.name, item.entries)
                 else:
                     self._edit_secondary_group(win, item.name, item.entries)
+            elif key == curses.KEY_F5 and items[selected][0] == "secondary":
+                self._show_secondary_health(win, items[selected][1].name, report)
 
     def _show_bind_access_item(self, win, selected_item, report) -> None:
         kind, item = selected_item
-        lines = [
-            f"Typ: {kind}", f"Nazwa: {item.name}",
-            f"Źródło: {item.source}:{item.line}", "", "Adresy:",
-        ] + [f"  {value}" for value in item.entries]
+        try:
+            inventory = BindAccessInventoryReader(self._bind_root_config()).collect()
+            impact = BindAccessImpactReporter().build(inventory, item.name)
+        except (BindAccessInventoryError, BindAccessImpactError, OSError) as exc:
+            self._message_view(
+                win, title=f"Wpływ: {item.name}", lines=[str(exc)], error=True
+            )
+            return
+        lines = self._impact_lines(impact)
         group = next(
             (entry for entry in report.groups if entry.name.casefold() == item.name.casefold()),
             None,
         )
         if group is not None:
-            lines += ["", f"Role: {', '.join(group.roles)}", f"Użycia: {group.usage_count}", "Strefy:"]
-            lines += [f"  {zone}" for zone in group.zones]
-        self._message_view(win, title=f"{kind}: {item.name}", lines=lines)
+            lines += ["", f"Użycia secondary: {group.usage_count}"]
+        self._message_view(win, title=f"Wpływ: {item.name}", lines=lines)
+
+    @staticmethod
+    def _impact_lines(impact) -> list[str]:
+        lines = [
+            f"Definicja: {impact.name} ({impact.kind})",
+            f"Źródło: {impact.source}:{impact.line}",
+            f"Ryzyko: {impact.risk}",
+            f"Role: {', '.join(impact.roles) or '-'}",
+            f"Strefy: {len(impact.zones)}",
+            f"Dodawane: {', '.join(impact.added_entries) or '-'}",
+            f"Usuwane: {', '.join(impact.removed_entries) or '-'}",
+        ]
+        if impact.blockers:
+            lines += ["", "BLOKADY:"] + [f"  {item}" for item in impact.blockers]
+        if impact.usages:
+            lines += ["", "UŻYCIA:"]
+            lines += [
+                f"  [{usage.role}] {usage.directive} — "
+                f"{usage.zone or usage.source}:{usage.line}"
+                for usage in impact.usages
+            ]
+        return lines
+
+    def _show_secondary_health(self, win, group_name: str, report) -> None:
+        pair = next(
+            (
+                item for item in report.pairs
+                if group_name in (*item.notify_groups, *item.transfer_groups)
+            ),
+            None,
+        )
+        if pair is None or not pair.notify_addresses:
+            self._message_view(
+                win, title=f"Audyt secondary: {group_name}",
+                lines=["Brak kompletnej pary lub adresu notify."], error=True,
+            )
+            return
+        zones = tuple(zone for zone in pair.zones if "rpz" not in zone.casefold())
+        results = BindSecondaryHealthGate().check(zones, pair.notify_addresses)
+        lines = [
+            f"Para: {pair.name}",
+            f"Serwery: {', '.join(pair.notify_addresses)}",
+            "Tryb: TYLKO ODCZYT", "",
+        ]
+        lines.extend(
+            f"[{item.status}] {item.zone} — {item.message}"
+            for item in results
+        )
+        failed = any(item.status == "FAIL" for item in results)
+        self._message_view(
+            win, title=f"Audyt secondary: {pair.name}", lines=lines, error=failed
+        )
 
     @staticmethod
     def _secondary_result_lines(result) -> list[str]:
@@ -4907,7 +4971,9 @@ class CursesApp:
             return
         self._message_view(
             win, title=f"Plan ACL: {name}",
-            lines=(plan.diff or "Brak zmian.").splitlines(),
+            lines=self._impact_lines(plan.impact)
+            + ["", "PLANOWANY DIFF:"]
+            + (plan.diff or "Brak zmian.").splitlines(),
         )
         transaction = BindAclTransaction(
             Path("/var/backups/zonectl-bind-acl/backups"),
@@ -4928,9 +4994,16 @@ class CursesApp:
             return
         if not CursesDialogs.confirm(win, f"Zastosować zmianę ACL {name}"):
             return
+        reason = CursesDialogs.text_input(win, " Powód zmiany ACL: ")
+        if not (reason or "").strip():
+            self._message_view(
+                win, title="Anulowano",
+                lines=["Commit wymaga niepustego uzasadnienia."], error=True,
+            )
+            return
         result = transaction.apply(
             plan, commit=True, activate=True,
-            reason="Zmiana ACL zatwierdzona w TUI",
+            reason=reason.strip(),
         )
         self._message_view(
             win, title=f"Transakcja ACL: {name}",
@@ -5014,8 +5087,9 @@ class CursesApp:
             return
         self._message_view(
             win, title=f"Plan secondary: {name}",
-            lines=(plan.diff or "Brak zmian.").splitlines()
-            + ["", f"Dotknięte strefy: {len(plan.zones)}"],
+            lines=self._impact_lines(plan.impact)
+            + ["", "PLANOWANY DIFF:"]
+            + (plan.diff or "Brak zmian.").splitlines(),
         )
         transaction = BindSecondaryTransaction(
             Path("/var/backups/zonectl-bind-secondary/backups"),
@@ -5040,9 +5114,16 @@ class CursesApp:
             return
         if not CursesDialogs.confirm(win, f"Zastosować zmianę grupy {name}"):
             return
+        reason = CursesDialogs.text_input(win, " Powód zmiany secondary: ")
+        if not (reason or "").strip():
+            self._message_view(
+                win, title="Anulowano",
+                lines=["Commit wymaga niepustego uzasadnienia."], error=True,
+            )
+            return
         result = transaction.apply(
             plan, commit=True, activate=True,
-            reason="Zmiana grupy secondary zatwierdzona w TUI",
+            reason=reason.strip(),
         )
         self._message_view(
             win, title=f"Transakcja secondary: {name}",

@@ -362,6 +362,12 @@ zaczynając od raportu wpływu tylko do odczytu.
   `bind secondary-health`, możliwy do uruchomienia przed zmianą produkcyjną.
 - [x] Wymagać niepustego uzasadnienia `--reason` dla każdego commitu ACL,
   grupy secondary i przypisania secondary wykonywanego z CLI.
+- [x] Pokazywać w TUI raport wpływu, ryzyko, dodawane/usuwane wpisy,
+  blokady oraz odczytowy audyt AA/SOA wybranej pary secondary; przed commitem
+  wymagać własnego uzasadnienia operatora.
+- [x] Ujednolicić wspólny dialog tekstowy TUI: edytować rzeczywistą wartość
+  początkową oraz obsługiwać strzałki, Backspace, Delete, Home i End także
+  dla sekwencji xterm/PuTTY.
 
 ### Testy awarii i jakość
 
