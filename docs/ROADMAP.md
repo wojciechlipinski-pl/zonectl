@@ -152,10 +152,10 @@ zrealizowane, a `[ ]` pozostają do wykonania.
 - [x] Udostępnić przypisywanie strefy do logicznych par secondary w CLI i TUI.
 - [x] Każdą zmianę ACL wykonywać przez planowany diff, backup, atomowy zapis,
   `named-checkconf`, kontrolowane `rndc reconfig` i automatyczny rollback.
-- [ ] Blokować usunięcie ostatniego wpisu administracyjnego, wpisu wymaganego
-  przez aktywny transfer albo całej używanej ACL bez osobnego potwierdzenia i
-  raportu skutków.
-- [ ] Rejestrować w manifeście operatora, przyczynę, stan przed i po zmianie
+- [x] Blokować przed backupem usunięcie ostatniego wpisu administracyjnego,
+  transferowego lub notify oraz całej aktywnie używanej ACL; pokazywać raport
+  skutków bez oferowania niebezpiecznego obejścia.
+- [x] Rejestrować w manifeście operatora, przyczynę, stan przed i po zmianie
   oraz listę stref, których dotyczyła modyfikacja ACL lub secondary.
 
 ## Jakość techniczna
@@ -307,16 +307,16 @@ Szczegółowe kryteria zgodności z opublikowanymi grafikami określa
 
 - [x] Rozpocząć przebudowę ekranu głównego na responsywny układ panelowy: lista stref,
   zaznaczenie aktywnego wiersza oraz panel szczegółów wybranej strefy.
-- [ ] Ujednolicić widoki planu, dry-runu, ostrzeżenia, sukcesu i rollbacku,
+- [x] Ujednolicić widoki planu, dry-runu, ostrzeżenia, sukcesu i rollbacku,
   zachowując tę samą hierarchię informacji i semantykę kolorów.
-- [ ] Stosować stałe paski tytułu i klawiszy funkcyjnych oraz skróty w stylu
+- [x] Stosować stałe paski tytułu i klawiszy funkcyjnych oraz skróty w stylu
   Midnight Commandera: F3 podgląd, F4 edycja, Insert dodawanie, F8/Delete
   usuwanie i F10 powrót.
 - [x] Ujednolicić ekran główny z kontraktem wizualnym: turkusowe zaznaczenie,
   nagłówki kolumn, separatory sekcji i pasek klawiszy w stylu MC.
-- [ ] Pokazywać najważniejszy stan operacji, blokady bezpieczeństwa, postęp i
+- [x] Pokazywać najważniejszy stan operacji, blokady bezpieczeństwa, postęp i
   następny krok bez konieczności analizowania surowego raportu.
-- [ ] Zapewnić poprawne skalowanie, zawijanie i przewijanie na małych
+- [x] Zapewnić poprawne skalowanie, zawijanie i przewijanie na małych
   terminalach, bez utraty dostępu do potwierdzeń i komunikatów błędów.
 - [x] Poprawić responsywne zawijanie ekranów szczegółów i wyników transakcji:
   ograniczać tekst do szerokości lewego panelu, zachowywać wcięcia wyników
@@ -373,8 +373,10 @@ zaczynając od raportu wpływu tylko do odczytu.
 
 ### Testy awarii i jakość
 
-- [ ] Dodać macierz wymuszonych awarii dla zapisu, walidacji, aktywacji i
-  rollbacku cyklu życia stref, ACL oraz secondary.
+- [x] Dodać macierz wymuszonych awarii dla zapisu, walidacji, aktywacji i
+  rollbacku ACL oraz secondary.
+- [ ] Uzupełnić analogiczną macierz awarii dla wszystkich operacji cyklu
+  życia stref.
 - [x] Sprawdzać zachowanie UID, GID i trybu pliku po sukcesie oraz rollbacku
   ACL/secondary i zapisywać te metadane w stanie przed/po manifestu.
 - [x] Ograniczyć manifesty ACL/secondary do jawnej listy pól i automatycznie
@@ -394,6 +396,23 @@ zaczynając od raportu wpływu tylko do odczytu.
 - [ ] Automatycznie budować wheel i pakiet Debian oraz uruchamiać Lintian.
 - [ ] Publikować artefakty dopiero dla podpisanego lub jawnie zatwierdzonego
   tagu wydania.
+
+### Bramka wydania ZoneCTL 4.8.3
+
+- [x] Domknąć raport wpływu, bramki ryzyka, uzasadnienie, manifest,
+  prywatność, kontrolę metadanych i rollback ACL/secondary.
+- [x] Udostępnić w CLI i TUI odczytowy audyt autorytatywności oraz seriali SOA
+  secondary, z osobnym profilem `SKIP` dla RPZ.
+- [x] Zweryfikować izolowany rollback prawdziwym `named-checkconf` oraz
+  produkcyjny dry-run bez zmiany plików i BIND.
+- [x] Potwierdzić końcowy stan DNSSEC strefy testowej: raport i delegacja
+  `PASS`, KASP oraz DS `omnipresent`.
+- [ ] Uruchomić końcową regresję, bramkę prywatności i kontrolę dokumentacji.
+- [ ] Ustawić wersję 4.8.3 oraz przygotować changelog i notatkę wydania.
+- [ ] Zbudować wheel i pakiet Debian, uruchomić Lintian oraz sprawdzić brak
+  plików `/etc/bind` w pakiecie.
+- [ ] Przetestować aktualizację na aktywnym środowisku bez zmiany BIND,
+  opublikować zatwierdzony tag i artefakty.
 
 ## Rozwój po osiągnięciu pełnej funkcjonalności podstawowej
 
