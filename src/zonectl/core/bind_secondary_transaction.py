@@ -126,8 +126,10 @@ class BindSecondaryTransaction:
             result.steps.append(BindSecondaryStep(
                 "impact-gate",
                 False,
-                "Zmiana HIGH jest zablokowana; użyj planu do usunięcia "
-                "przyczyny ryzyka. Tryb awaryjny nie jest jeszcze dostępny.",
+                "Zmiana HIGH jest zablokowana przed backupem: role "
+                f"{', '.join(plan.impact.roles) or '-'}; usuwane wpisy: "
+                f"{', '.join(plan.impact.removed_entries) or '-'}. "
+                "Nie można odłączyć ostatniego aktywnego secondary.",
             ))
             return result
 

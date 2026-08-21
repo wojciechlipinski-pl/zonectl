@@ -137,7 +137,8 @@ class BindAccessImpactReporter:
         elif removed and (
             "administration" in roles
             or (
-                {"query", "recursion"} & set(roles)
+                {"query", "recursion", "transfer", "notify", "primaries"}
+                & set(roles)
                 and not self._has_remote_capable_entry(
                     candidate, definitions, set()
                 )

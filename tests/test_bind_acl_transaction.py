@@ -133,6 +133,35 @@ def test_high_risk_commit_is_blocked_before_backup(tmp_path: Path) -> None:
     assert dry_run.status == "DRY-RUN"
     assert blocked.status == "BLOCKED"
     assert blocked.steps[0].name == "impact-gate"
+    assert "przed backupem" in blocked.steps[0].message
+    assert "recursion" in blocked.steps[0].message
+    assert root.read_bytes() == before
+    assert not (tmp_path / "backups").exists()
+
+
+def test_active_transfer_acl_cannot_be_replaced_with_none(tmp_path: Path) -> None:
+    root = tmp_path / "named.conf"
+    root.write_text(
+        'acl "zone-transfer" { 192.0.2.53; };\n'
+        'zone "example.invalid" { type primary; file "/zone"; '
+        'allow-transfer { zone-transfer; }; };\n',
+        encoding="utf-8",
+    )
+    planner = BindAclPlanner(root)
+    planner._validate_candidate = lambda source, candidate: (True, "kod 0")
+    plan = planner.plan("zone-transfer", entries=["none"])
+    before = root.read_bytes()
+
+    result = BindAclTransaction(
+        tmp_path / "backups", tmp_path / "manifests", root_config=root
+    ).apply(
+        plan, commit=True, activate=True,
+        reason="próba opróżnienia aktywnego transferu",
+    )
+
+    assert plan.impact is not None and plan.impact.risk == "HIGH"
+    assert result.status == "BLOCKED"
+    assert "transfer" in result.steps[0].message
     assert root.read_bytes() == before
     assert not (tmp_path / "backups").exists()
 

@@ -95,3 +95,31 @@ def test_query_acl_with_remaining_remote_network_is_medium_risk(
         ("localhost", "198.51.100.0/24"),
     )
     assert report.risk == "MEDIUM"
+
+
+def test_emptying_active_transfer_acl_is_high_risk(tmp_path: Path) -> None:
+    report = _impact(
+        tmp_path,
+        'acl "zone-transfer" { 192.0.2.53; };\n'
+        'zone "example.invalid" { type primary; file "/zone"; '
+        'allow-transfer { zone-transfer; }; };\n',
+        "zone-transfer",
+        ("none",),
+    )
+    assert report.roles == ("transfer",)
+    assert report.removed_entries == ("192.0.2.53",)
+    assert report.risk == "HIGH"
+
+
+def test_removing_one_transfer_endpoint_with_another_remaining_is_medium(
+    tmp_path: Path,
+) -> None:
+    report = _impact(
+        tmp_path,
+        'acl "zone-transfer" { 192.0.2.53; 198.51.100.53; };\n'
+        'zone "example.invalid" { type primary; file "/zone"; '
+        'allow-transfer { zone-transfer; }; };\n',
+        "zone-transfer",
+        ("198.51.100.53",),
+    )
+    assert report.risk == "MEDIUM"

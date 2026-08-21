@@ -346,10 +346,12 @@ zaczynając od raportu wpływu tylko do odczytu.
   przed wdrożeniem rozszerzonego potwierdzenia i przyczyny w manifeście.
 - [x] Klasyfikować usunięcie ostatniej logicznej pary secondary ze strefy jako
   HIGH i blokować commit przed utworzeniem backupu oraz zmianą konfiguracji.
-- [ ] Blokować usunięcie ostatniego wpisu administracyjnego oraz wpisu
-  wymaganego przez aktywny transfer.
-- [ ] Wymagać rozszerzonego potwierdzenia przy opróżnianiu używanej ACL lub
-  odłączaniu ostatniej pary secondary od strefy.
+- [x] Blokować przed backupem usunięcie ostatniego zdalnego wpisu ACL
+  używanej przez administrację, zapytania, rekursję, transfer lub notify oraz
+  odłączenie ostatniej pary secondary.
+- [x] Pokazywać dokładne role i usuwane wpisy dla ryzyka `HIGH`; nie oferować
+  obejścia ani rozszerzonego potwierdzenia dla operacji odcinającej ostatni
+  aktywny dostęp.
 - [x] Rozszerzyć manifest o operatora, przyczynę, ryzyko, stan przed i po operacji oraz
   pełną listę dotkniętych stref.
 - [x] Po `rndc reconfig` ponownie odczytywać konfigurację ACL/secondary,

@@ -110,8 +110,11 @@ class BindAclTransaction:
             result.steps.append(BindAclStep(
                 "impact-gate",
                 False,
-                "Zmiana HIGH jest zablokowana; użyj planu do usunięcia "
-                "przyczyny ryzyka. Tryb awaryjny nie jest jeszcze dostępny.",
+                "Zmiana HIGH jest zablokowana przed backupem: role "
+                f"{', '.join(plan.impact.roles) or '-'}; usuwane wpisy: "
+                f"{', '.join(plan.impact.removed_entries) or '-'}. "
+                "Nie można usunąć ostatniego dostępu administracyjnego, "
+                "transferowego ani notify.",
             ))
             return result
 
