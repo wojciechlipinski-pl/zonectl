@@ -4694,7 +4694,33 @@ class CursesApp:
                 continue
 
             if key == curses.KEY_F6:
-                self._zone_migration_view(win, zone)
+                if self._zone_migration_view(win, zone):
+                    if self.config is not None and hasattr(
+                        self.config, "_discover_bind_zones"
+                    ):
+                        self.config._discover_bind_zones()
+                        current = next(
+                            (
+                                item
+                                for item in self.config.zones()
+                                if item.name.rstrip(".").casefold()
+                                == zone.name.rstrip(".").casefold()
+                            ),
+                            None,
+                        )
+                        if current is not None:
+                            zone = current
+                    try:
+                        status = self.bind.quick_status(zone)
+                        self.statuses[zone.name] = status
+                    except Exception as exc:
+                        status = ZoneStatus(
+                            zone=zone,
+                            health=Health.FAIL,
+                            message=str(exc),
+                        )
+                        self.statuses[zone.name] = status
+                    self._start_refresh(force=True)
                 continue
 
             if key in (ord("d"), ord("D")):
@@ -5264,7 +5290,7 @@ class CursesApp:
         )
         return lines
 
-    def _zone_migration_view(self, win: curses.window, zone: Zone) -> None:
+    def _zone_migration_view(self, win: curses.window, zone: Zone) -> bool:
         """F3 shows a plan; F4 runs dry-run and guarded migration."""
         planner = self._zone_migration_planner()
         try:
@@ -5281,7 +5307,7 @@ class CursesApp:
                 lines=[f"Nie można odczytać stanu migracji: {exc}"],
                 error=True,
             )
-            return
+            return False
 
         relocation_planner = self._zone_relocation_planner()
         relocation_plan = None
@@ -5345,7 +5371,7 @@ class CursesApp:
             win.refresh()
             key = self._get_key(win)
             if key in (ord("q"), ord("Q"), 27, curses.KEY_BACKSPACE, 127, 8):
-                return
+                return False
             if key == curses.KEY_F3:
                 if relocation_plan:
                     self._show_zone_relocation_plan(win, zone, relocation_planner)
@@ -5367,7 +5393,7 @@ class CursesApp:
                     else self._apply_zone_migration(win, zone, planner)
                 )
                 if applied:
-                    return
+                    return True
 
     def _show_zone_relocation_plan(self, win, zone, planner) -> None:
         try:

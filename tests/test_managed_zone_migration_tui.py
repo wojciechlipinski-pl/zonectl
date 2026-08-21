@@ -22,6 +22,9 @@ def test_domain_view_routes_f6_to_zone_migration() -> None:
 
     assert "curses.KEY_F6" in source
     assert "self._zone_migration_view(win, zone)" in source
+    assert "self.config._discover_bind_zones()" in source
+    assert "zone = current" in source
+    assert "self.bind.quick_status(zone)" in source
     assert "F6 migracja" in source
 
 
