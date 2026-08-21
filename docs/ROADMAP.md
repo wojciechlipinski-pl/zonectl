@@ -375,8 +375,8 @@ zaczynając od raportu wpływu tylko do odczytu.
 
 - [ ] Dodać macierz wymuszonych awarii dla zapisu, walidacji, aktywacji i
   rollbacku cyklu życia stref, ACL oraz secondary.
-- [ ] Sprawdzać zachowanie właściciela, grupy i trybu pliku po sukcesie oraz
-  rollbacku.
+- [x] Sprawdzać zachowanie UID, GID i trybu pliku po sukcesie oraz rollbacku
+  ACL/secondary i zapisywać te metadane w stanie przed/po manifestu.
 - [x] Ograniczyć manifesty ACL/secondary do jawnej listy pól i automatycznie
   redagować sekret TSIG oraz materiał klucza prywatnego.
 - [x] Wymuszać testami rollback po awarii walidacji, aktywacji, bramki

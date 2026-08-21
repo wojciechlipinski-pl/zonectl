@@ -39,7 +39,8 @@ def test_dry_run_has_no_side_effects(tmp_path: Path) -> None:
 
 def test_commit_preserves_metadata_and_writes_manifest(tmp_path: Path) -> None:
     plan, root = _plan(tmp_path)
-    mode = root.stat().st_mode & 0o777
+    root.chmod(0o640)
+    metadata_before = root.stat()
     result = BindAclTransaction(
         tmp_path / "backups", tmp_path / "manifests",
         root_config=root, config_validator=_ok("named-checkconf"),
@@ -47,7 +48,10 @@ def test_commit_preserves_metadata_and_writes_manifest(tmp_path: Path) -> None:
     ).apply(plan, commit=True, activate=True, reason="kontrolowana zmiana ACL")
     assert result.status == "COMMIT"
     assert root.read_text() == plan.candidate_text
-    assert root.stat().st_mode & 0o777 == mode
+    metadata_after = root.stat()
+    assert metadata_after.st_mode & 0o777 == 0o640
+    assert metadata_after.st_uid == metadata_before.st_uid
+    assert metadata_after.st_gid == metadata_before.st_gid
     assert Path(result.backup).is_file()
     assert Path(result.manifest).is_file()
     manifest = json.loads(Path(result.manifest).read_text(encoding="utf-8"))
@@ -59,6 +63,9 @@ def test_commit_preserves_metadata_and_writes_manifest(tmp_path: Path) -> None:
     assert manifest["state_before"]["sha256"] != manifest["state_after"]["sha256"]
     assert manifest["state_before"]["entries"] == list(plan.impact.current_entries)
     assert manifest["state_after"]["entries"] == list(plan.impact.candidate_entries)
+    for field in ("uid", "gid", "mode"):
+        assert manifest["state_before"][field] == manifest["state_after"][field]
+    assert manifest["state_after"]["mode"] == "0640"
 
 
 def test_validation_failure_rolls_back(tmp_path: Path) -> None:
@@ -170,6 +177,8 @@ def test_post_config_gate_failure_rolls_back_and_verifies_restored_state(
     tmp_path: Path,
 ) -> None:
     plan, root = _plan(tmp_path)
+    root.chmod(0o640)
+    metadata_before = root.stat()
     calls = 0
 
     def activate() -> BindAclStep:
@@ -190,6 +199,10 @@ def test_post_config_gate_failure_rolls_back_and_verifies_restored_state(
     assert result.rolled_back is True
     assert calls == 2
     assert root.read_text() == plan.original_text
+    metadata_after = root.stat()
+    assert metadata_after.st_mode & 0o777 == 0o640
+    assert metadata_after.st_uid == metadata_before.st_uid
+    assert metadata_after.st_gid == metadata_before.st_gid
     assert any(step.name == "post-rollback-state" and step.ok for step in result.steps)
 
 

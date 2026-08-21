@@ -98,7 +98,7 @@ Manifest powinien dodatkowo zawierać:
 
 - operatora systemowego (`uid`, nazwa użytkownika) i czas lokalny/UTC;
 - obowiązkową przyczynę dla operacji podwyższonego ryzyka;
-- SHA-256, właściciela, grupę i tryb każdego pliku przed i po operacji;
+- SHA-256, UID, GID i tryb każdego pliku przed i po operacji;
 - raport wpływu, usunięte/dodane wpisy i listę dotkniętych stref;
 - wyniki wszystkich bramek przed i po aktywacji;
 - stan końcowy: commit, rollback albo rollback-failed.

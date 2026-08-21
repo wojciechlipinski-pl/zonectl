@@ -100,7 +100,9 @@ class BindSecondaryTransaction:
             operator=getpass.getuser(),
             reason=(reason or "nie podano").strip() or "nie podano",
             risk=plan.impact.risk if plan.impact is not None else "INDETERMINATE",
-            state_before=self._audit_state(plan.original_text, plan.old_addresses),
+            state_before=self._audit_state(
+                plan.original_text, plan.old_addresses, plan.source
+            ),
         )
         current = plan.source.read_text(encoding="utf-8", errors="replace")
         if current != plan.original_text:
@@ -215,15 +217,22 @@ class BindSecondaryTransaction:
         result.state_after = self._audit_state(
             plan.source.read_text(encoding="utf-8", errors="replace"),
             after_entries,
+            plan.source,
         )
         self._write_manifest(result)
         return result
 
     @staticmethod
-    def _audit_state(text: str, entries: tuple[str, ...]) -> dict[str, object]:
+    def _audit_state(
+        text: str, entries: tuple[str, ...], path: Path
+    ) -> dict[str, object]:
+        metadata = path.stat()
         return {
             "sha256": hashlib.sha256(text.encode("utf-8")).hexdigest(),
             "entries": list(entries),
+            "uid": metadata.st_uid,
+            "gid": metadata.st_gid,
+            "mode": f"{metadata.st_mode & 0o777:04o}",
         }
 
     def _validate_applied_state(self, plan: BindSecondaryPlan) -> BindSecondaryStep:

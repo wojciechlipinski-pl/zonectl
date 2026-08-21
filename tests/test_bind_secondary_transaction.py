@@ -38,6 +38,8 @@ def test_dry_run_has_no_side_effects(tmp_path: Path) -> None:
 
 def test_commit_writes_backup_manifest_and_audit_context(tmp_path: Path) -> None:
     plan, root = _plan(tmp_path)
+    root.chmod(0o640)
+    metadata_before = root.stat()
     result = BindSecondaryTransaction(
         tmp_path / "backups", tmp_path / "manifests", root_config=root,
         config_validator=_ok("named-checkconf"), activator=_ok("rndc-reconfig"),
@@ -50,6 +52,10 @@ def test_commit_writes_backup_manifest_and_audit_context(tmp_path: Path) -> None
     assert result.old_addresses == ("192.0.2.53",)
     assert result.new_addresses == ("192.0.2.60",)
     assert root.read_text() == plan.candidate_text
+    metadata_after = root.stat()
+    assert metadata_after.st_mode & 0o777 == 0o640
+    assert metadata_after.st_uid == metadata_before.st_uid
+    assert metadata_after.st_gid == metadata_before.st_gid
     assert Path(result.backup).is_file()
     assert Path(result.manifest).is_file()
     manifest = json.loads(Path(result.manifest).read_text(encoding="utf-8"))
@@ -63,6 +69,9 @@ def test_commit_writes_backup_manifest_and_audit_context(tmp_path: Path) -> None
     assert manifest["state_before"]["sha256"] != manifest["state_after"]["sha256"]
     assert manifest["state_before"]["entries"] == ["192.0.2.53"]
     assert manifest["state_after"]["entries"] == ["192.0.2.60"]
+    for field in ("uid", "gid", "mode"):
+        assert manifest["state_before"][field] == manifest["state_after"][field]
+    assert manifest["state_after"]["mode"] == "0640"
 
 
 def test_validation_failure_rolls_back(tmp_path: Path) -> None:
@@ -138,6 +147,8 @@ def test_post_config_gate_failure_rolls_back_secondary_and_rechecks_state(
     tmp_path: Path,
 ) -> None:
     plan, root = _plan(tmp_path)
+    root.chmod(0o640)
+    metadata_before = root.stat()
     calls = 0
 
     def activate() -> BindSecondaryStep:
@@ -158,6 +169,10 @@ def test_post_config_gate_failure_rolls_back_secondary_and_rechecks_state(
     assert result.rolled_back is True
     assert calls == 2
     assert root.read_text() == plan.original_text
+    metadata_after = root.stat()
+    assert metadata_after.st_mode & 0o777 == 0o640
+    assert metadata_after.st_uid == metadata_before.st_uid
+    assert metadata_after.st_gid == metadata_before.st_gid
     assert any(step.name == "post-rollback-state" and step.ok for step in result.steps)
 
 
