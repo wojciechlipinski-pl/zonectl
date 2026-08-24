@@ -8,6 +8,11 @@ from pathlib import Path
 from typing import Callable
 
 
+def format_days_pl(value: int) -> str:
+    """Return a compact Polish day count used by retention reports."""
+    return f"{value} dzień" if value == 1 else f"{value} dni"
+
+
 @dataclass(frozen=True, slots=True)
 class QuarantineRetentionRecord:
     zone: str
@@ -101,7 +106,7 @@ class QuarantineRetentionAuditor:
             reason=(
                 "okres retencji minął; kandydat do osobno zatwierdzanej operacji"
                 if eligible
-                else f"pozostało {self.retention_days - age_days} dni retencji"
+                else f"pozostało {format_days_pl(self.retention_days - age_days)} retencji"
             ),
             package=str(package),
         )

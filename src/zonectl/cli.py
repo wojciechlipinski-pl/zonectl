@@ -81,7 +81,10 @@ from .core.zone_lifecycle import (
     ZoneLifecyclePlanner,
 )
 from .core.zone_inventory import ZoneInventory
-from .core.zone_quarantine_retention import QuarantineRetentionAuditor
+from .core.zone_quarantine_retention import (
+    QuarantineRetentionAuditor,
+    format_days_pl,
+)
 from .core.zone_quarantine_purge import (
     QuarantinePurgeError,
     QuarantinePurgeTransaction,
@@ -2508,7 +2511,7 @@ def main(argv: list[str] | None = None) -> int:
                 print(json.dumps([item.to_dict() for item in records], ensure_ascii=False, indent=2))
             else:
                 print("PLAN RETENCJI KWARANTANNY — TYLKO ODCZYT")
-                print(f"Okres retencji: {args.retention_days} dni")
+                print(f"Okres retencji: {format_days_pl(args.retention_days)}")
                 if not records:
                     print("Brak pakietów kwarantanny.")
                 for item in records:

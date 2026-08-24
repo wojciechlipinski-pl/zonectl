@@ -413,6 +413,10 @@ zaczynając od raportu wpływu tylko do odczytu.
   niedelegowanej strefie: utworzenie, wyłączenie, zwykłe odtworzenie,
   kwarantanna, weryfikacja SHA-256 i metadanych, odtworzenie z pakietu oraz
   końcowe wycofanie strefy z aktywnego BIND.
+- [x] Wykonać kontrolowany drill trwałego usunięcia wyłącznie na syntetycznym
+  pakiecie: kwalifikacja retencji, dry-run, atomowy staging, zweryfikowane
+  archiwum ratunkowe, zewnętrzny manifest `PURGED` i kontrola niezmienionego
+  stanu pozostałych pakietów oraz BIND.
 - [ ] Uzupełnić docstringi publicznego API i zwiększyć pokrycie krytycznych
   ścieżek zapisu.
 

@@ -6,7 +6,10 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from zonectl import cli
-from zonectl.core.zone_quarantine_retention import QuarantineRetentionAuditor
+from zonectl.core.zone_quarantine_retention import (
+    QuarantineRetentionAuditor,
+    format_days_pl,
+)
 
 
 NOW = datetime(2026, 8, 24, 12, 0, tzinfo=timezone.utc)
@@ -79,6 +82,12 @@ def test_retention_must_be_positive(tmp_path: Path) -> None:
         raise AssertionError("expected ValueError")
 
 
+def test_polish_day_label_handles_singular() -> None:
+    assert format_days_pl(1) == "1 dzień"
+    assert format_days_pl(2) == "2 dni"
+    assert format_days_pl(90) == "90 dni"
+
+
 def test_cli_prints_read_only_retention_plan(
     monkeypatch, tmp_path: Path, capsys
 ) -> None:
@@ -99,6 +108,7 @@ def test_cli_prints_read_only_retention_plan(
     output = capsys.readouterr().out
     assert code == 0
     assert "TYLKO ODCZYT" in output
+    assert "Okres retencji: 1 dzień" in output
     assert "ELIGIBLE" in output
     assert "niczego nie usunięto" in output
 

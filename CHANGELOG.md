@@ -45,6 +45,10 @@
   after the root-context fix, the full lifecycle completed and the synthetic
   zone was removed from active configuration while verified recovery packages
   were retained for audit
+- a permanent-purge drill removed only a synthetic, non-BIND quarantine
+  package after retention and dry-run gates; atomic staging, recovery archive
+  verification and the external `PURGED` manifest completed successfully,
+  while all existing packages and active BIND remained unchanged
 
 ## 4.8.3 - 2026-08-21
 
