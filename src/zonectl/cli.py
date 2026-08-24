@@ -840,6 +840,10 @@ def parser() -> argparse.ArgumentParser:
         "--audit-directory", type=Path,
         default=Path("/var/backups/zonectl-quarantine-purge/manifests"),
     )
+    purge.add_argument(
+        "--staging-root", type=Path,
+        default=Path("/var/lib/zonectl/purge-staging"),
+    )
     purge.add_argument("--commit", action="store_true")
     purge.add_argument("--json", action="store_true")
     safety = lifecycle_sub.add_parser(
@@ -2518,6 +2522,7 @@ def main(argv: list[str] | None = None) -> int:
             transaction = QuarantinePurgeTransaction(
                 quarantine_root=args.quarantine_root,
                 audit_directory=args.audit_directory,
+                staging_root=args.staging_root,
                 retention_days=args.retention_days,
             )
             try:

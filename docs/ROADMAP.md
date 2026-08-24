@@ -94,7 +94,8 @@ zrealizowane, a `[ ]` pozostają do wykonania.
   odczytowy plan weryfikujący wiek, manifest i sumy SHA-256 pakietu.
 - [x] Trwałe usunięcie udostępnić wyłącznie jako osobną operację
   administracyjną z domyślnym dry-runem, ponowną kontrolą integralności,
-  potwierdzeniem strefy i identyfikatora pakietu oraz zewnętrznym manifestem.
+  potwierdzeniem strefy i identyfikatora pakietu, atomowym stagingiem,
+  zweryfikowanym archiwum ratunkowym oraz zewnętrznym manifestem.
 
 ### Wymagania bezpieczeństwa 4.4
 

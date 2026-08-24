@@ -16,7 +16,8 @@
 - permanent quarantine purge is a separate dry-run-first operation requiring
   an eligible verified package, reason, exact zone and package confirmations;
   it rechecks all gates immediately before deletion and retains an external
-  audit manifest
+  audit manifest; atomic staging and a verified recovery archive preserve a
+  recoverable artifact when deletion fails
 
 - a read-only GitHub Actions quality gate runs the complete suite on Python
   3.11 and 3.13 with isolated BIND validators and rejects whitespace errors
