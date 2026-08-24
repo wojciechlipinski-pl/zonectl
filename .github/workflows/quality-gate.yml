@@ -47,7 +47,10 @@ jobs:
         run: |
           python scripts/audit_public_api.py --strict \
             src/zonectl/core/zone_quarantine_retention.py \
-            src/zonectl/core/zone_quarantine_purge.py
+            src/zonectl/core/zone_quarantine_purge.py \
+            src/zonectl/core/zone_create_transaction.py \
+            src/zonectl/core/zone_disable_transaction.py \
+            src/zonectl/core/zone_restore_transaction.py
       - name: Reject whitespace errors
         run: git diff --check $(git hash-object -t tree /dev/null) HEAD
       - name: Reject executable documentation and Python sources

@@ -1,3 +1,5 @@
+"""Transactional creation and activation of managed DNS zones."""
+
 from __future__ import annotations
 
 import json
@@ -16,6 +18,7 @@ from .zone_lifecycle import ZoneCreatePlan
 
 @dataclass(slots=True)
 class ZoneCreateStep:
+    """One observable step of a zone creation transaction."""
     name: str
     ok: bool
     message: str
@@ -23,6 +26,7 @@ class ZoneCreateStep:
 
 @dataclass(slots=True)
 class ZoneCreateResult:
+    """Final status, manifest and rollback state for zone creation."""
     transaction_id: str
     zone: str
     status: str
@@ -33,6 +37,7 @@ class ZoneCreateResult:
 
     @property
     def ok(self) -> bool:
+        """Return whether every recorded transaction step succeeded."""
         return bool(self.steps) and all(step.ok for step in self.steps)
 
 
@@ -72,6 +77,7 @@ class ZoneCreateTransaction:
         commit: bool = False,
         activate: bool = False,
     ) -> ZoneCreateResult:
+        """Apply a plan or return its side-effect-free dry-run result."""
         txid = (
             datetime.now().strftime("%Y%m%d-%H%M%S")
             + f"-create-{plan.zone_name}-{uuid.uuid4().hex[:8]}"

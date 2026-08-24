@@ -1,3 +1,5 @@
+"""Transactional restoration of disabled zones into active BIND."""
+
 from __future__ import annotations
 
 import json
@@ -15,6 +17,7 @@ from .runner import run
 
 @dataclass(frozen=True, slots=True)
 class ZoneRestorePlan:
+    """Validated paths and include statement for restoring one zone."""
     zone_name: str
     zone_file: Path
     declaration_file: Path
@@ -26,6 +29,7 @@ class ZoneRestorePlan:
 
 @dataclass(slots=True)
 class ZoneRestoreStep:
+    """One observable step of a zone restore transaction."""
     name: str
     ok: bool
     message: str
@@ -33,6 +37,7 @@ class ZoneRestoreStep:
 
 @dataclass(slots=True)
 class ZoneRestoreResult:
+    """Final status, manifest and rollback state for zone restoration."""
     transaction_id: str
     zone: str
     status: str
@@ -43,6 +48,7 @@ class ZoneRestoreResult:
 
     @property
     def ok(self) -> bool:
+        """Return whether every recorded transaction step succeeded."""
         return bool(self.steps) and all(step.ok for step in self.steps)
 
 
@@ -83,6 +89,7 @@ class ZoneRestoreTransaction:
         disabled_root: Path = Path("/var/lib/zonectl/disabled-zones"),
         root_config: Path = Path("/etc/bind/named.conf"),
     ) -> ZoneRestorePlan:
+        """Validate archived state and build a side-effect-free restore plan."""
         name = zone_name.strip().rstrip(".").casefold()
         archived = disabled_root / name / declaration_file.name
         if not name:
@@ -120,6 +127,7 @@ class ZoneRestoreTransaction:
         *,
         commit: bool = False,
     ) -> ZoneRestoreResult:
+        """Apply a restore plan or return its side-effect-free dry-run result."""
         txid = (
             datetime.now().strftime("%Y%m%d-%H%M%S")
             + f"-restore-{plan.zone_name}-{uuid.uuid4().hex[:8]}"

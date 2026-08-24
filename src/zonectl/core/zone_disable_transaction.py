@@ -1,3 +1,5 @@
+"""Reversible removal of managed zones from active BIND configuration."""
+
 from __future__ import annotations
 
 import json
@@ -16,6 +18,7 @@ from .runner import run
 
 @dataclass(frozen=True, slots=True)
 class ZoneDisablePlan:
+    """Validated file and configuration paths for disabling one zone."""
     zone_name: str
     zone_file: Path
     declaration_file: Path
@@ -29,6 +32,7 @@ class ZoneDisablePlan:
 
 @dataclass(slots=True)
 class ZoneDisableStep:
+    """One observable step of a zone disable transaction."""
     name: str
     ok: bool
     message: str
@@ -36,6 +40,7 @@ class ZoneDisableStep:
 
 @dataclass(slots=True)
 class ZoneDisableResult:
+    """Final status, manifest and rollback state for zone disable."""
     transaction_id: str
     zone: str
     status: str
@@ -47,6 +52,7 @@ class ZoneDisableResult:
 
     @property
     def ok(self) -> bool:
+        """Return whether every recorded transaction step succeeded."""
         return bool(self.steps) and all(step.ok for step in self.steps)
 
 
@@ -87,6 +93,7 @@ class ZoneDisableTransaction:
         disabled_root: Path = Path("/var/lib/zonectl/disabled-zones"),
         reason: str,
     ) -> ZoneDisablePlan:
+        """Validate prerequisites and build a side-effect-free disable plan."""
         name = zone_name.strip().rstrip(".").casefold()
         if not name or not reason.strip():
             raise ZoneDisableError("Wymagana jest nazwa strefy i przyczyna")
@@ -128,6 +135,7 @@ class ZoneDisableTransaction:
         *,
         commit: bool = False,
     ) -> ZoneDisableResult:
+        """Apply a disable plan or return its side-effect-free dry-run result."""
         txid = (
             datetime.now().strftime("%Y%m%d-%H%M%S")
             + f"-disable-{plan.zone_name}-{uuid.uuid4().hex[:8]}"

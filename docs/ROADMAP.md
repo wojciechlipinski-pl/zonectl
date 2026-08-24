@@ -420,7 +420,9 @@ zaczynając od raportu wpływu tylko do odczytu.
 - [ ] Uzupełnić docstringi publicznego API i zwiększyć pokrycie krytycznych
   ścieżek zapisu. Odczytowy audyt obejmuje całe drzewo, a twarda bramka CI
   chroni już nowe moduły retencji i trwałego usuwania kwarantanny; zakres
-  należy rozszerzać stopniowo bez masowego przepisywania starszego kodu.
+  rozszerzono również na transakcje tworzenia, wyłączania i przywracania
+  stref; kolejne moduły należy obejmować stopniowo bez masowego przepisywania
+  starszego kodu.
 
 ### Automatyzacja GitHub i pakietów
 
