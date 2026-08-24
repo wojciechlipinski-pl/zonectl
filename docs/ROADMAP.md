@@ -170,7 +170,8 @@ zrealizowane, a `[ ]` pozostają do wykonania.
 - [ ] Rozszerzyć pokrycie testami krytycznych ścieżek zapisu.
 - [ ] Dodać statyczną analizę typów. Ścisła bramka `mypy` obejmuje już nowe
   moduły retencji/purge oraz audyt publicznego API; zakres należy rozszerzać
-  stopniowo po usunięciu błędów typów z kolejnych modułów.
+  stopniowo po usunięciu błędów typów z kolejnych modułów. Bramką objęto już
+  także transakcje tworzenia, wyłączania i przywracania stref.
 - [ ] Dodać automatyczne formatowanie i lint.
 - [x] Dodać testy integracyjne z odseparowaną konfiguracją i prawdziwymi
   narzędziami walidacyjnymi BIND, bez kontaktu z produkcyjnym `rndc`.
@@ -496,7 +497,7 @@ zaczynając od raportu wpływu tylko do odczytu.
   go na kontrole DNSSEC, DS i secondary.
 - [ ] Po zakończeniu zastępować animację jawnym wynikiem semantycznym:
   zielonym `PASS`, żółtym `WARN` albo czerwonym `FAIL` wraz z opisem.
-- [ ] Zapewnić wariant ASCII `| / - \` dla terminali bez poprawnej obsługi
+- [ ] Zapewnić wariant ASCII `| / - \\` dla terminali bez poprawnej obsługi
   znaków Braille'a oraz wyłączać animację w JSON, logach i środowisku
   nieinteraktywnym.
 - [ ] Nie udostępniać anulowania operacji, dopóki poszczególne transakcje nie

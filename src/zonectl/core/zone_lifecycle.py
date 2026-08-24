@@ -5,7 +5,7 @@ import re
 from dataclasses import asdict, dataclass
 from datetime import date
 from pathlib import Path
-from typing import Iterable
+from typing import Callable, Iterable
 
 from .models import Zone
 from .paths import DEFAULT_GROUPS
@@ -99,7 +99,7 @@ class ZoneLifecyclePlanner:
         self,
         existing_zones: Iterable[Zone],
         *,
-        today_provider=date.today,
+        today_provider: Callable[[], date] = date.today,
     ) -> None:
         self._existing = {
             zone.name.rstrip(".").casefold()
