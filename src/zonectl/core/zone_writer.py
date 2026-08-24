@@ -92,9 +92,90 @@ class ZoneWriter:
         node: RecordNode,
     ) -> str:
         """Renderuj rekord, zachowując jego komentarz końcowy."""
+        if node.record.rtype.upper() == "SOA" and "\n" in node.raw:
+            return self._render_modified_multiline_soa(node)
+
         rendered = self.render_record(node.record)
         suffix = self._inline_comment_suffix(node.raw)
         return rendered + suffix
+
+    @staticmethod
+    def _soa_token_spans(raw: str) -> list[tuple[int, int, str]]:
+        """Tokeny rekordu SOA poza komentarzami i nawiasami."""
+        tokens: list[tuple[int, int, str]] = []
+        index = 0
+
+        while index < len(raw):
+            character = raw[index]
+            if character == ";":
+                newline = raw.find("\n", index)
+                index = len(raw) if newline < 0 else newline + 1
+                continue
+            if character.isspace() or character in "()":
+                index += 1
+                continue
+
+            start = index
+            while index < len(raw):
+                character = raw[index]
+                if character.isspace() or character in "();":
+                    break
+                index += 1
+            tokens.append((start, index, raw[start:index]))
+
+        return tokens
+
+    def _render_modified_multiline_soa(self, node: RecordNode) -> str:
+        """Podmień wartości SOA, zachowując układ i komentarze bloku."""
+        tokens = self._soa_token_spans(node.raw)
+        try:
+            soa_index = next(
+                index for index, token in enumerate(tokens)
+                if token[2].upper() == "SOA"
+            )
+        except StopIteration as exc:
+            raise ZoneWriteError("Nie można odnaleźć typu SOA w bloku") from exc
+
+        rdata = node.record.rdata.split()
+        if len(rdata) != 7 or len(tokens) < soa_index + 8:
+            raise ZoneWriteError("Wielowierszowy SOA nie zawiera siedmiu pól")
+
+        replacements: list[tuple[int, int, str]] = []
+        for token, value in zip(tokens[soa_index + 1:soa_index + 8], rdata):
+            replacements.append((token[0], token[1], value))
+
+        ttl_token = next(
+            (token for token in tokens[:soa_index] if token[2].isdigit()),
+            None,
+        )
+        if ttl_token is not None and node.record.ttl is not None:
+            replacements.append(
+                (ttl_token[0], ttl_token[1], str(node.record.ttl))
+            )
+        elif ttl_token is not None and node.record.ttl is None:
+            end = ttl_token[1]
+            while end < len(node.raw) and node.raw[end] in " \t":
+                end += 1
+            replacements.append((ttl_token[0], end, ""))
+        elif ttl_token is None and node.record.ttl is not None:
+            insert_at = tokens[soa_index][0]
+            class_token = next(
+                (
+                    token for token in tokens[:soa_index]
+                    if token[2].upper() in {"IN", "CH", "HS"}
+                ),
+                None,
+            )
+            if class_token is not None:
+                insert_at = class_token[0]
+            replacements.append(
+                (insert_at, insert_at, f"{node.record.ttl} ")
+            )
+
+        rendered = node.raw
+        for start, end, value in sorted(replacements, reverse=True):
+            rendered = rendered[:start] + value + rendered[end:]
+        return rendered
 
     @staticmethod
     def _inline_comment_suffix(raw: str) -> str:

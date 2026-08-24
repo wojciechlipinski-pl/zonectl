@@ -429,8 +429,19 @@ zaczynając od raportu wpływu tylko do odczytu.
   ACL/secondary.
 - [x] Zachować jawne etykiety i symbole, aby kolor nie był jedynym nośnikiem
   informacji, oraz zapewnić poprawny tryb terminala bez kolorów.
-- [ ] Zweryfikować wizualnie reprezentatywne stany PASS/WARN/FAIL w działającym
+- [x] Zweryfikować wizualnie reprezentatywne stany PASS/WARN/FAIL w działającym
   TUI przed rozpoczęciem edytora SOA.
+
+### Bezpieczny edytor SOA
+
+- [x] Otwierać dla rekordu SOA osobny formularz z polami primary NS,
+  administrator, refresh, retry, expire, minimum oraz opcjonalnym TTL.
+- [x] Pokazywać serial wyłącznie informacyjnie i pozostawić jego podbijanie
+  istniejącemu mechanizmowi transakcyjnemu ZoneCTL.
+- [x] Walidować nazwy DNS, zakresy liczbowych parametrów SOA i TTL przed
+  dodaniem zmiany do bufora.
+- [x] Zweryfikować formularz wizualnie i przeprowadzić produkcyjny dry-run bez
+  zapisywania zmiany.
 
 ## Rozwój po osiągnięciu pełnej funkcjonalności podstawowej
 

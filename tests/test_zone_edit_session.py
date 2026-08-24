@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import date
 from pathlib import Path
 
 from zonectl.core.models import Zone
@@ -13,6 +14,7 @@ from zonectl.core.zone_edit_session import (
     ZoneEditSessionError,
 )
 from zonectl.core.zone_parser import DNSRecord
+from zonectl.ui.records.editor import RecordEditor
 
 
 @dataclass
@@ -176,6 +178,53 @@ def test_dry_run_does_not_change_active_file(
     assert source.read_text(encoding="utf-8") == original
     assert session.dirty is True
     assert engine.last_commit is False
+
+
+def test_soa_form_change_uses_automatic_serial_bump(
+    tmp_path: Path,
+) -> None:
+    source = tmp_path / "example.pl"
+    original = (
+        "$TTL 3600\n"
+        "@ 3600 IN SOA ns1.example.pl. hostmaster.example.pl. (\n"
+        "    2026082001 ; serial\n"
+        "    3600       ; refresh\n"
+        "    900        ; retry\n"
+        "    1209600    ; expire\n"
+        "    300 )      ; minimum\n"
+        "@ 3600 IN NS ns1.example.pl.\n"
+    )
+    source.write_text(original, encoding="utf-8")
+    session = ZoneEditSession(
+        make_zone(source), FakeEngine(source),
+        today_provider=lambda: date(2026, 8, 21),
+    )
+    view = next(
+        item for item in session.model.record_views
+        if item.record.rtype == "SOA"
+    )
+    updated, error = RecordEditor.build_soa_record(
+        view.record,
+        primary="ns2.example.pl.",
+        administrator="dns.example.pl.",
+        refresh="7200", retry="1200", expire="604800", minimum="600",
+        ttl_text="3600",
+    )
+    assert error == ""
+    assert updated is not None
+    session.model.replace_by_identifier(view.identifier, updated)
+
+    candidate = session.render_candidate()
+    repeated = session.render_candidate()
+
+    assert "ns2.example.pl. dns.example.pl." in candidate
+    assert "2026082101 ; serial" in candidate
+    assert "7200       ; refresh" in candidate
+    assert "1200        ; retry" in candidate
+    assert "604800    ; expire" in candidate
+    assert "600 )      ; minimum" in candidate
+    assert repeated == candidate
+    assert source.read_text(encoding="utf-8") == original
 
 
 def test_commit_changes_active_file_and_reloads_session(

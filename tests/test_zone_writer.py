@@ -111,7 +111,7 @@ def test_deleted_record_is_omitted() -> None:
     )
 
 
-def test_multiline_soa_raw_lines_are_preserved() -> None:
+def test_multiline_soa_record_is_preserved_when_unmodified() -> None:
     original = (
         "@ IN SOA ns1.example.pl. hostmaster.example.pl. (\n"
         "    2026072901\n"
@@ -123,12 +123,46 @@ def test_multiline_soa_raw_lines_are_preserved() -> None:
 
     document = ZoneFileParser.parse_text(original)
 
-    assert all(
-        isinstance(node, RawLine)
-        for node in document.nodes
-    )
+    assert len(document.nodes) == 1
+    assert isinstance(document.nodes[0], RecordNode)
 
     assert ZoneWriter().render_document(document) == original
+
+
+def test_modified_multiline_soa_preserves_layout_and_comments() -> None:
+    original = (
+        "@ 3600 IN SOA ns1.example.pl. hostmaster.example.pl. (\n"
+        "    2026072901 ; serial\n"
+        "    3600       ; refresh\n"
+        "    900        ; retry\n"
+        "    1209600    ; expire\n"
+        "    3600 )     ; minimum\n"
+    )
+    document = ZoneFileParser.parse_text(original)
+    node = next(document.iter_record_nodes())
+    node.record = DNSRecord(
+        owner=node.record.owner,
+        ttl=None,
+        rrclass=node.record.rrclass,
+        rtype="SOA",
+        rdata=(
+            "ns2.example.pl. dns.example.pl. "
+            "2026082101 7200 1200 604800 600"
+        ),
+        raw=node.record.raw,
+    )
+    node.modified = True
+
+    result = ZoneWriter().render_document(document)
+
+    assert result == (
+        "@ IN SOA ns2.example.pl. dns.example.pl. (\n"
+        "    2026082101 ; serial\n"
+        "    7200       ; refresh\n"
+        "    1200        ; retry\n"
+        "    604800    ; expire\n"
+        "    600 )     ; minimum\n"
+    )
 
 
 def test_render_record_with_ttl() -> None:

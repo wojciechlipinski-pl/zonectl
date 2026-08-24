@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from dataclasses import replace
 
 from .zone_document import RecordNode, ZoneDocument
 from .zone_model import ChangeKind, ZoneModel
@@ -105,10 +106,36 @@ class ZoneDocumentAdapter:
             node.deleted = False
 
             if view.change_kind is ChangeKind.MODIFY:
-                node.record = view.record
+                record = view.record
+
+                # Podgląd/dry-run może już podbić serial SOA w dokumencie.
+                # Ponowne renderowanie nie może cofnąć go do wartości z
+                # modelu, który celowo przechowuje zmianę operatora sprzed
+                # automatycznego podbicia serialu.
+                if (
+                    node.modified
+                    and node.record.rtype.upper() == "SOA"
+                    and record.rtype.upper() == "SOA"
+                ):
+                    current_fields = node.record.rdata.split()
+                    proposed_fields = record.rdata.split()
+                    if len(current_fields) >= 7 and len(proposed_fields) >= 7:
+                        proposed_fields[2] = current_fields[2]
+                        record = replace(
+                            record,
+                            rdata=" ".join(proposed_fields),
+                        )
+
+                node.record = record
                 node.modified = True
             else:
-                node.modified = False
+                # Zachowaj zmianę serialu przygotowaną przez sesję między
+                # kolejnymi wywołaniami render_candidate().
+                if not (
+                    node.modified
+                    and node.record.rtype.upper() == "SOA"
+                ):
+                    node.modified = False
 
         self._remove_abandoned_added_nodes(active_identifiers)
 

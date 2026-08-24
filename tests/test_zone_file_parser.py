@@ -138,7 +138,7 @@ def test_unknown_line_becomes_raw_line() -> None:
     assert document.nodes[0].raw == "to nie jest rekord DNS"
 
 
-def test_multiline_soa_is_preserved_as_raw_lines() -> None:
+def test_multiline_soa_is_parsed_and_preserved_as_one_record() -> None:
     text = (
         "@ IN SOA ns1.example.pl. hostmaster.example.pl. (\n"
         "    2026072901\n"
@@ -150,14 +150,16 @@ def test_multiline_soa_is_preserved_as_raw_lines() -> None:
 
     document = ZoneFileParser.parse_text(text)
 
-    assert len(document.nodes) == 6
-    assert all(
-        isinstance(node, RawLine)
-        for node in document.nodes
+    assert len(document.nodes) == 1
+    node = document.nodes[0]
+    assert isinstance(node, RecordNode)
+    assert node.record.owner == "@"
+    assert node.record.rtype == "SOA"
+    assert node.record.rdata == (
+        "ns1.example.pl. hostmaster.example.pl. "
+        "2026072901 3600 900 1209600 3600"
     )
-
-    assert document.nodes[0].raw.startswith("@ IN SOA")
-    assert document.nodes[-1].raw == "    3600 )"
+    assert node.raw == text.rstrip("\n")
 
 
 def test_preserves_trailing_newline_information() -> None:
