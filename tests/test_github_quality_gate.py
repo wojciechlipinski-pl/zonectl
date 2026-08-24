@@ -1,0 +1,31 @@
+from pathlib import Path
+
+
+ROOT = Path(__file__).resolve().parents[1]
+WORKFLOW = ROOT / ".github" / "workflows" / "quality-gate.yml"
+
+
+def test_quality_gate_runs_supported_python_versions_and_bind_tools() -> None:
+    text = WORKFLOW.read_text(encoding="utf-8")
+
+    assert 'python-version: ["3.11", "3.13"]' in text
+    assert "bind9-utils bind9-dnsutils" in text
+    assert "PYTHONPATH: src" in text
+    assert "python -m pytest -q" in text
+
+
+def test_quality_gate_is_read_only_and_has_no_production_bind_commands() -> None:
+    text = WORKFLOW.read_text(encoding="utf-8")
+
+    assert "permissions:\n  contents: read" in text
+    assert "/etc/bind" not in text
+    assert "rndc" not in text.casefold()
+    assert "systemctl" not in text.casefold()
+    assert "--commit" not in text
+
+
+def test_quality_gate_checks_repository_hygiene() -> None:
+    text = WORKFLOW.read_text(encoding="utf-8")
+
+    assert "git diff --check" in text
+    assert "Unexpected executable files" in text

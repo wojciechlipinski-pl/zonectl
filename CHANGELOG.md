@@ -10,6 +10,9 @@
 
 ### Safety
 
+- a read-only GitHub Actions quality gate runs the complete suite on Python
+  3.11 and 3.13 with isolated BIND validators and rejects whitespace errors
+  or accidental executable bits on documentation and Python sources
 - regression coverage verifies `named-checkconf` with definitions available
   only through the root configuration context
 - forced-failure matrices now cover creation, disable/restore,

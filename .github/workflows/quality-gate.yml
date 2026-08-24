@@ -1,0 +1,53 @@
+name: Quality gate
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    name: Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.13"]
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+      - name: Install isolated test dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes bind9-utils bind9-dnsutils
+          python -m pip install --disable-pip-version-check pytest
+      - name: Run tests without production BIND access
+        env:
+          PYTHONPATH: src
+        run: python -m pytest -q
+
+  repository-hygiene:
+    name: Repository hygiene
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Reject whitespace errors
+        run: git diff --check $(git hash-object -t tree /dev/null) HEAD
+      - name: Reject executable documentation and Python sources
+        shell: bash
+        run: |
+          unexpected="$({
+            git ls-files -s -- '*.md' '*.yml' '*.yaml' 'src/**/*.py' 'tests/**/*.py'
+          } | awk '$1 == "100755" { print $4 }')"
+          if [[ -n "$unexpected" ]]; then
+            printf 'Unexpected executable files:\n%s\n' "$unexpected"
+            exit 1
+          fi

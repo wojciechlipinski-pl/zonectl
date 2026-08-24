@@ -415,7 +415,7 @@ zaczynając od raportu wpływu tylko do odczytu.
 
 ### Automatyzacja GitHub i pakietów
 
-- [ ] Dodać GitHub Actions uruchamiające testy bez dostępu do produkcyjnego
+- [x] Dodać GitHub Actions uruchamiające testy bez dostępu do produkcyjnego
   BIND.
 - [ ] Automatycznie budować wheel i pakiet Debian oraz uruchamiać Lintian.
 - [ ] Publikować artefakty dopiero dla podpisanego lub jawnie zatwierdzonego
