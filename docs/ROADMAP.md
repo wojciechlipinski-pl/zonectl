@@ -382,6 +382,9 @@ zaczynając od raportu wpływu tylko do odczytu.
   rollbacku ACL oraz secondary.
 - [ ] Uzupełnić analogiczną macierz awarii dla wszystkich operacji cyklu
   życia stref.
+- [x] Objąć macierzą operację tworzenia strefy: wymuszone awarie każdego
+  zapisu atomowego, aktywacji i kontroli załadowania, zachowanie metadanych
+  istniejącej konfiguracji oraz jawny stan `ROLLBACK-FAILED`.
 - [x] Sprawdzać zachowanie UID, GID i trybu pliku po sukcesie oraz rollbacku
   ACL/secondary i zapisywać te metadane w stanie przed/po manifestu.
 - [x] Ograniczyć manifesty ACL/secondary do jawnej listy pól i automatycznie

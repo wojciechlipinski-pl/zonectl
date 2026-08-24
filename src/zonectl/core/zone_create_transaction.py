@@ -262,7 +262,7 @@ class ZoneCreateTransaction:
                     )
                     if not restore_step.ok:
                         raise RuntimeError(restore_step.message)
-            except OSError as rollback_error:
+            except Exception as rollback_error:
                 rollback_ok = False
                 result.steps.append(
                     ZoneCreateStep(
@@ -325,9 +325,11 @@ class ZoneCreateTransaction:
         if path.exists():
             owner = path.stat()
             uid, gid = owner.st_uid, owner.st_gid
+            mode = owner.st_mode & 0o777
         else:
             parent = path.parent.stat()
             uid, gid = parent.st_uid, parent.st_gid
+            mode = 0o640
         fd, temporary_name = tempfile.mkstemp(
             prefix=f".{path.name}.",
             dir=path.parent,
@@ -338,7 +340,7 @@ class ZoneCreateTransaction:
                 handle.write(content)
                 handle.flush()
                 os.fsync(handle.fileno())
-            os.chmod(temporary, 0o640)
+            os.chmod(temporary, mode)
             os.chown(temporary, uid, gid)
             os.replace(temporary, path)
         finally:
