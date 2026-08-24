@@ -36,8 +36,21 @@ def test_package_build_checksums_and_uploads_without_publishing() -> None:
     text = workflow_text()
 
     assert "sha256sum --check SHA256SUMS" in text
-    assert "actions/upload-artifact@v4" in text
+    assert "actions/checkout@v5" in text
+    assert "actions/upload-artifact@v6" in text
     assert "retention-days: 14" in text
     assert "actions/create-release" not in text
     assert "gh release" not in text
     assert "twine upload" not in text
+
+
+def test_workflows_use_node24_action_generations() -> None:
+    workflows = tuple((ROOT / ".github" / "workflows").glob("*.yml"))
+    combined = "\n".join(path.read_text(encoding="utf-8") for path in workflows)
+
+    assert "actions/checkout@v4" not in combined
+    assert "actions/setup-python@v5" not in combined
+    assert "actions/upload-artifact@v4" not in combined
+    assert "actions/checkout@v5" in combined
+    assert "actions/setup-python@v6" in combined
+    assert "actions/upload-artifact@v6" in combined

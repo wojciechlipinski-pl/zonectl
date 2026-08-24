@@ -17,9 +17,9 @@ jobs:
         python-version: ["3.11", "3.13"]
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
           cache: pip
@@ -38,7 +38,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Reject whitespace errors
         run: git diff --check $(git hash-object -t tree /dev/null) HEAD
       - name: Reject executable documentation and Python sources

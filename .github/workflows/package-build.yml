@@ -47,7 +47,7 @@ jobs:
             bind9-dnsutils \
             ca-certificates
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Build wheel
         run: python3 -m build --wheel --no-isolation
       - name: Build Debian package and run package tests
@@ -77,7 +77,7 @@ jobs:
           sha256sum zonectl-*.whl zonectl_*_all.deb > SHA256SUMS
           sha256sum --check SHA256SUMS
       - name: Upload verified build artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: zonectl-packages
           path: artifacts/

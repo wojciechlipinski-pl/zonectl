@@ -16,6 +16,8 @@
 - an isolated Debian 13 build job creates wheel and DEB artifacts, runs package
   tests and Lintian, verifies metadata and the absence of `/etc/bind`, and
   uploads SHA-256-protected outputs without publishing a release
+- GitHub workflows use the Node.js 24 generations of checkout, Python setup
+  and artifact upload actions
 - regression coverage verifies `named-checkconf` with definitions available
   only through the root configuration context
 - forced-failure matrices now cover creation, disable/restore,
