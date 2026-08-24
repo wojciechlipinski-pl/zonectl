@@ -380,7 +380,7 @@ zaczynając od raportu wpływu tylko do odczytu.
 
 - [x] Dodać macierz wymuszonych awarii dla zapisu, walidacji, aktywacji i
   rollbacku ACL oraz secondary.
-- [ ] Uzupełnić analogiczną macierz awarii dla wszystkich operacji cyklu
+- [x] Uzupełnić analogiczną macierz awarii dla wszystkich operacji cyklu
   życia stref.
 - [x] Objąć macierzą operację tworzenia strefy: wymuszone awarie każdego
   zapisu atomowego, aktywacji i kontroli załadowania, zachowanie metadanych
@@ -391,6 +391,9 @@ zaczynając od raportu wpływu tylko do odczytu.
 - [x] Objąć macierzą kwarantannę i odtworzenie pakietu: integralność SHA-256,
   awarie każdego zapisu, sprzątanie niekompletnych pakietów oraz zachowanie
   trybu, UID i GID pliku strefy i deklaracji.
+- [x] Objąć macierzą migrację deklaracji legacy i relokację zarządzanego
+  pliku strefy: awarie każdego zapisu, walidacji i aktywacji, zachowanie
+  metadanych, kontrolę docelowej ścieżki oraz `ROLLBACK-FAILED`.
 - [x] Sprawdzać zachowanie UID, GID i trybu pliku po sukcesie oraz rollbacku
   ACL/secondary i zapisywać te metadane w stanie przed/po manifestu.
 - [x] Ograniczyć manifesty ACL/secondary do jawnej listy pól i automatycznie

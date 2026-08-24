@@ -156,7 +156,7 @@ class ManagedZoneMigrationTransaction:
                     ))
                     if not step.ok:
                         rollback_ok = False
-            except OSError as rollback_error:
+            except Exception as rollback_error:
                 rollback_ok = False
                 result.steps.append(ManagedZoneMigrationStep(
                     "rollback", False, str(rollback_error)

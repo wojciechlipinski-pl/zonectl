@@ -118,7 +118,7 @@ class ManagedZoneRelocationTransaction:
                     step = self.activator(plan.zone)
                     result.steps.append(ManagedZoneMigrationStep("rndc-reconfig-rollback", step.ok, step.message))
                     rollback_ok = step.ok
-            except OSError as rollback_error:
+            except Exception as rollback_error:
                 rollback_ok = False
                 result.steps.append(ManagedZoneMigrationStep("rollback", False, str(rollback_error)))
             result.rolled_back = rollback_ok
