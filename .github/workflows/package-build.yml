@@ -59,8 +59,9 @@ jobs:
           test -n "$deb"
           test "$(dpkg-deb -f "$deb" Package)" = "zonectl"
           test "$(dpkg-deb -f "$deb" Architecture)" = "all"
-          dpkg-deb -c "$deb" | grep -q './usr/bin/zctl$'
-          if dpkg-deb -c "$deb" | grep -q './etc/bind/'; then
+          dpkg-deb -c "$deb" > package-contents.txt
+          grep -q './usr/bin/zctl$' package-contents.txt
+          if grep -q './etc/bind/' package-contents.txt; then
             echo "BŁĄD: pakiet zawiera pliki /etc/bind"
             exit 1
           fi

@@ -26,6 +26,8 @@ def test_package_build_creates_and_validates_both_artifact_formats() -> None:
     assert "dpkg-buildpackage --build=binary --no-sign" in text
     assert "lintian ../zonectl_*.changes" in text
     assert "dpkg-deb -f" in text
+    assert 'dpkg-deb -c "$deb" > package-contents.txt' in text
+    assert 'dpkg-deb -c "$deb" |' not in text
     assert "./usr/bin/zctl$" in text
     assert "./etc/bind/" in text
 
