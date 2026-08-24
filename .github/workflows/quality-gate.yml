@@ -39,6 +39,15 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v5
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+      - name: Require documented public API in new critical modules
+        run: |
+          python scripts/audit_public_api.py --strict \
+            src/zonectl/core/zone_quarantine_retention.py \
+            src/zonectl/core/zone_quarantine_purge.py
       - name: Reject whitespace errors
         run: git diff --check $(git hash-object -t tree /dev/null) HEAD
       - name: Reject executable documentation and Python sources

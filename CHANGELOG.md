@@ -10,6 +10,10 @@
 
 ### Safety
 
+- a dependency-free AST audit inventories missing public API docstrings, while
+  CI initially enforces complete documentation only for the new critical
+  quarantine retention and purge modules
+
 - a read-only quarantine retention plan classifies verified packages as
   retained or eligible after a configurable period and blocks damaged,
   incomplete or inconsistent manifests without deleting data

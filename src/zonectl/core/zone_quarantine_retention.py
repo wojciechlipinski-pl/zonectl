@@ -1,3 +1,5 @@
+"""Read-only quarantine retention classification and integrity checks."""
+
 from __future__ import annotations
 
 import hashlib
@@ -15,6 +17,7 @@ def format_days_pl(value: int) -> str:
 
 @dataclass(frozen=True, slots=True)
 class QuarantineRetentionRecord:
+    """One quarantine package retention decision."""
     zone: str
     transaction_id: str
     created_at: str
@@ -25,6 +28,7 @@ class QuarantineRetentionRecord:
     package: str
 
     def to_dict(self) -> dict[str, object]:
+        """Return a JSON-ready representation."""
         return asdict(self)
 
 
@@ -44,6 +48,7 @@ class QuarantineRetentionAuditor:
         self._now = now or (lambda: datetime.now(timezone.utc))
 
     def records(self) -> list[QuarantineRetentionRecord]:
+        """Inspect all discoverable quarantine package manifests."""
         if not self.quarantine_root.is_dir():
             return []
         records = [

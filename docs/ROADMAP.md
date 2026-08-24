@@ -418,7 +418,9 @@ zaczynając od raportu wpływu tylko do odczytu.
   archiwum ratunkowe, zewnętrzny manifest `PURGED` i kontrola niezmienionego
   stanu pozostałych pakietów oraz BIND.
 - [ ] Uzupełnić docstringi publicznego API i zwiększyć pokrycie krytycznych
-  ścieżek zapisu.
+  ścieżek zapisu. Odczytowy audyt obejmuje całe drzewo, a twarda bramka CI
+  chroni już nowe moduły retencji i trwałego usuwania kwarantanny; zakres
+  należy rozszerzać stopniowo bez masowego przepisywania starszego kodu.
 
 ### Automatyzacja GitHub i pakietów
 

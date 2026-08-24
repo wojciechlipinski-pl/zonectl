@@ -1,3 +1,5 @@
+"""Guarded permanent deletion of eligible quarantine packages."""
+
 from __future__ import annotations
 
 import getpass
@@ -16,6 +18,7 @@ from .zone_quarantine_retention import QuarantineRetentionAuditor
 
 @dataclass(frozen=True, slots=True)
 class QuarantinePurgePlan:
+    """Immutable, verified plan for one package purge."""
     zone: str
     package: Path
     package_id: str
@@ -24,6 +27,7 @@ class QuarantinePurgePlan:
     reason: str
 
     def to_dict(self) -> dict[str, object]:
+        """Return a JSON-ready representation."""
         payload = asdict(self)
         payload["package"] = str(self.package)
         return payload
@@ -31,6 +35,7 @@ class QuarantinePurgePlan:
 
 @dataclass(slots=True)
 class QuarantinePurgeStep:
+    """One observable step of a purge transaction."""
     name: str
     ok: bool
     message: str
@@ -38,6 +43,7 @@ class QuarantinePurgeStep:
 
 @dataclass(slots=True)
 class QuarantinePurgeResult:
+    """Final state and audit details of a purge attempt."""
     transaction_id: str
     zone: str
     package: str
@@ -71,6 +77,7 @@ class QuarantinePurgeTransaction:
         self._now = now or (lambda: datetime.now(timezone.utc))
 
     def plan(self, zone: str, package: Path, *, reason: str) -> QuarantinePurgePlan:
+        """Validate retention, location, contents and integrity without changes."""
         name = zone.strip().rstrip(".").casefold()
         if not name or not reason.strip():
             raise QuarantinePurgeError("wymagana jest nazwa strefy i przyczyna")
@@ -106,6 +113,7 @@ class QuarantinePurgeTransaction:
         confirmation: str | None = None,
         package_confirmation: str | None = None,
     ) -> QuarantinePurgeResult:
+        """Run dry-run or a multiply confirmed permanent purge transaction."""
         txid = (
             self._now().astimezone().strftime("%Y%m%d-%H%M%S")
             + f"-purge-{plan.zone}-{uuid.uuid4().hex[:8]}"
