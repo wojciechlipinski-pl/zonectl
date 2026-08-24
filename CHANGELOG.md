@@ -1,5 +1,31 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- zone creation validates the root BIND configuration instead of the managed
+  zone index alone, preserving access to ACL and `remote-servers` definitions
+  supplied by other included configuration files
+
+### Safety
+
+- regression coverage verifies `named-checkconf` with definitions available
+  only through the root configuration context
+- forced-failure matrices now cover creation, disable/restore,
+  quarantine/recovery and managed migration/relocation, including file
+  metadata, package integrity and explicit `ROLLBACK-FAILED` outcomes
+
+### Verified
+
+- a controlled drill on a synthetic, non-delegated zone completed creation,
+  disable, restore, quarantine and package recovery against a live BIND
+  instance
+- an initial validation failure restored the complete pre-transaction state;
+  after the root-context fix, the full lifecycle completed and the synthetic
+  zone was removed from active configuration while verified recovery packages
+  were retained for audit
+
 ## 4.8.3 - 2026-08-21
 
 ### Added

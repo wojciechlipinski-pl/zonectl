@@ -98,9 +98,9 @@ zrealizowane, a `[ ]` pozostają do wykonania.
 
 - [x] Dodać testy integracyjne tworzenia, wyłączania i przywracania z
   odseparowaną instancją BIND.
-- [ ] Testować awarie `named-checkzone`, `named-checkconf`, `rndc reconfig`
+- [x] Testować awarie `named-checkzone`, `named-checkconf`, `rndc reconfig`
   i weryfikacji załadowania.
-- [ ] Potwierdzić rollback po awarii na każdym etapie cyklu życia strefy.
+- [x] Potwierdzić rollback po awarii na każdym etapie cyklu życia strefy.
 - [x] Wykluczyć przypadkowe zarządzanie automatyczną strefą RPZ jak zwykłą
   domeną.
 - [x] Wykrywać strefy DNSSEC i `inline-signing`, raportować ich profil oraz
@@ -403,6 +403,13 @@ zaczynając od raportu wpływu tylko do odczytu.
   `ROLLBACK-FAILED`, gdy ponowna aktywacja nie powiedzie się.
 - [x] Wykonywać izolowany drill ACL i secondary z prawdziwym
   `named-checkconf`, wymuszoną awarią po aktywacji i pełnym odtworzeniem.
+- [x] Walidować tworzenie strefy przez główny plik `named.conf`, aby
+  `named-checkconf` otrzymywał pełny kontekst istniejących ACL i list
+  `remote-servers`, a nie tylko zarządzany indeks deklaracji stref.
+- [x] Wykonać kontrolowany drill cyklu życia na syntetycznej,
+  niedelegowanej strefie: utworzenie, wyłączenie, zwykłe odtworzenie,
+  kwarantanna, weryfikacja SHA-256 i metadanych, odtworzenie z pakietu oraz
+  końcowe wycofanie strefy z aktywnego BIND.
 - [ ] Uzupełnić docstringi publicznego API i zwiększyć pokrycie krytycznych
   ścieżek zapisu.
 
