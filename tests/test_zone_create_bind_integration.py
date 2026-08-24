@@ -48,9 +48,16 @@ def test_real_bind_tools_accept_generated_zone(
     tmp_path: Path,
 ) -> None:
     candidate = plan(tmp_path)
+    root_config = tmp_path / "bind" / "named.conf"
+    root_config.parent.mkdir(parents=True, exist_ok=True)
+    root_config.write_text(
+        f'include "{candidate.managed_config}";\n',
+        encoding="utf-8",
+    )
 
     result = ZoneCreateTransaction(
-        tmp_path / "manifests"
+        tmp_path / "manifests",
+        root_config=root_config,
     ).apply(candidate, commit=True)
 
     assert result.status == "COMMIT"
@@ -90,3 +97,36 @@ def test_real_named_checkzone_failure_rolls_back(
         step.name == "named-checkzone" and not step.ok
         for step in result.steps
     )
+
+
+def test_named_checkconf_uses_root_configuration_context(
+    tmp_path: Path,
+) -> None:
+    candidate = plan(tmp_path)
+    root_config = tmp_path / "bind" / "named.conf"
+    definitions = tmp_path / "bind" / "definitions.conf"
+    root_config.parent.mkdir(parents=True, exist_ok=True)
+    definitions.write_text(
+        'acl "transfer-peers" { 192.0.2.53; };\n',
+        encoding="utf-8",
+    )
+    root_config.write_text(
+        f'include "{definitions}";\n'
+        f'include "{candidate.managed_config}";\n',
+        encoding="utf-8",
+    )
+    declaration = candidate.bind_declaration.replace(
+        "};\n",
+        "    allow-transfer { transfer-peers; };\n};\n",
+    )
+    candidate = replace(candidate, bind_declaration=declaration)
+
+    result = ZoneCreateTransaction(
+        tmp_path / "manifests",
+        root_config=root_config,
+    ).apply(candidate, commit=True)
+
+    assert result.status == "COMMIT"
+    assert next(
+        step for step in result.steps if step.name == "named-checkconf"
+    ).ok is True

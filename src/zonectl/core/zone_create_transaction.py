@@ -48,12 +48,14 @@ class ZoneCreateTransaction:
         self,
         manifest_directory: Path,
         *,
+        root_config: Path = Path("/etc/bind/named.conf"),
         zone_validator: Validator | None = None,
         config_validator: ConfigValidator | None = None,
         activator: ZoneAction | None = None,
         loaded_verifier: ZoneAction | None = None,
     ) -> None:
         self.manifest_directory = manifest_directory
+        self.root_config = root_config
         self.zone_validator = zone_validator or self._validate_zone
         self.config_validator = (
             config_validator or self._validate_config
@@ -201,9 +203,7 @@ class ZoneCreateTransaction:
             if not zone_step.ok:
                 raise RuntimeError(zone_step.message)
 
-            config_step = self.config_validator(
-                plan.managed_config
-            )
+            config_step = self.config_validator(self.root_config)
             result.steps.append(config_step)
             if not config_step.ok:
                 raise RuntimeError(config_step.message)

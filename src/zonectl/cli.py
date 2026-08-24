@@ -632,6 +632,11 @@ def parser() -> argparse.ArgumentParser:
         default=Path("/etc/bind/zonectl-zones.d"),
     )
     create.add_argument(
+        "--root-config",
+        type=Path,
+        default=Path("/etc/bind/named.conf"),
+    )
+    create.add_argument(
         "--manifest-directory",
         type=Path,
         default=Path("/var/backups/zonectl-zone-create/manifests"),
@@ -2669,6 +2674,7 @@ def main(argv: list[str] | None = None) -> int:
         if args.zone_command == "create":
             result = ZoneCreateTransaction(
                 args.manifest_directory,
+                root_config=args.root_config,
             ).apply(
                 plan,
                 commit=args.commit,
