@@ -27,8 +27,9 @@ def test_details_panel_uses_presentation_model_and_current_status() -> None:
 
 def test_main_footer_matches_published_mc_key_model() -> None:
     source = inspect.getsource(CursesApp._draw_main_footer)
-    for key in ("F3", "F4", "Insert", "F9", "F10"):
+    for key in ("F3", "F4", "Insert", "r", "F9", "F10"):
         assert f'("{key}",' in source
+    assert '("r", "Odśwież")' in source
     assert '("F8",' not in source
     assert "curses.color_pair(6)" in source
     assert "curses.color_pair(6) | curses.A_BOLD" not in source

@@ -448,6 +448,7 @@ class CursesApp:
             ("F3", "Podgląd"),
             ("F4", "Edycja"),
             ("Insert", "Dodaj"),
+            ("r", "Odśwież"),
             ("F9", "ACL/secondary"),
             ("F10", "Wyjście"),
         )
