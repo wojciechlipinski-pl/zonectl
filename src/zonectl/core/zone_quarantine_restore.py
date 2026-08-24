@@ -26,6 +26,12 @@ class QuarantineRestorePlan:
     managed_index: Path
     root_config: Path
     include_line: str
+    zone_mode: int | None = None
+    zone_uid: int | None = None
+    zone_gid: int | None = None
+    declaration_mode: int | None = None
+    declaration_uid: int | None = None
+    declaration_gid: int | None = None
 
 
 @dataclass(slots=True)
@@ -101,6 +107,29 @@ class QuarantineRestoreTransaction:
                 raise QuarantineRestoreError(f"Błędna suma kontrolna: {filename}")
         if set(manifest.get("files", {})) != {"zone.db", "zone.conf"}:
             raise QuarantineRestoreError("Manifest ma niekompletną listę plików")
+        metadata = manifest.get("metadata", {})
+        if metadata and set(metadata) != {"zone.db", "zone.conf"}:
+            raise QuarantineRestoreError("Manifest ma niekompletne metadane plików")
+
+        def file_metadata(filename: str) -> tuple[int | None, int | None, int | None]:
+            values = metadata.get(filename)
+            if values is None:
+                return None, None, None
+            if not isinstance(values, dict):
+                raise QuarantineRestoreError("Nieprawidłowe metadane plików")
+            mode = values.get("mode")
+            uid = values.get("uid")
+            gid = values.get("gid")
+            if not all(isinstance(value, int) for value in (mode, uid, gid)):
+                raise QuarantineRestoreError("Nieprawidłowe metadane plików")
+            if not 0 <= mode <= 0o7777 or uid < 0 or gid < 0:
+                raise QuarantineRestoreError("Nieprawidłowe metadane plików")
+            return mode, uid, gid
+
+        zone_mode, zone_uid, zone_gid = file_metadata("zone.db")
+        declaration_mode, declaration_uid, declaration_gid = file_metadata(
+            "zone.conf"
+        )
         if zone_file.exists() or active_declaration.exists():
             raise QuarantineRestoreError("Docelowe pliki strefy już istnieją")
         include_line = f'include "{active_declaration}";'
@@ -120,6 +149,12 @@ class QuarantineRestoreTransaction:
             managed_index,
             root_config,
             include_line,
+            zone_mode,
+            zone_uid,
+            zone_gid,
+            declaration_mode,
+            declaration_uid,
+            declaration_gid,
         )
 
     def apply(
@@ -152,9 +187,9 @@ class QuarantineRestoreTransaction:
             self._atomic_write(
                 plan.zone_file,
                 plan.packaged_zone.read_bytes(),
-                0o640,
-                zone_parent.st_uid,
-                zone_parent.st_gid,
+                plan.zone_mode if plan.zone_mode is not None else 0o640,
+                plan.zone_uid if plan.zone_uid is not None else zone_parent.st_uid,
+                plan.zone_gid if plan.zone_gid is not None else zone_parent.st_gid,
             )
             zone_created = True
             result.steps.append(
@@ -168,9 +203,15 @@ class QuarantineRestoreTransaction:
             self._atomic_write(
                 plan.active_declaration,
                 plan.packaged_declaration.read_bytes(),
-                0o640,
-                declaration_parent.st_uid,
-                declaration_parent.st_gid,
+                plan.declaration_mode
+                if plan.declaration_mode is not None
+                else 0o640,
+                plan.declaration_uid
+                if plan.declaration_uid is not None
+                else declaration_parent.st_uid,
+                plan.declaration_gid
+                if plan.declaration_gid is not None
+                else declaration_parent.st_gid,
             )
             declaration_created = True
             separator = b"" if not index_original or index_original.endswith(b"\n") else b"\n"

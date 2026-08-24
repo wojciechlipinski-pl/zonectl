@@ -157,6 +157,18 @@ class ZoneQuarantineTransaction:
                     "zone.db": self._sha256(zone_copy),
                     "zone.conf": self._sha256(declaration_copy),
                 },
+                "metadata": {
+                    "zone.db": {
+                        "uid": zone_stat.st_uid,
+                        "gid": zone_stat.st_gid,
+                        "mode": zone_stat.st_mode & 0o777,
+                    },
+                    "zone.conf": {
+                        "uid": declaration_stat.st_uid,
+                        "gid": declaration_stat.st_gid,
+                        "mode": declaration_stat.st_mode & 0o777,
+                    },
+                },
             }
             manifest_path = package / "manifest.json"
             self._atomic_write(
@@ -209,6 +221,13 @@ class ZoneQuarantineTransaction:
                         declaration_stat.st_uid,
                         declaration_stat.st_gid,
                     )
+                for generated in (
+                    package / "manifest.json",
+                    package / "zone.conf",
+                    package / "zone.db",
+                ):
+                    generated.unlink(missing_ok=True)
+                package.rmdir()
             except Exception as rollback_error:
                 rollback_ok = False
                 result.steps.append(
