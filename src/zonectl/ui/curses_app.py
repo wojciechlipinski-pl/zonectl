@@ -14,6 +14,12 @@ from zonectl.ui.rpz_status_view import RpzStatusView
 from zonectl.ui.bind_onboarding_view import BindOnboardingView
 from zonectl.ui.about_view import AboutView
 from zonectl.ui.zone_details_view import ZoneDetailsView
+from zonectl.ui.semantic_status import (
+    kasp_health,
+    parse_kasp_line,
+    state_health,
+    text_health,
+)
 
 import curses
 import queue
@@ -231,6 +237,16 @@ class CursesApp:
             Health.FAIL: curses.color_pair(3),
             Health.UNKNOWN: curses.A_DIM,
         }[health]
+
+    def _semantic_attr(self, text: object, *, bold_failure: bool = False) -> int:
+        """Return the shared semantic color while preserving monochrome use."""
+        health = text_health(text)
+        if health is None:
+            return curses.A_NORMAL
+        attr = self._color(health)
+        if bold_failure and health is Health.FAIL:
+            attr |= curses.A_BOLD
+        return attr
 
     @staticmethod
     def _symbol(health: Health) -> str:
@@ -757,6 +773,7 @@ class CursesApp:
             while True:
                 win.erase()
                 height, width = win.getmaxyx()
+                wide = width >= 100 and height >= 24
                 wrapped = self._wrap_message_lines(
                     list(view.lines), max(1, width - 4)
                 )
@@ -774,7 +791,7 @@ class CursesApp:
                     wrapped[offset : offset + visible], start=2
                 ):
                     win.addnstr(row, 2, line, max(0, width - 4))
-                if width >= 100 and height >= 24:
+                if wide:
                     self._draw_onboarding_summary_48(win, report)
                 footer = self._onboarding_footer(report)
                 win.addnstr(
@@ -2457,18 +2474,8 @@ class CursesApp:
             stripped = line.strip()
             if stripped.isupper() and len(stripped) < 54:
                 attr = heading_attr
-            elif (
-                stripped.startswith("[OK]") or "Status: PASS" in line
-                or "Status: COMMIT" in line or "Status: DRY-RUN" in line
-            ):
-                attr = self._color(Health.PASS) if has_colors else curses.A_NORMAL
-            elif (
-                stripped.startswith("[BŁĄD]") or stripped.startswith("BŁĄD")
-                or "Status: BLOCKED" in line or "Status: FAIL" in line
-            ):
-                attr = (
-                    self._color(Health.FAIL) if has_colors else curses.A_NORMAL
-                ) | curses.A_BOLD
+            else:
+                attr = self._semantic_attr(line, bold_failure=True)
             win.addnstr(row, 3, line, max(1, divider - 6), attr)
 
         right = divider + 3
@@ -2521,7 +2528,10 @@ class CursesApp:
                     break
                 column = right + 15 if index == 0 else right
                 limit = max(1, right_width - 15) if index == 0 else right_width
-                win.addnstr(row, column, part, limit)
+                win.addnstr(
+                    row, column, part, limit,
+                    self._semantic_attr(content, bold_failure=True),
+                )
                 row += 1
             row += 1
 
@@ -2536,8 +2546,8 @@ class CursesApp:
     ) -> None:
         """Renderuje wynik importu w dwukolumnowym układzie TUI 4.8."""
         status = str(result.status).replace("_", "-")
-        ok = status in {"COMMIT", "DRY-RUN"}
-        status_attr = self._color(Health.PASS if ok else Health.FAIL) | curses.A_BOLD
+        status_health = state_health(status) or Health.UNKNOWN
+        status_attr = self._color(status_health) | curses.A_BOLD
         heading_attr = curses.A_BOLD | (
             curses.color_pair(4) if curses.has_colors() else curses.A_NORMAL
         )
@@ -3873,11 +3883,7 @@ class CursesApp:
                 visible = max(1, height - 5)
                 offset = min(offset, max(0, len(lines) - visible))
                 for row, line in enumerate(lines[offset : offset + visible], start=3):
-                    attr = curses.A_NORMAL
-                    if "JESZCZE ZABLOKOWANA" in line or line.startswith("BŁĄD"):
-                        attr = self._color(Health.FAIL) | curses.A_BOLD
-                    elif "DOZWOLONA" in line or "[MATCH]" in line:
-                        attr = self._color(Health.PASS)
+                    attr = self._dnssec_line_attr(line, lines)
                     win.addnstr(row, 2, line, max(0, width - 4), attr)
 
                 if width >= 100 and height >= 28:
@@ -4297,15 +4303,8 @@ class CursesApp:
                     "Resolvery:", "Serwery autorytatywne:",
                 } or stripped.startswith("KONTROLA DELEGACJI"):
                     attr = heading_attr
-                elif "[MATCH]" in text or "DOZWOLONA" in text:
-                    attr = self._color(Health.PASS)
-                elif (
-                    "JESZCZE ZABLOKOWANA" in text
-                    or "[MISMATCH]" in text
-                    or "[NOT-AUTH]" in text
-                    or stripped.startswith("BŁĄD")
-                ):
-                    attr = self._color(Health.FAIL) | curses.A_BOLD
+                else:
+                    attr = self._dnssec_line_attr(text, raw_lines)
                 wrapped = self._wrap_message_lines([text], column_width) or [""]
                 for wrapped_line in wrapped:
                     if row >= height - 3:
@@ -4319,6 +4318,26 @@ class CursesApp:
             draw_lines(right_lines, 7, right, right_width)
         else:
             put(7, right, "Brak danych delegacji.", curses.A_DIM, right_width)
+
+    def _dnssec_line_attr(self, line: str, all_lines) -> int:
+        """Color DNSSEC and KASP states without treating transitions as errors."""
+        parsed = parse_kasp_line(line)
+        if parsed is not None:
+            _label, value = parsed
+            goal = next(
+                (
+                    candidate[1]
+                    for candidate in (parse_kasp_line(item) for item in all_lines)
+                    if candidate is not None and candidate[0] == "goal"
+                ),
+                None,
+            )
+            return self._color(kasp_health(value, goal=goal))
+        if "DOZWOLONA" in line and "ZABLOKOWANA" not in line:
+            return self._color(Health.PASS)
+        if "JESZCZE ZABLOKOWANA" in line or line.strip().startswith("BŁĄD"):
+            return self._color(Health.FAIL) | curses.A_BOLD
+        return self._semantic_attr(line, bold_failure=True)
 
     def _draw_domain_view_48(
         self,

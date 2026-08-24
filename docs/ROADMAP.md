@@ -413,8 +413,24 @@ zaczynając od raportu wpływu tylko do odczytu.
   katalogu, bez ponownego importowania deklaracji i bez zmiany serialu SOA.
 - [x] Zbudować wheel i pakiet Debian, uruchomić Lintian oraz sprawdzić brak
   plików `/etc/bind` w pakiecie.
-- [ ] Przetestować aktualizację na aktywnym środowisku bez zmiany BIND,
+- [x] Przetestować aktualizację na aktywnym środowisku bez zmiany BIND,
   opublikować zatwierdzony tag i artefakty.
+
+## ZoneCTL 4.9 — semantyczna czytelność TUI
+
+- [x] Zdefiniować centralny kontrakt kolorów stanów: zielony dla stanu
+  poprawnego, żółty dla ostrzeżenia lub stanu przejściowego oraz czerwony dla
+  błędu, konfliktu albo blokady.
+- [x] Kolorować stany KASP względem celu polityki: `omnipresent` jako stan
+  osiągnięty, `rumoured` i `unretentive` jako przejściowe, a `hidden` zależnie
+  od oczekiwanego celu.
+- [x] Zastosować wspólną klasyfikację w statusie DNSSEC, wynikach transakcji,
+  komunikatach, panelach kontekstowych, RPZ, migracji oraz audytach
+  ACL/secondary.
+- [x] Zachować jawne etykiety i symbole, aby kolor nie był jedynym nośnikiem
+  informacji, oraz zapewnić poprawny tryb terminala bez kolorów.
+- [ ] Zweryfikować wizualnie reprezentatywne stany PASS/WARN/FAIL w działającym
+  TUI przed rozpoczęciem edytora SOA.
 
 ## Rozwój po osiągnięciu pełnej funkcjonalności podstawowej
 
