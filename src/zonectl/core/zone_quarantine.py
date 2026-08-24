@@ -148,6 +148,10 @@ class ZoneQuarantineTransaction:
             self._atomic_write(zone_copy, zone_content, 0o640)
             self._atomic_write(declaration_copy, declaration_content, 0o640)
 
+            file_hashes: dict[str, str] = {
+                "zone.db": self._sha256(zone_copy),
+                "zone.conf": self._sha256(declaration_copy),
+            }
             manifest = {
                 "transaction_id": txid,
                 "zone": plan.zone_name,
@@ -161,10 +165,7 @@ class ZoneQuarantineTransaction:
                     "zone_file": str(plan.zone_file),
                     "declaration": str(plan.archived_declaration),
                 },
-                "files": {
-                    "zone.db": self._sha256(zone_copy),
-                    "zone.conf": self._sha256(declaration_copy),
-                },
+                "files": file_hashes,
                 "metadata": {
                     "zone.db": {
                         "uid": zone_stat.st_uid,
@@ -184,7 +185,7 @@ class ZoneQuarantineTransaction:
                 json.dumps(manifest, ensure_ascii=False, indent=2).encode("utf-8"),
                 0o640,
             )
-            for filename, expected in manifest["files"].items():
+            for filename, expected in file_hashes.items():
                 if self._sha256(package / filename) != expected:
                     raise RuntimeError(f"Błędna suma kontrolna: {filename}")
             result.steps.append(

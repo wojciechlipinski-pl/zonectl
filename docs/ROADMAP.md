@@ -171,7 +171,10 @@ zrealizowane, a `[ ]` pozostają do wykonania.
 - [ ] Dodać statyczną analizę typów. Ścisła bramka `mypy` obejmuje już nowe
   moduły retencji/purge oraz audyt publicznego API; zakres należy rozszerzać
   stopniowo po usunięciu błędów typów z kolejnych modułów. Bramką objęto już
-  także transakcje tworzenia, wyłączania i przywracania stref.
+  także transakcje tworzenia, wyłączania i przywracania stref oraz pakowania
+  strefy do kwarantanny i jej bezpiecznego odtwarzania. Typowanie migracji i
+  relokacji plików zarządzanych pozostaje osobnym etapem zależnym od modułu
+  discovery.
 - [ ] Dodać automatyczne formatowanie i lint.
 - [x] Dodać testy integracyjne z odseparowaną konfiguracją i prawdziwymi
   narzędziami walidacyjnymi BIND, bez kontaktu z produkcyjnym `rndc`.

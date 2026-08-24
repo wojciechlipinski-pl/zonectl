@@ -106,15 +106,26 @@ class QuarantineRestoreTransaction:
             if not path.is_file():
                 raise QuarantineRestoreError(f"Brak wymaganego pliku: {path}")
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        if not isinstance(manifest, dict):
+            raise QuarantineRestoreError("Nieprawidłowy format manifestu")
         if manifest.get("zone") != name or manifest.get("status") != "QUARANTINED":
             raise QuarantineRestoreError("Manifest nie opisuje wskazanej strefy")
-        for filename, expected in manifest.get("files", {}).items():
+        files = manifest.get("files")
+        if not isinstance(files, dict) or not all(
+            isinstance(filename, str) and isinstance(expected, str)
+            for filename, expected in files.items()
+        ):
+            raise QuarantineRestoreError("Nieprawidłowa lista plików manifestu")
+        file_hashes: dict[str, str] = dict(files)
+        for filename, expected in file_hashes.items():
             path = package_directory / filename
             if not path.is_file() or QuarantineRestoreTransaction._sha256(path) != expected:
                 raise QuarantineRestoreError(f"Błędna suma kontrolna: {filename}")
-        if set(manifest.get("files", {})) != {"zone.db", "zone.conf"}:
+        if set(file_hashes) != {"zone.db", "zone.conf"}:
             raise QuarantineRestoreError("Manifest ma niekompletną listę plików")
         metadata = manifest.get("metadata", {})
+        if not isinstance(metadata, dict):
+            raise QuarantineRestoreError("Nieprawidłowe metadane plików")
         if metadata and set(metadata) != {"zone.db", "zone.conf"}:
             raise QuarantineRestoreError("Manifest ma niekompletne metadane plików")
 
@@ -127,7 +138,11 @@ class QuarantineRestoreTransaction:
             mode = values.get("mode")
             uid = values.get("uid")
             gid = values.get("gid")
-            if not all(isinstance(value, int) for value in (mode, uid, gid)):
+            if (
+                not isinstance(mode, int)
+                or not isinstance(uid, int)
+                or not isinstance(gid, int)
+            ):
                 raise QuarantineRestoreError("Nieprawidłowe metadane plików")
             if not 0 <= mode <= 0o7777 or uid < 0 or gid < 0:
                 raise QuarantineRestoreError("Nieprawidłowe metadane plików")

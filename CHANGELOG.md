@@ -14,7 +14,8 @@
   retention, guarded purge and public-API audit modules without imposing the
   existing type debt of the entire codebase on unrelated changes; zone create,
   disable and restore transactions are included after annotating their shared
-  lifecycle date provider
+  lifecycle date provider; quarantine packaging and recovery now share the
+  same strict gate, including typed manifest integrity and metadata checks
 
 - a dependency-free AST audit inventories missing public API docstrings, while
   CI initially enforces complete documentation only for the new critical
