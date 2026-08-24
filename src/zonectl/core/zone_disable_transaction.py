@@ -152,7 +152,7 @@ class ZoneDisableTransaction:
             self._atomic_write(
                 plan.archived_declaration,
                 declaration_original,
-                0o640,
+                declaration_stat.st_mode & 0o777,
                 declaration_stat.st_uid,
                 declaration_stat.st_gid,
             )

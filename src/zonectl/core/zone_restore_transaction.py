@@ -135,7 +135,7 @@ class ZoneRestoreTransaction:
         index_original = plan.managed_index.read_bytes()
         index_stat = plan.managed_index.stat()
         archived_content = plan.archived_declaration.read_bytes()
-        declaration_parent = plan.declaration_file.parent.stat()
+        archived_stat = plan.archived_declaration.stat()
         declaration_created = False
         index_written = False
         activation_attempted = False
@@ -148,9 +148,9 @@ class ZoneRestoreTransaction:
             self._atomic_write(
                 plan.declaration_file,
                 archived_content,
-                0o640,
-                declaration_parent.st_uid,
-                declaration_parent.st_gid,
+                archived_stat.st_mode & 0o777,
+                archived_stat.st_uid,
+                archived_stat.st_gid,
             )
             declaration_created = True
             result.steps.append(

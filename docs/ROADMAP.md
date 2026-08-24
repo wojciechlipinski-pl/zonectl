@@ -385,6 +385,9 @@ zaczynając od raportu wpływu tylko do odczytu.
 - [x] Objąć macierzą operację tworzenia strefy: wymuszone awarie każdego
   zapisu atomowego, aktywacji i kontroli załadowania, zachowanie metadanych
   istniejącej konfiguracji oraz jawny stan `ROLLBACK-FAILED`.
+- [x] Objąć macierzą wyłączenie i przywrócenie strefy: awarie zapisu,
+  walidacji, aktywacji i kontroli stanu, zachowanie metadanych deklaracji
+  oraz indeksu i jawny wynik nieskutecznego rollbacku.
 - [x] Sprawdzać zachowanie UID, GID i trybu pliku po sukcesie oraz rollbacku
   ACL/secondary i zapisywać te metadane w stanie przed/po manifestu.
 - [x] Ograniczyć manifesty ACL/secondary do jawnej listy pól i automatycznie
