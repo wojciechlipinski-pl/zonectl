@@ -13,6 +13,10 @@
 - a read-only quarantine retention plan classifies verified packages as
   retained or eligible after a configurable period and blocks damaged,
   incomplete or inconsistent manifests without deleting data
+- permanent quarantine purge is a separate dry-run-first operation requiring
+  an eligible verified package, reason, exact zone and package confirmations;
+  it rechecks all gates immediately before deletion and retains an external
+  audit manifest
 
 - a read-only GitHub Actions quality gate runs the complete suite on Python
   3.11 and 3.13 with isolated BIND validators and rejects whitespace errors

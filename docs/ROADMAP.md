@@ -92,8 +92,9 @@ zrealizowane, a `[ ]` pozostają do wykonania.
   i sum SHA-256, bez usuwania pakietu odtworzeniowego.
 - [x] Dodać konfigurowalny okres retencji przed trwałym usunięciem oraz
   odczytowy plan weryfikujący wiek, manifest i sumy SHA-256 pakietu.
-- [ ] Trwałe usunięcie udostępnić wyłącznie jako osobną operację
-  administracyjną.
+- [x] Trwałe usunięcie udostępnić wyłącznie jako osobną operację
+  administracyjną z domyślnym dry-runem, ponowną kontrolą integralności,
+  potwierdzeniem strefy i identyfikatora pakietu oraz zewnętrznym manifestem.
 
 ### Wymagania bezpieczeństwa 4.4
 

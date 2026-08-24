@@ -82,6 +82,10 @@ from .core.zone_lifecycle import (
 )
 from .core.zone_inventory import ZoneInventory
 from .core.zone_quarantine_retention import QuarantineRetentionAuditor
+from .core.zone_quarantine_purge import (
+    QuarantinePurgeError,
+    QuarantinePurgeTransaction,
+)
 from .core.managed_zone_migration import (
     ManagedZoneMigrationError,
     ManagedZoneMigrationPlanner,
@@ -818,6 +822,26 @@ def parser() -> argparse.ArgumentParser:
     )
     retention.add_argument("--retention-days", type=int, default=90)
     retention.add_argument("--json", action="store_true")
+    purge = lifecycle_sub.add_parser(
+        "quarantine-purge",
+        help="trwale usuń jeden pakiet po retencji; domyślnie dry-run",
+    )
+    purge.add_argument("name")
+    purge.add_argument("--package", type=Path, required=True)
+    purge.add_argument("--reason", required=True)
+    purge.add_argument("--confirm")
+    purge.add_argument("--confirm-package")
+    purge.add_argument("--retention-days", type=int, default=90)
+    purge.add_argument(
+        "--quarantine-root", type=Path,
+        default=Path("/var/lib/zonectl/quarantine"),
+    )
+    purge.add_argument(
+        "--audit-directory", type=Path,
+        default=Path("/var/backups/zonectl-quarantine-purge/manifests"),
+    )
+    purge.add_argument("--commit", action="store_true")
+    purge.add_argument("--json", action="store_true")
     safety = lifecycle_sub.add_parser(
         "safety",
         help="pokaż profile bezpieczeństwa stref cyklu życia",
@@ -2490,6 +2514,37 @@ def main(argv: list[str] | None = None) -> int:
                     print(f"  {item.package}")
                 print("Wynik: raport odczytowy — niczego nie usunięto")
             return 0
+        if args.zone_command == "quarantine-purge":
+            transaction = QuarantinePurgeTransaction(
+                quarantine_root=args.quarantine_root,
+                audit_directory=args.audit_directory,
+                retention_days=args.retention_days,
+            )
+            try:
+                plan = transaction.plan(args.name, args.package, reason=args.reason)
+            except (QuarantinePurgeError, ValueError) as exc:
+                print(f"BŁĄD: {exc}", file=sys.stderr)
+                return 2
+            result = transaction.apply(
+                plan,
+                commit=args.commit,
+                confirmation=args.confirm,
+                package_confirmation=args.confirm_package,
+            )
+            if args.json:
+                print(json.dumps(asdict(result), ensure_ascii=False, indent=2))
+            else:
+                print(f"Transakcja: {result.transaction_id}")
+                print(f"Strefa:     {result.zone}")
+                print(f"Pakiet:     {result.package}")
+                print(f"Status:     {result.status}")
+                print(f"Commit:     {'TAK' if result.committed else 'NIE'}")
+                if result.manifest:
+                    print(f"Manifest:   {result.manifest}")
+                print("\nEtapy:")
+                for step in result.steps:
+                    print(f"[{'OK' if step.ok else 'BŁĄD'}] {step.name}: {step.message}")
+            return 0 if result.status in {"DRY-RUN", "PURGED"} else 2
         if args.zone_command in {
             "disable",
             "restore",

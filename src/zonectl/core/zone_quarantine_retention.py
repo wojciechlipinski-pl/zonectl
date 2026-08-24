@@ -47,6 +47,13 @@ class QuarantineRetentionAuditor:
         ]
         return sorted(records, key=lambda item: (item.zone, item.created_at, item.package))
 
+    def inspect_package(self, package: Path) -> QuarantineRetentionRecord:
+        """Inspect one direct child package without changing it."""
+        manifest = package / "manifest.json"
+        if not manifest.is_file():
+            return self._blocked(package, package.parent.name, "brak pliku manifest.json")
+        return self._inspect(manifest)
+
     def _inspect(self, manifest_path: Path) -> QuarantineRetentionRecord:
         package = manifest_path.parent
         fallback_zone = package.parent.name
@@ -64,6 +71,8 @@ class QuarantineRetentionAuditor:
             return self._blocked(package, zone, "manifest nie ma stanu QUARANTINED", transaction_id, created_text)
         if zone != fallback_zone:
             return self._blocked(package, zone, "nazwa strefy nie zgadza się ze ścieżką pakietu", transaction_id, created_text)
+        if package.is_symlink() or manifest_path.is_symlink():
+            return self._blocked(package, zone, "pakiet lub manifest jest dowiązaniem symbolicznym", transaction_id, created_text)
 
         try:
             created = datetime.fromisoformat(created_text)
@@ -105,7 +114,7 @@ class QuarantineRetentionAuditor:
             if not isinstance(name, str) or Path(name).name != name:
                 return "manifest zawiera niedozwoloną nazwę pliku"
             path = package / name
-            if not path.is_file():
+            if path.is_symlink() or not path.is_file():
                 return f"brak pliku {name}"
             actual = hashlib.sha256(path.read_bytes()).hexdigest()
             if not isinstance(expected, str) or actual.casefold() != expected.casefold():
