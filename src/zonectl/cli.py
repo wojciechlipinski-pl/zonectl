@@ -81,6 +81,7 @@ from .core.zone_lifecycle import (
     ZoneLifecyclePlanner,
 )
 from .core.zone_inventory import ZoneInventory
+from .core.zone_quarantine_retention import QuarantineRetentionAuditor
 from .core.managed_zone_migration import (
     ManagedZoneMigrationError,
     ManagedZoneMigrationPlanner,
@@ -806,6 +807,17 @@ def parser() -> argparse.ArgumentParser:
         default=Path("/var/backups/zonectl-zone-disable/manifests"),
     )
     inventory.add_argument("--json", action="store_true")
+    retention = lifecycle_sub.add_parser(
+        "quarantine-retention",
+        help="pokaż odczytowy plan retencji pakietów kwarantanny",
+    )
+    retention.add_argument(
+        "--quarantine-root",
+        type=Path,
+        default=Path("/var/lib/zonectl/quarantine"),
+    )
+    retention.add_argument("--retention-days", type=int, default=90)
+    retention.add_argument("--json", action="store_true")
     safety = lifecycle_sub.add_parser(
         "safety",
         help="pokaż profile bezpieczeństwa stref cyklu życia",
@@ -2454,6 +2466,29 @@ def main(argv: list[str] | None = None) -> int:
                         f"{record.reason}"
                     )
                     print(f"  {record.location}")
+            return 0
+        if args.zone_command == "quarantine-retention":
+            try:
+                records = QuarantineRetentionAuditor(
+                    quarantine_root=args.quarantine_root,
+                    retention_days=args.retention_days,
+                ).records()
+            except ValueError as exc:
+                print(f"BŁĄD: {exc}", file=sys.stderr)
+                return 2
+            if args.json:
+                print(json.dumps([item.to_dict() for item in records], ensure_ascii=False, indent=2))
+            else:
+                print("PLAN RETENCJI KWARANTANNY — TYLKO ODCZYT")
+                print(f"Okres retencji: {args.retention_days} dni")
+                if not records:
+                    print("Brak pakietów kwarantanny.")
+                for item in records:
+                    age = "-" if item.age_days is None else str(item.age_days)
+                    print(f"[{item.state:<8}] {item.zone} — wiek {age} dni")
+                    print(f"  {item.reason}")
+                    print(f"  {item.package}")
+                print("Wynik: raport odczytowy — niczego nie usunięto")
             return 0
         if args.zone_command in {
             "disable",

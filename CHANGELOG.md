@@ -10,6 +10,10 @@
 
 ### Safety
 
+- a read-only quarantine retention plan classifies verified packages as
+  retained or eligible after a configurable period and blocks damaged,
+  incomplete or inconsistent manifests without deleting data
+
 - a read-only GitHub Actions quality gate runs the complete suite on Python
   3.11 and 3.13 with isolated BIND validators and rejects whitespace errors
   or accidental executable bits on documentation and Python sources

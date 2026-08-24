@@ -90,7 +90,8 @@ zrealizowane, a `[ ]` pozostają do wykonania.
 - [x] Zapisywać sumy kontrolne, manifest i kompletny pakiet odtworzeniowy.
 - [x] Umożliwić odtworzenie strefy z kwarantanny z weryfikacją manifestu
   i sum SHA-256, bez usuwania pakietu odtworzeniowego.
-- [ ] Dodać konfigurowalny okres retencji przed trwałym usunięciem.
+- [x] Dodać konfigurowalny okres retencji przed trwałym usunięciem oraz
+  odczytowy plan weryfikujący wiek, manifest i sumy SHA-256 pakietu.
 - [ ] Trwałe usunięcie udostępnić wyłącznie jako osobną operację
   administracyjną.
 
