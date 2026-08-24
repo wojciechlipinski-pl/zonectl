@@ -18,6 +18,53 @@ class BindService:
         self.dns2_server = t.get("dns2_server", "192.0.2.53")
         self.he_server = t.get("he_server", "192.0.2.54")
         self.timeout = int(t.get("dig_timeout", "3"))
+        self.secondary_propagation_grace = max(
+            0,
+            int(t.get("secondary_propagation_grace_seconds", "600")),
+        )
+
+    @staticmethod
+    def _serial_relation(primary: str, secondary: str) -> str:
+        """Porównaj seriale zgodnie z arytmetyką szeregową DNS (RFC 1982)."""
+        try:
+            primary_value = int(primary)
+            secondary_value = int(secondary)
+        except ValueError:
+            return "different"
+
+        modulo = 2**32
+        delta = (primary_value - secondary_value) % modulo
+        if delta == 0:
+            return "equal"
+        if delta < modulo // 2:
+            return "behind"
+        return "ahead"
+
+    def _secondary_serial_state(
+        self,
+        label: str,
+        primary: str,
+        secondary: str,
+        file_age_seconds: int | None,
+    ) -> tuple[str | None, str | None]:
+        relation = self._serial_relation(primary, secondary)
+        if relation == "equal":
+            return None, None
+        if (
+            relation == "behind"
+            and file_age_seconds is not None
+            and file_age_seconds <= self.secondary_propagation_grace
+        ):
+            return (
+                None,
+                f"propagacja {label}: serial {secondary} → {primary} "
+                f"({file_age_seconds}/{self.secondary_propagation_grace}s)",
+            )
+        if relation == "behind":
+            return f"nieaktualny serial {label}", None
+        if relation == "ahead":
+            return f"serial {label} wyższy od primary", None
+        return f"inny serial {label}", None
 
     def serial(self, server: str, zone: str) -> str | None:
         result = run(
@@ -168,6 +215,11 @@ class BindService:
 
         status = ZoneStatus(zone=zone)
         status.file_exists = bool(zone.file and zone.file.exists())
+        if status.file_exists and zone.file is not None:
+            status.file_age_seconds = max(
+                0,
+                int(time.time() - zone.file.stat().st_mtime),
+            )
         status.local_serial = self.serial(self.local_server, zone.name)
         status.dns2_serial = self.serial(self.dns2_server, zone.name) if zone.dns2 else None
         status.he_serial = self.serial(self.he_server, zone.name) if zone.he else None
@@ -183,12 +235,26 @@ class BindService:
             if status.dns2_serial is None:
                 problems.append("brak SOA DNS2")
             elif status.local_serial and status.dns2_serial != status.local_serial:
-                problems.append("inny serial DNS2")
+                problem, warning = self._secondary_serial_state(
+                    "DNS2", status.local_serial, status.dns2_serial,
+                    status.file_age_seconds,
+                )
+                if problem:
+                    problems.append(problem)
+                if warning:
+                    warnings.append(warning)
         if zone.he:
             if status.he_serial is None:
                 problems.append("brak SOA HE")
             elif status.local_serial and status.he_serial != status.local_serial:
-                problems.append("inny serial HE")
+                problem, warning = self._secondary_serial_state(
+                    "HE", status.local_serial, status.he_serial,
+                    status.file_age_seconds,
+                )
+                if problem:
+                    problems.append(problem)
+                if warning:
+                    warnings.append(warning)
         if status.dnssec is None:
             warnings.append("status DNSSEC nieznany")
 

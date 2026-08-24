@@ -26,6 +26,20 @@ cofania oraz zapisu. Silnik transakcyjny niezależnie blokuje także
 `apply --commit` i `rollback --commit`, zwracając status `READ-ONLY`.
 Tryby walidacyjne bez `--commit` pozostają dostępne.
 
+## Okno propagacji secondary
+
+Po zmianie serialu SOA główny widok stref pokazuje niższy serial secondary
+jako żółty stan `WARN`, dopóki trwa dozwolone okno propagacji. Domyślnie jest
+to 600 sekund. Brak odpowiedzi SOA, serial secondary wyższy od primary albo
+opóźnienie przekraczające ten czas jest czerwonym stanem `FAIL`.
+
+Okno można zmienić w konfiguracji:
+
+```ini
+[toolkit]
+secondary_propagation_grace_seconds = 600
+```
+
 ## Blokada równoległej edycji
 
 Po otwarciu strefy do edycji ZoneCTL zakłada blokadę `flock` w katalogu

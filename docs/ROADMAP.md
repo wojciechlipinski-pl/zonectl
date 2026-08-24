@@ -52,8 +52,10 @@ zrealizowane, a `[ ]` pozostają do wykonania.
 - [x] Dodać kreator nowej domeny w TUI, oparty na tym samym planie i
   transakcji co polecenie CLI.
 - [x] Walidować nazwę domeny i odrzucać strefy już istniejące.
-- [ ] Umożliwić wybór grupy, serwerów NS, administratora SOA i parametrów
+- [x] Umożliwić wybór grupy, serwerów NS, administratora SOA i parametrów
   czasowych SOA.
+- [x] Zapisywać przypisanie grupy atomowo w `groups.yaml` w ramach tej samej
+  transakcji i przywracać poprzedni plik podczas rollbacku.
 - [x] Generować minimalny plik strefy z SOA, NS i poprawnym serialem.
 - [x] Opcjonalnie dodawać rekordy A/AAAA dla apexu i `www`.
 - [x] Dodawać deklarację `primary` do zarządzanego fragmentu konfiguracji
@@ -360,6 +362,9 @@ zaczynając od raportu wpływu tylko do odczytu.
 - [x] Dla dotkniętych stref sprawdzać po aktywacji flagę AA i serial SOA na
   primary oraz secondary; brak AA i serial wyższy od primary traktować jako
   błąd, a niższy serial secondary jako kontrolowany stan PENDING.
+- [x] Stosować tę samą semantykę w głównym statusie strefy: opóźniony
+  secondary pokazywać jako żółty `WARN` w konfigurowalnym oknie propagacji,
+  a dopiero po jego przekroczeniu jako czerwony `FAIL`.
 - [x] Udostępnić tę samą kontrolę jako odczytowy audyt
   `bind secondary-health`, możliwy do uruchomienia przed zmianą produkcyjną.
 - [x] Wymagać niepustego uzasadnienia `--reason` dla każdego commitu ACL,
