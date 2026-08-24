@@ -13,6 +13,9 @@
 - a read-only GitHub Actions quality gate runs the complete suite on Python
   3.11 and 3.13 with isolated BIND validators and rejects whitespace errors
   or accidental executable bits on documentation and Python sources
+- an isolated Debian 13 build job creates wheel and DEB artifacts, runs package
+  tests and Lintian, verifies metadata and the absence of `/etc/bind`, and
+  uploads SHA-256-protected outputs without publishing a release
 - regression coverage verifies `named-checkconf` with definitions available
   only through the root configuration context
 - forced-failure matrices now cover creation, disable/restore,

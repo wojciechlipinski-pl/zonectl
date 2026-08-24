@@ -417,7 +417,9 @@ zaczynając od raportu wpływu tylko do odczytu.
 
 - [x] Dodać GitHub Actions uruchamiające testy bez dostępu do produkcyjnego
   BIND.
-- [ ] Automatycznie budować wheel i pakiet Debian oraz uruchamiać Lintian.
+- [x] Automatycznie budować wheel i pakiet Debian w czystym Debianie 13,
+  uruchamiać testy pakietowe i Lintian, weryfikować metadane oraz brak
+  `/etc/bind`, generować SHA-256 i zachowywać wynik jako czasowy artefakt CI.
 - [ ] Publikować artefakty dopiero dla podpisanego lub jawnie zatwierdzonego
   tagu wydania.
 
