@@ -1,0 +1,106 @@
+name: Approved release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing release tag, for example v4.8.4
+        required: true
+        type: string
+      package_run_id:
+        description: Successful Package build run ID for the tagged commit
+        required: true
+        type: string
+      confirmation:
+        description: Type publish followed by the tag, for example publish v4.8.4
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  publish:
+    name: Verify tag and publish artifacts
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      RELEASE_TAG: ${{ inputs.tag }}
+      PACKAGE_RUN_ID: ${{ inputs.package_run_id }}
+      RELEASE_CONFIRMATION: ${{ inputs.confirmation }}
+    steps:
+      - name: Check out tagged source
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.tag }}
+          fetch-depth: 0
+      - name: Verify explicit approval, tag and package run
+        shell: bash
+        run: |
+          set -u
+          expected_confirmation="publish $RELEASE_TAG"
+          test "$RELEASE_CONFIRMATION" = "$expected_confirmation" || {
+            echo "BŁĄD: confirmation must equal: $expected_confirmation"
+            exit 1
+          }
+          version="$(python3 -c 'import pathlib, tomllib; print(tomllib.loads(pathlib.Path("pyproject.toml").read_text())["project"]["version"])')"
+          test "$RELEASE_TAG" = "v$version" || {
+            echo "BŁĄD: tag $RELEASE_TAG does not match project version $version"
+            exit 1
+          }
+          tag_sha="$(git rev-parse "$RELEASE_TAG^{commit}")"
+          run_name="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$PACKAGE_RUN_ID" --jq .name)"
+          run_result="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$PACKAGE_RUN_ID" --jq .conclusion)"
+          run_sha="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$PACKAGE_RUN_ID" --jq .head_sha)"
+          test "$run_name" = "Package build" || {
+            echo "BŁĄD: wskazany przebieg nie jest workflow Package build"
+            exit 1
+          }
+          test "$run_result" = "success" || {
+            echo "BŁĄD: Package build nie zakończył się sukcesem"
+            exit 1
+          }
+          test "$run_sha" = "$tag_sha" || {
+            echo "BŁĄD: artefakty pochodzą z innego commitu niż tag"
+            exit 1
+          }
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            echo "BŁĄD: wydanie dla tagu już istnieje"
+            exit 1
+          fi
+          printf 'Tag: %s\nCommit: %s\nPackage run: %s\n' \
+            "$RELEASE_TAG" "$tag_sha" "$PACKAGE_RUN_ID"
+      - name: Download verified package artifacts
+        run: |
+          mkdir release-assets
+          gh run download "$PACKAGE_RUN_ID" \
+            --repo "$GITHUB_REPOSITORY" \
+            --name zonectl-packages \
+            --dir release-assets
+      - name: Verify checksums and package versions
+        shell: bash
+        run: |
+          cd release-assets
+          sha256sum --check SHA256SUMS
+          version="${RELEASE_TAG#v}"
+          deb="$(find . -maxdepth 1 -type f -name 'zonectl_*_all.deb' -print -quit)"
+          wheel="$(find . -maxdepth 1 -type f -name 'zonectl-*.whl' -print -quit)"
+          test -n "$deb" && test -n "$wheel"
+          test "$(dpkg-deb -f "$deb" Version)" = "$version-1"
+          case "$(basename "$wheel")" in
+            "zonectl-$version-"*.whl) ;;
+            *) echo "BŁĄD: wersja wheel nie odpowiada tagowi"; exit 1 ;;
+          esac
+      - name: Publish GitHub release
+        run: |
+          version="${RELEASE_TAG#v}"
+          gh release create "$RELEASE_TAG" \
+            release-assets/* \
+            --repo "$GITHUB_REPOSITORY" \
+            --verify-tag \
+            --title "ZoneCTL $version" \
+            --generate-notes

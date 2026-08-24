@@ -420,8 +420,10 @@ zaczynając od raportu wpływu tylko do odczytu.
 - [x] Automatycznie budować wheel i pakiet Debian w czystym Debianie 13,
   uruchamiać testy pakietowe i Lintian, weryfikować metadane oraz brak
   `/etc/bind`, generować SHA-256 i zachowywać wynik jako czasowy artefakt CI.
-- [ ] Publikować artefakty dopiero dla podpisanego lub jawnie zatwierdzonego
-  tagu wydania.
+- [x] Publikować artefakty wyłącznie przez ręczny workflow wymagający
+  istniejącego tagu, jawnego potwierdzenia, zielonego `Package build` z tego
+  samego commitu, zgodności wersji i SHA-256 oraz osobnego prawa zapisu tylko
+  dla joba publikującego GitHub Release.
 
 ### Bramka wydania ZoneCTL 4.8.3
 

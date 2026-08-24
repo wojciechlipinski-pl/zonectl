@@ -18,6 +18,9 @@
   uploads SHA-256-protected outputs without publishing a release
 - GitHub workflows use the Node.js 24 generations of checkout, Python setup
   and artifact upload actions
+- release publication is manual and requires an existing version-matched tag,
+  explicit operator confirmation and successful package artifacts built from
+  the exact tagged commit before a write-scoped job can create GitHub Release
 - regression coverage verifies `named-checkconf` with definitions available
   only through the root configuration context
 - forced-failure matrices now cover creation, disable/restore,
