@@ -117,9 +117,16 @@ class ZoneCreateTransaction:
             if config_existed
             else None
         )
+        groups_existed = plan.groups_config.exists()
+        original_groups = (
+            plan.groups_config.read_bytes()
+            if groups_existed
+            else None
+        )
         zone_created = False
         config_written = False
         declaration_created = False
+        groups_written = False
         activation_attempted = False
         try:
             self._atomic_write(
@@ -172,6 +179,20 @@ class ZoneCreateTransaction:
                 )
             )
 
+            if plan.groups_text is not None:
+                self._atomic_write(
+                    plan.groups_config,
+                    plan.groups_text.encode("utf-8"),
+                )
+                groups_written = True
+                result.steps.append(
+                    ZoneCreateStep(
+                        "groups-config",
+                        True,
+                        f"Przypisano strefę do grupy {plan.group}",
+                    )
+                )
+
             zone_step = self.zone_validator(
                 plan.zone_name,
                 plan.zone_file,
@@ -215,6 +236,14 @@ class ZoneCreateTransaction:
                         self._atomic_write(
                             plan.managed_config,
                             original_config,
+                        )
+                if groups_written:
+                    if original_groups is None:
+                        plan.groups_config.unlink(missing_ok=True)
+                    else:
+                        self._atomic_write(
+                            plan.groups_config,
+                            original_groups,
                         )
                 if zone_created:
                     plan.zone_file.unlink(missing_ok=True)

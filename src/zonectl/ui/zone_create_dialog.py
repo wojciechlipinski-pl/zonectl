@@ -16,6 +16,11 @@ class ZoneCreateForm:
     ipv4: str = ""
     ipv6: str = ""
     add_www: bool = False
+    group: str = "Pozostałe"
+    refresh: int = 3600
+    retry: int = 900
+    expire: int = 1209600
+    negative_ttl: int = 3600
 
 
 class ZoneCreateDialog:
@@ -23,9 +28,14 @@ class ZoneCreateDialog:
 
     LABELS = (
         "Nazwa strefy",
+        "Grupa",
         "Główny NS",
         "Administrator SOA",
         "Serwery NS",
+        "SOA refresh",
+        "SOA retry",
+        "SOA expire",
+        "SOA minimum",
         "IPv4 apex",
         "IPv6 apex",
         "Rekord www",
@@ -125,9 +135,28 @@ class ZoneCreateDialog:
         primary_ns: str,
         admin: str,
         nameservers: str,
+        groups: tuple[str, ...] = (),
+        initial: ZoneCreateForm | None = None,
     ) -> ZoneCreateForm | None:
-        values = ["", primary_ns, admin, nameservers, "", ""]
-        add_www = False
+        group_options = tuple(dict.fromkeys((*groups, "Pozostałe")))
+        default_group = initial.group if initial is not None else group_options[0]
+        if default_group not in group_options:
+            group_options = (*group_options, default_group)
+        group_index = group_options.index(default_group)
+        values = (
+            [
+                initial.name, initial.group, initial.primary_ns, initial.admin,
+                initial.nameservers, str(initial.refresh), str(initial.retry),
+                str(initial.expire), str(initial.negative_ttl), initial.ipv4,
+                initial.ipv6,
+            ]
+            if initial is not None
+            else [
+                "", default_group, primary_ns, admin, nameservers,
+                "3600", "900", "1209600", "3600", "", "",
+            ]
+        )
+        add_www = initial.add_www if initial is not None else False
         active = 0
         message = ""
         try:
@@ -155,18 +184,20 @@ class ZoneCreateDialog:
                     f"{label:<18}: ",
                     attr if is_active else curses.A_BOLD,
                 )
-                text = ("[ TAK ]" if add_www else "[ NIE ]") if index == 6 else values[index]
+                text = (
+                    "[ TAK ]" if add_www else "[ NIE ]"
+                ) if index == len(self.LABELS) - 1 else values[index]
                 self._put(win, row, 23, text.ljust(max(1, width - 25)), attr)
             self._put(
                 win,
-                17,
+                min(height - 4, 3 + len(self.LABELS) * 2),
                 2,
                 f"Aktywne pole: {self.LABELS[active]}",
                 active_field_attr(),
             )
             if message:
-                self._put(win, 18, 2, message, curses.A_BOLD)
-            footer = " ↑/↓/Tab pole  Enter edytuj  Spacja przełącz www  F2 podgląd  Esc/q anuluj "
+                self._put(win, height - 3, 2, message, curses.A_BOLD)
+            footer = " ↑/↓/Tab pole  ←/→ grupa  Enter edytuj  Spacja www  F2 podgląd  Esc/q anuluj "
             self._put(win, height - 1, 0, footer.ljust(width), curses.A_REVERSE)
             win.refresh()
             key = self._get_key(win)
@@ -178,11 +209,16 @@ class ZoneCreateDialog:
             if key in (curses.KEY_UP, curses.KEY_BTAB):
                 active = (active - 1) % len(self.LABELS)
                 continue
-            if key == ord(" ") and active == 6:
+            if active == 1 and key in (curses.KEY_LEFT, curses.KEY_RIGHT):
+                step = -1 if key == curses.KEY_LEFT else 1
+                group_index = (group_index + step) % len(group_options)
+                values[1] = group_options[group_index]
+                continue
+            if key == ord(" ") and active == len(self.LABELS) - 1:
                 add_www = not add_www
                 continue
             if key in (10, 13, curses.KEY_ENTER):
-                if active == 6:
+                if active == len(self.LABELS) - 1:
                     add_www = not add_www
                 else:
                     edited = self._edit_line(win, 3 + active * 2, 23, values[active])
@@ -190,15 +226,27 @@ class ZoneCreateDialog:
                         values[active] = edited.strip()
                 continue
             if key == curses.KEY_F2:
-                if not all(values[index].strip() for index in range(4)):
+                if not all(values[index].strip() for index in range(9)):
                     message = "Wypełnij nazwę strefy, główny NS, SOA i listę NS."
+                    continue
+                try:
+                    refresh, retry, expire, minimum = (
+                        int(values[index]) for index in range(5, 9)
+                    )
+                except ValueError:
+                    message = "Parametry czasowe SOA muszą być liczbami całkowitymi."
                     continue
                 return ZoneCreateForm(
                     name=values[0].strip(),
-                    primary_ns=values[1].strip(),
-                    admin=values[2].strip(),
-                    nameservers=values[3].strip(),
-                    ipv4=values[4].strip(),
-                    ipv6=values[5].strip(),
+                    primary_ns=values[2].strip(),
+                    admin=values[3].strip(),
+                    nameservers=values[4].strip(),
+                    ipv4=values[9].strip(),
+                    ipv6=values[10].strip(),
                     add_www=add_www,
+                    group=values[1].strip(),
+                    refresh=refresh,
+                    retry=retry,
+                    expire=expire,
+                    negative_ttl=minimum,
                 )

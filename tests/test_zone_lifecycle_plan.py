@@ -134,6 +134,42 @@ def test_primary_ns_must_be_listed() -> None:
         )
 
 
+def test_custom_soa_timers_and_group_are_in_plan(tmp_path: Path) -> None:
+    groups = tmp_path / "groups.yaml"
+    groups.write_text("groups:\n  Klienci:\n    - old.example\n")
+
+    plan = planner().plan_create(request(
+        group="Klienci",
+        groups_config=groups,
+        refresh=7200,
+        retry=1200,
+        expire=604800,
+        negative_ttl=600,
+    ))
+
+    assert plan.group == "Klienci"
+    assert "    7200 ; refresh" in plan.zone_text
+    assert "    1200 ; retry" in plan.zone_text
+    assert "    604800 ; expire" in plan.zone_text
+    assert "    600 ; negative TTL" in plan.zone_text
+    assert plan.groups_text is not None
+    assert "    - old.example\n    - example.pl" in plan.groups_text
+
+
+@pytest.mark.parametrize(
+    "changes",
+    (
+        {"refresh": 0},
+        {"retry": -1},
+        {"expire": 900, "refresh": 3600},
+        {"negative_ttl": -1},
+    ),
+)
+def test_invalid_soa_timers_are_rejected(changes) -> None:
+    with pytest.raises(ZoneLifecycleError, match="SOA"):
+        planner().plan_create(request(**changes))
+
+
 def test_www_requires_an_apex_address() -> None:
     with pytest.raises(ZoneLifecycleError, match="www"):
         planner().plan_create(request(add_www=True))

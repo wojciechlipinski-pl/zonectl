@@ -1661,23 +1661,31 @@ class CursesApp:
             ),
         }
 
-        form = ZoneCreateDialog().collect(
-            win,
-            primary_ns=defaults["primary_ns"],
-            admin=defaults["admin"],
-            nameservers=defaults["nameservers"],
-        )
-        if form is None:
-            return
+        form = None
+        while True:
+            form = ZoneCreateDialog().collect(
+                win,
+                primary_ns=defaults["primary_ns"],
+                admin=defaults["admin"],
+                nameservers=defaults["nameservers"],
+                groups=tuple(
+                    self.config.group_order
+                    if self.config is not None
+                    else ()
+                ),
+                initial=form,
+            )
+            if form is None:
+                return
 
-        nameservers = tuple(
-            value.strip()
-            for value in form.nameservers.split(",")
-            if value.strip()
-        )
-        try:
-            plan = ZoneLifecyclePlanner(self.all_zones).plan_create(
-                ZoneCreateRequest(
+            nameservers = tuple(
+                value.strip()
+                for value in form.nameservers.split(",")
+                if value.strip()
+            )
+            try:
+                plan = ZoneLifecyclePlanner(self.all_zones).plan_create(
+                    ZoneCreateRequest(
                     name=form.name,
                     primary_ns=form.primary_ns,
                     admin=form.admin,
@@ -1685,35 +1693,46 @@ class CursesApp:
                     apex_ipv4=form.ipv4 or None,
                     apex_ipv6=form.ipv6 or None,
                     add_www=form.add_www,
+                    group=form.group,
+                    groups_config=(
+                        self.config.groups_path
+                        if self.config is not None
+                        else Path("/etc/zonectl/groups.yaml")
+                    ),
+                    refresh=form.refresh,
+                    retry=form.retry,
+                    expire=form.expire,
+                    negative_ttl=form.negative_ttl,
+                    )
                 )
-            )
-        except ZoneLifecycleError as exc:
+            except ZoneLifecycleError as exc:
+                self._message_view(
+                    win,
+                    title="Błąd planu nowej strefy",
+                    lines=[str(exc), "", "Po powrocie popraw dane formularza."],
+                    error=True,
+                )
+                continue
+
+            preview = [
+                f"Strefa: {plan.zone_name}",
+                f"Plik: {plan.zone_file}",
+                f"Deklaracja: {plan.zone_declaration_file}",
+                f"Serial: {plan.serial}",
+                f"Grupa: {plan.group}",
+                "",
+                *plan.zone_text.splitlines(),
+            ]
             self._message_view(
                 win,
-                title="Błąd planu nowej strefy",
-                lines=[str(exc)],
-                error=True,
+                title=f"Plan utworzenia: {plan.zone_name}",
+                lines=preview,
             )
-            return
-
-        preview = [
-            f"Strefa: {plan.zone_name}",
-            f"Plik: {plan.zone_file}",
-            f"Deklaracja: {plan.zone_declaration_file}",
-            f"Serial: {plan.serial}",
-            "",
-            *plan.zone_text.splitlines(),
-        ]
-        self._message_view(
-            win,
-            title=f"Plan utworzenia: {plan.zone_name}",
-            lines=preview,
-        )
-        if not CursesDialogs.confirm(
-            win,
-            f"Utworzyć i aktywować strefę {plan.zone_name}?",
-        ):
-            return
+            if CursesDialogs.confirm(
+                win,
+                f"Utworzyć i aktywować strefę {plan.zone_name}?",
+            ):
+                break
 
         result = ZoneCreateTransaction(
             Path("/var/backups/zonectl-zone-create/manifests")
@@ -1737,7 +1756,11 @@ class CursesApp:
         )
         if result.ok and result.status == "COMMIT":
             self.all_zones.append(
-                Zone(name=plan.zone_name, file=plan.zone_file)
+                Zone(
+                    name=plan.zone_name,
+                    file=plan.zone_file,
+                    group=plan.group,
+                )
             )
             self._rebuild_rows(keep_zone=plan.zone_name)
 

@@ -572,6 +572,12 @@ def parser() -> argparse.ArgumentParser:
     create_plan.add_argument("--ipv4")
     create_plan.add_argument("--ipv6")
     create_plan.add_argument("--www", action="store_true")
+    create_plan.add_argument("--group", default="Pozostałe")
+    create_plan.add_argument("--groups-config", type=Path, default=DEFAULT_GROUPS)
+    create_plan.add_argument("--refresh", type=int, default=3600)
+    create_plan.add_argument("--retry", type=int, default=900)
+    create_plan.add_argument("--expire", type=int, default=1209600)
+    create_plan.add_argument("--minimum", type=int, default=3600)
     create_plan.add_argument(
         "--zone-directory",
         type=Path,
@@ -604,6 +610,12 @@ def parser() -> argparse.ArgumentParser:
     create.add_argument("--ipv4")
     create.add_argument("--ipv6")
     create.add_argument("--www", action="store_true")
+    create.add_argument("--group", default="Pozostałe")
+    create.add_argument("--groups-config", type=Path, default=DEFAULT_GROUPS)
+    create.add_argument("--refresh", type=int, default=3600)
+    create.add_argument("--retry", type=int, default=900)
+    create.add_argument("--expire", type=int, default=1209600)
+    create.add_argument("--minimum", type=int, default=3600)
     create.add_argument(
         "--zone-directory",
         type=Path,
@@ -2643,6 +2655,12 @@ def main(argv: list[str] | None = None) -> int:
                     apex_ipv4=args.ipv4,
                     apex_ipv6=args.ipv6,
                     add_www=args.www,
+                    group=args.group,
+                    groups_config=args.groups_config,
+                    refresh=args.refresh,
+                    retry=args.retry,
+                    expire=args.expire,
+                    negative_ttl=args.minimum,
                 )
             )
         except ZoneLifecycleError as exc:
