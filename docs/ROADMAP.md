@@ -168,7 +168,9 @@ zrealizowane, a `[ ]` pozostają do wykonania.
 - [x] Zachować względną nazwę właściciela i komentarz inline po edycji.
 - [ ] Uzupełnić docstringi publicznych klas i metod.
 - [ ] Rozszerzyć pokrycie testami krytycznych ścieżek zapisu.
-- [ ] Dodać statyczną analizę typów.
+- [ ] Dodać statyczną analizę typów. Ścisła bramka `mypy` obejmuje już nowe
+  moduły retencji/purge oraz audyt publicznego API; zakres należy rozszerzać
+  stopniowo po usunięciu błędów typów z kolejnych modułów.
 - [ ] Dodać automatyczne formatowanie i lint.
 - [x] Dodać testy integracyjne z odseparowaną konfiguracją i prawdziwymi
   narzędziami walidacyjnymi BIND, bez kontaktu z produkcyjnym `rndc`.

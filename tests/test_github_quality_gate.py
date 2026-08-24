@@ -29,3 +29,14 @@ def test_quality_gate_checks_repository_hygiene() -> None:
 
     assert "git diff --check" in text
     assert "Unexpected executable files" in text
+
+
+def test_quality_gate_type_checks_only_incremental_critical_scope() -> None:
+    text = WORKFLOW.read_text(encoding="utf-8")
+
+    assert '"mypy>=1.20,<1.21"' in text
+    assert "MYPYPATH: src" in text
+    assert "python -m mypy" in text
+    assert "zone_quarantine_retention.py" in text
+    assert "zone_quarantine_purge.py" in text
+    assert "scripts/audit_public_api.py" in text

@@ -8,6 +8,28 @@ permissions:
   contents: read
 
 jobs:
+  static-analysis:
+    name: Incremental static analysis
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+          cache: pip
+      - name: Install pinned analysis dependency
+        run: python -m pip install --disable-pip-version-check "mypy>=1.20,<1.21"
+      - name: Type-check new critical modules
+        env:
+          MYPYPATH: src
+        run: |
+          python -m mypy \
+            src/zonectl/core/zone_quarantine_retention.py \
+            src/zonectl/core/zone_quarantine_purge.py \
+            scripts/audit_public_api.py
+
   tests:
     name: Python ${{ matrix.python-version }}
     runs-on: ubuntu-latest

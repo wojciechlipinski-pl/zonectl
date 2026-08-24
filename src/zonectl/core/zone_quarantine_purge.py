@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import getpass
+import hashlib
 import json
 import os
 import tarfile
@@ -253,7 +254,7 @@ class QuarantinePurgeTransaction:
 
     @staticmethod
     def _sha256(path: Path) -> str:
-        return __import__("hashlib").sha256(path.read_bytes()).hexdigest()
+        return hashlib.sha256(path.read_bytes()).hexdigest()
 
     @staticmethod
     def _write_manifest(path: Path, payload: dict[str, object]) -> None:
