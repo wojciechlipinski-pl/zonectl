@@ -421,8 +421,9 @@ zaczynając od raportu wpływu tylko do odczytu.
   ścieżek zapisu. Odczytowy audyt obejmuje całe drzewo, a twarda bramka CI
   chroni już nowe moduły retencji i trwałego usuwania kwarantanny; zakres
   rozszerzono również na transakcje tworzenia, wyłączania i przywracania
-  stref; kolejne moduły należy obejmować stopniowo bez masowego przepisywania
-  starszego kodu.
+  stref, kwarantannę, odtwarzanie pakietów oraz migrację i relokację
+  zarządzanych stref. Kolejne moduły należy obejmować stopniowo bez masowego
+  przepisywania starszego kodu.
 
 ### Automatyzacja GitHub i pakietów
 

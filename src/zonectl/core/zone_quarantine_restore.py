@@ -1,3 +1,5 @@
+"""Verified restoration of a zone from a quarantine package."""
+
 from __future__ import annotations
 
 import hashlib
@@ -16,6 +18,7 @@ from .runner import run
 
 @dataclass(frozen=True, slots=True)
 class QuarantineRestorePlan:
+    """Validated package, metadata and target paths for restoration."""
     zone_name: str
     package_directory: Path
     package_manifest: Path
@@ -36,6 +39,7 @@ class QuarantineRestorePlan:
 
 @dataclass(slots=True)
 class QuarantineRestoreStep:
+    """One observable step of a quarantine restoration transaction."""
     name: str
     ok: bool
     message: str
@@ -43,6 +47,7 @@ class QuarantineRestoreStep:
 
 @dataclass(slots=True)
 class QuarantineRestoreResult:
+    """Final status, package path and rollback state for restoration."""
     transaction_id: str
     zone: str
     status: str
@@ -53,6 +58,7 @@ class QuarantineRestoreResult:
 
     @property
     def ok(self) -> bool:
+        """Return whether every recorded transaction step succeeded."""
         return bool(self.steps) and all(step.ok for step in self.steps)
 
 
@@ -91,6 +97,7 @@ class QuarantineRestoreTransaction:
         managed_index: Path,
         root_config: Path = Path("/etc/bind/named.conf"),
     ) -> QuarantineRestorePlan:
+        """Verify package integrity and build a side-effect-free plan."""
         name = zone_name.strip().rstrip(".").casefold()
         manifest_path = package_directory / "manifest.json"
         zone_copy = package_directory / "zone.db"
@@ -163,6 +170,7 @@ class QuarantineRestoreTransaction:
         *,
         commit: bool = False,
     ) -> QuarantineRestoreResult:
+        """Restore and activate a package or return its dry-run result."""
         txid = (
             datetime.now().strftime("%Y%m%d-%H%M%S")
             + f"-restore-quarantine-{plan.zone_name}-{uuid.uuid4().hex[:8]}"

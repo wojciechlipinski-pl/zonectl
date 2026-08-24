@@ -1,3 +1,5 @@
+"""Packaging of disabled zones into verified quarantine artifacts."""
+
 from __future__ import annotations
 
 import getpass
@@ -13,6 +15,7 @@ from pathlib import Path
 
 @dataclass(frozen=True, slots=True)
 class ZoneQuarantinePlan:
+    """Validated source paths and destination for quarantining one zone."""
     zone_name: str
     zone_file: Path
     archived_declaration: Path
@@ -23,6 +26,7 @@ class ZoneQuarantinePlan:
 
 @dataclass(slots=True)
 class ZoneQuarantineStep:
+    """One observable step of a zone quarantine transaction."""
     name: str
     ok: bool
     message: str
@@ -30,6 +34,7 @@ class ZoneQuarantineStep:
 
 @dataclass(slots=True)
 class ZoneQuarantineResult:
+    """Final status, package path and rollback state for quarantine."""
     transaction_id: str
     zone: str
     status: str
@@ -41,6 +46,7 @@ class ZoneQuarantineResult:
 
     @property
     def ok(self) -> bool:
+        """Return whether every recorded transaction step succeeded."""
         return bool(self.steps) and all(step.ok for step in self.steps)
 
 
@@ -62,6 +68,7 @@ class ZoneQuarantineTransaction:
         quarantine_root: Path = Path("/var/lib/zonectl/quarantine"),
         reason: str,
     ) -> ZoneQuarantinePlan:
+        """Validate disabled state and build a side-effect-free plan."""
         name = zone_name.strip().rstrip(".").casefold()
         if not name or not reason.strip():
             raise ZoneQuarantineError("Wymagana jest nazwa strefy i przyczyna")
@@ -100,6 +107,7 @@ class ZoneQuarantineTransaction:
         commit: bool = False,
         confirmation: str | None = None,
     ) -> ZoneQuarantineResult:
+        """Create a verified package or return a side-effect-free dry-run."""
         txid = (
             datetime.now().strftime("%Y%m%d-%H%M%S")
             + f"-quarantine-{plan.zone_name}-{uuid.uuid4().hex[:8]}"

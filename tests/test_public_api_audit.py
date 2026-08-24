@@ -54,6 +54,10 @@ def test_current_critical_modules_are_fully_documented() -> None:
         root / "src/zonectl/core/zone_create_transaction.py",
         root / "src/zonectl/core/zone_disable_transaction.py",
         root / "src/zonectl/core/zone_restore_transaction.py",
+        root / "src/zonectl/core/zone_quarantine.py",
+        root / "src/zonectl/core/zone_quarantine_restore.py",
+        root / "src/zonectl/core/managed_zone_migration_transaction.py",
+        root / "src/zonectl/core/managed_zone_relocation_transaction.py",
     ]
     total, missing = MODULE.audit(paths)
     assert total > 0

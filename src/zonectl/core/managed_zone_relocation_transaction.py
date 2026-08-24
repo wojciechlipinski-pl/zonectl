@@ -19,6 +19,7 @@ from .runner import run
 
 @dataclass(slots=True)
 class ManagedZoneRelocationResult:
+    """Final status, backup and rollback state for zone-file relocation."""
     transaction_id: str
     zone: str
     status: str
@@ -33,6 +34,7 @@ StepAction = Callable[..., ManagedZoneMigrationStep]
 
 
 class ManagedZoneRelocationTransaction:
+    """Relocate an already managed zone file with validation and rollback."""
     def __init__(
         self,
         backup_root: Path,
@@ -53,6 +55,7 @@ class ManagedZoneRelocationTransaction:
         self.loaded_verifier = loaded_verifier or self._verify_loaded
 
     def apply(self, plan: ManagedZoneRelocationPlan, *, commit=False, activate=False):
+        """Apply a verified relocation plan or return its dry-run result."""
         txid = datetime.now().strftime("%Y%m%d-%H%M%S") + (
             f"-zone-relocate-{plan.zone}-{uuid.uuid4().hex[:8]}"
         )

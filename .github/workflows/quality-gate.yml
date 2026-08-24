@@ -50,7 +50,11 @@ jobs:
             src/zonectl/core/zone_quarantine_purge.py \
             src/zonectl/core/zone_create_transaction.py \
             src/zonectl/core/zone_disable_transaction.py \
-            src/zonectl/core/zone_restore_transaction.py
+            src/zonectl/core/zone_restore_transaction.py \
+            src/zonectl/core/zone_quarantine.py \
+            src/zonectl/core/zone_quarantine_restore.py \
+            src/zonectl/core/managed_zone_migration_transaction.py \
+            src/zonectl/core/managed_zone_relocation_transaction.py
       - name: Reject whitespace errors
         run: git diff --check $(git hash-object -t tree /dev/null) HEAD
       - name: Reject executable documentation and Python sources
