@@ -91,7 +91,11 @@ class BindSecondaryHealthGate:
                 zone, "FAIL", primary.serial, observations,
                 "Co najmniej jeden secondary nie zwraca autorytatywnego SOA",
             )
-        if any(item.serial > primary.serial for item in observations):
+        if any(
+            serial > primary.serial
+            for serial in (item.serial for item in observations)
+            if serial is not None
+        ):
             return SecondaryZoneHealth(
                 zone, "FAIL", primary.serial, observations,
                 "Secondary ma serial wyższy niż lokalny primary",

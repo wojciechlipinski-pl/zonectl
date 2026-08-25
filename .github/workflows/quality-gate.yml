@@ -38,6 +38,10 @@ jobs:
             src/zonectl/core/managed_zone_migration_transaction.py \
             src/zonectl/core/managed_zone_relocation.py \
             src/zonectl/core/managed_zone_relocation_transaction.py \
+            src/zonectl/core/bind_audit_manifest.py \
+            src/zonectl/core/bind_secondary_health.py \
+            src/zonectl/core/bind_access_impact.py \
+            src/zonectl/core/bind_config.py \
             scripts/audit_public_api.py
 
   tests:

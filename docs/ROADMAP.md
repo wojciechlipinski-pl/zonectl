@@ -174,7 +174,8 @@ zrealizowane, a `[ ]` pozostają do wykonania.
   także transakcje tworzenia, wyłączania i przywracania stref oraz pakowania
   strefy do kwarantanny i jej bezpiecznego odtwarzania, a także wykrywanie
   konfiguracji oraz planowanie i transakcje migracji i relokacji zarządzanych
-  plików stref.
+  plików stref. Kolejny zakres obejmuje bezpieczną serializację manifestów
+  audytowych, analizę wpływu ACL, health secondary i parser konfiguracji BIND.
 - [ ] Dodać automatyczne formatowanie i lint.
 - [x] Dodać testy integracyjne z odseparowaną konfiguracją i prawdziwymi
   narzędziami walidacyjnymi BIND, bez kontaktu z produkcyjnym `rndc`.

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Iterator
 from pathlib import Path
 
 from .models import Zone
@@ -106,7 +107,11 @@ class BindConfigDiscovery:
 
         return (parent_file.parent / include_path).resolve()
 
-    def _zone_blocks(self, text: str, source: Path):
+    def _zone_blocks(
+        self,
+        text: str,
+        source: Path,
+    ) -> Iterator[tuple[str, str]]:
         position = 0
 
         while True:

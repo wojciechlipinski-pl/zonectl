@@ -16,7 +16,9 @@
   disable and restore transactions are included after annotating their shared
   lifecycle date provider; quarantine packaging and recovery now share the
   same strict gate, including typed manifest integrity and metadata checks;
-  BIND discovery and managed-zone migration and relocation are covered as well
+  BIND discovery and managed-zone migration and relocation are covered as
+  well, followed by audit-manifest privacy, ACL impact, secondary health and
+  BIND configuration parsing
 
 - a dependency-free AST audit inventories missing public API docstrings, while
   CI initially enforces complete documentation only for the new critical

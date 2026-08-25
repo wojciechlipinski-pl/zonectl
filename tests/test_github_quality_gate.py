@@ -49,4 +49,8 @@ def test_quality_gate_type_checks_only_incremental_critical_scope() -> None:
     assert "managed_zone_migration_transaction.py" in text
     assert "managed_zone_relocation.py" in text
     assert "managed_zone_relocation_transaction.py" in text
+    assert "bind_audit_manifest.py" in text
+    assert "bind_secondary_health.py" in text
+    assert "bind_access_impact.py" in text
+    assert "bind_config.py" in text
     assert "scripts/audit_public_api.py" in text
