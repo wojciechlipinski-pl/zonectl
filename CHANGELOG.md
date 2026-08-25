@@ -37,7 +37,9 @@
   coverage of the main curses application and adds it to CI; the first CLI
   pass isolates BIND access, ACL, secondary, onboarding and managed RPZ
   command results, reducing errors owned by `cli.py` from 304 to 196 without
-  yet admitting the incomplete module to the strict gate
+  yet admitting the incomplete module to the strict gate; a second pass
+  separates managed RPZ installation, external RPZ migration and BIND access
+  inventory or audit values, reducing the remaining CLI report to 139
 
 - a dependency-free AST audit inventories missing public API docstrings, while
   CI initially enforces complete documentation only for the new critical

@@ -1578,42 +1578,42 @@ def main(argv: list[str] | None = None) -> int:
         return 0 if rpz_managed_plan.status == "READY" else 1
     if args.command == "bind" and args.bind_command == "rpz-managed-dry-run":
         try:
-            plan = RpzManagedPlanner(
+            rpz_dry_run_plan = RpzManagedPlanner(
                 args.root_config, zone=args.zone, source_url=args.source_url
             ).plan()
-            result = RpzManagedInstallDryRun().execute(plan)
+            rpz_dry_run_result = RpzManagedInstallDryRun().execute(rpz_dry_run_plan)
         except (BindDiscoveryError, OSError) as exc:
             print(f"BŁĄD: {exc}", file=sys.stderr)
             return 2
         if args.json:
-            print(json.dumps(result.to_dict(), ensure_ascii=False, indent=2))
+            print(json.dumps(rpz_dry_run_result.to_dict(), ensure_ascii=False, indent=2))
         else:
             print("DRY-RUN ŚWIEŻEJ INSTALACJI CERT POLSKA RPZ")
-            print(f"Strefa:       {result.zone}")
-            print(f"Status:       {result.status}")
-            print(f"Commit:       {'TAK' if result.committed else 'NIE'}")
-            print(f"Aktywacja:    {'TAK' if result.activated else 'NIE'}")
+            print(f"Strefa:       {rpz_dry_run_result.zone}")
+            print(f"Status:       {rpz_dry_run_result.status}")
+            print(f"Commit:       {'TAK' if rpz_dry_run_result.committed else 'NIE'}")
+            print(f"Aktywacja:    {'TAK' if rpz_dry_run_result.activated else 'NIE'}")
             print("\nETAPY")
-            for step in result.steps:
-                print(f"[{'OK' if step.ok else 'BŁĄD'}] {step.name}: {step.message}")
-            if result.candidate_hashes:
+            for rpz_dry_run_step in rpz_dry_run_result.steps:
+                print(f"[{'OK' if rpz_dry_run_step.ok else 'BŁĄD'}] {rpz_dry_run_step.name}: {rpz_dry_run_step.message}")
+            if rpz_dry_run_result.candidate_hashes:
                 print("\nSUMY KANDYDATÓW")
-                for name, digest in result.candidate_hashes.items():
-                    print(f"- {name}: {digest}")
+                for candidate_name, candidate_digest in rpz_dry_run_result.candidate_hashes.items():
+                    print(f"- {candidate_name}: {candidate_digest}")
             print(
                 "\nWynik: DRY-RUN — nie zapisano plików systemowych, "
                 "nie uruchomiono timera i nie zmieniono BIND"
             )
-        return 0 if result.status == "DRY-RUN" else 1
+        return 0 if rpz_dry_run_result.status == "DRY-RUN" else 1
     if args.command == "bind" and args.bind_command == "rpz-managed-apply":
         try:
-            plan = RpzManagedPlanner(
+            rpz_apply_plan = RpzManagedPlanner(
                 args.root_config, zone=args.zone, source_url=args.source_url
             ).plan()
-            result = RpzManagedInstallTransaction(
+            rpz_apply_result = RpzManagedInstallTransaction(
                 manifest_directory=args.manifest_directory
             ).apply(
-                plan,
+                rpz_apply_plan,
                 commit=args.commit,
                 activate=args.activate,
                 confirm=args.confirm,
@@ -1622,107 +1622,107 @@ def main(argv: list[str] | None = None) -> int:
             print(f"BŁĄD: {exc}", file=sys.stderr)
             return 2
         if args.json:
-            print(json.dumps(result.to_dict(), ensure_ascii=False, indent=2))
+            print(json.dumps(rpz_apply_result.to_dict(), ensure_ascii=False, indent=2))
         else:
             print("TRANSAKCJA ŚWIEŻEJ INSTALACJI CERT POLSKA RPZ")
-            print(f"Transakcja: {result.transaction_id or '-'}")
-            print(f"Strefa:     {result.zone}")
-            print(f"Status:     {result.status}")
-            print(f"Commit:     {'TAK' if result.committed else 'NIE'}")
-            print(f"Aktywacja:  {'TAK' if result.activated else 'NIE'}")
-            print(f"Rollback:   {'TAK' if result.rolled_back else 'NIE'}")
-            if result.backup:
-                print(f"Backup:     {result.backup}")
-            if result.manifest:
-                print(f"Manifest:   {result.manifest}")
+            print(f"Transakcja: {rpz_apply_result.transaction_id or '-'}")
+            print(f"Strefa:     {rpz_apply_result.zone}")
+            print(f"Status:     {rpz_apply_result.status}")
+            print(f"Commit:     {'TAK' if rpz_apply_result.committed else 'NIE'}")
+            print(f"Aktywacja:  {'TAK' if rpz_apply_result.activated else 'NIE'}")
+            print(f"Rollback:   {'TAK' if rpz_apply_result.rolled_back else 'NIE'}")
+            if rpz_apply_result.backup:
+                print(f"Backup:     {rpz_apply_result.backup}")
+            if rpz_apply_result.manifest:
+                print(f"Manifest:   {rpz_apply_result.manifest}")
             print("\nETAPY")
-            for step in result.steps:
-                print(f"[{'OK' if step.ok else 'BŁĄD'}] {step.name}: {step.message}")
-        if result.status == "REJECTED":
+            for rpz_apply_step in rpz_apply_result.steps:
+                print(f"[{'OK' if rpz_apply_step.ok else 'BŁĄD'}] {rpz_apply_step.name}: {rpz_apply_step.message}")
+        if rpz_apply_result.status == "REJECTED":
             return 2
-        return 0 if result.status in {"DRY-RUN", "COMMIT"} else 1
+        return 0 if rpz_apply_result.status in {"DRY-RUN", "COMMIT"} else 1
     if args.command == "bind" and args.bind_command == "rpz-external-migration-plan":
         try:
-            plan = RpzExternalMigrationPlanner(args.root_config).plan()
+            rpz_migration_plan = RpzExternalMigrationPlanner(args.root_config).plan()
         except (BindDiscoveryError, OSError) as exc:
             print(f"BŁĄD: {exc}", file=sys.stderr)
             return 2
         if args.json:
-            print(json.dumps(plan.to_dict(), ensure_ascii=False, indent=2))
+            print(json.dumps(rpz_migration_plan.to_dict(), ensure_ascii=False, indent=2))
         else:
             print("PLAN MIGRACJI RPZ EXTERNAL → MANAGED — TYLKO ODCZYT")
-            print(f"Status:          {plan.status}")
-            print(f"Strefa:          {plan.zone}")
-            print(f"Timer EXTERNAL:  {plan.current_timer or '-'}")
-            print(f"Usługa EXTERNAL: {plan.current_service or '-'}")
+            print(f"Status:          {rpz_migration_plan.status}")
+            print(f"Strefa:          {rpz_migration_plan.zone}")
+            print(f"Timer EXTERNAL:  {rpz_migration_plan.current_timer or '-'}")
+            print(f"Usługa EXTERNAL: {rpz_migration_plan.current_service or '-'}")
             print(
                 "Stan timera:     "
-                f"{'enabled' if plan.current_enabled else 'disabled'}, "
-                f"{'active' if plan.current_active else 'inactive'}"
+                f"{'enabled' if rpz_migration_plan.current_enabled else 'disabled'}, "
+                f"{'active' if rpz_migration_plan.current_active else 'inactive'}"
             )
             print("\nINWENTARYZACJA — BEZ WYŚWIETLANIA TREŚCI")
-            for item in plan.artifacts:
+            for migration_artifact in rpz_migration_plan.artifacts:
                 print(
-                    f"[{item.role:<12}] {item.path or '-'} — "
-                    f"{'OK' if item.exists else 'BRAK'}"
+                    f"[{migration_artifact.role:<12}] {migration_artifact.path or '-'} — "
+                    f"{'OK' if migration_artifact.exists else 'BRAK'}"
                 )
-                if item.exists:
+                if migration_artifact.exists:
                     print(
-                        f"  uid/gid {item.owner}/{item.group}, {item.mode}, "
-                        f"SHA-256 {item.sha256}"
+                        f"  uid/gid {migration_artifact.owner}/{migration_artifact.group}, {migration_artifact.mode}, "
+                        f"SHA-256 {migration_artifact.sha256}"
                     )
             print("\nCELE MANAGED")
-            print(f"Aktualizator: {plan.managed_updater}")
-            print(f"Usługa:       {plan.managed_service}")
-            print(f"Timer:        {plan.managed_timer}")
-            print(f"Backup:       {plan.backup_root}")
+            print(f"Aktualizator: {rpz_migration_plan.managed_updater}")
+            print(f"Usługa:       {rpz_migration_plan.managed_service}")
+            print(f"Timer:        {rpz_migration_plan.managed_timer}")
+            print(f"Backup:       {rpz_migration_plan.backup_root}")
             print("\nBLOKADY")
-            for blocker in plan.blockers or ("-",):
-                print(f"- {blocker}")
+            for migration_blocker in rpz_migration_plan.blockers or ("-",):
+                print(f"- {migration_blocker}")
             print("\nPLANOWANE ETAPY")
-            for step in plan.steps:
-                print(f"- {step}")
-            print(f"\nNastępny krok: {plan.next_action}")
+            for migration_step_name in rpz_migration_plan.steps:
+                print(f"- {migration_step_name}")
+            print(f"\nNastępny krok: {rpz_migration_plan.next_action}")
             print("\nWynik: PLAN — nie zatrzymano timera i nie zmieniono BIND")
-        return 0 if plan.status == "READY" else 1
+        return 0 if rpz_migration_plan.status == "READY" else 1
     if args.command == "bind" and args.bind_command == "rpz-external-migration-dry-run":
         try:
-            plan = RpzExternalMigrationPlanner(args.root_config).plan()
-            result = RpzExternalMigrationDryRun(
+            rpz_migration_dry_plan = RpzExternalMigrationPlanner(args.root_config).plan()
+            rpz_migration_dry_result = RpzExternalMigrationDryRun(
                 root_config=args.root_config
-            ).execute(plan)
+            ).execute(rpz_migration_dry_plan)
         except (BindDiscoveryError, OSError) as exc:
             print(f"BŁĄD: {exc}", file=sys.stderr)
             return 2
         if args.json:
-            print(json.dumps(result.to_dict(), ensure_ascii=False, indent=2))
+            print(json.dumps(rpz_migration_dry_result.to_dict(), ensure_ascii=False, indent=2))
         else:
             print("DRY-RUN MIGRACJI RPZ EXTERNAL → MANAGED")
-            print(f"Strefa:          {result.zone}")
-            print(f"Status:          {result.status}")
-            print(f"Commit:          {'TAK' if result.committed else 'NIE'}")
-            print(f"Przełączenie:    {'TAK' if result.timer_switched else 'NIE'}")
+            print(f"Strefa:          {rpz_migration_dry_result.zone}")
+            print(f"Status:          {rpz_migration_dry_result.status}")
+            print(f"Commit:          {'TAK' if rpz_migration_dry_result.committed else 'NIE'}")
+            print(f"Przełączenie:    {'TAK' if rpz_migration_dry_result.timer_switched else 'NIE'}")
             print("\nETAPY")
-            for step in result.steps:
-                print(f"[{'OK' if step.ok else 'BŁĄD'}] {step.name}: {step.message}")
-            if result.candidate_hashes:
+            for migration_dry_step in rpz_migration_dry_result.steps:
+                print(f"[{'OK' if migration_dry_step.ok else 'BŁĄD'}] {migration_dry_step.name}: {migration_dry_step.message}")
+            if rpz_migration_dry_result.candidate_hashes:
                 print("\nSUMY KANDYDATÓW")
-                for name, digest in result.candidate_hashes.items():
-                    print(f"- {name}: {digest}")
+                for migration_name, migration_digest in rpz_migration_dry_result.candidate_hashes.items():
+                    print(f"- {migration_name}: {migration_digest}")
             print(
                 "\nWynik: DRY-RUN — nie zapisano plików systemowych, "
                 "nie zatrzymano timera i nie zmieniono BIND"
             )
-        return 0 if result.status == "DRY-RUN" else 1
+        return 0 if rpz_migration_dry_result.status == "DRY-RUN" else 1
     if args.command == "bind" and args.bind_command == "rpz-external-migration-apply":
         try:
-            plan = RpzExternalMigrationPlanner(args.root_config).plan()
-            result = RpzExternalMigrationTransaction(
+            rpz_migration_apply_plan = RpzExternalMigrationPlanner(args.root_config).plan()
+            rpz_migration_apply_result = RpzExternalMigrationTransaction(
                 args.backup_root,
                 args.manifest_directory,
                 root_config=args.root_config,
             ).apply(
-                plan,
+                rpz_migration_apply_plan,
                 commit=args.commit,
                 activate=args.activate,
                 confirm=args.confirm,
@@ -1731,72 +1731,72 @@ def main(argv: list[str] | None = None) -> int:
             print(f"BŁĄD: {exc}", file=sys.stderr)
             return 2
         if args.json:
-            print(json.dumps(result.to_dict(), ensure_ascii=False, indent=2))
+            print(json.dumps(rpz_migration_apply_result.to_dict(), ensure_ascii=False, indent=2))
         else:
             print("TRANSAKCJA MIGRACJI RPZ EXTERNAL → MANAGED")
-            print(f"Transakcja:  {result.transaction_id}")
-            print(f"Strefa:      {result.zone}")
-            print(f"Status:      {result.status}")
-            print(f"Commit:      {'TAK' if result.committed else 'NIE'}")
-            print(f"Aktywacja:   {'TAK' if result.activated else 'NIE'}")
-            print(f"Rollback:    {'TAK' if result.rolled_back else 'NIE'}")
-            if result.backup:
-                print(f"Backup:      {result.backup}")
-            if result.manifest:
-                print(f"Manifest:    {result.manifest}")
+            print(f"Transakcja:  {rpz_migration_apply_result.transaction_id}")
+            print(f"Strefa:      {rpz_migration_apply_result.zone}")
+            print(f"Status:      {rpz_migration_apply_result.status}")
+            print(f"Commit:      {'TAK' if rpz_migration_apply_result.committed else 'NIE'}")
+            print(f"Aktywacja:   {'TAK' if rpz_migration_apply_result.activated else 'NIE'}")
+            print(f"Rollback:    {'TAK' if rpz_migration_apply_result.rolled_back else 'NIE'}")
+            if rpz_migration_apply_result.backup:
+                print(f"Backup:      {rpz_migration_apply_result.backup}")
+            if rpz_migration_apply_result.manifest:
+                print(f"Manifest:    {rpz_migration_apply_result.manifest}")
             print("\nETAPY")
-            for step in result.steps:
-                print(f"[{'OK' if step.ok else 'BŁĄD'}] {step.name}: {step.message}")
-        if result.status == "REJECTED":
+            for migration_apply_step in rpz_migration_apply_result.steps:
+                print(f"[{'OK' if migration_apply_step.ok else 'BŁĄD'}] {migration_apply_step.name}: {migration_apply_step.message}")
+        if rpz_migration_apply_result.status == "REJECTED":
             return 2
-        return 0 if result.status in {"DRY-RUN", "COMMIT"} else 1
+        return 0 if rpz_migration_apply_result.status in {"DRY-RUN", "COMMIT"} else 1
     if args.command == "bind" and args.bind_command in {"inventory", "audit"}:
         try:
-            report = BindAccessInventoryReader(args.root_config).collect()
+            access_inventory = BindAccessInventoryReader(args.root_config).collect()
         except (BindAccessInventoryError, OSError) as exc:
             print(f"BŁĄD: {exc}", file=sys.stderr)
             return 2
         if args.bind_command == "audit":
-            audit = BindAccessAuditor().audit(report)
+            access_audit = BindAccessAuditor().audit(access_inventory)
             if args.json:
-                print(json.dumps(audit.to_dict(), ensure_ascii=False, indent=2))
+                print(json.dumps(access_audit.to_dict(), ensure_ascii=False, indent=2))
             else:
                 print("AUDYT ACL I GRUP SECONDARY")
-                print(f"Status: {audit.status}")
-                if not audit.findings:
+                print(f"Status: {access_audit.status}")
+                if not access_audit.findings:
                     print("[OK] Nie wykryto problemów.")
-                for finding in audit.findings:
+                for access_finding in access_audit.findings:
                     location = (
-                        f" — {finding.source}:{finding.line}"
-                        if finding.source and finding.line else ""
+                        f" — {access_finding.source}:{access_finding.line}"
+                        if access_finding.source and access_finding.line else ""
                     )
                     print(
-                        f"[{finding.severity}] {finding.code}: "
-                        f"{finding.message}{location}"
+                        f"[{access_finding.severity}] {access_finding.code}: "
+                        f"{access_finding.message}{location}"
                     )
-                    if finding.zones:
-                        print("  Strefy: " + ", ".join(finding.zones))
-            return 1 if audit.status == "FAIL" else 0
+                    if access_finding.zones:
+                        print("  Strefy: " + ", ".join(access_finding.zones))
+            return 1 if access_audit.status == "FAIL" else 0
         if args.json:
-            print(json.dumps(report.to_dict(), ensure_ascii=False, indent=2))
+            print(json.dumps(access_inventory.to_dict(), ensure_ascii=False, indent=2))
         else:
             print("DEFINICJE ACL I GRUP SECONDARY")
-            if not report.definitions:
+            if not access_inventory.definitions:
                 print("- brak")
-            for item in report.definitions:
+            for access_definition in access_inventory.definitions:
                 print(
-                    f"[{item.kind.upper()}] {item.name} — "
-                    f"{item.source}:{item.line}"
+                    f"[{access_definition.kind.upper()}] {access_definition.name} — "
+                    f"{access_definition.source}:{access_definition.line}"
                 )
-                for entry in item.entries:
-                    print(f"  {entry}")
+                for access_entry in access_definition.entries:
+                    print(f"  {access_entry}")
             print("\nUŻYCIA")
-            if not report.usages:
+            if not access_inventory.usages:
                 print("- brak")
-            for usage in report.usages:
+            for access_usage in access_inventory.usages:
                 print(
-                    f"[{usage.directive}] {usage.source}:{usage.line} — "
-                    + "; ".join(usage.values)
+                    f"[{access_usage.directive}] {access_usage.source}:{access_usage.line} — "
+                    + "; ".join(access_usage.values)
                 )
         return 0
     if args.command == "dnssec" and args.dnssec_command == "confirm-ds":

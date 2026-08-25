@@ -196,7 +196,9 @@ zrealizowane, a `[ ]` pozostają do wykonania.
   audyt i zostaje objęty bramką CI. Pierwszy etap porządkowania głównego CLI
   rozdziela typy wyników poleceń BIND access, ACL, secondary, onboardingu i
   MANAGED RPZ, zmniejszając liczbę błędów należących do `cli.py` z 304 do 196;
-  moduł zostanie objęty bramką dopiero po pełnym domknięciu audytu.
+  drugi etap rozdziela instalację MANAGED RPZ, migrację EXTERNAL RPZ oraz
+  inwentaryzację i audyt dostępu BIND, pozostawiając 139 błędów. Moduł zostanie
+  objęty bramką dopiero po pełnym domknięciu audytu.
 - [ ] Dodać automatyczne formatowanie i lint.
 - [x] Dodać testy integracyjne z odseparowaną konfiguracją i prawdziwymi
   narzędziami walidacyjnymi BIND, bez kontaktu z produkcyjnym `rndc`.
