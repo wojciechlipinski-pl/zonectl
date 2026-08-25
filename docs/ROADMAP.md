@@ -179,7 +179,8 @@ zrealizowane, a `[ ]` pozostają do wykonania.
   a następnie planowanie przypisań secondary, transakcje ACL i secondary,
   inwentaryzację stref nieaktywnych, blokady sesji edycji oraz bezstratny
   adapter dokumentu, serializację, zapis kandydatów, dziennik audytowy,
-  główny silnik transakcji i sesję edycji strefy.
+  główny silnik transakcji, sesję edycji strefy oraz instalację MANAGED RPZ i
+  transakcyjną migrację zewnętrznej konfiguracji RPZ.
 - [ ] Dodać automatyczne formatowanie i lint.
 - [x] Dodać testy integracyjne z odseparowaną konfiguracją i prawdziwymi
   narzędziami walidacyjnymi BIND, bez kontaktu z produkcyjnym `rndc`.
