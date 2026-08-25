@@ -30,7 +30,10 @@ class ManagedZoneRelocationResult:
     steps: list[ManagedZoneMigrationStep] = field(default_factory=list)
 
 
-StepAction = Callable[..., ManagedZoneMigrationStep]
+ZoneValidator = Callable[[str, Path], ManagedZoneMigrationStep]
+ConfigValidator = Callable[[Path], ManagedZoneMigrationStep]
+ZoneAction = Callable[[str], ManagedZoneMigrationStep]
+LoadedVerifier = Callable[[str, Path], ManagedZoneMigrationStep]
 
 
 class ManagedZoneRelocationTransaction:
@@ -41,10 +44,10 @@ class ManagedZoneRelocationTransaction:
         manifest_directory: Path,
         *,
         root_config: Path = Path("/etc/bind/named.conf"),
-        zone_validator: StepAction | None = None,
-        config_validator: StepAction | None = None,
-        activator: StepAction | None = None,
-        loaded_verifier: StepAction | None = None,
+        zone_validator: ZoneValidator | None = None,
+        config_validator: ConfigValidator | None = None,
+        activator: ZoneAction | None = None,
+        loaded_verifier: LoadedVerifier | None = None,
     ) -> None:
         self.backup_root = backup_root
         self.manifest_directory = manifest_directory
@@ -54,7 +57,13 @@ class ManagedZoneRelocationTransaction:
         self.activator = activator or self._activate
         self.loaded_verifier = loaded_verifier or self._verify_loaded
 
-    def apply(self, plan: ManagedZoneRelocationPlan, *, commit=False, activate=False):
+    def apply(
+        self,
+        plan: ManagedZoneRelocationPlan,
+        *,
+        commit: bool = False,
+        activate: bool = False,
+    ) -> ManagedZoneRelocationResult:
         """Apply a verified relocation plan or return its dry-run result."""
         txid = datetime.now().strftime("%Y%m%d-%H%M%S") + (
             f"-zone-relocate-{plan.zone}-{uuid.uuid4().hex[:8]}"
@@ -95,11 +104,10 @@ class ManagedZoneRelocationTransaction:
                 raise RuntimeError(check.message)
             if activate:
                 activation_attempted = True
-                for action, args in (
-                    (self.activator, (plan.zone,)),
-                    (self.loaded_verifier, (plan.zone, plan.target_file)),
+                for step in (
+                    self.activator(plan.zone),
+                    self.loaded_verifier(plan.zone, plan.target_file),
                 ):
-                    step = action(*args)
                     result.steps.append(step)
                     if not step.ok:
                         raise RuntimeError(step.message)
@@ -134,7 +142,9 @@ class ManagedZoneRelocationTransaction:
         return result
 
     @staticmethod
-    def _preflight(plan):
+    def _preflight(
+        plan: ManagedZoneRelocationPlan,
+    ) -> ManagedZoneMigrationStep | None:
         if not plan.source_file.is_file():
             return ManagedZoneMigrationStep("preflight", False, f"Brak źródła: {plan.source_file}")
         if plan.target_file.exists():
@@ -143,7 +153,7 @@ class ManagedZoneRelocationTransaction:
             return ManagedZoneMigrationStep("preflight", False, "Deklaracja zmieniła się od utworzenia planu")
         return None
 
-    def _write_manifest(self, result):
+    def _write_manifest(self, result: ManagedZoneRelocationResult) -> None:
         self.manifest_directory.mkdir(parents=True, exist_ok=True, mode=0o750)
         path = self.manifest_directory / f"{result.transaction_id}.json"
         result.manifest = str(path)
@@ -152,7 +162,11 @@ class ManagedZoneRelocationTransaction:
         path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
 
     @staticmethod
-    def _atomic_write(path: Path, content: bytes, metadata) -> None:
+    def _atomic_write(
+        path: Path,
+        content: bytes,
+        metadata: os.stat_result,
+    ) -> None:
         path.parent.mkdir(parents=True, exist_ok=True, mode=0o750)
         fd, name = tempfile.mkstemp(prefix=f".{path.name}.", dir=path.parent)
         temporary = Path(name)
@@ -160,35 +174,42 @@ class ManagedZoneRelocationTransaction:
             with os.fdopen(fd, "wb") as stream:
                 stream.write(content); stream.flush(); os.fsync(stream.fileno())
             os.chmod(temporary, metadata.st_mode & 0o777)
-            os.chown(temporary, metadata.st_uid, metadata.st_gid)
+            chown = getattr(os, "chown", None)
+            if chown is not None:
+                chown(temporary, metadata.st_uid, metadata.st_gid)
             os.replace(temporary, path)
         finally:
             temporary.unlink(missing_ok=True)
 
     @classmethod
-    def _atomic_copy(cls, source: Path, target: Path, metadata) -> None:
+    def _atomic_copy(
+        cls,
+        source: Path,
+        target: Path,
+        metadata: os.stat_result,
+    ) -> None:
         cls._atomic_write(target, source.read_bytes(), metadata)
 
     @staticmethod
-    def _validate_zone(zone: str, path: Path):
+    def _validate_zone(zone: str, path: Path) -> ManagedZoneMigrationStep:
         outcome = run(["named-checkzone", zone, str(path)], 30)
         detail = (outcome.stdout or outcome.stderr).strip() or f"kod {outcome.returncode}"
         return ManagedZoneMigrationStep("named-checkzone", outcome.returncode == 0, detail)
 
     @staticmethod
-    def _validate_config(root: Path):
+    def _validate_config(root: Path) -> ManagedZoneMigrationStep:
         outcome = run(["named-checkconf", str(root)], 30)
         detail = (outcome.stdout or outcome.stderr).strip() or f"kod {outcome.returncode}"
         return ManagedZoneMigrationStep("named-checkconf", outcome.returncode == 0, detail)
 
     @staticmethod
-    def _activate(_zone: str):
+    def _activate(_zone: str) -> ManagedZoneMigrationStep:
         outcome = run(["rndc", "reconfig"], 30)
         detail = (outcome.stdout or outcome.stderr).strip() or f"kod {outcome.returncode}"
         return ManagedZoneMigrationStep("rndc-reconfig", outcome.returncode == 0, detail)
 
     @staticmethod
-    def _verify_loaded(zone: str, target: Path):
+    def _verify_loaded(zone: str, target: Path) -> ManagedZoneMigrationStep:
         outcome = run(["rndc", "zonestatus", zone], 30)
         detail = (outcome.stdout or outcome.stderr).strip() or f"kod {outcome.returncode}"
         ok = outcome.returncode == 0 and str(target) in outcome.stdout

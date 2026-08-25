@@ -33,6 +33,11 @@ jobs:
             src/zonectl/core/zone_restore_transaction.py \
             src/zonectl/core/zone_quarantine.py \
             src/zonectl/core/zone_quarantine_restore.py \
+            src/zonectl/core/discovery.py \
+            src/zonectl/core/managed_zone_migration.py \
+            src/zonectl/core/managed_zone_migration_transaction.py \
+            src/zonectl/core/managed_zone_relocation.py \
+            src/zonectl/core/managed_zone_relocation_transaction.py \
             scripts/audit_public_api.py
 
   tests:

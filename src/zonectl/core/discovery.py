@@ -324,11 +324,11 @@ class BindConfigDiscovery:
         body: str,
         config_file: Path,
     ) -> ZoneConfig:
-        zone_type = self._match_value(
+        zone_type = (self._match_value(
             self._type_re,
             body,
             default="unknown",
-        ).lower()
+        ) or "unknown").lower()
 
         raw_file = self._match_value(
             self._file_re,
@@ -349,11 +349,11 @@ class BindConfigDiscovery:
         )
 
         inline_signing = (
-            self._match_value(
+            (self._match_value(
                 self._inline_signing_re,
                 body,
                 default="no",
-            ).lower()
+            ) or "no").lower()
             == "yes"
         )
 

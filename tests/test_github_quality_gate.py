@@ -44,4 +44,9 @@ def test_quality_gate_type_checks_only_incremental_critical_scope() -> None:
     assert "zone_restore_transaction.py" in text
     assert "zone_quarantine.py" in text
     assert "zone_quarantine_restore.py" in text
+    assert "discovery.py" in text
+    assert "managed_zone_migration.py" in text
+    assert "managed_zone_migration_transaction.py" in text
+    assert "managed_zone_relocation.py" in text
+    assert "managed_zone_relocation_transaction.py" in text
     assert "scripts/audit_public_api.py" in text

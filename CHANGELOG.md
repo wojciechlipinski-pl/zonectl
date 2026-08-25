@@ -15,7 +15,8 @@
   existing type debt of the entire codebase on unrelated changes; zone create,
   disable and restore transactions are included after annotating their shared
   lifecycle date provider; quarantine packaging and recovery now share the
-  same strict gate, including typed manifest integrity and metadata checks
+  same strict gate, including typed manifest integrity and metadata checks;
+  BIND discovery and managed-zone migration and relocation are covered as well
 
 - a dependency-free AST audit inventories missing public API docstrings, while
   CI initially enforces complete documentation only for the new critical
