@@ -2081,7 +2081,7 @@ def main(argv: list[str] | None = None) -> int:
             )
             return 2
         try:
-            plan = DnssecEnablePlanner().plan(
+            enable_plan = DnssecEnablePlanner().plan(
                 discovered,
                 policy=args.policy,
                 key_directory=args.key_directory,
@@ -2091,55 +2091,55 @@ def main(argv: list[str] | None = None) -> int:
             print(f"BŁĄD: {exc}", file=sys.stderr)
             return 2
         if args.dnssec_command == "enable":
-            result = DnssecEnableTransaction(
+            enable_result = DnssecEnableTransaction(
                 args.backup_root,
                 args.manifest_directory,
                 root_config=args.root_config,
             ).apply(
-                plan,
+                enable_plan,
                 commit=args.commit,
                 activate=args.activate,
             )
             if args.json:
-                print(json.dumps(asdict(result), ensure_ascii=False, indent=2))
+                print(json.dumps(asdict(enable_result), ensure_ascii=False, indent=2))
             else:
-                print(f"Transakcja: {result.transaction_id}")
-                print(f"Strefa:     {result.zone}")
-                print(f"Status:     {result.status}")
-                print(f"Commit:     {'TAK' if result.committed else 'NIE'}")
-                print(f"Rollback:   {'TAK' if result.rolled_back else 'NIE'}")
-                if result.backup_directory:
-                    print(f"Backup:     {result.backup_directory}")
-                if result.manifest:
-                    print(f"Manifest:   {result.manifest}")
+                print(f"Transakcja: {enable_result.transaction_id}")
+                print(f"Strefa:     {enable_result.zone}")
+                print(f"Status:     {enable_result.status}")
+                print(f"Commit:     {'TAK' if enable_result.committed else 'NIE'}")
+                print(f"Rollback:   {'TAK' if enable_result.rolled_back else 'NIE'}")
+                if enable_result.backup_directory:
+                    print(f"Backup:     {enable_result.backup_directory}")
+                if enable_result.manifest:
+                    print(f"Manifest:   {enable_result.manifest}")
                 print("\nEtapy:")
-                for step in result.steps:
-                    print(f"[{'OK' if step.ok else 'BŁĄD'}] {step.name}: {step.message}")
-            return 0 if result.status in {"DRY-RUN", "COMMIT"} else 1
+                for enable_step in enable_result.steps:
+                    print(f"[{'OK' if enable_step.ok else 'BŁĄD'}] {enable_step.name}: {enable_step.message}")
+            return 0 if enable_result.status in {"DRY-RUN", "COMMIT"} else 1
         if args.json:
-            print(json.dumps(plan.to_dict(), ensure_ascii=False, indent=2))
+            print(json.dumps(enable_plan.to_dict(), ensure_ascii=False, indent=2))
         else:
             print("PLAN WŁĄCZENIA DNSSEC — BEZ ZMIAN W SYSTEMIE")
-            print(f"Strefa:       {plan.zone}")
-            print(f"Plik źródłowy: {plan.source_zone_file}")
-            print(f"Plik docelowy: {plan.target_zone_file}")
+            print(f"Strefa:       {enable_plan.zone}")
+            print(f"Plik źródłowy: {enable_plan.source_zone_file}")
+            print(f"Plik docelowy: {enable_plan.target_zone_file}")
             print(
                 "Migracja pliku: "
-                + ("TAK" if plan.migration_required else "NIE")
+                + ("TAK" if enable_plan.migration_required else "NIE")
             )
-            print(f"Deklaracja:   {plan.declaration_file}")
-            print(f"Polityka:     {plan.policy}")
-            print(f"Katalog kluczy: {plan.key_directory}")
+            print(f"Deklaracja:   {enable_plan.declaration_file}")
+            print(f"Polityka:     {enable_plan.policy}")
+            print(f"Katalog kluczy: {enable_plan.key_directory}")
             print("\nPlanowany diff:\n")
-            print(plan.unified_diff, end="")
+            print(enable_plan.unified_diff, end="")
             print("\nPlanowane etapy:")
-            for action in plan.actions:
-                print(f"- {action}")
+            for enable_action in enable_plan.actions:
+                print(f"- {enable_action}")
             print("\nWynik: DRY-RUN — niczego nie zmieniono")
         return 0
     if args.command == "dnssec" and args.dnssec_command == "check-ds":
         wanted = args.name.strip().rstrip(".").casefold()
-        zone = next(
+        ds_check_zone = next(
             (
                 item
                 for item in zones
@@ -2147,7 +2147,7 @@ def main(argv: list[str] | None = None) -> int:
             ),
             None,
         )
-        if zone is None:
+        if ds_check_zone is None:
             print(f"BŁĄD: Nie znaleziono strefy: {args.name}", file=sys.stderr)
             return 2
         resolvers = tuple(
@@ -2156,34 +2156,34 @@ def main(argv: list[str] | None = None) -> int:
         local_server = args.server or config.toolkit.get(
             "local_server", "127.0.0.1"
         )
-        result = DnssecDsChecker(
+        ds_check_result = DnssecDsChecker(
             local_server=local_server,
             timeout=int(config.toolkit.get("dig_timeout", "3")),
-        ).collect(zone.name, resolvers)
+        ).collect(ds_check_zone.name, resolvers)
         if args.json:
-            print(json.dumps(result.to_dict(), ensure_ascii=False, indent=2))
+            print(json.dumps(ds_check_result.to_dict(), ensure_ascii=False, indent=2))
         else:
-            print(f"KONTROLA DS — {result.zone}")
-            print(f"Status:             {result.status}")
-            print(f"Gotowość KASP:      {'TAK' if result.kasp_ready else 'NIE'}")
+            print(f"KONTROLA DS — {ds_check_result.zone}")
+            print(f"Status:             {ds_check_result.status}")
+            print(f"Gotowość KASP:      {'TAK' if ds_check_result.kasp_ready else 'NIE'}")
             print("DS oczekiwany:")
-            for record in result.expected_ds or ("-",):
-                print(f"  {record}")
+            for expected_ds_record in ds_check_result.expected_ds or ("-",):
+                print(f"  {expected_ds_record}")
             print("\nResolvery:")
-            for check in result.resolver_checks:
-                print(f"  [{check.status:<10}] {check.resolver}: {check.message}")
-                for record in check.records:
-                    print(f"    {record}")
+            for resolver_check in ds_check_result.resolver_checks:
+                print(f"  [{resolver_check.status:<10}] {resolver_check.resolver}: {resolver_check.message}")
+                for resolver_record in resolver_check.records:
+                    print(f"    {resolver_record}")
             print("\nSerwery autorytatywne:")
-            for check in result.authority_checks:
-                print(f"  [{check.status:<10}] {check.server}: {check.message}")
-            for error in result.errors:
-                print(f"BŁĄD: {error}")
-            print(f"\nNastępny krok: {result.next_action}")
-        return 1 if result.status == "FAIL" else 0
+            for authority_check in ds_check_result.authority_checks:
+                print(f"  [{authority_check.status:<10}] {authority_check.server}: {authority_check.message}")
+            for ds_error in ds_check_result.errors:
+                print(f"BŁĄD: {ds_error}")
+            print(f"\nNastępny krok: {ds_check_result.next_action}")
+        return 1 if ds_check_result.status == "FAIL" else 0
     if args.command == "dnssec" and args.dnssec_command == "withdrawal-check":
         wanted = args.name.strip().rstrip(".").casefold()
-        zone = next(
+        withdrawal_check_zone = next(
             (
                 item
                 for item in zones
@@ -2191,32 +2191,32 @@ def main(argv: list[str] | None = None) -> int:
             ),
             None,
         )
-        if zone is None:
+        if withdrawal_check_zone is None:
             print(f"BŁĄD: Nie znaleziono strefy: {args.name}", file=sys.stderr)
             return 2
         resolvers = tuple(
             args.resolvers or ("1.1.1.1", "8.8.8.8", "9.9.9.9")
         )
-        result = DnssecWithdrawalChecker(
+        withdrawal_check_result = DnssecWithdrawalChecker(
             timeout=int(config.toolkit.get("dig_timeout", "3")),
-        ).collect(zone.name, resolvers)
+        ).collect(withdrawal_check_zone.name, resolvers)
         if args.json:
-            print(json.dumps(result.to_dict(), ensure_ascii=False, indent=2))
+            print(json.dumps(withdrawal_check_result.to_dict(), ensure_ascii=False, indent=2))
         else:
-            print(f"KONTROLA WYCOFANIA DS — {result.zone}")
-            print(f"Status:  {result.status}")
+            print(f"KONTROLA WYCOFANIA DS — {withdrawal_check_result.zone}")
+            print(f"Status:  {withdrawal_check_result.status}")
             print("\nResolvery:")
-            for check in result.resolver_checks:
-                print(f"  [{check.status:<11}] {check.resolver}: {check.message}")
-                for record in check.records:
-                    print(f"    {record}")
-            for error in result.errors:
-                print(f"BŁĄD: {error}")
-            print(f"\nNastępny krok: {result.next_action}")
-        return 0 if result.status == "READY_FOR_WITHDRAWN" else 1
+            for withdrawal_resolver_check in withdrawal_check_result.resolver_checks:
+                print(f"  [{withdrawal_resolver_check.status:<11}] {withdrawal_resolver_check.resolver}: {withdrawal_resolver_check.message}")
+                for withdrawal_record in withdrawal_resolver_check.records:
+                    print(f"    {withdrawal_record}")
+            for withdrawal_error in withdrawal_check_result.errors:
+                print(f"BŁĄD: {withdrawal_error}")
+            print(f"\nNastępny krok: {withdrawal_check_result.next_action}")
+        return 0 if withdrawal_check_result.status == "READY_FOR_WITHDRAWN" else 1
     if args.command == "dnssec" and args.dnssec_command == "withdrawal-confirm":
         wanted = args.name.strip().rstrip(".").casefold()
-        zone = next(
+        withdrawal_confirm_zone = next(
             (
                 item
                 for item in zones
@@ -2224,37 +2224,37 @@ def main(argv: list[str] | None = None) -> int:
             ),
             None,
         )
-        if zone is None:
+        if withdrawal_confirm_zone is None:
             print(f"BŁĄD: Nie znaleziono strefy: {args.name}", file=sys.stderr)
             return 2
         resolvers = tuple(
             args.resolvers or ("1.1.1.1", "8.8.8.8", "9.9.9.9")
         )
-        checker = DnssecWithdrawalChecker(
+        withdrawal_confirm_checker = DnssecWithdrawalChecker(
             timeout=int(config.toolkit.get("dig_timeout", "3")),
         )
-        result = DnssecWithdrawalConfirmTransaction(
+        withdrawal_confirm_result = DnssecWithdrawalConfirmTransaction(
             args.manifest_directory,
-            checker=checker.collect,
+            checker=withdrawal_confirm_checker.collect,
         ).apply(
-            zone.name,
+            withdrawal_confirm_zone.name,
             resolvers,
             commit=args.commit,
             acknowledge_withdrawn=args.acknowledge_withdrawn,
         )
         if args.json:
-            print(json.dumps(asdict(result), ensure_ascii=False, indent=2))
+            print(json.dumps(asdict(withdrawal_confirm_result), ensure_ascii=False, indent=2))
         else:
-            print(f"Transakcja: {result.transaction_id}")
-            print(f"Strefa:     {result.zone}")
-            print(f"Status:     {result.status}")
-            print(f"Commit:     {'TAK' if result.committed else 'NIE'}")
-            if result.manifest:
-                print(f"Manifest:   {result.manifest}")
+            print(f"Transakcja: {withdrawal_confirm_result.transaction_id}")
+            print(f"Strefa:     {withdrawal_confirm_result.zone}")
+            print(f"Status:     {withdrawal_confirm_result.status}")
+            print(f"Commit:     {'TAK' if withdrawal_confirm_result.committed else 'NIE'}")
+            if withdrawal_confirm_result.manifest:
+                print(f"Manifest:   {withdrawal_confirm_result.manifest}")
             print("\nEtapy:")
-            for step in result.steps:
-                print(f"[{'OK' if step.ok else 'BŁĄD'}] {step.name}: {step.message}")
-        return 0 if result.status in {"DRY-RUN", "WITHDRAWN"} else 1
+            for withdrawal_confirm_step in withdrawal_confirm_result.steps:
+                print(f"[{'OK' if withdrawal_confirm_step.ok else 'BŁĄD'}] {withdrawal_confirm_step.name}: {withdrawal_confirm_step.message}")
+        return 0 if withdrawal_confirm_result.status in {"DRY-RUN", "WITHDRAWN"} else 1
     if args.command == "dnssec" and args.dnssec_command == "report":
         wanted = args.name.strip().rstrip(".").casefold()
         matches = [

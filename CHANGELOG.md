@@ -41,7 +41,8 @@
   separates managed RPZ installation, external RPZ migration and BIND access
   inventory or audit values, reducing the remaining CLI report to 139; typed
   DS confirmation, serial finalization, DNSSEC withdrawal planning, apply and
-  recovery backup results reduce it further to 95
+  recovery backup results reduce it further to 95; separating DNSSEC enable,
+  DS health checks and withdrawal confirmation values leaves 75 CLI errors
 
 - a dependency-free AST audit inventories missing public API docstrings, while
   CI initially enforces complete documentation only for the new critical

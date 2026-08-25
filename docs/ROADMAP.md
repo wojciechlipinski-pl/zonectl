@@ -199,8 +199,10 @@ zrealizowane, a `[ ]` pozostają do wykonania.
   drugi etap rozdziela instalację MANAGED RPZ, migrację EXTERNAL RPZ oraz
   inwentaryzację i audyt dostępu BIND, pozostawiając 139 błędów. Trzeci etap
   typuje potwierdzenie DS, finalizację seriala oraz plan, wykonanie
-  i pakiet bezpieczeństwa wycofania DNSSEC, pozostawiając 95 błędów. Moduł
-  zostanie objęty bramką dopiero po pełnym domknięciu audytu.
+  i pakiet bezpieczeństwa wycofania DNSSEC, pozostawiając 95 błędów. Czwarty
+  etap rozdziela plan i wynik włączenia DNSSEC, kontrole DS oraz
+  potwierdzenie wycofania, pozostawiając 75 błędów. Moduł zostanie objęty
+  bramką dopiero po pełnym domknięciu audytu.
 - [ ] Dodać automatyczne formatowanie i lint.
 - [x] Dodać testy integracyjne z odseparowaną konfiguracją i prawdziwymi
   narzędziami walidacyjnymi BIND, bez kontaktu z produkcyjnym `rndc`.
