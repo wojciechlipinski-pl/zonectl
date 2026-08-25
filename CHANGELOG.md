@@ -23,7 +23,8 @@
   included in the same incremental gate, followed by lossless document
   adaptation, zone serialization, candidate writing, audit logging, the core
   transaction engine and zone edit sessions; managed RPZ installation and
-  external RPZ migration are now covered too
+  external RPZ migration are now covered too, followed by record editing,
+  zone creation forms and shared TUI dialogs
 
 - a dependency-free AST audit inventories missing public API docstrings, while
   CI initially enforces complete documentation only for the new critical

@@ -56,6 +56,9 @@ jobs:
             src/zonectl/core/zone_edit_session.py \
             src/zonectl/core/rpz_managed_install.py \
             src/zonectl/core/rpz_external_migration_transaction.py \
+            src/zonectl/ui/records/editor.py \
+            src/zonectl/ui/zone_create_dialog.py \
+            src/zonectl/ui/dialogs.py \
             scripts/audit_public_api.py
 
   tests:

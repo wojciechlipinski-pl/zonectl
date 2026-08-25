@@ -180,7 +180,8 @@ zrealizowane, a `[ ]` pozostają do wykonania.
   inwentaryzację stref nieaktywnych, blokady sesji edycji oraz bezstratny
   adapter dokumentu, serializację, zapis kandydatów, dziennik audytowy,
   główny silnik transakcji, sesję edycji strefy oraz instalację MANAGED RPZ i
-  transakcyjną migrację zewnętrznej konfiguracji RPZ.
+  transakcyjną migrację zewnętrznej konfiguracji RPZ. Pierwszy zakres TUI
+  obejmuje edytor rekordów, formularz tworzenia strefy i wspólne dialogi.
 - [ ] Dodać automatyczne formatowanie i lint.
 - [x] Dodać testy integracyjne z odseparowaną konfiguracją i prawdziwymi
   narzędziami walidacyjnymi BIND, bez kontaktu z produkcyjnym `rndc`.

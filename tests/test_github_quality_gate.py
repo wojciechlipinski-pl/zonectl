@@ -67,4 +67,7 @@ def test_quality_gate_type_checks_only_incremental_critical_scope() -> None:
     assert "zone_edit_session.py" in text
     assert "rpz_managed_install.py" in text
     assert "rpz_external_migration_transaction.py" in text
+    assert "ui/records/editor.py" in text
+    assert "ui/zone_create_dialog.py" in text
+    assert "ui/dialogs.py" in text
     assert "scripts/audit_public_api.py" in text

@@ -232,9 +232,9 @@ class RecordEditor:
     def edit_record_dialog(
         self,
         win: curses.window,
-        record,
+        record: DNSRecord,
         zone: Zone,
-    ):
+    ) -> DNSRecord | None:
         """Edytuje rekord w pamięci. Zwraca nowy rekord albo None."""
         from dataclasses import replace
 
@@ -263,7 +263,7 @@ class RecordEditor:
         active = 0
         message = ""
 
-        def build_record():
+        def build_record() -> tuple[DNSRecord | None, str]:
             owner_value = values[0].strip()
             rtype_value = values[1].strip().upper()
             ttl_value = values[2].strip()

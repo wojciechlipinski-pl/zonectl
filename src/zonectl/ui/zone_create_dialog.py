@@ -67,7 +67,13 @@ class ZoneCreateDialog:
         return 27
 
     @staticmethod
-    def _put(win, row, column, text, attr=curses.A_NORMAL) -> None:
+    def _put(
+        win: curses.window,
+        row: int,
+        column: int,
+        text: object,
+        attr: int = curses.A_NORMAL,
+    ) -> None:
         height, width = win.getmaxyx()
         if not (0 <= row < height and 0 <= column < width):
             return
@@ -76,7 +82,13 @@ class ZoneCreateDialog:
         except curses.error:
             pass
 
-    def _edit_line(self, win, row: int, column: int, initial: str) -> str | None:
+    def _edit_line(
+        self,
+        win: curses.window,
+        row: int,
+        column: int,
+        initial: str,
+    ) -> str | None:
         value = list(initial)
         cursor = len(value)
         try:
