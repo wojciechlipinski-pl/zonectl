@@ -70,6 +70,24 @@ def test_quality_gate_type_checks_only_incremental_critical_scope() -> None:
     assert "ui/records/editor.py" in text
     assert "ui/zone_create_dialog.py" in text
     assert "ui/dialogs.py" in text
+    for module in (
+        "ui/__init__.py",
+        "ui/about_view.py",
+        "ui/bind_onboarding_view.py",
+        "ui/credits.py",
+        "ui/dnssec_status_view.py",
+        "ui/form_style.py",
+        "ui/function_keys.py",
+        "ui/records/__init__.py",
+        "ui/records/controller.py",
+        "ui/records/keybindings.py",
+        "ui/records/new_record.py",
+        "ui/records/renderer.py",
+        "ui/rpz_status_view.py",
+        "ui/semantic_status.py",
+        "ui/zone_details_view.py",
+    ):
+        assert module in text
     assert "dnssec_enable_transaction.py" in text
     assert "multi_zone_session.py" in text
     assert "scripts/audit_public_api.py" in text

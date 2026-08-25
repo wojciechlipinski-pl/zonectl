@@ -183,7 +183,9 @@ zrealizowane, a `[ ]` pozostają do wykonania.
   transakcyjną migrację zewnętrznej konfiguracji RPZ. Pierwszy zakres TUI
   obejmuje edytor rekordów, formularz tworzenia strefy i wspólne dialogi.
   Wszystkie moduły core przechodzą pełny audyt mypy; ostatni zakres domyka
-  transakcję włączenia DNSSEC i sesję edycji wielu stref.
+  transakcję włączenia DNSSEC i sesję edycji wielu stref. Bramką objęto też
+  wszystkie pomocnicze moduły TUI; pozostały dług typów interfejsu skupia się
+  w głównej aplikacji `curses_app.py`.
 - [ ] Dodać automatyczne formatowanie i lint.
 - [x] Dodać testy integracyjne z odseparowaną konfiguracją i prawdziwymi
   narzędziami walidacyjnymi BIND, bez kontaktu z produkcyjnym `rndc`.

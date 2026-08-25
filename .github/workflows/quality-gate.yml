@@ -59,6 +59,21 @@ jobs:
             src/zonectl/ui/records/editor.py \
             src/zonectl/ui/zone_create_dialog.py \
             src/zonectl/ui/dialogs.py \
+            src/zonectl/ui/__init__.py \
+            src/zonectl/ui/about_view.py \
+            src/zonectl/ui/bind_onboarding_view.py \
+            src/zonectl/ui/credits.py \
+            src/zonectl/ui/dnssec_status_view.py \
+            src/zonectl/ui/form_style.py \
+            src/zonectl/ui/function_keys.py \
+            src/zonectl/ui/records/__init__.py \
+            src/zonectl/ui/records/controller.py \
+            src/zonectl/ui/records/keybindings.py \
+            src/zonectl/ui/records/new_record.py \
+            src/zonectl/ui/records/renderer.py \
+            src/zonectl/ui/rpz_status_view.py \
+            src/zonectl/ui/semantic_status.py \
+            src/zonectl/ui/zone_details_view.py \
             src/zonectl/core/dnssec_enable_transaction.py \
             src/zonectl/core/multi_zone_session.py \
             scripts/audit_public_api.py
