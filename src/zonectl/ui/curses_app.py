@@ -40,7 +40,12 @@ from ..core.bind_access_impact import BindAccessImpactError, BindAccessImpactRep
 from ..core.bind_acl_plan import BindAclPlanError, BindAclPlanner
 from ..core.bind_acl_transaction import BindAclTransaction
 from ..core.bind_environment_report import BindEnvironmentReporter
-from ..core.bind_onboarding_report import BindOnboardingReporter
+from ..core.bind_onboarding_report import (
+    BindOnboardingReport,
+    BindOnboardingReporter,
+    OnboardingBlocker,
+    OnboardingCandidate,
+)
 from ..core.bind_secondary_plan import BindSecondaryPlanError, BindSecondaryPlanner
 from ..core.bind_secondary_health import BindSecondaryHealthGate
 from ..core.bind_secondary_report import BindSecondaryReporter
@@ -55,7 +60,10 @@ from ..core.dnssec_disable_transaction import DnssecDisableTransaction
 from ..core.dnssec_enable_plan import DnssecEnablePlanner
 from ..core.dnssec_enable_transaction import DnssecEnableTransaction
 from ..core.dnssec_report import DnssecReporter
-from ..core.dnssec_onboarding_audit import DnssecOnboardingAuditor
+from ..core.dnssec_onboarding_audit import (
+    DnssecOnboardingAuditItem,
+    DnssecOnboardingAuditor,
+)
 from ..core.dnssec_withdrawal_backup import DnssecWithdrawalBackup
 from ..core.managed_zone_migration import (
     ManagedZoneMigrationError,
@@ -714,7 +722,10 @@ class CursesApp:
         finally:
             win.timeout(150)
 
-    def _draw_about_identity(self, win, top, left, width, heading_attr) -> None:
+    def _draw_about_identity(
+        self, win: curses.window, top: int, left: int, width: int,
+        heading_attr: int,
+    ) -> None:
         """Lewa kolumna ekranu F1: człowiek, AI i charakter projektu."""
         sections = (
             ("AUTOR I WŁAŚCICIEL PROJEKTU", ("Wojciech Lipiński", "Domain Expert • QA • Product Design")),
@@ -730,7 +741,10 @@ class CursesApp:
                 row += 1
             row += 2
 
-    def _draw_about_history(self, win, top, left, width, heading_attr) -> None:
+    def _draw_about_history(
+        self, win: curses.window, top: int, left: int, width: int,
+        heading_attr: int,
+    ) -> None:
         """Prawa kolumna ekranu F1: historia i repozytorium."""
         win.addnstr(top, left, "HISTORIA PROJEKTU", width, heading_attr)
         history = (
@@ -751,7 +765,10 @@ class CursesApp:
             row, left, "github.com/wojciechlipinski-pl/zonectl", width
         )
 
-    def _draw_about_compact(self, win, top, left, width, heading_attr) -> None:
+    def _draw_about_compact(
+        self, win: curses.window, top: int, left: int, width: int,
+        heading_attr: int,
+    ) -> None:
         """Jednokolumnowy wariant F1 dla węższych terminali."""
         lines = (
             ("AUTOR", heading_attr),
@@ -772,7 +789,10 @@ class CursesApp:
                 win.addnstr(row, left, line, width, attr)
                 row += 1
 
-    def _onboarding_summary_view(self, win, view, report) -> None:
+    def _onboarding_summary_view(
+        self, win: curses.window, view: BindOnboardingView,
+        report: BindOnboardingReport,
+    ) -> None:
         """Raport F2 z przejściem do listy kandydatów klawiszem Enter."""
         offset = 0
         try:
@@ -834,7 +854,7 @@ class CursesApp:
             win.timeout(150)
 
     @staticmethod
-    def _onboarding_footer(report) -> str:
+    def _onboarding_footer(report: BindOnboardingReport) -> str:
         """Pokazuje wyłącznie akcje mające dostępne elementy docelowe."""
         actions: list[str] = []
         if report.candidates:
@@ -844,7 +864,9 @@ class CursesApp:
         actions.extend(("↑/↓ PgUp/PgDn", "F10 Powrót"))
         return " " + "   ".join(actions) + " "
 
-    def _draw_onboarding_summary_48(self, win, report) -> None:
+    def _draw_onboarding_summary_48(
+        self, win: curses.window, report: BindOnboardingReport,
+    ) -> None:
         """Rysuje raport środowiska w dwukolumnowym układzie ZoneCTL 4.8."""
         height, width = win.getmaxyx()
         heading_attr = curses.A_BOLD | (
@@ -949,12 +971,16 @@ class CursesApp:
                 row += 1
 
     @staticmethod
-    def _refresh_onboarding_report(root_config):
+    def _refresh_onboarding_report(
+        root_config: str | Path,
+    ) -> tuple[BindOnboardingReport, BindOnboardingView]:
         """Ponownie odkrywa BIND po wyjściu z listy importu."""
         report = BindOnboardingReporter(Path(root_config)).collect()
         return report, BindOnboardingView.build(report)
 
-    def _onboarding_candidates_view(self, win, candidates) -> None:
+    def _onboarding_candidates_view(
+        self, win: curses.window, candidates: Sequence[OnboardingCandidate],
+    ) -> None:
         """Lista legacy: plan, dry-run i jawnie potwierdzony import."""
         selected = 0
         planner = self._zone_migration_planner()
@@ -1019,7 +1045,10 @@ class CursesApp:
                 ):
                     return
 
-    def _show_bind_onboarding_plan(self, win, zone_name, planner) -> None:
+    def _show_bind_onboarding_plan(
+        self, win: curses.window, zone_name: str,
+        planner: ManagedZoneMigrationPlanner,
+    ) -> None:
         """Wyświetla diff kandydata; ten przepływ nie ma ścieżki zapisu."""
         try:
             plan = planner.plan(zone_name)
@@ -1041,7 +1070,9 @@ class CursesApp:
                 win, title="Plan importu zablokowany", lines=[str(exc)], error=True
             )
 
-    def _onboarding_dnssec_view(self, win, blockers) -> None:
+    def _onboarding_dnssec_view(
+        self, win: curses.window, blockers: Sequence[OnboardingBlocker],
+    ) -> None:
         """Koncepcyjny ekran stref DNSSEC: wyłącznie plan i dry-run."""
         selected = 0
         planner = self._zone_migration_planner()
@@ -1109,7 +1140,8 @@ class CursesApp:
                 self._dnssec_onboarding_audit_view(win, blockers)
 
     def _draw_dnssec_onboarding_48(
-        self, win, blockers, selected, offset, visible
+        self, win: curses.window, blockers: Sequence[OnboardingBlocker],
+        selected: int, offset: int, visible: int,
     ) -> None:
         """Rysuje listę importu DNSSEC zgodnie z wizualnym kontraktem 4.8."""
         height, width = win.getmaxyx()
@@ -1175,7 +1207,10 @@ class CursesApp:
             win.addnstr(row, right, line, right_width)
             row += 1
 
-    def _show_dnssec_onboarding_plan(self, win, zone_name, planner) -> None:
+    def _show_dnssec_onboarding_plan(
+        self, win: curses.window, zone_name: str,
+        planner: ManagedZoneMigrationPlanner,
+    ) -> None:
         """Pokazuje deklaracyjny plan DNSSEC bez operacji na kluczach."""
         try:
             plan = planner.plan(zone_name, allow_dnssec=True)
@@ -1197,7 +1232,9 @@ class CursesApp:
                 win, title="Plan DNSSEC zablokowany", lines=[str(exc)], error=True
             )
 
-    def _dnssec_onboarding_audit_view(self, win, blockers) -> None:
+    def _dnssec_onboarding_audit_view(
+        self, win: curses.window, blockers: Sequence[OnboardingBlocker],
+    ) -> None:
         """Pokazuje zbiorczą gotowość DNSSEC w koncepcyjnym układzie 4.8."""
         toolkit = self.config.toolkit if self.config is not None else {}
         wanted = {item.name.rstrip(".").casefold() for item in blockers}
@@ -1239,7 +1276,10 @@ class CursesApp:
         lines.extend(("", "Audyt nie zmienił BIND, kluczy, KASP ani DS."))
         self._dnssec_onboarding_audit_result_view(win, results, ready)
 
-    def _dnssec_onboarding_audit_result_view(self, win, results, ready) -> None:
+    def _dnssec_onboarding_audit_result_view(
+        self, win: curses.window,
+        results: tuple[DnssecOnboardingAuditItem, ...], ready: int,
+    ) -> None:
         """Pokazuje zbiorczy audyt DNSSEC w układzie ZoneCTL 4.8."""
         selected = 0
         try:
@@ -1347,7 +1387,10 @@ class CursesApp:
         finally:
             win.timeout(150)
 
-    def _dry_run_dnssec_onboarding_import(self, win, zone_name, planner) -> None:
+    def _dry_run_dnssec_onboarding_import(
+        self, win: curses.window, zone_name: str,
+        planner: ManagedZoneMigrationPlanner,
+    ) -> None:
         """Uruchamia transakcyjny dry-run profilu DNSSEC bez aktywacji."""
         try:
             plan = planner.plan(zone_name, allow_dnssec=True)
@@ -1370,7 +1413,9 @@ class CursesApp:
                 win, title="Dry-run DNSSEC zablokowany", lines=[str(exc)], error=True
             )
 
-    def _dnssec_import_gate(self, zone_name):
+    def _dnssec_import_gate(
+        self, zone_name: str,
+    ) -> tuple[Zone, tuple[str, ...], Path, tuple[object, ...]]:
         """Wymaga aktywnego, w pełni zgodnego łańcucha DNSSEC."""
         zone = next(
             item for item in self.all_zones
@@ -1413,7 +1458,10 @@ class CursesApp:
         )
         return zone, resolvers, key_directory, fingerprint
 
-    def _commit_dnssec_onboarding_import(self, win, zone_name, planner) -> bool:
+    def _commit_dnssec_onboarding_import(
+        self, win: curses.window, zone_name: str,
+        planner: ManagedZoneMigrationPlanner,
+    ) -> bool:
         """Importuje deklarację DNSSEC z bramką przed i po rndc reconfig."""
         if self.read_only:
             self._message_view(
@@ -1426,7 +1474,7 @@ class CursesApp:
             plan = planner.plan(zone_name, allow_dnssec=True)
             toolkit = self.config.toolkit if self.config is not None else {}
 
-            def verify_dnssec(_zone_name):
+            def verify_dnssec(_zone_name: str) -> ManagedZoneMigrationStep:
                 report = DnssecReporter(
                     local_server=toolkit.get("dnssec_local_server", "127.0.0.1"),
                     resolver=resolvers[0],
@@ -1491,7 +1539,10 @@ class CursesApp:
             )
             return False
 
-    def _dry_run_bind_onboarding_import(self, win, zone_name, planner) -> None:
+    def _dry_run_bind_onboarding_import(
+        self, win: curses.window, zone_name: str,
+        planner: ManagedZoneMigrationPlanner,
+    ) -> None:
         """Waliduje transakcję importu bez zapisu plików i aktywacji BIND."""
         try:
             plan = planner.plan(zone_name)
@@ -1531,7 +1582,10 @@ class CursesApp:
                 error=True,
             )
 
-    def _commit_bind_onboarding_import(self, win, zone_name, planner) -> bool:
+    def _commit_bind_onboarding_import(
+        self, win: curses.window, zone_name: str,
+        planner: ManagedZoneMigrationPlanner,
+    ) -> bool:
         """Importuje jedną deklarację po dwóch niezależnych potwierdzeniach."""
         if self.read_only:
             self._message_view(
