@@ -29,10 +29,14 @@ class AuditLog:
 
     @staticmethod
     def identity() -> tuple[str, int]:
-        uid = os.getuid()
+        getuid = getattr(os, "getuid", None)
+        uid = int(getuid()) if getuid is not None else 0
         try:
-            user = pwd.getpwuid(uid).pw_name
-        except KeyError:
+            getpwuid = getattr(pwd, "getpwuid", None)
+            if getpwuid is None:
+                raise KeyError(uid)
+            user = str(getpwuid(uid).pw_name)
+        except (KeyError, AttributeError):
             user = str(uid)
         sudo_user = os.environ.get("SUDO_USER")
         return (sudo_user or user, uid)

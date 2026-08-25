@@ -5,6 +5,7 @@ from dataclasses import replace
 
 from .zone_document import RecordNode, ZoneDocument
 from .zone_model import ChangeKind, ZoneModel
+from .zone_parser import DNSRecord
 
 
 class ZoneDocumentAdapterError(RuntimeError):
@@ -144,7 +145,7 @@ class ZoneDocumentAdapter:
     def _apply_add(
         self,
         identifier: int,
-        record,
+        record: DNSRecord,
     ) -> None:
         node = self._added_nodes.get(identifier)
 

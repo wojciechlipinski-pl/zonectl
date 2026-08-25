@@ -59,4 +59,8 @@ def test_quality_gate_type_checks_only_incremental_critical_scope() -> None:
     assert "bind_secondary_transaction.py" in text
     assert "zone_inventory.py" in text
     assert "edit_lock.py" in text
+    assert "audit.py" in text
+    assert "zone_document_adapter.py" in text
+    assert "zone_writer.py" in text
+    assert "zone_serializer.py" in text
     assert "scripts/audit_public_api.py" in text

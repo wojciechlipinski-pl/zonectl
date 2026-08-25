@@ -283,7 +283,9 @@ class ZoneSerializer:
         path = Path(raw_path)
 
         try:
-            os.fchmod(fd, 0o600)
+            fchmod = getattr(os, "fchmod", None)
+            if fchmod is not None:
+                fchmod(fd, 0o600)
 
             with os.fdopen(
                 fd,

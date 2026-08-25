@@ -177,7 +177,8 @@ zrealizowane, a `[ ]` pozostają do wykonania.
   plików stref. Kolejny zakres obejmuje bezpieczną serializację manifestów
   audytowych, analizę wpływu ACL, health secondary i parser konfiguracji BIND,
   a następnie planowanie przypisań secondary, transakcje ACL i secondary,
-  inwentaryzację stref nieaktywnych oraz blokady sesji edycji.
+  inwentaryzację stref nieaktywnych, blokady sesji edycji oraz bezstratny
+  adapter dokumentu, serializację, zapis kandydatów i dziennik audytowy.
 - [ ] Dodać automatyczne formatowanie i lint.
 - [x] Dodać testy integracyjne z odseparowaną konfiguracją i prawdziwymi
   narzędziami walidacyjnymi BIND, bez kontaktu z produkcyjnym `rndc`.
