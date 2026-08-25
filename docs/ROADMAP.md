@@ -511,10 +511,11 @@ zaczynając od raportu wpływu tylko do odczytu.
   `legacy_v220.py` jako jawnie wydzielony wyjątek kompatybilności.
 - [x] Dodać izolowane workflow jakości, budowy pakietów i ręcznie
   zatwierdzanego wydania oraz test spójności wersji 4.9.0.
-- [ ] Zbudować końcowe wheel i DEB 4.9.0, uruchomić Lintian i zweryfikować
+- [x] Zbudować końcowe wheel i DEB 4.9.0, uruchomić Lintian i zweryfikować
   sumy SHA-256 oraz brak plików `/etc/bind`.
-- [ ] Przetestować aktualizację 4.8.3 → 4.9.0 bez zmiany konfiguracji BIND,
-  scalić gałąź, utworzyć tag `v4.9.0` i uruchomić zatwierdzony release.
+- [x] Przetestować aktualizację 4.8.3 → 4.9.0 bez zmiany struktury, metadanych
+  ani zawartości `/etc/bind`, przy aktywnej usłudze i poprawnym raporcie.
+- [ ] Scalić gałąź, utworzyć tag `v4.9.0` i uruchomić zatwierdzony release.
 
 ## ZoneCTL 4.9 — semantyczna czytelność TUI
 

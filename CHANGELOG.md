@@ -86,6 +86,12 @@
 
 ### Verified
 
+- CI-built wheel and Debian artifacts for 4.9.0 passed SHA-256 verification,
+  Debian metadata and content checks, including the absence of `/etc/bind`
+- a production upgrade from 4.8.3-1 to 4.9.0-1 preserved the complete
+  structure, ownership, modes and file contents of `/etc/bind`; BIND remained
+  active and the read-only environment report confirmed 23 loaded primary
+  zones, 19 DNSSEC zones and a healthy managed RPZ integration
 - a controlled drill on a synthetic, non-delegated zone completed creation,
   disable, restore, quarantine and package recovery against a live BIND
   instance
