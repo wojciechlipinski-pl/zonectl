@@ -7,6 +7,7 @@ import os
 import shutil
 import tempfile
 import uuid
+from collections.abc import Iterable
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
@@ -261,7 +262,10 @@ class DnssecEnableTransaction:
         cls._atomic_write(target, source.read_bytes(), 0o640, parent.st_uid, parent.st_gid)
 
     @staticmethod
-    def _remove_new_artifacts(current, before: set[Path]) -> None:
+    def _remove_new_artifacts(
+        current: Iterable[Path],
+        before: set[Path],
+    ) -> None:
         for path in set(current) - before:
             if path.is_file():
                 path.unlink()

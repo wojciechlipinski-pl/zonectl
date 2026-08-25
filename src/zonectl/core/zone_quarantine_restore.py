@@ -316,7 +316,9 @@ class QuarantineRestoreTransaction:
                 handle.flush()
                 os.fsync(handle.fileno())
             os.chmod(temporary, mode)
-            os.chown(temporary, uid, gid)
+            chown = getattr(os, "chown", None)
+            if chown is not None:
+                chown(temporary, uid, gid)
             os.replace(temporary, path)
         finally:
             temporary.unlink(missing_ok=True)

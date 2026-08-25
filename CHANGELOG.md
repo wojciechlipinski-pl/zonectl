@@ -24,7 +24,8 @@
   adaptation, zone serialization, candidate writing, audit logging, the core
   transaction engine and zone edit sessions; managed RPZ installation and
   external RPZ migration are now covered too, followed by record editing,
-  zone creation forms and shared TUI dialogs
+  zone creation forms and shared TUI dialogs; DNSSEC enablement and multi-zone
+  editing complete strict typing coverage of the core module set
 
 - a dependency-free AST audit inventories missing public API docstrings, while
   CI initially enforces complete documentation only for the new critical

@@ -59,6 +59,8 @@ jobs:
             src/zonectl/ui/records/editor.py \
             src/zonectl/ui/zone_create_dialog.py \
             src/zonectl/ui/dialogs.py \
+            src/zonectl/core/dnssec_enable_transaction.py \
+            src/zonectl/core/multi_zone_session.py \
             scripts/audit_public_api.py
 
   tests:

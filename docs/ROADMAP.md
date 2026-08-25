@@ -182,6 +182,8 @@ zrealizowane, a `[ ]` pozostają do wykonania.
   główny silnik transakcji, sesję edycji strefy oraz instalację MANAGED RPZ i
   transakcyjną migrację zewnętrznej konfiguracji RPZ. Pierwszy zakres TUI
   obejmuje edytor rekordów, formularz tworzenia strefy i wspólne dialogi.
+  Wszystkie moduły core przechodzą pełny audyt mypy; ostatni zakres domyka
+  transakcję włączenia DNSSEC i sesję edycji wielu stref.
 - [ ] Dodać automatyczne formatowanie i lint.
 - [x] Dodać testy integracyjne z odseparowaną konfiguracją i prawdziwymi
   narzędziami walidacyjnymi BIND, bez kontaktu z produkcyjnym `rndc`.

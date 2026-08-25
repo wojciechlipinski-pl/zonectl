@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass, field
+from types import TracebackType
 
 from .models import Zone
 from .zone_edit_session import ZoneEditSession, ZoneSaveResult
@@ -131,5 +132,10 @@ class MultiZoneEditSession:
     def __enter__(self) -> "MultiZoneEditSession":
         return self
 
-    def __exit__(self, exc_type, exc, traceback) -> None:
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc: BaseException | None,
+        traceback: TracebackType | None,
+    ) -> None:
         self.close(discard=True)
