@@ -1,5 +1,21 @@
+import curses
+
 from zonectl.core.zone_parser import DNSRecord
 from zonectl.ui.records.new_record import NewRecordDialog
+
+
+class FakeWindow:
+    def __init__(self, keys: list[int]):
+        self.keys = list(keys)
+        self.timeouts: list[int] = []
+
+    def getch(self) -> int:
+        if not self.keys:
+            return -1
+        return self.keys.pop(0)
+
+    def timeout(self, value: int) -> None:
+        self.timeouts.append(value)
 
 
 def record(
@@ -106,6 +122,34 @@ def test_build_record_accepts_zone_apex() -> None:
     assert error == ""
     assert result is not None
     assert result.owner == "example.pl."
+
+
+def test_build_record_accepts_inherited_ttl() -> None:
+    result, error = NewRecordDialog.build_record(
+        zone_name="example.pl",
+        owner="www2",
+        rtype="CNAME",
+        ttl_text="",
+        rdata="@",
+    )
+
+    assert error == ""
+    assert result is not None
+    assert result.ttl is None
+    assert result.raw == "www2.example.pl. IN CNAME @"
+
+
+def test_new_record_dialog_decodes_putty_linux_f2() -> None:
+    window = FakeWindow([27, *b"[[B"])
+
+    assert NewRecordDialog._get_key(window) == curses.KEY_F2
+
+
+def test_new_record_dialog_decodes_xterm_f2() -> None:
+    for sequence in (b"OQ", b"[12~"):
+        window = FakeWindow([27, *sequence])
+
+        assert NewRecordDialog._get_key(window) == curses.KEY_F2
 
 
 def test_build_record_rejects_invalid_ipv4() -> None:

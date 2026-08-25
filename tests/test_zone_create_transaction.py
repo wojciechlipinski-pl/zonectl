@@ -28,6 +28,8 @@ def plan(tmp_path: Path):
             zone_directory=tmp_path / "zones",
             managed_config=tmp_path / "bind" / "zones.conf",
             managed_zone_directory=tmp_path / "bind" / "zones.d",
+            group="Klienci",
+            groups_config=tmp_path / "zonectl" / "groups.yaml",
         )
     )
 
@@ -74,6 +76,7 @@ def test_commit_creates_files_and_manifest(tmp_path: Path) -> None:
         f'include "{candidate.zone_declaration_file}";'
         in candidate.managed_config.read_text()
     )
+    assert "  Klienci:\n    - example.pl" in candidate.groups_config.read_text()
     manifest = Path(result.manifest or "")
     assert manifest.is_file()
     assert json.loads(manifest.read_text())["status"] == "COMMIT"
@@ -110,6 +113,7 @@ def test_zone_validation_failure_rolls_back_both_files(
     assert not candidate.zone_file.exists()
     assert not candidate.zone_declaration_file.exists()
     assert candidate.managed_config.read_text() == "// original\n"
+    assert not candidate.groups_config.exists()
 
 
 def test_config_validation_failure_removes_new_files(
@@ -129,6 +133,7 @@ def test_config_validation_failure_removes_new_files(
     assert not candidate.zone_file.exists()
     assert not candidate.zone_declaration_file.exists()
     assert not candidate.managed_config.exists()
+    assert not candidate.groups_config.exists()
 
 
 def test_existing_zone_file_is_never_overwritten(tmp_path: Path) -> None:

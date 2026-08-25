@@ -1,3 +1,12 @@
+zonectl (4.9.0-1) unstable; urgency=medium
+
+  * Add semantic TUI status colors, safe multiline SOA editing and refresh UX.
+  * Harden zone lifecycle, quarantine retention and guarded atomic purge.
+  * Add isolated quality, package and approved release workflows.
+  * Complete strict typing coverage of the modern core, TUI and CLI.
+
+ -- Wojciech Lipiński <wojciech.lipinski.elk@gmail.com>  Tue, 25 Aug 2026 16:00:00 +0200
+
 zonectl (4.8.3-1) unstable; urgency=medium
 
   * Add guarded impact analysis and operational health checks for BIND access.

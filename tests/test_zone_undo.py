@@ -96,7 +96,10 @@ def test_session_undo_last_change_restores_prepared_soa(
         UnusedEngine(),
         today_provider=lambda: date(2026, 7, 30),
     )
-    view = session.model.record_views[0]
+    view = next(
+        item for item in session.model.record_views
+        if item.record.rtype == "A"
+    )
     session.model.replace_by_identifier(
         view.identifier,
         record("www", "192.0.2.40"),

@@ -18,6 +18,7 @@ from .runner import run
 
 @dataclass(slots=True)
 class ManagedZoneMigrationStep:
+    """One observable step of a managed declaration migration."""
     name: str
     ok: bool
     message: str
@@ -25,6 +26,7 @@ class ManagedZoneMigrationStep:
 
 @dataclass(slots=True)
 class ManagedZoneMigrationResult:
+    """Final status, backup and rollback state for declaration migration."""
     transaction_id: str
     zone: str
     status: str
@@ -66,6 +68,7 @@ class ManagedZoneMigrationTransaction:
         commit: bool = False,
         activate: bool = False,
     ) -> ManagedZoneMigrationResult:
+        """Apply a verified migration plan or return its dry-run result."""
         txid = (
             datetime.now().strftime("%Y%m%d-%H%M%S")
             + f"-zone-migrate-{plan.zone}-{uuid.uuid4().hex[:8]}"
@@ -156,7 +159,7 @@ class ManagedZoneMigrationTransaction:
                     ))
                     if not step.ok:
                         rollback_ok = False
-            except OSError as rollback_error:
+            except Exception as rollback_error:
                 rollback_ok = False
                 result.steps.append(ManagedZoneMigrationStep(
                     "rollback", False, str(rollback_error)
@@ -208,7 +211,9 @@ class ManagedZoneMigrationTransaction:
                 stream.flush()
                 os.fsync(stream.fileno())
             os.chmod(temporary, mode)
-            os.chown(temporary, uid, gid)
+            chown = getattr(os, "chown", None)
+            if chown is not None:
+                chown(temporary, uid, gid)
             os.replace(temporary, path)
         finally:
             temporary.unlink(missing_ok=True)

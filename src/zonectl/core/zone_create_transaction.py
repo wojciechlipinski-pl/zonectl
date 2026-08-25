@@ -1,3 +1,5 @@
+"""Transactional creation and activation of managed DNS zones."""
+
 from __future__ import annotations
 
 import json
@@ -16,6 +18,7 @@ from .zone_lifecycle import ZoneCreatePlan
 
 @dataclass(slots=True)
 class ZoneCreateStep:
+    """One observable step of a zone creation transaction."""
     name: str
     ok: bool
     message: str
@@ -23,6 +26,7 @@ class ZoneCreateStep:
 
 @dataclass(slots=True)
 class ZoneCreateResult:
+    """Final status, manifest and rollback state for zone creation."""
     transaction_id: str
     zone: str
     status: str
@@ -33,6 +37,7 @@ class ZoneCreateResult:
 
     @property
     def ok(self) -> bool:
+        """Return whether every recorded transaction step succeeded."""
         return bool(self.steps) and all(step.ok for step in self.steps)
 
 
@@ -48,12 +53,14 @@ class ZoneCreateTransaction:
         self,
         manifest_directory: Path,
         *,
+        root_config: Path = Path("/etc/bind/named.conf"),
         zone_validator: Validator | None = None,
         config_validator: ConfigValidator | None = None,
         activator: ZoneAction | None = None,
         loaded_verifier: ZoneAction | None = None,
     ) -> None:
         self.manifest_directory = manifest_directory
+        self.root_config = root_config
         self.zone_validator = zone_validator or self._validate_zone
         self.config_validator = (
             config_validator or self._validate_config
@@ -70,6 +77,7 @@ class ZoneCreateTransaction:
         commit: bool = False,
         activate: bool = False,
     ) -> ZoneCreateResult:
+        """Apply a plan or return its side-effect-free dry-run result."""
         txid = (
             datetime.now().strftime("%Y%m%d-%H%M%S")
             + f"-create-{plan.zone_name}-{uuid.uuid4().hex[:8]}"
@@ -117,9 +125,16 @@ class ZoneCreateTransaction:
             if config_existed
             else None
         )
+        groups_existed = plan.groups_config.exists()
+        original_groups = (
+            plan.groups_config.read_bytes()
+            if groups_existed
+            else None
+        )
         zone_created = False
         config_written = False
         declaration_created = False
+        groups_written = False
         activation_attempted = False
         try:
             self._atomic_write(
@@ -172,6 +187,20 @@ class ZoneCreateTransaction:
                 )
             )
 
+            if plan.groups_text is not None:
+                self._atomic_write(
+                    plan.groups_config,
+                    plan.groups_text.encode("utf-8"),
+                )
+                groups_written = True
+                result.steps.append(
+                    ZoneCreateStep(
+                        "groups-config",
+                        True,
+                        f"Przypisano strefę do grupy {plan.group}",
+                    )
+                )
+
             zone_step = self.zone_validator(
                 plan.zone_name,
                 plan.zone_file,
@@ -180,9 +209,7 @@ class ZoneCreateTransaction:
             if not zone_step.ok:
                 raise RuntimeError(zone_step.message)
 
-            config_step = self.config_validator(
-                plan.managed_config
-            )
+            config_step = self.config_validator(self.root_config)
             result.steps.append(config_step)
             if not config_step.ok:
                 raise RuntimeError(config_step.message)
@@ -216,6 +243,14 @@ class ZoneCreateTransaction:
                             plan.managed_config,
                             original_config,
                         )
+                if groups_written:
+                    if original_groups is None:
+                        plan.groups_config.unlink(missing_ok=True)
+                    else:
+                        self._atomic_write(
+                            plan.groups_config,
+                            original_groups,
+                        )
                 if zone_created:
                     plan.zone_file.unlink(missing_ok=True)
                 if declaration_created:
@@ -233,7 +268,7 @@ class ZoneCreateTransaction:
                     )
                     if not restore_step.ok:
                         raise RuntimeError(restore_step.message)
-            except OSError as rollback_error:
+            except Exception as rollback_error:
                 rollback_ok = False
                 result.steps.append(
                     ZoneCreateStep(
@@ -296,9 +331,11 @@ class ZoneCreateTransaction:
         if path.exists():
             owner = path.stat()
             uid, gid = owner.st_uid, owner.st_gid
+            mode = owner.st_mode & 0o777
         else:
             parent = path.parent.stat()
             uid, gid = parent.st_uid, parent.st_gid
+            mode = 0o640
         fd, temporary_name = tempfile.mkstemp(
             prefix=f".{path.name}.",
             dir=path.parent,
@@ -309,8 +346,10 @@ class ZoneCreateTransaction:
                 handle.write(content)
                 handle.flush()
                 os.fsync(handle.fileno())
-            os.chmod(temporary, 0o640)
-            os.chown(temporary, uid, gid)
+            os.chmod(temporary, mode)
+            chown = getattr(os, "chown", None)
+            if chown is not None:
+                chown(temporary, uid, gid)
             os.replace(temporary, path)
         finally:
             temporary.unlink(missing_ok=True)

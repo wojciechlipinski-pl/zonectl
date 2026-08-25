@@ -1,0 +1,85 @@
+name: Package build
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "debian/**"
+      - "src/**"
+      - "tests/**"
+      - "pyproject.toml"
+      - ".github/workflows/package-build.yml"
+  pull_request:
+    paths:
+      - "debian/**"
+      - "src/**"
+      - "tests/**"
+      - "pyproject.toml"
+      - ".github/workflows/package-build.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Wheel and Debian package
+    runs-on: ubuntu-latest
+    container: debian:trixie-slim
+    steps:
+      - name: Install build toolchain
+        run: |
+          apt-get update
+          apt-get install --yes --no-install-recommends \
+            build-essential \
+            debhelper \
+            devscripts \
+            dh-python \
+            dpkg-dev \
+            git \
+            lintian \
+            pybuild-plugin-pyproject \
+            python3-all \
+            python3-build \
+            python3-installer \
+            python3-pytest \
+            python3-setuptools \
+            bind9-utils \
+            bind9-dnsutils \
+            ca-certificates
+      - name: Check out repository
+        uses: actions/checkout@v5
+      - name: Build wheel
+        run: python3 -m build --wheel --no-isolation
+      - name: Build Debian package and run package tests
+        run: dpkg-buildpackage --build=binary --no-sign
+      - name: Verify Debian package metadata and contents
+        shell: bash
+        run: |
+          deb="$(find .. -maxdepth 1 -type f -name 'zonectl_*_all.deb' -print -quit)"
+          test -n "$deb"
+          test "$(dpkg-deb -f "$deb" Package)" = "zonectl"
+          test "$(dpkg-deb -f "$deb" Architecture)" = "all"
+          dpkg-deb -c "$deb" > package-contents.txt
+          grep -q './usr/bin/zctl$' package-contents.txt
+          if grep -q './etc/bind/' package-contents.txt; then
+            echo "BŁĄD: pakiet zawiera pliki /etc/bind"
+            exit 1
+          fi
+      - name: Run Lintian
+        run: lintian ../zonectl_*.changes
+      - name: Collect verified artifacts and checksums
+        shell: bash
+        run: |
+          mkdir -p artifacts
+          cp dist/zonectl-*.whl artifacts/
+          cp ../zonectl_*_all.deb artifacts/
+          cd artifacts
+          sha256sum zonectl-*.whl zonectl_*_all.deb > SHA256SUMS
+          sha256sum --check SHA256SUMS
+      - name: Upload verified build artifacts
+        uses: actions/upload-artifact@v6
+        with:
+          name: zonectl-packages
+          path: artifacts/
+          if-no-files-found: error
+          retention-days: 14

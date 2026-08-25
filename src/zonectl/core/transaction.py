@@ -12,6 +12,8 @@ import uuid
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
+from types import TracebackType
+from typing import Any, Callable, TextIO, cast
 
 from .audit import AuditLog
 from .config import ToolkitConfig
@@ -24,6 +26,12 @@ from .paths import (
     TRANSACTION_DIR,
 )
 from .runner import CommandResult, run
+
+
+_flock = cast(Callable[[int, int], None], getattr(fcntl, "flock"))
+_LOCK_EX = cast(int, getattr(fcntl, "LOCK_EX"))
+_LOCK_NB = cast(int, getattr(fcntl, "LOCK_NB"))
+_LOCK_UN = cast(int, getattr(fcntl, "LOCK_UN"))
 
 
 @dataclass(slots=True)
@@ -55,13 +63,13 @@ class TransactionResult:
 class ZoneLock:
     def __init__(self, path: Path):
         self.path = path
-        self.handle = None
+        self.handle: TextIO | None = None
 
-    def __enter__(self):
+    def __enter__(self) -> "ZoneLock":
         self.path.parent.mkdir(parents=True, exist_ok=True)
         self.handle = self.path.open("a+")
         try:
-            fcntl.flock(self.handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+            _flock(self.handle.fileno(), _LOCK_EX | _LOCK_NB)
         except BlockingIOError as exc:
             self.handle.close()
             raise RuntimeError(f"Strefa jest już objęta inną transakcją: {self.path.stem}") from exc
@@ -71,9 +79,14 @@ class ZoneLock:
         self.handle.flush()
         return self
 
-    def __exit__(self, exc_type, exc, tb):
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc: BaseException | None,
+        tb: TracebackType | None,
+    ) -> None:
         if self.handle:
-            fcntl.flock(self.handle.fileno(), fcntl.LOCK_UN)
+            _flock(self.handle.fileno(), _LOCK_UN)
             self.handle.close()
         try:
             self.path.unlink()
@@ -499,7 +512,7 @@ class TransactionEngine:
         self,
         zone_name: str | None = None,
         limit: int = 50,
-    ) -> list[dict]:
+    ) -> list[dict[str, object]]:
         """Odczytaj ostatnie manifesty transakcji."""
         if not self.transaction_dir.exists():
             return []
@@ -509,7 +522,7 @@ class TransactionEngine:
             if zone_name
             else None
         )
-        records: list[dict] = []
+        records: list[dict[str, object]] = []
         paths = sorted(
             self.transaction_dir.glob("*.json"),
             key=lambda path: path.stat().st_mtime,
@@ -524,7 +537,10 @@ class TransactionEngine:
             except (OSError, json.JSONDecodeError):
                 continue
 
-            zone = str(payload.get("zone", ""))
+            if not isinstance(payload, dict):
+                continue
+            record = cast(dict[str, object], payload)
+            zone = str(record.get("zone", ""))
 
             if (
                 wanted is not None
@@ -532,14 +548,14 @@ class TransactionEngine:
             ):
                 continue
 
-            payload.setdefault(
+            record.setdefault(
                 "saved_at",
                 datetime.fromtimestamp(
                     path.stat().st_mtime,
                     tz=timezone.utc,
                 ).astimezone().isoformat(timespec="seconds"),
             )
-            records.append(payload)
+            records.append(record)
 
             if len(records) >= max(1, limit):
                 break
@@ -570,7 +586,7 @@ class TransactionEngine:
             )
 
         try:
-            payload = json.loads(
+            payload_raw = json.loads(
                 path.read_text(encoding="utf-8")
             )
         except (OSError, json.JSONDecodeError) as exc:
@@ -578,6 +594,9 @@ class TransactionEngine:
                 f"Nie można odczytać manifestu transakcji: {path}"
             ) from exc
 
+        if not isinstance(payload_raw, dict):
+            raise RuntimeError(f"Nieprawidłowy manifest transakcji: {path}")
+        payload = cast(dict[str, Any], payload_raw)
         try:
             steps = [
                 StepResult(
@@ -649,11 +668,14 @@ class TransactionEngine:
                 os.fsync(out.fileno())
             os.chmod(temp, stat.S_IMODE(target_stat.st_mode))
             try:
-                os.chown(temp, target_stat.st_uid, target_stat.st_gid)
+                chown = getattr(os, "chown", None)
+                if chown is not None:
+                    chown(temp, target_stat.st_uid, target_stat.st_gid)
             except PermissionError:
                 pass
             os.replace(temp, target)
-            dir_fd = os.open(target.parent, os.O_DIRECTORY)
+            directory_flag = int(getattr(os, "O_DIRECTORY", 0))
+            dir_fd = os.open(target.parent, directory_flag)
             try:
                 os.fsync(dir_fd)
             finally:
@@ -674,7 +696,11 @@ class TransactionEngine:
         except Exception as exc:
             return StepResult("rollback", False, str(exc))
 
-    def _save_manifest(self, result: TransactionResult, extra: dict) -> None:
+    def _save_manifest(
+        self,
+        result: TransactionResult,
+        extra: dict[str, object],
+    ) -> None:
         self.transaction_dir.mkdir(parents=True, exist_ok=True)
         payload = asdict(result)
         payload.update(extra)
@@ -686,10 +712,15 @@ class TransactionEngine:
         path = self.transaction_dir / f"{result.transaction_id}.json"
         path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
 
-    def _finish(self, result: TransactionResult, outcome: str, **extra) -> TransactionResult:
+    def _finish(
+        self,
+        result: TransactionResult,
+        outcome: str,
+        **extra: object,
+    ) -> TransactionResult:
         result.status = outcome
         self._save_manifest(result, {"outcome": outcome, **extra})
-        audit_details = {
+        audit_details: dict[str, object] = {
             "backup": result.backup,
             "rolled_back": result.rolled_back,
         }

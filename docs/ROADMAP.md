@@ -52,8 +52,10 @@ zrealizowane, a `[ ]` pozostają do wykonania.
 - [x] Dodać kreator nowej domeny w TUI, oparty na tym samym planie i
   transakcji co polecenie CLI.
 - [x] Walidować nazwę domeny i odrzucać strefy już istniejące.
-- [ ] Umożliwić wybór grupy, serwerów NS, administratora SOA i parametrów
+- [x] Umożliwić wybór grupy, serwerów NS, administratora SOA i parametrów
   czasowych SOA.
+- [x] Zapisywać przypisanie grupy atomowo w `groups.yaml` w ramach tej samej
+  transakcji i przywracać poprzedni plik podczas rollbacku.
 - [x] Generować minimalny plik strefy z SOA, NS i poprawnym serialem.
 - [x] Opcjonalnie dodawać rekordy A/AAAA dla apexu i `www`.
 - [x] Dodawać deklarację `primary` do zarządzanego fragmentu konfiguracji
@@ -88,17 +90,20 @@ zrealizowane, a `[ ]` pozostają do wykonania.
 - [x] Zapisywać sumy kontrolne, manifest i kompletny pakiet odtworzeniowy.
 - [x] Umożliwić odtworzenie strefy z kwarantanny z weryfikacją manifestu
   i sum SHA-256, bez usuwania pakietu odtworzeniowego.
-- [ ] Dodać konfigurowalny okres retencji przed trwałym usunięciem.
-- [ ] Trwałe usunięcie udostępnić wyłącznie jako osobną operację
-  administracyjną.
+- [x] Dodać konfigurowalny okres retencji przed trwałym usunięciem oraz
+  odczytowy plan weryfikujący wiek, manifest i sumy SHA-256 pakietu.
+- [x] Trwałe usunięcie udostępnić wyłącznie jako osobną operację
+  administracyjną z domyślnym dry-runem, ponowną kontrolą integralności,
+  potwierdzeniem strefy i identyfikatora pakietu, atomowym stagingiem,
+  zweryfikowanym archiwum ratunkowym oraz zewnętrznym manifestem.
 
 ### Wymagania bezpieczeństwa 4.4
 
 - [x] Dodać testy integracyjne tworzenia, wyłączania i przywracania z
   odseparowaną instancją BIND.
-- [ ] Testować awarie `named-checkzone`, `named-checkconf`, `rndc reconfig`
+- [x] Testować awarie `named-checkzone`, `named-checkconf`, `rndc reconfig`
   i weryfikacji załadowania.
-- [ ] Potwierdzić rollback po awarii na każdym etapie cyklu życia strefy.
+- [x] Potwierdzić rollback po awarii na każdym etapie cyklu życia strefy.
 - [x] Wykluczyć przypadkowe zarządzanie automatyczną strefą RPZ jak zwykłą
   domeną.
 - [x] Wykrywać strefy DNSSEC i `inline-signing`, raportować ich profil oraz
@@ -163,7 +168,48 @@ zrealizowane, a `[ ]` pozostają do wykonania.
 - [x] Zachować względną nazwę właściciela i komentarz inline po edycji.
 - [ ] Uzupełnić docstringi publicznych klas i metod.
 - [ ] Rozszerzyć pokrycie testami krytycznych ścieżek zapisu.
-- [ ] Dodać statyczną analizę typów.
+- [x] Dodać statyczną analizę typów. Ścisła bramka `mypy` obejmuje już nowe
+  moduły retencji/purge oraz audyt publicznego API; zakres należy rozszerzać
+  stopniowo po usunięciu błędów typów z kolejnych modułów. Bramką objęto już
+  także transakcje tworzenia, wyłączania i przywracania stref oraz pakowania
+  strefy do kwarantanny i jej bezpiecznego odtwarzania, a także wykrywanie
+  konfiguracji oraz planowanie i transakcje migracji i relokacji zarządzanych
+  plików stref. Kolejny zakres obejmuje bezpieczną serializację manifestów
+  audytowych, analizę wpływu ACL, health secondary i parser konfiguracji BIND,
+  a następnie planowanie przypisań secondary, transakcje ACL i secondary,
+  inwentaryzację stref nieaktywnych, blokady sesji edycji oraz bezstratny
+  adapter dokumentu, serializację, zapis kandydatów, dziennik audytowy,
+  główny silnik transakcji, sesję edycji strefy oraz instalację MANAGED RPZ i
+  transakcyjną migrację zewnętrznej konfiguracji RPZ. Pierwszy zakres TUI
+  obejmuje edytor rekordów, formularz tworzenia strefy i wspólne dialogi.
+  Wszystkie moduły core przechodzą pełny audyt mypy; ostatni zakres domyka
+  transakcję włączenia DNSSEC i sesję edycji wielu stref. Bramką objęto też
+  wszystkie pomocnicze moduły TUI; pozostały dług typów interfejsu skupia się
+  w głównej aplikacji `curses_app.py`. Pierwszy etap porządkuje typy wspólnych
+  funkcji sortowania i renderowania, zmniejszając raport mypy ze 100 do 56
+  błędów. Drugi etap typuje onboarding BIND, audyt i import DNSSEC oraz ekran
+  informacji o projekcie, pozostawiając 33 błędy przed objęciem całego pliku
+  bramką. Trzeci etap typuje wspólne widoki wyników, walidację rekordów,
+  sesję wielu stref oraz plany i wyniki transakcji DNSSEC, redukując raport
+  do 15 błędów. Ostatni etap typuje obsługę ACL i secondary, edytory list oraz
+  migrację i relokację stref; cały `curses_app.py` przechodzi rygorystyczny
+  audyt i zostaje objęty bramką CI. Pierwszy etap porządkowania głównego CLI
+  rozdziela typy wyników poleceń BIND access, ACL, secondary, onboardingu i
+  MANAGED RPZ, zmniejszając liczbę błędów należących do `cli.py` z 304 do 196;
+  drugi etap rozdziela instalację MANAGED RPZ, migrację EXTERNAL RPZ oraz
+  inwentaryzację i audyt dostępu BIND, pozostawiając 139 błędów. Trzeci etap
+  typuje potwierdzenie DS, finalizację seriala oraz plan, wykonanie
+  i pakiet bezpieczeństwa wycofania DNSSEC, pozostawiając 95 błędów. Czwarty
+  etap rozdziela plan i wynik włączenia DNSSEC, kontrole DS oraz
+  potwierdzenie wycofania, pozostawiając 75 błędów. Piąty etap typuje raport
+  DNSSEC, migrację zarządzanych stref, raport
+  bezpieczeństwa cyklu życia, inwentaryzację i retencję kwarantanny,
+  pozostawiając 51 błędów. Szósty etap rozdziela purge, odtwarzanie z
+  kwarantanny, kwarantannę oraz transakcje disable, restore i create,
+  pozostawiając 12 błędów przed końcowym objęciem modułu bramką. Ostatni etap
+  typuje wspólne funkcje CLI i usuwa pozostałe kolizje inferencji; `cli.py`
+  przechodzi ścisły audyt i trafia do CI. Historyczny moduł kompatybilności
+  `legacy_v220.py` pozostaje jawnym, osobno wydzielonym wyjątkiem.
 - [ ] Dodać automatyczne formatowanie i lint.
 - [x] Dodać testy integracyjne z odseparowaną konfiguracją i prawdziwymi
   narzędziami walidacyjnymi BIND, bez kontaktu z produkcyjnym `rndc`.
@@ -360,6 +406,9 @@ zaczynając od raportu wpływu tylko do odczytu.
 - [x] Dla dotkniętych stref sprawdzać po aktywacji flagę AA i serial SOA na
   primary oraz secondary; brak AA i serial wyższy od primary traktować jako
   błąd, a niższy serial secondary jako kontrolowany stan PENDING.
+- [x] Stosować tę samą semantykę w głównym statusie strefy: opóźniony
+  secondary pokazywać jako żółty `WARN` w konfigurowalnym oknie propagacji,
+  a dopiero po jego przekroczeniu jako czerwony `FAIL`.
 - [x] Udostępnić tę samą kontrolę jako odczytowy audyt
   `bind secondary-health`, możliwy do uruchomienia przed zmianą produkcyjną.
 - [x] Wymagać niepustego uzasadnienia `--reason` dla każdego commitu ACL,
@@ -375,8 +424,20 @@ zaczynając od raportu wpływu tylko do odczytu.
 
 - [x] Dodać macierz wymuszonych awarii dla zapisu, walidacji, aktywacji i
   rollbacku ACL oraz secondary.
-- [ ] Uzupełnić analogiczną macierz awarii dla wszystkich operacji cyklu
+- [x] Uzupełnić analogiczną macierz awarii dla wszystkich operacji cyklu
   życia stref.
+- [x] Objąć macierzą operację tworzenia strefy: wymuszone awarie każdego
+  zapisu atomowego, aktywacji i kontroli załadowania, zachowanie metadanych
+  istniejącej konfiguracji oraz jawny stan `ROLLBACK-FAILED`.
+- [x] Objąć macierzą wyłączenie i przywrócenie strefy: awarie zapisu,
+  walidacji, aktywacji i kontroli stanu, zachowanie metadanych deklaracji
+  oraz indeksu i jawny wynik nieskutecznego rollbacku.
+- [x] Objąć macierzą kwarantannę i odtworzenie pakietu: integralność SHA-256,
+  awarie każdego zapisu, sprzątanie niekompletnych pakietów oraz zachowanie
+  trybu, UID i GID pliku strefy i deklaracji.
+- [x] Objąć macierzą migrację deklaracji legacy i relokację zarządzanego
+  pliku strefy: awarie każdego zapisu, walidacji i aktywacji, zachowanie
+  metadanych, kontrolę docelowej ścieżki oraz `ROLLBACK-FAILED`.
 - [x] Sprawdzać zachowanie UID, GID i trybu pliku po sukcesie oraz rollbacku
   ACL/secondary i zapisywać te metadane w stanie przed/po manifestu.
 - [x] Ograniczyć manifesty ACL/secondary do jawnej listy pól i automatycznie
@@ -386,16 +447,36 @@ zaczynając od raportu wpływu tylko do odczytu.
   `ROLLBACK-FAILED`, gdy ponowna aktywacja nie powiedzie się.
 - [x] Wykonywać izolowany drill ACL i secondary z prawdziwym
   `named-checkconf`, wymuszoną awarią po aktywacji i pełnym odtworzeniem.
+- [x] Walidować tworzenie strefy przez główny plik `named.conf`, aby
+  `named-checkconf` otrzymywał pełny kontekst istniejących ACL i list
+  `remote-servers`, a nie tylko zarządzany indeks deklaracji stref.
+- [x] Wykonać kontrolowany drill cyklu życia na syntetycznej,
+  niedelegowanej strefie: utworzenie, wyłączenie, zwykłe odtworzenie,
+  kwarantanna, weryfikacja SHA-256 i metadanych, odtworzenie z pakietu oraz
+  końcowe wycofanie strefy z aktywnego BIND.
+- [x] Wykonać kontrolowany drill trwałego usunięcia wyłącznie na syntetycznym
+  pakiecie: kwalifikacja retencji, dry-run, atomowy staging, zweryfikowane
+  archiwum ratunkowe, zewnętrzny manifest `PURGED` i kontrola niezmienionego
+  stanu pozostałych pakietów oraz BIND.
 - [ ] Uzupełnić docstringi publicznego API i zwiększyć pokrycie krytycznych
-  ścieżek zapisu.
+  ścieżek zapisu. Odczytowy audyt obejmuje całe drzewo, a twarda bramka CI
+  chroni już nowe moduły retencji i trwałego usuwania kwarantanny; zakres
+  rozszerzono również na transakcje tworzenia, wyłączania i przywracania
+  stref, kwarantannę, odtwarzanie pakietów oraz migrację i relokację
+  zarządzanych stref. Kolejne moduły należy obejmować stopniowo bez masowego
+  przepisywania starszego kodu.
 
 ### Automatyzacja GitHub i pakietów
 
-- [ ] Dodać GitHub Actions uruchamiające testy bez dostępu do produkcyjnego
+- [x] Dodać GitHub Actions uruchamiające testy bez dostępu do produkcyjnego
   BIND.
-- [ ] Automatycznie budować wheel i pakiet Debian oraz uruchamiać Lintian.
-- [ ] Publikować artefakty dopiero dla podpisanego lub jawnie zatwierdzonego
-  tagu wydania.
+- [x] Automatycznie budować wheel i pakiet Debian w czystym Debianie 13,
+  uruchamiać testy pakietowe i Lintian, weryfikować metadane oraz brak
+  `/etc/bind`, generować SHA-256 i zachowywać wynik jako czasowy artefakt CI.
+- [x] Publikować artefakty wyłącznie przez ręczny workflow wymagający
+  istniejącego tagu, jawnego potwierdzenia, zielonego `Package build` z tego
+  samego commitu, zgodności wersji i SHA-256 oraz osobnego prawa zapisu tylko
+  dla joba publikującego GitHub Release.
 
 ### Bramka wydania ZoneCTL 4.8.3
 
@@ -413,8 +494,72 @@ zaczynając od raportu wpływu tylko do odczytu.
   katalogu, bez ponownego importowania deklaracji i bez zmiany serialu SOA.
 - [x] Zbudować wheel i pakiet Debian, uruchomić Lintian oraz sprawdzić brak
   plików `/etc/bind` w pakiecie.
-- [ ] Przetestować aktualizację na aktywnym środowisku bez zmiany BIND,
+- [x] Przetestować aktualizację na aktywnym środowisku bez zmiany BIND,
   opublikować zatwierdzony tag i artefakty.
+
+### Bramka wydania ZoneCTL 4.9.0
+
+- [x] Ujednolicić semantyczne kolory stanów TUI, obsługę odświeżania oraz
+  formularze rekordów i bezpieczną edycję wieloliniowego SOA.
+- [x] Zweryfikować macierze awarii i rollbacku tworzenia, disable/restore,
+  kwarantanny oraz migracji i relokacji zarządzanych stref.
+- [x] Przeprowadzić produkcyjny drill kompletnego cyklu życia strefy oraz
+  oddzielny drill atomowego purge pakietu syntetycznego.
+- [x] Dodać retencję kwarantanny, trwały purge z potwierdzeniami, stagingiem,
+  archiwum ratunkowym i zewnętrznym manifestem audytowym.
+- [x] Objąć nowoczesny core, TUI i CLI rygorystycznym `mypy`, pozostawiając
+  `legacy_v220.py` jako jawnie wydzielony wyjątek kompatybilności.
+- [x] Dodać izolowane workflow jakości, budowy pakietów i ręcznie
+  zatwierdzanego wydania oraz test spójności wersji 4.9.0.
+- [x] Zbudować końcowe wheel i DEB 4.9.0, uruchomić Lintian i zweryfikować
+  sumy SHA-256 oraz brak plików `/etc/bind`.
+- [x] Przetestować aktualizację 4.8.3 → 4.9.0 bez zmiany struktury, metadanych
+  ani zawartości `/etc/bind`, przy aktywnej usłudze i poprawnym raporcie.
+- [ ] Scalić gałąź, utworzyć tag `v4.9.0` i uruchomić zatwierdzony release.
+
+## ZoneCTL 4.9 — semantyczna czytelność TUI
+
+- [x] Zdefiniować centralny kontrakt kolorów stanów: zielony dla stanu
+  poprawnego, żółty dla ostrzeżenia lub stanu przejściowego oraz czerwony dla
+  błędu, konfliktu albo blokady.
+- [x] Kolorować stany KASP względem celu polityki: `omnipresent` jako stan
+  osiągnięty, `rumoured` i `unretentive` jako przejściowe, a `hidden` zależnie
+  od oczekiwanego celu.
+- [x] Zastosować wspólną klasyfikację w statusie DNSSEC, wynikach transakcji,
+  komunikatach, panelach kontekstowych, RPZ, migracji oraz audytach
+  ACL/secondary.
+- [x] Zachować jawne etykiety i symbole, aby kolor nie był jedynym nośnikiem
+  informacji, oraz zapewnić poprawny tryb terminala bez kolorów.
+- [x] Zweryfikować wizualnie reprezentatywne stany PASS/WARN/FAIL w działającym
+  TUI przed rozpoczęciem edytora SOA.
+
+### Bezpieczny edytor SOA
+
+- [x] Otwierać dla rekordu SOA osobny formularz z polami primary NS,
+  administrator, refresh, retry, expire, minimum oraz opcjonalnym TTL.
+- [x] Pokazywać serial wyłącznie informacyjnie i pozostawić jego podbijanie
+  istniejącemu mechanizmowi transakcyjnemu ZoneCTL.
+- [x] Walidować nazwy DNS, zakresy liczbowych parametrów SOA i TTL przed
+  dodaniem zmiany do bufora.
+- [x] Zweryfikować formularz wizualnie i przeprowadzić produkcyjny dry-run bez
+  zapisywania zmiany.
+
+### Informacja zwrotna podczas oczekiwania
+
+- [ ] Dodać wspólny komponent animowanego wskaźnika pracy TUI dla operacji,
+  których czasu zakończenia nie można wiarygodnie określić.
+- [ ] Pokazywać nazwę bieżącego etapu i upływający czas bez prezentowania
+  pozornego procentowego postępu.
+- [ ] Zastosować wskaźnik najpierw podczas głównego odświeżania stref oraz
+  oczekiwania na stan BIND po aktywacji lub rollbacku, a następnie rozszerzyć
+  go na kontrole DNSSEC, DS i secondary.
+- [ ] Po zakończeniu zastępować animację jawnym wynikiem semantycznym:
+  zielonym `PASS`, żółtym `WARN` albo czerwonym `FAIL` wraz z opisem.
+- [ ] Zapewnić wariant ASCII `| / - \\` dla terminali bez poprawnej obsługi
+  znaków Braille'a oraz wyłączać animację w JSON, logach i środowisku
+  nieinteraktywnym.
+- [ ] Nie udostępniać anulowania operacji, dopóki poszczególne transakcje nie
+  mają bezpiecznie zdefiniowanego punktu przerwania i rollbacku.
 
 ## Rozwój po osiągnięciu pełnej funkcjonalności podstawowej
 

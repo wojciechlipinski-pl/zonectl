@@ -7,7 +7,12 @@ import re
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
-from .discovery import BindConfigDiscovery, BindDiscoveryError, ZoneConfig
+from .discovery import (
+    BindConfigDiscovery,
+    BindDiscoveryError,
+    DiscoveryResult,
+    ZoneConfig,
+)
 from .zone_lifecycle import ZoneLifecycleError, normalize_zone_name
 
 
@@ -243,7 +248,7 @@ class ManagedZoneMigrationPlanner:
             ),
         )
 
-    def _discover(self):
+    def _discover(self) -> DiscoveryResult:
         try:
             return BindConfigDiscovery(self.root_config).discover()
         except BindDiscoveryError as exc:

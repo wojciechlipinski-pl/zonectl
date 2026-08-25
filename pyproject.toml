@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "zonectl"
-version = "4.8.3"
+version = "4.9.0"
 description = "Transactional DNS Management Toolkit"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -20,3 +20,12 @@ package-dir = {"" = "src"}
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+warn_unused_configs = true
+
+[[tool.mypy.overrides]]
+module = "zonectl.legacy_v220"
+ignore_errors = true

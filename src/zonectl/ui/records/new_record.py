@@ -13,6 +13,7 @@ from ...core.record_validation import (
     validate_rdata as validate_record_rdata,
 )
 from ...core.zone_parser import DNSRecord
+from ..function_keys import decode_function_key
 from ..form_style import active_field_attr, field_marker
 
 
@@ -224,12 +225,14 @@ class NewRecordDialog:
         if normalized_type not in RECORD_TYPES:
             return None, "Nieobsługiwany typ rekordu."
 
-        try:
-            ttl = int(ttl_text.strip())
-        except ValueError:
-            return None, "TTL musi być liczbą całkowitą."
+        normalized_ttl = ttl_text.strip()
 
-        if not 0 <= ttl <= 2147483647:
+        try:
+            ttl = int(normalized_ttl) if normalized_ttl else None
+        except ValueError:
+            return None, "TTL musi być liczbą całkowitą albo pozostać pusty."
+
+        if ttl is not None and not 0 <= ttl <= 2147483647:
             return None, "TTL musi mieć zakres 0–2147483647."
 
         error = validate_record_rdata(
@@ -252,9 +255,16 @@ class NewRecordDialog:
             rrclass="IN",
             rtype=normalized_type,
             rdata=normalized_rdata,
-            raw=(
-                f"{absolute_owner} {ttl} IN "
-                f"{normalized_type} {normalized_rdata}"
+            raw=" ".join(
+                part
+                for part in (
+                    absolute_owner,
+                    str(ttl) if ttl is not None else "",
+                    "IN",
+                    normalized_type,
+                    normalized_rdata,
+                )
+                if part
             ),
         )
 
@@ -472,7 +482,7 @@ class NewRecordDialog:
                         pass
 
                 win.refresh()
-                key = win.getch()
+                key = self._get_key(win)
 
                 if key in (27,):
                     return None
@@ -642,3 +652,41 @@ class NewRecordDialog:
                 win.nodelay(True)
             except curses.error:
                 pass
+    @staticmethod
+    def _get_key(win: curses.window) -> int:
+        """Odczytaj klawisz, normalizując sekwencje xterm/PuTTY."""
+        key = win.getch()
+
+        if key != 27:
+            return key
+
+        sequence: list[int] = []
+
+        try:
+            win.timeout(80)
+
+            for _ in range(4):
+                item = win.getch()
+
+                if item == -1:
+                    break
+
+                sequence.append(item)
+        finally:
+            try:
+                win.timeout(-1)
+            except curses.error:
+                pass
+
+        decoded = decode_function_key(sequence)
+
+        if decoded is not None:
+            return decoded
+
+        for item in reversed(sequence):
+            try:
+                curses.ungetch(item)
+            except curses.error:
+                break
+
+        return 27

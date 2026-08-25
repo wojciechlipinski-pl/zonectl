@@ -1,3 +1,5 @@
+"""Packaging of disabled zones into verified quarantine artifacts."""
+
 from __future__ import annotations
 
 import getpass
@@ -13,6 +15,7 @@ from pathlib import Path
 
 @dataclass(frozen=True, slots=True)
 class ZoneQuarantinePlan:
+    """Validated source paths and destination for quarantining one zone."""
     zone_name: str
     zone_file: Path
     archived_declaration: Path
@@ -23,6 +26,7 @@ class ZoneQuarantinePlan:
 
 @dataclass(slots=True)
 class ZoneQuarantineStep:
+    """One observable step of a zone quarantine transaction."""
     name: str
     ok: bool
     message: str
@@ -30,6 +34,7 @@ class ZoneQuarantineStep:
 
 @dataclass(slots=True)
 class ZoneQuarantineResult:
+    """Final status, package path and rollback state for quarantine."""
     transaction_id: str
     zone: str
     status: str
@@ -41,6 +46,7 @@ class ZoneQuarantineResult:
 
     @property
     def ok(self) -> bool:
+        """Return whether every recorded transaction step succeeded."""
         return bool(self.steps) and all(step.ok for step in self.steps)
 
 
@@ -62,6 +68,7 @@ class ZoneQuarantineTransaction:
         quarantine_root: Path = Path("/var/lib/zonectl/quarantine"),
         reason: str,
     ) -> ZoneQuarantinePlan:
+        """Validate disabled state and build a side-effect-free plan."""
         name = zone_name.strip().rstrip(".").casefold()
         if not name or not reason.strip():
             raise ZoneQuarantineError("Wymagana jest nazwa strefy i przyczyna")
@@ -100,6 +107,7 @@ class ZoneQuarantineTransaction:
         commit: bool = False,
         confirmation: str | None = None,
     ) -> ZoneQuarantineResult:
+        """Create a verified package or return a side-effect-free dry-run."""
         txid = (
             datetime.now().strftime("%Y%m%d-%H%M%S")
             + f"-quarantine-{plan.zone_name}-{uuid.uuid4().hex[:8]}"
@@ -140,6 +148,10 @@ class ZoneQuarantineTransaction:
             self._atomic_write(zone_copy, zone_content, 0o640)
             self._atomic_write(declaration_copy, declaration_content, 0o640)
 
+            file_hashes: dict[str, str] = {
+                "zone.db": self._sha256(zone_copy),
+                "zone.conf": self._sha256(declaration_copy),
+            }
             manifest = {
                 "transaction_id": txid,
                 "zone": plan.zone_name,
@@ -153,9 +165,18 @@ class ZoneQuarantineTransaction:
                     "zone_file": str(plan.zone_file),
                     "declaration": str(plan.archived_declaration),
                 },
-                "files": {
-                    "zone.db": self._sha256(zone_copy),
-                    "zone.conf": self._sha256(declaration_copy),
+                "files": file_hashes,
+                "metadata": {
+                    "zone.db": {
+                        "uid": zone_stat.st_uid,
+                        "gid": zone_stat.st_gid,
+                        "mode": zone_stat.st_mode & 0o777,
+                    },
+                    "zone.conf": {
+                        "uid": declaration_stat.st_uid,
+                        "gid": declaration_stat.st_gid,
+                        "mode": declaration_stat.st_mode & 0o777,
+                    },
                 },
             }
             manifest_path = package / "manifest.json"
@@ -164,7 +185,7 @@ class ZoneQuarantineTransaction:
                 json.dumps(manifest, ensure_ascii=False, indent=2).encode("utf-8"),
                 0o640,
             )
-            for filename, expected in manifest["files"].items():
+            for filename, expected in file_hashes.items():
                 if self._sha256(package / filename) != expected:
                     raise RuntimeError(f"Błędna suma kontrolna: {filename}")
             result.steps.append(
@@ -209,6 +230,13 @@ class ZoneQuarantineTransaction:
                         declaration_stat.st_uid,
                         declaration_stat.st_gid,
                     )
+                for generated in (
+                    package / "manifest.json",
+                    package / "zone.conf",
+                    package / "zone.db",
+                ):
+                    generated.unlink(missing_ok=True)
+                package.rmdir()
             except Exception as rollback_error:
                 rollback_ok = False
                 result.steps.append(
@@ -248,7 +276,9 @@ class ZoneQuarantineTransaction:
                 os.fsync(handle.fileno())
             os.chmod(temporary, mode)
             if uid is not None and gid is not None:
-                os.chown(temporary, uid, gid)
+                chown = getattr(os, "chown", None)
+                if chown is not None:
+                    chown(temporary, uid, gid)
             os.replace(temporary, path)
         finally:
             temporary.unlink(missing_ok=True)

@@ -232,11 +232,14 @@ class RecordEditor:
     def edit_record_dialog(
         self,
         win: curses.window,
-        record,
+        record: DNSRecord,
         zone: Zone,
-    ):
+    ) -> DNSRecord | None:
         """Edytuje rekord w pamięci. Zwraca nowy rekord albo None."""
         from dataclasses import replace
+
+        if record.rtype.upper() == "SOA":
+            return self.edit_soa_dialog(win, record, zone)
 
         self._save_requested = False
 
@@ -260,7 +263,7 @@ class RecordEditor:
         active = 0
         message = ""
 
-        def build_record():
+        def build_record() -> tuple[DNSRecord | None, str]:
             owner_value = values[0].strip()
             rtype_value = values[1].strip().upper()
             ttl_value = values[2].strip()
@@ -472,3 +475,163 @@ class RecordEditor:
 
                 if updated_record is not None:
                     return updated_record
+
+    @staticmethod
+    def _soa_values(record: DNSRecord) -> tuple[list[str] | None, str]:
+        fields = record.rdata.replace("(", " ").replace(")", " ").split()
+        if len(fields) != 7:
+            return None, (
+                "Rekord SOA nie zawiera siedmiu wymaganych pól; "
+                "edycja została zablokowana."
+            )
+        return fields, ""
+
+    @staticmethod
+    def build_soa_record(
+        record: DNSRecord,
+        *,
+        primary: str,
+        administrator: str,
+        refresh: str,
+        retry: str,
+        expire: str,
+        minimum: str,
+        ttl_text: str,
+    ) -> tuple[DNSRecord | None, str]:
+        """Zbuduj SOA, zachowując serial zarządzany automatycznie."""
+        from dataclasses import replace
+
+        soa, error = RecordEditor._soa_values(record)
+        if soa is None:
+            return None, error
+
+        ttl_value = ttl_text.strip()
+        try:
+            ttl = None if not ttl_value else int(ttl_value)
+        except ValueError:
+            return None, "TTL musi być liczbą całkowitą albo pozostać pusty."
+        if ttl is not None and not 0 <= ttl <= 2147483647:
+            return None, "TTL musi mieć zakres 0–2147483647."
+
+        rdata = " ".join((
+            primary.strip(), administrator.strip(), soa[2],
+            refresh.strip(), retry.strip(), expire.strip(), minimum.strip(),
+        ))
+        validation_error = validate_rdata("SOA", rdata)
+        if validation_error:
+            return None, validation_error
+        return replace(record, ttl=ttl, rdata=rdata), ""
+
+    def edit_soa_dialog(
+        self,
+        win: curses.window,
+        record: DNSRecord,
+        zone: Zone,
+    ) -> DNSRecord | None:
+        """Edytuj SOA w osobnych polach bez ręcznej zmiany serialu."""
+        soa, _ = self._soa_values(record)
+        if soa is None:
+            return None
+
+        labels = (
+            "Primary NS", "Administrator", "Refresh", "Retry",
+            "Expire", "Minimum", "TTL",
+        )
+        values = [
+            soa[0], soa[1], soa[3], soa[4], soa[5], soa[6],
+            "" if record.ttl is None else str(record.ttl),
+        ]
+        active = 0
+        message = ""
+        self._save_requested = False
+
+        try:
+            win.keypad(True)
+            win.nodelay(False)
+            win.timeout(-1)
+        except curses.error:
+            pass
+
+        def build() -> tuple[DNSRecord | None, str]:
+            return self.build_soa_record(
+                record,
+                primary=values[0], administrator=values[1],
+                refresh=values[2], retry=values[3], expire=values[4],
+                minimum=values[5], ttl_text=values[6],
+            )
+
+        try:
+            while True:
+                win.erase()
+                height, width = win.getmaxyx()
+
+                def put(row: int, column: int, text: str, attr: int = 0) -> None:
+                    if not (0 <= row < height and 0 <= column < width):
+                        return
+                    try:
+                        win.addnstr(
+                            row, column, str(text),
+                            max(0, width - column - 1), attr,
+                        )
+                    except curses.error:
+                        pass
+
+                put(0, 0, f" Edycja SOA: {zone.name} ".ljust(width),
+                    curses.A_REVERSE | curses.A_BOLD)
+                put(2, 2, "Serial", curses.A_BOLD)
+                put(2, 20, f"{soa[2]} (automatycznie podbijany przy zapisie)")
+                for index, (label, value) in enumerate(zip(labels, values)):
+                    row = 4 + index * 2
+                    selected = index == active
+                    attr = active_field_attr() if selected else curses.A_NORMAL
+                    put(row, 0, field_marker(selected), attr)
+                    put(row, 2, f"{label:<15}: ",
+                        attr if selected else curses.A_BOLD)
+                    put(row, 20, value, attr)
+                if message:
+                    put(height - 4, 2, message, self._error_attr)
+                put(height - 2, 0,
+                    " ↑/↓ pole   Enter edytuj   F2 zatwierdź zmianę   Esc anuluj ".ljust(width),
+                    curses.A_REVERSE)
+                win.refresh()
+                key = self._get_key(win)
+
+                if key in (27, ord("q"), ord("Q")):
+                    return None
+                if key in (curses.KEY_UP, ord("k")):
+                    active = (active - 1) % len(values)
+                    message = ""
+                    continue
+                if key in (curses.KEY_DOWN, ord("j"), 9):
+                    active = (active + 1) % len(values)
+                    message = ""
+                    continue
+                if key in (10, 13, curses.KEY_ENTER):
+                    self._save_requested = False
+                    edited = self._edit_line(
+                        win=win, row=4 + active * 2, column=20,
+                        initial_value=values[active],
+                        max_width=max(1, width - 22),
+                    )
+                    if edited is not None:
+                        values[active] = edited
+                        message = ""
+                    if self._save_requested:
+                        self._save_requested = False
+                        updated, message = build()
+                        if updated is not None:
+                            return updated
+                    continue
+                if key == curses.KEY_F2:
+                    updated, message = build()
+                    if updated is not None:
+                        return updated
+        finally:
+            try:
+                curses.curs_set(0)
+            except curses.error:
+                pass
+            try:
+                win.nodelay(True)
+            except curses.error:
+                pass

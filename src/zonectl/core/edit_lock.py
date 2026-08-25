@@ -9,7 +9,14 @@ import socket
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import TextIO
+from types import TracebackType
+from typing import Callable, TextIO, cast
+
+
+_flock = cast(Callable[[int, int], None], getattr(fcntl, "flock"))
+_LOCK_EX = cast(int, getattr(fcntl, "LOCK_EX"))
+_LOCK_NB = cast(int, getattr(fcntl, "LOCK_NB"))
+_LOCK_UN = cast(int, getattr(fcntl, "LOCK_UN"))
 
 
 class ZoneEditLockedError(RuntimeError):
@@ -84,9 +91,9 @@ class ZoneEditLock:
         handle = self.path.open("a+", encoding="utf-8")
 
         try:
-            fcntl.flock(
+            _flock(
                 handle.fileno(),
-                fcntl.LOCK_EX | fcntl.LOCK_NB,
+                _LOCK_EX | _LOCK_NB,
             )
         except BlockingIOError as exc:
             owner = self._read_owner(handle)
@@ -110,7 +117,7 @@ class ZoneEditLock:
             os.fsync(handle.fileno())
             os.chmod(self.path, 0o640)
         except Exception:
-            fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+            _flock(handle.fileno(), _LOCK_UN)
             handle.close()
             raise
 
@@ -129,11 +136,16 @@ class ZoneEditLock:
             except FileNotFoundError:
                 pass
         finally:
-            fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
+            _flock(handle.fileno(), _LOCK_UN)
             handle.close()
 
     def __enter__(self) -> "ZoneEditLock":
         return self.acquire()
 
-    def __exit__(self, exc_type, exc, traceback) -> None:
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc: BaseException | None,
+        traceback: TracebackType | None,
+    ) -> None:
         self.release()

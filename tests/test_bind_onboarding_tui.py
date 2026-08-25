@@ -4,6 +4,35 @@ from types import SimpleNamespace
 from zonectl.ui.curses_app import CursesApp
 
 
+class _SummaryWindow:
+    def timeout(self, _value):
+        pass
+
+    def erase(self):
+        pass
+
+    def getmaxyx(self):
+        return 30, 120
+
+    def addnstr(self, *_args):
+        pass
+
+    def refresh(self):
+        pass
+
+
+def test_onboarding_summary_computes_wide_layout_before_visible_rows(
+    monkeypatch,
+) -> None:
+    app = CursesApp.__new__(CursesApp)
+    report = SimpleNamespace(candidates=(), blockers=())
+    view = SimpleNamespace(title="Środowisko", lines=("Status: PASS",))
+    monkeypatch.setattr(app, "_get_key", lambda _win: ord("q"))
+    monkeypatch.setattr(app, "_draw_onboarding_summary_48", lambda *_args: None)
+
+    app._onboarding_summary_view(_SummaryWindow(), view, report)
+
+
 def test_main_tui_opens_environment_report_with_f2() -> None:
     main = inspect.getsource(CursesApp._main)
     footer = inspect.getsource(CursesApp._draw_main_footer)

@@ -253,7 +253,9 @@ class BindAclTransaction:
                 stream.flush()
                 os.fsync(stream.fileno())
             os.chmod(temporary, mode)
-            os.chown(temporary, uid, gid)
+            chown = getattr(os, "chown", None)
+            if chown is not None:
+                chown(temporary, uid, gid)
             os.replace(temporary, path)
         finally:
             temporary.unlink(missing_ok=True)

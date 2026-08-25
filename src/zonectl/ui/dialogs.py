@@ -50,15 +50,8 @@ class CursesDialogs:
         row = max(0, min(row, height - 1))
         available = max(1, width - len(prompt) - 1)
 
-        previous_nodelay: bool | None = None
-
         try:
-            try:
-                previous_nodelay = win.nodelay(False)
-            except TypeError:
-                # Niektóre implementacje curses nie zwracają
-                # poprzedniego stanu.
-                win.nodelay(False)
+            win.nodelay(False)
 
             win.timeout(-1)
             curses.noecho()

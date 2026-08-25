@@ -49,6 +49,11 @@ def test_tui_wizard_creates_and_adds_zone(monkeypatch) -> None:
             "192.0.2.44",
             "",
             True,
+            group="Klienci",
+            refresh=7200,
+            retry=1200,
+            expire=604800,
+            negative_ttl=600,
         ),
     )
     monkeypatch.setattr(
@@ -66,6 +71,8 @@ def test_tui_wizard_creates_and_adds_zone(monkeypatch) -> None:
         assert commit is True and activate is True
         assert plan.zone_name == "new.example"
         assert "www IN A 192.0.2.44" in plan.zone_text
+        assert "    7200 ; refresh" in plan.zone_text
+        assert plan.group == "Klienci"
         return ZoneCreateResult(
             "tx-create",
             plan.zone_name,
@@ -85,6 +92,7 @@ def test_tui_wizard_creates_and_adds_zone(monkeypatch) -> None:
     assert app.all_zones[0].file == Path(
         "/var/lib/bind/Primary/new.example"
     )
+    assert app.all_zones[0].group == "Klienci"
     assert len(messages) == 2
 
 
@@ -104,15 +112,19 @@ def test_tui_wizard_cancel_before_plan_has_no_effect(monkeypatch) -> None:
 def test_tui_wizard_shows_validation_error(monkeypatch) -> None:
     app = CursesApp([], bind=object())
     messages = []
-    monkeypatch.setattr(
-        ZoneCreateDialog,
-        "collect",
-        lambda *args, **kwargs: ZoneCreateForm(
+    forms = iter((
+        ZoneCreateForm(
             "bad_name",
             "ns1.example.pl.",
             "hostmaster.example.pl.",
             "ns1.example.pl.",
         ),
+        None,
+    ))
+    monkeypatch.setattr(
+        ZoneCreateDialog,
+        "collect",
+        lambda *args, **kwargs: next(forms),
     )
     monkeypatch.setattr(
         CursesDialogs,
@@ -130,3 +142,47 @@ def test_tui_wizard_shows_validation_error(monkeypatch) -> None:
     assert app.all_zones == []
     assert messages[0]["error"] is True
     assert "Błąd planu" in messages[0]["title"]
+
+
+def test_tui_wizard_returns_to_preserved_form_after_preview(monkeypatch) -> None:
+    app = CursesApp([], bind=object())
+    first = ZoneCreateForm(
+        "test-zone.example", "ns1.example.pl.",
+        "hostmaster.example.pl.", "ns1.example.pl.",
+    )
+    corrected = ZoneCreateForm(
+        "test-zone.example", "ns1.example.pl.",
+        "admin.example.pl.", "ns1.example.pl.",
+    )
+    initial_values = []
+    forms = iter((first, corrected))
+    monkeypatch.setattr(
+        ZoneCreateDialog,
+        "collect",
+        lambda *args, **kwargs: (
+            initial_values.append(kwargs.get("initial"))
+            or next(forms)
+        ),
+    )
+    confirmations = iter((False, True))
+    monkeypatch.setattr(
+        CursesDialogs,
+        "confirm",
+        lambda *args, **kwargs: next(confirmations),
+    )
+    monkeypatch.setattr(app, "_message_view", lambda *args, **kwargs: None)
+
+    def apply(self, plan, *, commit=False, activate=False):
+        assert "admin.example.pl." in plan.zone_text
+        return ZoneCreateResult(
+            "tx", plan.zone_name, "COMMIT", committed=True,
+            steps=[ZoneCreateStep("loaded", True, "OK")],
+        )
+
+    monkeypatch.setattr(
+        "zonectl.ui.curses_app.ZoneCreateTransaction.apply", apply,
+    )
+
+    app._create_zone_wizard(FakeWindow())
+
+    assert initial_values == [None, first]

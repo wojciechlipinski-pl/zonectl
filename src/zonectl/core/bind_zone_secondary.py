@@ -10,7 +10,7 @@ from pathlib import Path
 from .bind_access_impact import BindAccessImpactReport
 from .bind_access_inventory import BindAccessInventoryReader
 from .bind_secondary_plan import BindSecondaryPlan, BindSecondaryPlanner
-from .bind_secondary_report import BindSecondaryReporter
+from .bind_secondary_report import BindSecondaryReporter, SecondaryPairReport
 from .discovery import BindConfigDiscovery, BindDiscoveryError
 from .managed_zone_migration import ManagedZoneMigrationPlanner
 
@@ -52,7 +52,7 @@ class BindZoneSecondaryPlanner:
     def __init__(self, root_config: Path = Path("/etc/bind/named.conf")) -> None:
         self.root_config = root_config.expanduser().resolve()
 
-    def available_pairs(self):
+    def available_pairs(self) -> tuple[SecondaryPairReport, ...]:
         inventory = BindAccessInventoryReader(self.root_config).collect()
         return tuple(pair for pair in BindSecondaryReporter().build(inventory).pairs if pair.status == "PASS")
 

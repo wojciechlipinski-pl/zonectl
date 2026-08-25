@@ -4,8 +4,13 @@ from __future__ import annotations
 
 from dataclasses import asdict, dataclass
 import ipaddress
+from collections.abc import Mapping, Sequence
 
-from .bind_access_inventory import BindAccessInventory, BindListUsage
+from .bind_access_inventory import (
+    BindAccessInventory,
+    BindListDefinition,
+    BindListUsage,
+)
 
 
 class BindAccessImpactError(RuntimeError):
@@ -176,7 +181,10 @@ class BindAccessImpactReporter:
 
     @classmethod
     def _has_remote_capable_entry(
-        cls, entries, definitions, visited: set[str]
+        cls,
+        entries: Sequence[str],
+        definitions: Mapping[str, BindListDefinition],
+        visited: set[str],
     ) -> bool:
         """Czy dodatni wpis może dopuścić klienta spoza hosta lokalnego."""
         for raw in entries:
@@ -220,7 +228,11 @@ class BindAccessImpactReporter:
         return result
 
     @staticmethod
-    def _cycle_blockers(graph, target, definitions) -> list[str]:
+    def _cycle_blockers(
+        graph: Mapping[str, tuple[str, ...]],
+        target: str,
+        definitions: Mapping[str, BindListDefinition],
+    ) -> list[str]:
         blockers: list[str] = []
 
         def visit(node: str, path: tuple[str, ...]) -> None:

@@ -13,7 +13,7 @@ import uuid
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Callable
+from typing import Callable, cast
 from urllib.request import urlopen
 
 from .bind_config import BindConfigDiscovery
@@ -139,7 +139,10 @@ class RpzManagedInstallDryRun:
     def _build_candidates(
         self, plan: RpzManagedPlan, payload: bytes, workspace: Path
     ) -> dict[str, Path]:
-        options_original = plan.options_file.read_text(encoding="utf-8", errors="replace")
+        options_file = plan.options_file
+        if options_file is None:
+            raise ValueError("Nie wskazano pliku zawierającego blok options")
+        options_original = options_file.read_text(encoding="utf-8", errors="replace")
         options_candidate = self._inject_response_policy(options_original, plan.zone)
         declaration = (
             f'zone "{plan.zone}" {{\n'
@@ -172,7 +175,7 @@ class RpzManagedInstallDryRun:
 
         root_text = plan.root_config.read_text(encoding="utf-8", errors="replace")
         root_text = self._redirect_direct_include(
-            root_text, plan.root_config, plan.options_file, paths["options"]
+            root_text, plan.root_config, options_file, paths["options"]
         )
         root_text += f'\ninclude "{paths["declaration"]}";\n'
         paths["root-config"].write_text(root_text, encoding="utf-8")
@@ -313,7 +316,7 @@ WantedBy=timers.target
     @staticmethod
     def _fetch(url: str) -> bytes:
         with urlopen(url, timeout=30) as response:  # noqa: S310 - HTTPS checked above
-            return response.read()
+            return cast(bytes, response.read())
 
 
 class RpzManagedInstallTransaction:
@@ -533,16 +536,24 @@ class RpzManagedInstallTransaction:
         result: RpzManagedInstallResult,
     ) -> bool:
         ok = True
+        options_file = plan.options_file
+        if options_file is None:
+            result.steps.append(
+                RpzManagedInstallStep(
+                    "rollback", False, "Brak ścieżki pliku options do rollbacku"
+                )
+            )
+            return False
         if activation_started:
             if self.command_runner(
                 ["systemctl", "disable", "--now", plan.timer_file.name], 30
             ).returncode != 0:
                 ok = False
         try:
-            options_stat = plan.options_file.stat()  # type: ignore[union-attr]
+            options_stat = options_file.stat()
             root_stat = plan.root_config.stat()
             self._atomic_write(
-                plan.options_file, options_original, options_stat.st_mode & 0o777,
+                options_file, options_original, options_stat.st_mode & 0o777,
                 options_stat.st_uid, options_stat.st_gid,
             )
             self._atomic_write(
@@ -580,7 +591,9 @@ class RpzManagedInstallTransaction:
             missing.append(cursor)
             cursor = cursor.parent
         path.mkdir(parents=True, exist_ok=True, mode=0o750)
-        os.chown(path, uid, gid)
+        chown = getattr(os, "chown", None)
+        if chown is not None:
+            chown(path, uid, gid)
         os.chmod(path, 0o750)
         return missing
 
@@ -595,7 +608,9 @@ class RpzManagedInstallTransaction:
                 stream.flush()
                 os.fsync(stream.fileno())
             os.chmod(temporary, mode)
-            os.chown(temporary, uid, gid)
+            chown = getattr(os, "chown", None)
+            if chown is not None:
+                chown(temporary, uid, gid)
             os.replace(temporary, path)
         finally:
             temporary.unlink(missing_ok=True)

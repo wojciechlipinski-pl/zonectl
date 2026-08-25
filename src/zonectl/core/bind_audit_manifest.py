@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import asdict, is_dataclass
-from typing import Any, Iterable
+from typing import Any, Iterable, cast
 
 
 REDACTED = "[REDACTED]"
@@ -21,15 +21,18 @@ _SENSITIVE_TEXT = (
 
 def safe_manifest_payload(result: object, allowed_fields: Iterable[str]) -> dict[str, Any]:
     """Return only explicitly allowed, recursively sanitized result fields."""
-    if not is_dataclass(result):
+    if isinstance(result, type) or not is_dataclass(result):
         raise TypeError("Manifest source must be a dataclass instance")
-    source = asdict(result)
+    source: dict[str, Any] = asdict(cast(Any, result))
     payload = {
         field: source[field]
         for field in allowed_fields
         if field in source
     }
-    return _sanitize(payload)
+    sanitized = _sanitize(payload)
+    if not isinstance(sanitized, dict):
+        raise TypeError("Sanitized manifest payload must be a dictionary")
+    return cast(dict[str, Any], sanitized)
 
 
 def _sanitize(value: Any, *, key: str = "") -> Any:

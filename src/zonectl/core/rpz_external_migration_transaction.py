@@ -354,7 +354,9 @@ class RpzExternalMigrationTransaction:
                 handle.flush()
                 os.fsync(handle.fileno())
             os.chmod(temporary, metadata.st_mode & 0o777)
-            os.chown(temporary, metadata.st_uid, metadata.st_gid)
+            chown = getattr(os, "chown", None)
+            if chown is not None:
+                chown(temporary, metadata.st_uid, metadata.st_gid)
             os.replace(temporary, target)
         finally:
             if temporary.exists():

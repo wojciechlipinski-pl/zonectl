@@ -88,10 +88,10 @@ class ZoneInventory:
             )
         return records
 
-    def _latest_disable_manifest(self, zone: str) -> dict:
+    def _latest_disable_manifest(self, zone: str) -> dict[str, object]:
         if not self.disable_manifest_directory.is_dir():
             return {}
-        candidates: list[tuple[str, dict]] = []
+        candidates: list[tuple[str, dict[str, object]]] = []
         for path in self.disable_manifest_directory.glob("*.json"):
             payload = self._load_json(path)
             if (
@@ -109,7 +109,7 @@ class ZoneInventory:
         zone: str,
         state: str,
         location: Path,
-        manifest: dict,
+        manifest: dict[str, object],
         fallback_timestamp: str,
     ) -> InactiveZone:
         return InactiveZone(
@@ -127,12 +127,14 @@ class ZoneInventory:
         )
 
     @staticmethod
-    def _load_json(path: Path) -> dict:
+    def _load_json(path: Path) -> dict[str, object]:
         try:
             payload = json.loads(path.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError):
             return {}
-        return payload if isinstance(payload, dict) else {}
+        if not isinstance(payload, dict):
+            return {}
+        return {str(key): value for key, value in payload.items()}
 
     @staticmethod
     def _mtime(path: Path) -> str:

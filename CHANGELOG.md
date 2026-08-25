@@ -1,5 +1,109 @@
 # Changelog
 
+## Unreleased
+
+## 4.9.0 - 2026-08-25
+
+### Fixed
+
+- zone creation validates the root BIND configuration instead of the managed
+  zone index alone, preserving access to ACL and `remote-servers` definitions
+  supplied by other included configuration files
+
+### Safety
+
+- a pinned, strict mypy job incrementally type-checks the new quarantine
+  retention, guarded purge and public-API audit modules without imposing the
+  existing type debt of the entire codebase on unrelated changes; zone create,
+  disable and restore transactions are included after annotating their shared
+  lifecycle date provider; quarantine packaging and recovery now share the
+  same strict gate, including typed manifest integrity and metadata checks;
+  BIND discovery and managed-zone migration and relocation are covered as
+  well, followed by audit-manifest privacy, ACL impact, secondary health and
+  BIND configuration parsing; secondary planning and ACL/secondary
+  transactions, inactive-zone inventory and inter-process edit locks are
+  included in the same incremental gate, followed by lossless document
+  adaptation, zone serialization, candidate writing, audit logging, the core
+  transaction engine and zone edit sessions; managed RPZ installation and
+  external RPZ migration are now covered too, followed by record editing,
+  zone creation forms and shared TUI dialogs; DNSSEC enablement and multi-zone
+  editing complete strict typing coverage of the core module set; all TUI
+  helper modules are now covered as well, isolating the remaining interface
+  type debt in the main curses application; the first curses typing pass
+  annotates shared sorting and rendering helpers and reduces its mypy report
+  from 100 errors to 56, while the second pass covers BIND onboarding, DNSSEC
+  onboarding and project information views and reduces the remainder to 33;
+  typed transaction result views, record validation, multi-zone sessions and
+  DNSSEC operation plans reduce the remaining report to 15; typing the BIND
+  access editors and managed-zone migration flows completes strict mypy
+  coverage of the main curses application and adds it to CI; the first CLI
+  pass isolates BIND access, ACL, secondary, onboarding and managed RPZ
+  command results, reducing errors owned by `cli.py` from 304 to 196 without
+  yet admitting the incomplete module to the strict gate; a second pass
+  separates managed RPZ installation, external RPZ migration and BIND access
+  inventory or audit values, reducing the remaining CLI report to 139; typed
+  DS confirmation, serial finalization, DNSSEC withdrawal planning, apply and
+  recovery backup results reduce it further to 95; separating DNSSEC enable,
+  DS health checks and withdrawal confirmation values leaves 75 CLI errors;
+  typed DNSSEC reporting, managed-zone migration, lifecycle safety inventory
+  and quarantine retention reporting reduce the remainder to 51; separating
+  purge, quarantine recovery, disable, restore and create transaction values
+  leaves only 12 CLI errors before final admission to the strict gate; the
+  final pass types shared CLI helpers, removes the remaining cross-branch
+  inference collisions and adds `cli.py` to CI, while explicitly isolating
+  the unchanged `legacy_v220.py` compatibility implementation
+
+- a dependency-free AST audit inventories missing public API docstrings, while
+  CI initially enforces complete documentation only for the new critical
+  quarantine retention and purge modules plus zone create, disable and restore
+  transactions, quarantine recovery and managed migration or relocation
+
+- a read-only quarantine retention plan classifies verified packages as
+  retained or eligible after a configurable period and blocks damaged,
+  incomplete or inconsistent manifests without deleting data
+- permanent quarantine purge is a separate dry-run-first operation requiring
+  an eligible verified package, reason, exact zone and package confirmations;
+  it rechecks all gates immediately before deletion and retains an external
+  audit manifest; atomic staging and a verified recovery archive preserve a
+  recoverable artifact when deletion fails
+
+- a read-only GitHub Actions quality gate runs the complete suite on Python
+  3.11 and 3.13 with isolated BIND validators and rejects whitespace errors
+  or accidental executable bits on documentation and Python sources
+- an isolated Debian 13 build job creates wheel and DEB artifacts, runs package
+  tests and Lintian, verifies metadata and the absence of `/etc/bind`, and
+  uploads SHA-256-protected outputs without publishing a release
+- GitHub workflows use the Node.js 24 generations of checkout, Python setup
+  and artifact upload actions
+- release publication is manual and requires an existing version-matched tag,
+  explicit operator confirmation and successful package artifacts built from
+  the exact tagged commit before a write-scoped job can create GitHub Release
+- regression coverage verifies `named-checkconf` with definitions available
+  only through the root configuration context
+- forced-failure matrices now cover creation, disable/restore,
+  quarantine/recovery and managed migration/relocation, including file
+  metadata, package integrity and explicit `ROLLBACK-FAILED` outcomes
+
+### Verified
+
+- CI-built wheel and Debian artifacts for 4.9.0 passed SHA-256 verification,
+  Debian metadata and content checks, including the absence of `/etc/bind`
+- a production upgrade from 4.8.3-1 to 4.9.0-1 preserved the complete
+  structure, ownership, modes and file contents of `/etc/bind`; BIND remained
+  active and the read-only environment report confirmed 23 loaded primary
+  zones, 19 DNSSEC zones and a healthy managed RPZ integration
+- a controlled drill on a synthetic, non-delegated zone completed creation,
+  disable, restore, quarantine and package recovery against a live BIND
+  instance
+- an initial validation failure restored the complete pre-transaction state;
+  after the root-context fix, the full lifecycle completed and the synthetic
+  zone was removed from active configuration while verified recovery packages
+  were retained for audit
+- a permanent-purge drill removed only a synthetic, non-BIND quarantine
+  package after retention and dry-run gates; atomic staging, recovery archive
+  verification and the external `PURGED` manifest completed successfully,
+  while all existing packages and active BIND remained unchanged
+
 ## 4.8.3 - 2026-08-21
 
 ### Added

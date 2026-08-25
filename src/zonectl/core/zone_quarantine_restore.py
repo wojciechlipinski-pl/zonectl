@@ -1,3 +1,5 @@
+"""Verified restoration of a zone from a quarantine package."""
+
 from __future__ import annotations
 
 import hashlib
@@ -16,6 +18,7 @@ from .runner import run
 
 @dataclass(frozen=True, slots=True)
 class QuarantineRestorePlan:
+    """Validated package, metadata and target paths for restoration."""
     zone_name: str
     package_directory: Path
     package_manifest: Path
@@ -26,10 +29,17 @@ class QuarantineRestorePlan:
     managed_index: Path
     root_config: Path
     include_line: str
+    zone_mode: int | None = None
+    zone_uid: int | None = None
+    zone_gid: int | None = None
+    declaration_mode: int | None = None
+    declaration_uid: int | None = None
+    declaration_gid: int | None = None
 
 
 @dataclass(slots=True)
 class QuarantineRestoreStep:
+    """One observable step of a quarantine restoration transaction."""
     name: str
     ok: bool
     message: str
@@ -37,6 +47,7 @@ class QuarantineRestoreStep:
 
 @dataclass(slots=True)
 class QuarantineRestoreResult:
+    """Final status, package path and rollback state for restoration."""
     transaction_id: str
     zone: str
     status: str
@@ -47,6 +58,7 @@ class QuarantineRestoreResult:
 
     @property
     def ok(self) -> bool:
+        """Return whether every recorded transaction step succeeded."""
         return bool(self.steps) and all(step.ok for step in self.steps)
 
 
@@ -85,6 +97,7 @@ class QuarantineRestoreTransaction:
         managed_index: Path,
         root_config: Path = Path("/etc/bind/named.conf"),
     ) -> QuarantineRestorePlan:
+        """Verify package integrity and build a side-effect-free plan."""
         name = zone_name.strip().rstrip(".").casefold()
         manifest_path = package_directory / "manifest.json"
         zone_copy = package_directory / "zone.db"
@@ -93,14 +106,52 @@ class QuarantineRestoreTransaction:
             if not path.is_file():
                 raise QuarantineRestoreError(f"Brak wymaganego pliku: {path}")
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        if not isinstance(manifest, dict):
+            raise QuarantineRestoreError("Nieprawidłowy format manifestu")
         if manifest.get("zone") != name or manifest.get("status") != "QUARANTINED":
             raise QuarantineRestoreError("Manifest nie opisuje wskazanej strefy")
-        for filename, expected in manifest.get("files", {}).items():
+        files = manifest.get("files")
+        if not isinstance(files, dict) or not all(
+            isinstance(filename, str) and isinstance(expected, str)
+            for filename, expected in files.items()
+        ):
+            raise QuarantineRestoreError("Nieprawidłowa lista plików manifestu")
+        file_hashes: dict[str, str] = dict(files)
+        for filename, expected in file_hashes.items():
             path = package_directory / filename
             if not path.is_file() or QuarantineRestoreTransaction._sha256(path) != expected:
                 raise QuarantineRestoreError(f"Błędna suma kontrolna: {filename}")
-        if set(manifest.get("files", {})) != {"zone.db", "zone.conf"}:
+        if set(file_hashes) != {"zone.db", "zone.conf"}:
             raise QuarantineRestoreError("Manifest ma niekompletną listę plików")
+        metadata = manifest.get("metadata", {})
+        if not isinstance(metadata, dict):
+            raise QuarantineRestoreError("Nieprawidłowe metadane plików")
+        if metadata and set(metadata) != {"zone.db", "zone.conf"}:
+            raise QuarantineRestoreError("Manifest ma niekompletne metadane plików")
+
+        def file_metadata(filename: str) -> tuple[int | None, int | None, int | None]:
+            values = metadata.get(filename)
+            if values is None:
+                return None, None, None
+            if not isinstance(values, dict):
+                raise QuarantineRestoreError("Nieprawidłowe metadane plików")
+            mode = values.get("mode")
+            uid = values.get("uid")
+            gid = values.get("gid")
+            if (
+                not isinstance(mode, int)
+                or not isinstance(uid, int)
+                or not isinstance(gid, int)
+            ):
+                raise QuarantineRestoreError("Nieprawidłowe metadane plików")
+            if not 0 <= mode <= 0o7777 or uid < 0 or gid < 0:
+                raise QuarantineRestoreError("Nieprawidłowe metadane plików")
+            return mode, uid, gid
+
+        zone_mode, zone_uid, zone_gid = file_metadata("zone.db")
+        declaration_mode, declaration_uid, declaration_gid = file_metadata(
+            "zone.conf"
+        )
         if zone_file.exists() or active_declaration.exists():
             raise QuarantineRestoreError("Docelowe pliki strefy już istnieją")
         include_line = f'include "{active_declaration}";'
@@ -120,6 +171,12 @@ class QuarantineRestoreTransaction:
             managed_index,
             root_config,
             include_line,
+            zone_mode,
+            zone_uid,
+            zone_gid,
+            declaration_mode,
+            declaration_uid,
+            declaration_gid,
         )
 
     def apply(
@@ -128,6 +185,7 @@ class QuarantineRestoreTransaction:
         *,
         commit: bool = False,
     ) -> QuarantineRestoreResult:
+        """Restore and activate a package or return its dry-run result."""
         txid = (
             datetime.now().strftime("%Y%m%d-%H%M%S")
             + f"-restore-quarantine-{plan.zone_name}-{uuid.uuid4().hex[:8]}"
@@ -152,9 +210,9 @@ class QuarantineRestoreTransaction:
             self._atomic_write(
                 plan.zone_file,
                 plan.packaged_zone.read_bytes(),
-                0o640,
-                zone_parent.st_uid,
-                zone_parent.st_gid,
+                plan.zone_mode if plan.zone_mode is not None else 0o640,
+                plan.zone_uid if plan.zone_uid is not None else zone_parent.st_uid,
+                plan.zone_gid if plan.zone_gid is not None else zone_parent.st_gid,
             )
             zone_created = True
             result.steps.append(
@@ -168,9 +226,15 @@ class QuarantineRestoreTransaction:
             self._atomic_write(
                 plan.active_declaration,
                 plan.packaged_declaration.read_bytes(),
-                0o640,
-                declaration_parent.st_uid,
-                declaration_parent.st_gid,
+                plan.declaration_mode
+                if plan.declaration_mode is not None
+                else 0o640,
+                plan.declaration_uid
+                if plan.declaration_uid is not None
+                else declaration_parent.st_uid,
+                plan.declaration_gid
+                if plan.declaration_gid is not None
+                else declaration_parent.st_gid,
             )
             declaration_created = True
             separator = b"" if not index_original or index_original.endswith(b"\n") else b"\n"
@@ -252,7 +316,9 @@ class QuarantineRestoreTransaction:
                 handle.flush()
                 os.fsync(handle.fileno())
             os.chmod(temporary, mode)
-            os.chown(temporary, uid, gid)
+            chown = getattr(os, "chown", None)
+            if chown is not None:
+                chown(temporary, uid, gid)
             os.replace(temporary, path)
         finally:
             temporary.unlink(missing_ok=True)

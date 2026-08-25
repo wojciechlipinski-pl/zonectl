@@ -7,6 +7,7 @@ import ipaddress
 import re
 import shutil
 import tempfile
+from collections.abc import Sequence
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
@@ -131,7 +132,7 @@ class BindSecondaryPlanner:
         )
 
     @staticmethod
-    def _validate_addresses(addresses) -> tuple[str, ...]:
+    def _validate_addresses(addresses: Sequence[str]) -> tuple[str, ...]:
         if not addresses:
             raise BindSecondaryPlanError("Grupa secondary nie może być pusta")
         result: list[str] = []

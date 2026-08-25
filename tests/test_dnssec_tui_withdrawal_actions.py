@@ -149,7 +149,7 @@ def test_withdrawal_backup_ui_requires_exact_confirmation() -> None:
     assert "Wpisz pełną nazwę strefy, aby utworzyć backup" in source
     assert "Utworzyć backup wycofania DNSSEC" in source
     assert "zone, commit=True" in source
-    assert 'committed.status != "BACKUP-CREATED"' in source
+    assert 'committed_backup.status != "BACKUP-CREATED"' in source
 
 
 def test_enable_dry_run_never_commits_or_activates(monkeypatch) -> None:
@@ -256,7 +256,7 @@ def test_confirm_ds_ui_requires_fresh_check_and_exact_confirmation() -> None:
     assert "Kontrola DS przed potwierdzeniem" in source
     assert "Wpisz pełną nazwę strefy, aby potwierdzić DS" in source
     assert "Potwierdzić opublikowany DS" in source
-    assert "committed = self._dnssec_confirm_ds(" in source
+    assert "committed_confirmation = self._dnssec_confirm_ds(" in source
 
 
 @pytest.mark.parametrize(

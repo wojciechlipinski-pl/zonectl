@@ -123,23 +123,13 @@ class ZoneFileParser:
         )
 
         previous_owner: str | None = None
-        parenthesis_depth = 0
+        lines = text.splitlines()
+        index = 0
 
-        for raw_line in text.splitlines():
+        while index < len(lines):
+            raw_line = lines[index]
             stripped = raw_line.strip()
-
-            if parenthesis_depth > 0:
-                document.nodes.append(
-                    RawLine(raw=raw_line)
-                )
-                parenthesis_depth += cls._parenthesis_delta(
-                    cls._remove_comment(raw_line)
-                )
-
-                if parenthesis_depth < 0:
-                    parenthesis_depth = 0
-
-                continue
+            index += 1
 
             if not stripped:
                 document.nodes.append(
@@ -164,10 +154,33 @@ class ZoneFileParser:
 
             # Na tym etapie rekordów wielowierszowych nie interpretujemy.
             if delta != 0:
-                document.nodes.append(
-                    RawLine(raw=raw_line)
+                block = [raw_line]
+                depth = delta
+
+                while depth > 0 and index < len(lines):
+                    continuation = lines[index]
+                    index += 1
+                    block.append(continuation)
+                    depth += cls._parenthesis_delta(
+                        cls._remove_comment(continuation)
+                    )
+
+                multiline = cls._parse_multiline_soa(
+                    block,
+                    previous_owner=previous_owner,
                 )
-                parenthesis_depth = max(delta, 0)
+
+                if multiline is not None:
+                    record, owner_was_explicit = multiline
+                    document.nodes.append(
+                        RecordNode(record=record, raw="\n".join(block))
+                    )
+                    if owner_was_explicit:
+                        previous_owner = record.owner
+                else:
+                    document.nodes.extend(
+                        RawLine(raw=line) for line in block
+                    )
                 continue
 
             parsed = cls._parse_record_line(
@@ -194,6 +207,43 @@ class ZoneFileParser:
                 previous_owner = record.owner
 
         return document
+
+    @classmethod
+    def _parse_multiline_soa(
+        cls,
+        lines: list[str],
+        previous_owner: str | None,
+    ) -> tuple[DNSRecord, bool] | None:
+        """Rozpoznaj bezpiecznie wielowierszowy SOA jako jeden rekord."""
+        if not lines:
+            return None
+
+        logical = "\n".join(cls._remove_comment(line) for line in lines)
+        logical = logical.replace("(", " ").replace(")", " ")
+        parsed = cls._parse_record_line(
+            logical,
+            previous_owner=previous_owner,
+        )
+        if parsed is None:
+            return None
+
+        record, explicit = parsed
+        if record.rtype != "SOA":
+            return None
+
+        rdata = " ".join(record.rdata.split())
+        if len(rdata.split()) != 7:
+            return None
+
+        record = DNSRecord(
+            owner=record.owner,
+            ttl=record.ttl,
+            rrclass=record.rrclass,
+            rtype=record.rtype,
+            rdata=rdata,
+            raw=record.raw,
+        )
+        return record, explicit
 
     @classmethod
     def _parse_directive(
