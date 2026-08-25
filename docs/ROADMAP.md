@@ -497,6 +497,25 @@ zaczynając od raportu wpływu tylko do odczytu.
 - [x] Przetestować aktualizację na aktywnym środowisku bez zmiany BIND,
   opublikować zatwierdzony tag i artefakty.
 
+### Bramka wydania ZoneCTL 4.9.0
+
+- [x] Ujednolicić semantyczne kolory stanów TUI, obsługę odświeżania oraz
+  formularze rekordów i bezpieczną edycję wieloliniowego SOA.
+- [x] Zweryfikować macierze awarii i rollbacku tworzenia, disable/restore,
+  kwarantanny oraz migracji i relokacji zarządzanych stref.
+- [x] Przeprowadzić produkcyjny drill kompletnego cyklu życia strefy oraz
+  oddzielny drill atomowego purge pakietu syntetycznego.
+- [x] Dodać retencję kwarantanny, trwały purge z potwierdzeniami, stagingiem,
+  archiwum ratunkowym i zewnętrznym manifestem audytowym.
+- [x] Objąć nowoczesny core, TUI i CLI rygorystycznym `mypy`, pozostawiając
+  `legacy_v220.py` jako jawnie wydzielony wyjątek kompatybilności.
+- [x] Dodać izolowane workflow jakości, budowy pakietów i ręcznie
+  zatwierdzanego wydania oraz test spójności wersji 4.9.0.
+- [ ] Zbudować końcowe wheel i DEB 4.9.0, uruchomić Lintian i zweryfikować
+  sumy SHA-256 oraz brak plików `/etc/bind`.
+- [ ] Przetestować aktualizację 4.8.3 → 4.9.0 bez zmiany konfiguracji BIND,
+  scalić gałąź, utworzyć tag `v4.9.0` i uruchomić zatwierdzony release.
+
 ## ZoneCTL 4.9 — semantyczna czytelność TUI
 
 - [x] Zdefiniować centralny kontrakt kolorów stanów: zielony dla stanu

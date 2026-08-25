@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 4.9.0 - 2026-08-25
+
 ### Fixed
 
 - zone creation validates the root BIND configuration instead of the managed

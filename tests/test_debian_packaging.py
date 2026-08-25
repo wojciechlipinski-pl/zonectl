@@ -1,4 +1,5 @@
 from pathlib import Path
+import tomllib
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -21,7 +22,9 @@ def test_required_debian_packaging_files_exist() -> None:
 
 def test_debian_version_matches_release() -> None:
     changelog = (DEBIAN / "changelog").read_text(encoding="utf-8")
-    assert changelog.startswith("zonectl (4.8.3-1) ")
+    metadata = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+    version = metadata["project"]["version"]
+    assert changelog.startswith(f"zonectl ({version}-1) ")
 
 
 def test_bind_dependencies_use_supported_lower_bound_without_exact_pin() -> None:
