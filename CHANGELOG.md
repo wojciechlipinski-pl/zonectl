@@ -27,7 +27,9 @@
   zone creation forms and shared TUI dialogs; DNSSEC enablement and multi-zone
   editing complete strict typing coverage of the core module set; all TUI
   helper modules are now covered as well, isolating the remaining interface
-  type debt in the main curses application
+  type debt in the main curses application; the first curses typing pass
+  annotates shared sorting and rendering helpers and reduces its mypy report
+  from 100 errors to 56
 
 - a dependency-free AST audit inventories missing public API docstrings, while
   CI initially enforces complete documentation only for the new critical

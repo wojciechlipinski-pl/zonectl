@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from zonectl.ui.credits import draw_project_credits
-from zonectl.core.zone_model import ChangeKind, ZoneChange, ZoneModel
+from zonectl.core.zone_model import ChangeKind, ZoneChange, ZoneModel, ZoneRecordView
 from zonectl.ui.dialogs import CursesDialogs
 from zonectl.ui.function_keys import decode_function_key
 from zonectl.ui.records.editor import RecordEditor
@@ -25,6 +25,7 @@ import curses
 import queue
 import threading
 import textwrap
+from collections.abc import Sequence
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from pathlib import Path
@@ -151,6 +152,7 @@ class CursesApp:
         self.multi_selected: set[str] = set()
         self.messages: queue.Queue[tuple[str, ZoneStatus]] = queue.Queue()
         self.stop_event = threading.Event()
+        self.worker: threading.Thread | None = None
         self._rebuild_rows()
 
     def run(self) -> None:
@@ -253,7 +255,8 @@ class CursesApp:
         return {Health.PASS: "●", Health.WARN: "●", Health.FAIL: "●", Health.UNKNOWN: "○"}[health]
 
     def _start_refresh(self, force: bool = False) -> None:
-        if getattr(self, "worker", None) and self.worker.is_alive():
+        worker = self.worker
+        if worker is not None and worker.is_alive():
             if not force:
                 return
             return  # do not start two concurrent scans
@@ -285,7 +288,7 @@ class CursesApp:
             changed = True
         return changed
 
-    def _zone_key(self, zone: Zone):
+    def _zone_key(self, zone: Zone) -> tuple[int | str, ...]:
         status = self.statuses.get(zone.name, ZoneStatus(zone=zone))
         mode = self.SORTS[self.sort_index]
         if mode == "Health":
@@ -334,8 +337,9 @@ class CursesApp:
         self.offset = min(self.offset, self.selected)
 
     def _selected_zone_name(self) -> str | None:
-        if self.rows and self.rows[self.selected].zone:
-            return self.rows[self.selected].zone.name
+        zone = self.rows[self.selected].zone if self.rows else None
+        if zone is not None:
+            return zone.name
         return None
 
     def _draw(self, win: curses.window) -> None:
@@ -494,6 +498,8 @@ class CursesApp:
             if self.rows and 0 <= self.selected < len(self.rows)
             else None
         )
+        lines: tuple[str, ...]
+        summary_lines: tuple[str, ...]
         if zone is None:
             title = " Szczegóły strefy "
             lines = ("Wybierz strefę z listy.",)
@@ -1832,10 +1838,10 @@ class CursesApp:
 
         sort_names = ("Nazwa", "Typ", "TTL")
 
-        def ordered_records():
+        def ordered_records() -> list[ZoneRecordView]:
             views = list(model.record_views)
 
-            def name_key(view):
+            def name_key(view: ZoneRecordView) -> tuple[object, ...]:
                 record = view.record
                 return (
                     natural_name_key(record.relative_owner(zone.name)),
@@ -1844,7 +1850,7 @@ class CursesApp:
                     view.identifier,
                 )
 
-            def type_key(view):
+            def type_key(view: ZoneRecordView) -> tuple[object, ...]:
                 record = view.record
                 return (
                     record.rtype.casefold(),
@@ -1853,7 +1859,7 @@ class CursesApp:
                     view.identifier,
                 )
 
-            def ttl_key(view):
+            def ttl_key(view: ZoneRecordView) -> tuple[object, ...]:
                 record = view.record
                 return (
                     record.ttl is None,
@@ -3880,6 +3886,7 @@ class CursesApp:
                     curses.A_REVERSE | curses.A_BOLD,
                 )
 
+                lines: tuple[str, ...]
                 if error is not None:
                     lines = ("BŁĄD ODCZYTU", error)
                     stage = "ERROR"
@@ -4251,11 +4258,24 @@ class CursesApp:
             except curses.error:
                 pass
 
-    def _draw_dnssec_status_48(self, win, zone, view, error, stage) -> None:
+    def _draw_dnssec_status_48(
+        self,
+        win: curses.window,
+        zone: Zone,
+        view: DnssecStatusView | None,
+        error: str | None,
+        stage: str,
+    ) -> None:
         """Rysuje status strefy DNSSEC w dwukolumnowym układzie 4.8."""
         height, width = win.getmaxyx()
 
-        def put(row, column, text, attr=curses.A_NORMAL, limit=None):
+        def put(
+            row: int,
+            column: int,
+            text: object,
+            attr: int = curses.A_NORMAL,
+            limit: int | None = None,
+        ) -> None:
             if 0 <= row < height and 0 <= column < width:
                 try:
                     available = max(0, width - column - 1)
@@ -4314,7 +4334,12 @@ class CursesApp:
         left_lines = raw_lines[:delegation_at]
         right_lines = raw_lines[delegation_at:]
 
-        def draw_lines(lines, top, column, column_width):
+        def draw_lines(
+            lines: Sequence[str],
+            top: int,
+            column: int,
+            column_width: int,
+        ) -> int:
             row = top
             for text in lines:
                 if row >= height - 3:
@@ -4343,7 +4368,11 @@ class CursesApp:
         else:
             put(7, right, "Brak danych delegacji.", curses.A_DIM, right_width)
 
-    def _dnssec_line_attr(self, line: str, all_lines) -> int:
+    def _dnssec_line_attr(
+        self,
+        line: str,
+        all_lines: Sequence[str],
+    ) -> int:
         """Color DNSSEC and KASP states without treating transitions as errors."""
         parsed = parse_kasp_line(line)
         if parsed is not None:
@@ -4374,7 +4403,12 @@ class CursesApp:
         win.erase()
         height, width = win.getmaxyx()
 
-        def put(row, column, text, attr=curses.A_NORMAL):
+        def put(
+            row: int,
+            column: int,
+            text: object,
+            attr: int = curses.A_NORMAL,
+        ) -> None:
             if 0 <= row < height and 0 <= column < width:
                 try:
                     win.addnstr(

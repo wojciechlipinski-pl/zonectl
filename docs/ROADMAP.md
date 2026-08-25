@@ -185,7 +185,9 @@ zrealizowane, a `[ ]` pozostają do wykonania.
   Wszystkie moduły core przechodzą pełny audyt mypy; ostatni zakres domyka
   transakcję włączenia DNSSEC i sesję edycji wielu stref. Bramką objęto też
   wszystkie pomocnicze moduły TUI; pozostały dług typów interfejsu skupia się
-  w głównej aplikacji `curses_app.py`.
+  w głównej aplikacji `curses_app.py`. Pierwszy etap porządkuje typy wspólnych
+  funkcji sortowania i renderowania, zmniejszając raport mypy ze 100 do 56
+  błędów przed objęciem całego pliku bramką.
 - [ ] Dodać automatyczne formatowanie i lint.
 - [x] Dodać testy integracyjne z odseparowaną konfiguracją i prawdziwymi
   narzędziami walidacyjnymi BIND, bez kontaktu z produkcyjnym `rndc`.
