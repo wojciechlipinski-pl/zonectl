@@ -37,6 +37,7 @@ def test_quality_gate_type_checks_only_incremental_critical_scope() -> None:
     assert '"mypy>=1.20,<1.21"' in text
     assert "MYPYPATH: src" in text
     assert "python -m mypy" in text
+    assert "src/zonectl/cli.py" in text
     assert "zone_quarantine_retention.py" in text
     assert "zone_quarantine_purge.py" in text
     assert "zone_create_transaction.py" in text

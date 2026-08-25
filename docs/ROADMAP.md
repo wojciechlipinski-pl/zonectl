@@ -168,7 +168,7 @@ zrealizowane, a `[ ]` pozostają do wykonania.
 - [x] Zachować względną nazwę właściciela i komentarz inline po edycji.
 - [ ] Uzupełnić docstringi publicznych klas i metod.
 - [ ] Rozszerzyć pokrycie testami krytycznych ścieżek zapisu.
-- [ ] Dodać statyczną analizę typów. Ścisła bramka `mypy` obejmuje już nowe
+- [x] Dodać statyczną analizę typów. Ścisła bramka `mypy` obejmuje już nowe
   moduły retencji/purge oraz audyt publicznego API; zakres należy rozszerzać
   stopniowo po usunięciu błędów typów z kolejnych modułów. Bramką objęto już
   także transakcje tworzenia, wyłączania i przywracania stref oraz pakowania
@@ -206,7 +206,10 @@ zrealizowane, a `[ ]` pozostają do wykonania.
   bezpieczeństwa cyklu życia, inwentaryzację i retencję kwarantanny,
   pozostawiając 51 błędów. Szósty etap rozdziela purge, odtwarzanie z
   kwarantanny, kwarantannę oraz transakcje disable, restore i create,
-  pozostawiając 12 błędów przed końcowym objęciem modułu bramką.
+  pozostawiając 12 błędów przed końcowym objęciem modułu bramką. Ostatni etap
+  typuje wspólne funkcje CLI i usuwa pozostałe kolizje inferencji; `cli.py`
+  przechodzi ścisły audyt i trafia do CI. Historyczny moduł kompatybilności
+  `legacy_v220.py` pozostaje jawnym, osobno wydzielonym wyjątkiem.
 - [ ] Dodać automatyczne formatowanie i lint.
 - [x] Dodać testy integracyjne z odseparowaną konfiguracją i prawdziwymi
   narzędziami walidacyjnymi BIND, bez kontaktu z produkcyjnym `rndc`.

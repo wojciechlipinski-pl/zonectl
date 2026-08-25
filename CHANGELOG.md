@@ -46,7 +46,10 @@
   typed DNSSEC reporting, managed-zone migration, lifecycle safety inventory
   and quarantine retention reporting reduce the remainder to 51; separating
   purge, quarantine recovery, disable, restore and create transaction values
-  leaves only 12 CLI errors before final admission to the strict gate
+  leaves only 12 CLI errors before final admission to the strict gate; the
+  final pass types shared CLI helpers, removes the remaining cross-branch
+  inference collisions and adds `cli.py` to CI, while explicitly isolating
+  the unchanged `legacy_v220.py` compatibility implementation
 
 - a dependency-free AST audit inventories missing public API docstrings, while
   CI initially enforces complete documentation only for the new critical

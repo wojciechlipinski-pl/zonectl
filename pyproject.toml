@@ -25,3 +25,7 @@ where = ["src"]
 python_version = "3.11"
 strict = true
 warn_unused_configs = true
+
+[[tool.mypy.overrides]]
+module = "zonectl.legacy_v220"
+ignore_errors = true

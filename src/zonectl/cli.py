@@ -5,6 +5,7 @@ import json
 import sys
 from dataclasses import asdict
 from pathlib import Path
+from collections.abc import Iterator, Sequence
 
 from . import __version__
 from .core.bind import BindService
@@ -38,7 +39,9 @@ from .core.bind_secondary_plan import (
 )
 from .core.bind_secondary_transaction import BindSecondaryTransaction
 from .core.bind_zone_secondary import BindZoneSecondaryError, BindZoneSecondaryPlanner
-from .core.config import DEFAULT_CONFIG, DEFAULT_GROUPS, DEFAULT_ZONES, ToolkitConfig
+from .core.config import ToolkitConfig
+from .core.models import Zone
+from .core.paths import DEFAULT_CONFIG, DEFAULT_GROUPS, DEFAULT_ZONES
 from .core.dnssec_enable_plan import (
     DnssecEnablePlanError,
     DnssecEnablePlanner,
@@ -963,12 +966,12 @@ def legacy_main(arguments: list[str]) -> int:
     old_argv = sys.argv
     try:
         sys.argv = ["zctl"] + arguments
-        return int(legacy_v220.main() or 0)
+        return int(legacy_v220.main() or 0)  # type: ignore[no-untyped-call]
     finally:
         sys.argv = old_argv
 
 
-def grouped_lines(config: ToolkitConfig, zones):
+def grouped_lines(config: ToolkitConfig, zones: Sequence[Zone]) -> Iterator[str]:
     groups: dict[str, list[str]] = {}
     for zone in zones:
         groups.setdefault(zone.group, []).append(zone.name)
@@ -991,7 +994,7 @@ def print_transaction(result: TransactionResult, as_json: bool = False) -> int:
     return transaction_exit_code(result)
 
 
-def transaction_main(args, config: ToolkitConfig) -> int:
+def transaction_main(args: argparse.Namespace, config: ToolkitConfig) -> int:
     engine = TransactionEngine(config)
     try:
         if args.tx_command == "check":
@@ -1405,8 +1408,8 @@ def main(argv: list[str] | None = None) -> int:
             if acl_apply_result.manifest:
                 print(f"Manifest:    {acl_apply_result.manifest}")
             print("\nEtapy:")
-            for step in acl_apply_result.steps:
-                print(f"[{'OK' if step.ok else 'BŁĄD'}] {step.name}: {step.message}")
+            for acl_apply_step in acl_apply_result.steps:
+                print(f"[{'OK' if acl_apply_step.ok else 'BŁĄD'}] {acl_apply_step.name}: {acl_apply_step.message}")
         return 0 if acl_apply_result.status in {"DRY-RUN", "COMMIT"} else 1
     if args.command == "bind" and args.bind_command == "acl-plan":
         acl_plan_replacements: dict[str, str] = {}
@@ -1571,8 +1574,8 @@ def main(argv: list[str] | None = None) -> int:
             for conflict in rpz_managed_plan.conflicts or ("-",):
                 print(f"- {conflict}")
             print("\nPLANOWANE ETAPY PRZYSZŁEJ TRANSAKCJI")
-            for step in rpz_managed_plan.steps:
-                print(f"- {step}")
+            for rpz_plan_step in rpz_managed_plan.steps:
+                print(f"- {rpz_plan_step}")
             print(f"\nNastępny krok: {rpz_managed_plan.next_action}")
             print("\nWynik: PLAN — niczego nie zapisano i nie zmieniono BIND")
         return 0 if rpz_managed_plan.status == "READY" else 1
@@ -2389,8 +2392,8 @@ def main(argv: list[str] | None = None) -> int:
                 if migration_apply_result.manifest:
                     print(f"Manifest:   {migration_apply_result.manifest}")
                 print("\nEtapy:")
-                for migration_apply_step in migration_apply_result.steps:
-                    print(f"[{'OK' if migration_apply_step.ok else 'BŁĄD'}] {migration_apply_step.name}: {migration_apply_step.message}")
+                for managed_migration_step in migration_apply_result.steps:
+                    print(f"[{'OK' if managed_migration_step.ok else 'BŁĄD'}] {managed_migration_step.name}: {managed_migration_step.message}")
             return 0 if migration_apply_result.status in {"DRY-RUN", "COMMIT"} else 1
         if args.zone_command in {"migration-inventory", "migration-plan"}:
             migration_query_planner = ManagedZoneMigrationPlanner(
@@ -2843,8 +2846,8 @@ def main(argv: list[str] | None = None) -> int:
         if args.grouped:
             print("\n".join(grouped_lines(config, zones)))
         else:
-            for zone in zones:
-                print(zone.name)
+            for domain_zone in zones:
+                print(domain_zone.name)
         return 0
     if args.command == "groups":
         print("\n".join(grouped_lines(config, zones)))
