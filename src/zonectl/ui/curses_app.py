@@ -35,10 +35,15 @@ from ..core.bind import BindService
 from ..core.bind_access_inventory import (
     BindAccessInventoryError,
     BindAccessInventoryReader,
+    BindListDefinition,
 )
-from ..core.bind_access_impact import BindAccessImpactError, BindAccessImpactReporter
+from ..core.bind_access_impact import (
+    BindAccessImpactError,
+    BindAccessImpactReport,
+    BindAccessImpactReporter,
+)
 from ..core.bind_acl_plan import BindAclPlanError, BindAclPlanner
-from ..core.bind_acl_transaction import BindAclTransaction
+from ..core.bind_acl_transaction import BindAclResult, BindAclTransaction
 from ..core.bind_environment_report import BindEnvironmentReporter
 from ..core.bind_onboarding_report import (
     BindOnboardingReport,
@@ -48,28 +53,32 @@ from ..core.bind_onboarding_report import (
 )
 from ..core.bind_secondary_plan import BindSecondaryPlanError, BindSecondaryPlanner
 from ..core.bind_secondary_health import BindSecondaryHealthGate
-from ..core.bind_secondary_report import BindSecondaryReporter
-from ..core.bind_secondary_transaction import BindSecondaryTransaction
+from ..core.bind_secondary_report import BindSecondaryReport, BindSecondaryReporter
+from ..core.bind_secondary_transaction import BindSecondaryResult, BindSecondaryTransaction
 from ..core.bind_zone_secondary import BindZoneSecondaryError, BindZoneSecondaryPlanner
 from ..core.bulk_operations import BulkOperation, BulkOperationError
 from ..core.config import ToolkitConfig
 from ..core.dnssec_ds_check import DnssecDsChecker
-from ..core.dnssec_confirm_ds import DnssecConfirmDsTransaction
-from ..core.dnssec_disable_plan import DnssecDisablePlanner
-from ..core.dnssec_disable_transaction import DnssecDisableTransaction
-from ..core.dnssec_enable_plan import DnssecEnablePlanner
-from ..core.dnssec_enable_transaction import DnssecEnableTransaction
+from ..core.dnssec_confirm_ds import DnssecConfirmDsTransaction, DnssecConfirmResult
+from ..core.dnssec_disable_plan import DnssecDisablePlan, DnssecDisablePlanner
+from ..core.dnssec_disable_transaction import DnssecDisableResult, DnssecDisableTransaction
+from ..core.dnssec_enable_plan import DnssecEnablePlan, DnssecEnablePlanner
+from ..core.dnssec_enable_transaction import DnssecEnableResult, DnssecEnableTransaction
 from ..core.dnssec_report import DnssecReporter
 from ..core.dnssec_onboarding_audit import (
     DnssecOnboardingAuditItem,
     DnssecOnboardingAuditor,
 )
-from ..core.dnssec_withdrawal_backup import DnssecWithdrawalBackup
+from ..core.dnssec_withdrawal_backup import (
+    DnssecWithdrawalBackup,
+    DnssecWithdrawalBackupResult,
+)
 from ..core.managed_zone_migration import (
     ManagedZoneMigrationError,
     ManagedZoneMigrationPlanner,
 )
 from ..core.managed_zone_migration_transaction import (
+    ManagedZoneMigrationResult,
     ManagedZoneMigrationStep,
     ManagedZoneMigrationTransaction,
 )
@@ -78,6 +87,7 @@ from ..core.managed_zone_relocation import (
     ManagedZoneRelocationPlanner,
 )
 from ..core.managed_zone_relocation_transaction import (
+    ManagedZoneRelocationResult,
     ManagedZoneRelocationTransaction,
 )
 from ..core.edit_lock import ZoneEditLockedError
@@ -97,6 +107,7 @@ from ..core.zone_edit_session import (
     ZoneEditSession,
     ZoneEditSessionError,
 )
+from ..core.zone_parser import DNSRecord
 from ..core.zone_create_transaction import ZoneCreateTransaction
 from ..core.zone_lifecycle import (
     ZoneCreateRequest,
@@ -2441,7 +2452,7 @@ class CursesApp:
         win: curses.window,
         *,
         title: str,
-        lines: list[str],
+        lines: Sequence[str],
         error: bool = False,
     ) -> None:
         """Wyświetla zawijany i przewijany modalny komunikat."""
@@ -2521,7 +2532,8 @@ class CursesApp:
                 pass
 
     def _draw_message_view_48(
-        self, win, title, wrapped, offset, visible, error, divider
+        self, win: curses.window, title: str, wrapped: Sequence[str],
+        offset: int, visible: int, error: bool, divider: int,
     ) -> None:
         """Wspólny renderer komunikatów, planów i wyników w układzie 4.8."""
         height, width = win.getmaxyx()
@@ -2579,7 +2591,10 @@ class CursesApp:
         for row, text in enumerate(hints, start=11):
             win.addnstr(row, right, text, right_width)
 
-    def _draw_context_panel_48(self, win, heading, details) -> None:
+    def _draw_context_panel_48(
+        self, win: curses.window, heading: str,
+        details: Sequence[tuple[object, object]],
+    ) -> None:
         """Dodaje panel kontekstowy 4.8 do starszych ekranów listowych."""
         height, width = win.getmaxyx()
         if width < 100 or height < 20:
@@ -2624,7 +2639,7 @@ class CursesApp:
         win: curses.window,
         *,
         title: str,
-        result,
+        result: ManagedZoneMigrationResult,
         profile: str,
         note: str = "",
     ) -> None:
@@ -2720,7 +2735,7 @@ class CursesApp:
                 pass
 
     @staticmethod
-    def _wrap_message_lines(lines: list[str], width: int) -> list[str]:
+    def _wrap_message_lines(lines: Sequence[str], width: int) -> list[str]:
         """Zawijaj wiersze wizualne bez wypuszczania tekstu poza panel.
 
         Komunikaty narzędzi BIND często trafiają do pojedynczego elementu
@@ -3393,8 +3408,8 @@ class CursesApp:
         self,
         win: curses.window,
         zone: Zone,
-        current_records,
-        proposed_records,
+        current_records: Sequence[DNSRecord],
+        proposed_records: Sequence[DNSRecord],
     ) -> bool:
         """Odrzuć nowe błędy i wymagaj potwierdzenia nowych ostrzeżeń."""
         existing = {
@@ -3475,11 +3490,12 @@ class CursesApp:
                 error=True,
             )
             return
+        transaction_engine = self.transaction_engine
 
         def factory(zone: Zone) -> ZoneEditSession:
             return ZoneEditSession(
                 zone,
-                self.transaction_engine,
+                transaction_engine,
                 read_only=self.read_only,
                 edit_lock_directory=self.edit_lock_directory,
             )
@@ -3729,7 +3745,7 @@ class CursesApp:
                 f"Operacje DNSSEC w TUI są zablokowane dla RPZ: {zone.name}"
             )
 
-    def _dnssec_disable_plan(self, zone: Zone):
+    def _dnssec_disable_plan(self, zone: Zone) -> DnssecDisablePlan:
         self._ensure_dnssec_tui_allowed(zone)
         if self.config is None:
             raise RuntimeError("Brak konfiguracji ZoneCTL")
@@ -3740,7 +3756,7 @@ class CursesApp:
             )
         return DnssecDisablePlanner().plan(discovered)
 
-    def _dnssec_enable_plan(self, zone: Zone):
+    def _dnssec_enable_plan(self, zone: Zone) -> DnssecEnablePlan:
         self._ensure_dnssec_tui_allowed(zone)
         if self.config is None:
             raise RuntimeError("Brak konfiguracji ZoneCTL")
@@ -3751,21 +3767,23 @@ class CursesApp:
             )
         return DnssecEnablePlanner().plan(discovered)
 
-    def _dnssec_enable_dry_run(self, zone: Zone):
+    def _dnssec_enable_dry_run(self, zone: Zone) -> DnssecEnableResult:
         plan = self._dnssec_enable_plan(zone)
         return DnssecEnableTransaction(
             Path("/var/backups/zonectl-dnssec-enable/backups"),
             Path("/var/backups/zonectl-dnssec-enable/manifests"),
         ).apply(plan)
 
-    def _dnssec_enable_commit(self, zone: Zone):
+    def _dnssec_enable_commit(self, zone: Zone) -> DnssecEnableResult:
         plan = self._dnssec_enable_plan(zone)
         return DnssecEnableTransaction(
             Path("/var/backups/zonectl-dnssec-enable/backups"),
             Path("/var/backups/zonectl-dnssec-enable/manifests"),
         ).apply(plan, commit=True, activate=True)
 
-    def _dnssec_confirm_ds(self, zone: Zone, *, commit: bool = False):
+    def _dnssec_confirm_ds(
+        self, zone: Zone, *, commit: bool = False,
+    ) -> DnssecConfirmResult:
         self._ensure_dnssec_tui_allowed(zone)
         toolkit = self.config.toolkit if self.config is not None else {}
         local_server = toolkit.get("local_server", "127.0.0.1")
@@ -3789,21 +3807,23 @@ class CursesApp:
             acknowledge_published=commit,
         )
 
-    def _dnssec_finalize_dry_run(self, zone: Zone):
+    def _dnssec_finalize_dry_run(self, zone: Zone) -> DnssecDisableResult:
         plan = self._dnssec_disable_plan(zone)
         return DnssecDisableTransaction(
             Path("/var/backups/zonectl-dnssec-disable/backups"),
             Path("/var/backups/zonectl-dnssec-disable/manifests"),
         ).apply(plan, stage="finalize")
 
-    def _dnssec_finalize_commit(self, zone: Zone):
+    def _dnssec_finalize_commit(self, zone: Zone) -> DnssecDisableResult:
         plan = self._dnssec_disable_plan(zone)
         return DnssecDisableTransaction(
             Path("/var/backups/zonectl-dnssec-disable/backups"),
             Path("/var/backups/zonectl-dnssec-disable/manifests"),
         ).apply(plan, stage="finalize", commit=True, activate=True)
 
-    def _dnssec_withdrawal_backup(self, zone: Zone, *, commit: bool = False):
+    def _dnssec_withdrawal_backup(
+        self, zone: Zone, *, commit: bool = False,
+    ) -> DnssecWithdrawalBackupResult:
         plan = self._dnssec_disable_plan(zone)
         toolkit = self.config.toolkit if self.config is not None else {}
         local_server = toolkit.get("local_server", "127.0.0.1")
@@ -3835,7 +3855,9 @@ class CursesApp:
         )
 
     @staticmethod
-    def _dnssec_backup_result_lines(result) -> list[str]:
+    def _dnssec_backup_result_lines(
+        result: DnssecWithdrawalBackupResult,
+    ) -> list[str]:
         lines = [
             f"Status: {result.status}",
             f"Commit: {'TAK' if result.committed else 'NIE'}",
@@ -3851,7 +3873,7 @@ class CursesApp:
         return lines
 
     @staticmethod
-    def _dnssec_enable_result_lines(result) -> list[str]:
+    def _dnssec_enable_result_lines(result: DnssecEnableResult) -> list[str]:
         lines = [
             f"Status: {result.status}",
             f"Commit: {'TAK' if result.committed else 'NIE'}",
@@ -3864,7 +3886,7 @@ class CursesApp:
         return lines
 
     @staticmethod
-    def _dnssec_confirm_result_lines(result) -> list[str]:
+    def _dnssec_confirm_result_lines(result: DnssecConfirmResult) -> list[str]:
         lines = [
             f"Status: {result.status}",
             f"Commit: {'TAK' if result.committed else 'NIE'}",
@@ -3878,7 +3900,7 @@ class CursesApp:
         return lines
 
     @staticmethod
-    def _dnssec_disable_result_lines(result) -> list[str]:
+    def _dnssec_disable_result_lines(result: DnssecDisableResult) -> list[str]:
         lines = [
             f"Etap: {result.stage}",
             f"Status: {result.status}",
@@ -4014,39 +4036,39 @@ class CursesApp:
                                 error=checked.operation != "CONFIRM_DS",
                             )
                         elif view is not None and view.operation == "ENABLE":
-                            plan = self._dnssec_enable_plan(zone)
+                            enable_plan = self._dnssec_enable_plan(zone)
                             self._message_view(
                                 win,
                                 title=f"Plan włączenia DNSSEC: {zone.name}",
                                 lines=(
                                     [
-                                        f"Plik źródłowy: {plan.source_zone_file}",
-                                        f"Plik docelowy: {plan.target_zone_file}",
+                                        f"Plik źródłowy: {enable_plan.source_zone_file}",
+                                        f"Plik docelowy: {enable_plan.target_zone_file}",
                                         "Migracja pliku: "
-                                        + ("TAK" if plan.migration_required else "NIE"),
-                                        f"Polityka: {plan.policy}",
+                                        + ("TAK" if enable_plan.migration_required else "NIE"),
+                                        f"Polityka: {enable_plan.policy}",
                                         "",
                                         "Planowany diff:",
                                     ]
-                                    + (plan.unified_diff.splitlines() or ["Brak zmian"])
+                                    + (enable_plan.unified_diff.splitlines() or ["Brak zmian"])
                                     + ["", "Planowane etapy:"]
-                                    + [f"- {action}" for action in plan.actions]
+                                    + [f"- {action}" for action in enable_plan.actions]
                                 ),
                             )
                         else:
-                            plan = self._dnssec_disable_plan(zone)
+                            disable_plan = self._dnssec_disable_plan(zone)
                             self._message_view(
                                 win,
                                 title=f"Plan wycofania DNSSEC: {zone.name}",
                                 lines=(
                                     ["Etap insecure:"]
                                     + (
-                                        plan.insecure_diff.splitlines()
+                                        disable_plan.insecure_diff.splitlines()
                                         or ["Brak zmian"]
                                     )
                                     + ["", "Etap finalize:"]
                                     + (
-                                        plan.unified_diff.splitlines()
+                                        disable_plan.unified_diff.splitlines()
                                         or ["Brak zmian"]
                                     )
                                 ),
@@ -4068,14 +4090,14 @@ class CursesApp:
                         continue
                     if view.operation == "WITHDRAWAL":
                         try:
-                            result = self._dnssec_withdrawal_backup(zone)
+                            backup_result = self._dnssec_withdrawal_backup(zone)
                             self._message_view(
                                 win,
                                 title=f"Dry-run backupu DNSSEC: {zone.name}",
-                                lines=self._dnssec_backup_result_lines(result),
-                                error=result.status != "DRY-RUN",
+                                lines=self._dnssec_backup_result_lines(backup_result),
+                                error=backup_result.status != "DRY-RUN",
                             )
-                            if result.status == "DRY-RUN":
+                            if backup_result.status == "DRY-RUN":
                                 if self.config is not None and self.config.read_only:
                                     self._read_only_message(win, zone)
                                 else:
@@ -4098,16 +4120,16 @@ class CursesApp:
                                         f"Utworzyć backup wycofania DNSSEC dla {zone.name}?",
                                         key_reader=self._get_key,
                                     ):
-                                        committed = self._dnssec_withdrawal_backup(
+                                        committed_backup = self._dnssec_withdrawal_backup(
                                             zone, commit=True
                                         )
                                         self._message_view(
                                             win,
                                             title=f"Backup wycofania DNSSEC: {zone.name}",
                                             lines=self._dnssec_backup_result_lines(
-                                                committed
+                                                committed_backup
                                             ),
-                                            error=committed.status != "BACKUP-CREATED",
+                                            error=committed_backup.status != "BACKUP-CREATED",
                                         )
                         except Exception as exc:
                             self._message_view(
@@ -4120,14 +4142,14 @@ class CursesApp:
                         continue
                     if view.operation == "CONFIRM_DS":
                         try:
-                            result = self._dnssec_confirm_ds(zone)
+                            confirm_result = self._dnssec_confirm_ds(zone)
                             self._message_view(
                                 win,
                                 title=f"Dry-run potwierdzenia DS: {zone.name}",
-                                lines=self._dnssec_confirm_result_lines(result),
-                                error=result.status != "DRY-RUN",
+                                lines=self._dnssec_confirm_result_lines(confirm_result),
+                                error=confirm_result.status != "DRY-RUN",
                             )
-                            if result.status == "DRY-RUN":
+                            if confirm_result.status == "DRY-RUN":
                                 if self.config is not None and self.config.read_only:
                                     self._read_only_message(win, zone)
                                 else:
@@ -4148,16 +4170,16 @@ class CursesApp:
                                         f"Potwierdzić opublikowany DS dla {zone.name}?",
                                         key_reader=self._get_key,
                                     ):
-                                        committed = self._dnssec_confirm_ds(
+                                        committed_confirmation = self._dnssec_confirm_ds(
                                             zone, commit=True
                                         )
                                         self._message_view(
                                             win,
                                             title=f"Wynik potwierdzenia DS: {zone.name}",
                                             lines=self._dnssec_confirm_result_lines(
-                                                committed
+                                                committed_confirmation
                                             ),
-                                            error=committed.status != "CONFIRMED",
+                                            error=committed_confirmation.status != "CONFIRMED",
                                         )
                         except Exception as exc:
                             self._message_view(
@@ -4171,14 +4193,14 @@ class CursesApp:
                     if view.operation != "FINALIZE":
                         if view.operation == "ENABLE":
                             try:
-                                result = self._dnssec_enable_dry_run(zone)
+                                enable_result = self._dnssec_enable_dry_run(zone)
                                 self._message_view(
                                     win,
                                     title=f"Dry-run włączenia DNSSEC: {zone.name}",
-                                    lines=self._dnssec_enable_result_lines(result),
-                                    error=result.status != "DRY-RUN",
+                                    lines=self._dnssec_enable_result_lines(enable_result),
+                                    error=enable_result.status != "DRY-RUN",
                                 )
-                                if result.status == "DRY-RUN":
+                                if enable_result.status == "DRY-RUN":
                                     if self.config is not None and self.config.read_only:
                                         self._read_only_message(win, zone)
                                     else:
@@ -4203,7 +4225,7 @@ class CursesApp:
                                             f"Włączyć i aktywować DNSSEC dla {zone.name}?",
                                             key_reader=self._get_key,
                                         ):
-                                            committed = self._dnssec_enable_commit(zone)
+                                            committed_enable = self._dnssec_enable_commit(zone)
                                             self._message_view(
                                                 win,
                                                 title=(
@@ -4211,9 +4233,9 @@ class CursesApp:
                                                     f"{zone.name}"
                                                 ),
                                                 lines=self._dnssec_enable_result_lines(
-                                                    committed
+                                                    committed_enable
                                                 ),
-                                                error=not committed.ok,
+                                                error=not committed_enable.ok,
                                             )
                             except Exception as exc:
                                 self._message_view(
@@ -4237,15 +4259,15 @@ class CursesApp:
                         refresh = True
                         continue
                     try:
-                        result = self._dnssec_finalize_dry_run(zone)
+                        finalize_result = self._dnssec_finalize_dry_run(zone)
                         self._message_view(
                             win,
                             title=f"Dry-run finalizacji: {zone.name}",
-                            lines=self._dnssec_disable_result_lines(result),
-                            error=result.status not in {"DRY-RUN"},
+                            lines=self._dnssec_disable_result_lines(finalize_result),
+                            error=finalize_result.status not in {"DRY-RUN"},
                         )
                         if (
-                            result.status == "DRY-RUN"
+                            finalize_result.status == "DRY-RUN"
                             and view is not None
                             and view.stage == "READY_TO_FINALIZE"
                         ):
@@ -4278,7 +4300,7 @@ class CursesApp:
                                         lines=["Nie zmieniono BIND."],
                                     )
                                 else:
-                                    committed = self._dnssec_finalize_commit(zone)
+                                    committed_finalize = self._dnssec_finalize_commit(zone)
                                     self._message_view(
                                         win,
                                         title=(
@@ -4286,9 +4308,9 @@ class CursesApp:
                                             f"{zone.name}"
                                         ),
                                         lines=self._dnssec_disable_result_lines(
-                                            committed
+                                            committed_finalize
                                         ),
-                                        error=not committed.ok,
+                                        error=not committed_finalize.ok,
                                     )
                     except Exception as exc:
                         self._message_view(
@@ -5040,7 +5062,11 @@ class CursesApp:
             elif key == curses.KEY_F5 and items[selected][0] == "secondary":
                 self._show_secondary_health(win, items[selected][1].name, report)
 
-    def _show_bind_access_item(self, win, selected_item, report) -> None:
+    def _show_bind_access_item(
+        self, win: curses.window,
+        selected_item: tuple[str, BindListDefinition],
+        report: BindSecondaryReport,
+    ) -> None:
         kind, item = selected_item
         try:
             inventory = BindAccessInventoryReader(self._bind_root_config()).collect()
@@ -5060,7 +5086,9 @@ class CursesApp:
         self._message_view(win, title=f"Wpływ: {item.name}", lines=lines)
 
     @staticmethod
-    def _impact_lines(impact) -> list[str]:
+    def _impact_lines(impact: BindAccessImpactReport | None) -> list[str]:
+        if impact is None:
+            return ["Raport wpływu jest niedostępny."]
         lines = [
             f"Definicja: {impact.name} ({impact.kind})",
             f"Źródło: {impact.source}:{impact.line}",
@@ -5081,7 +5109,10 @@ class CursesApp:
             ]
         return lines
 
-    def _show_secondary_health(self, win, group_name: str, report) -> None:
+    def _show_secondary_health(
+        self, win: curses.window, group_name: str,
+        report: BindSecondaryReport,
+    ) -> None:
         pair = next(
             (
                 item for item in report.pairs
@@ -5112,7 +5143,9 @@ class CursesApp:
         )
 
     @staticmethod
-    def _secondary_result_lines(result) -> list[str]:
+    def _secondary_result_lines(
+        result: BindAclResult | BindSecondaryResult,
+    ) -> list[str]:
         lines = [
             f"Transakcja: {result.transaction_id}", f"Status: {result.status}",
             f"Commit: {'TAK' if result.committed else 'NIE'}",
@@ -5124,7 +5157,9 @@ class CursesApp:
         )
         return lines
 
-    def _edit_acl(self, win, name: str, current: tuple[str, ...]) -> None:
+    def _edit_acl(
+        self, win: curses.window, name: str, current: tuple[str, ...],
+    ) -> None:
         entries = self._acl_entry_editor(win, name, current)
         if entries is None:
             return
@@ -5158,8 +5193,8 @@ class CursesApp:
             return
         if not CursesDialogs.confirm(win, f"Zastosować zmianę ACL {name}"):
             return
-        reason = CursesDialogs.text_input(win, " Powód zmiany ACL: ")
-        if not (reason or "").strip():
+        reason = (CursesDialogs.text_input(win, " Powód zmiany ACL: ") or "").strip()
+        if not reason:
             self._message_view(
                 win, title="Anulowano",
                 lines=["Commit wymaga niepustego uzasadnienia."], error=True,
@@ -5167,7 +5202,7 @@ class CursesApp:
             return
         result = transaction.apply(
             plan, commit=True, activate=True,
-            reason=reason.strip(),
+            reason=reason,
         )
         self._message_view(
             win, title=f"Transakcja ACL: {name}",
@@ -5219,16 +5254,16 @@ class CursesApp:
             elif key in (curses.KEY_UP, ord("k")) and entries:
                 selected = max(0, selected - 1)
             elif key == curses.KEY_IC:
-                value = CursesDialogs.text_input(win, " Nowy element ACL: ", row=2)
-                if value is not None and value.strip():
-                    entries.append(value.strip())
+                new_value = CursesDialogs.text_input(win, " Nowy element ACL: ", row=2)
+                if new_value is not None and new_value.strip():
+                    entries.append(new_value.strip())
                     selected = len(entries) - 1
             elif key == curses.KEY_F4 and entries:
-                value = CursesDialogs.text_input(
+                edited_value = CursesDialogs.text_input(
                     win, " Edytuj element ACL: ", initial=entries[selected], row=2
                 )
-                if value is not None and value.strip():
-                    entries[selected] = value.strip()
+                if edited_value is not None and edited_value.strip():
+                    entries[selected] = edited_value.strip()
             elif key in (curses.KEY_F8, curses.KEY_DC) and entries:
                 if CursesDialogs.confirm(win, f"Usunąć {entries[selected]}"):
                     entries.pop(selected)
@@ -5239,7 +5274,9 @@ class CursesApp:
                     continue
                 return entries
 
-    def _edit_secondary_group(self, win, name: str, current: tuple[str, ...]) -> None:
+    def _edit_secondary_group(
+        self, win: curses.window, name: str, current: tuple[str, ...],
+    ) -> None:
         addresses = self._secondary_address_editor(win, name, current)
         if addresses is None:
             return
@@ -5278,8 +5315,10 @@ class CursesApp:
             return
         if not CursesDialogs.confirm(win, f"Zastosować zmianę grupy {name}"):
             return
-        reason = CursesDialogs.text_input(win, " Powód zmiany secondary: ")
-        if not (reason or "").strip():
+        reason = (
+            CursesDialogs.text_input(win, " Powód zmiany secondary: ") or ""
+        ).strip()
+        if not reason:
             self._message_view(
                 win, title="Anulowano",
                 lines=["Commit wymaga niepustego uzasadnienia."], error=True,
@@ -5287,7 +5326,7 @@ class CursesApp:
             return
         result = transaction.apply(
             plan, commit=True, activate=True,
-            reason=reason.strip(),
+            reason=reason,
         )
         self._message_view(
             win, title=f"Transakcja secondary: {name}",
@@ -5346,18 +5385,18 @@ class CursesApp:
             elif key in (curses.KEY_UP, ord("k")) and addresses:
                 selected = max(0, selected - 1)
             elif key == curses.KEY_IC:
-                value = CursesDialogs.text_input(
+                new_address = CursesDialogs.text_input(
                     win, " Nowy adres: ", row=2
                 )
-                if value is not None and value.strip():
-                    addresses.append(value.strip())
+                if new_address is not None and new_address.strip():
+                    addresses.append(new_address.strip())
                     selected = len(addresses) - 1
             elif key == curses.KEY_F4 and addresses:
-                value = CursesDialogs.text_input(
+                edited_address = CursesDialogs.text_input(
                     win, " Edytuj adres: ", initial=addresses[selected], row=2
                 )
-                if value is not None and value.strip():
-                    addresses[selected] = value.strip()
+                if edited_address is not None and edited_address.strip():
+                    addresses[selected] = edited_address.strip()
             elif key in (curses.KEY_F8, curses.KEY_DC) and addresses:
                 if CursesDialogs.confirm(win, f"Usunąć {addresses[selected]}"):
                     addresses.pop(selected)
@@ -5403,7 +5442,9 @@ class CursesApp:
         )
 
     @staticmethod
-    def _migration_result_lines(result) -> list[str]:
+    def _migration_result_lines(
+        result: ManagedZoneMigrationResult | ManagedZoneRelocationResult,
+    ) -> list[str]:
         lines = [
             f"Transakcja: {result.transaction_id}",
             f"Status: {result.status}",
@@ -5526,7 +5567,10 @@ class CursesApp:
                 if applied:
                     return True
 
-    def _show_zone_relocation_plan(self, win, zone, planner) -> None:
+    def _show_zone_relocation_plan(
+        self, win: curses.window, zone: Zone,
+        planner: ManagedZoneRelocationPlanner,
+    ) -> None:
         try:
             plan = planner.plan(zone.name)
             lines = [
@@ -5543,7 +5587,10 @@ class CursesApp:
         except (ManagedZoneRelocationError, OSError) as exc:
             self._message_view(win, title="Relokacja zablokowana", lines=[str(exc)], error=True)
 
-    def _apply_zone_relocation(self, win, zone, planner) -> bool:
+    def _apply_zone_relocation(
+        self, win: curses.window, zone: Zone,
+        planner: ManagedZoneRelocationPlanner,
+    ) -> bool:
         try:
             plan = planner.plan(zone.name)
             toolkit = self.config.toolkit if self.config is not None else {}
@@ -5581,7 +5628,10 @@ class CursesApp:
             self._message_view(win, title="Błąd relokacji", lines=[str(exc)], error=True)
             return False
 
-    def _show_zone_migration_plan(self, win, zone, planner) -> None:
+    def _show_zone_migration_plan(
+        self, win: curses.window, zone: Zone,
+        planner: ManagedZoneMigrationPlanner,
+    ) -> None:
         try:
             plan = planner.plan(zone.name)
             lines = [
@@ -5606,7 +5656,10 @@ class CursesApp:
                 error=True,
             )
 
-    def _apply_zone_migration(self, win, zone, planner) -> bool:
+    def _apply_zone_migration(
+        self, win: curses.window, zone: Zone,
+        planner: ManagedZoneMigrationPlanner,
+    ) -> bool:
         try:
             plan = planner.plan(zone.name)
             toolkit = self.config.toolkit if self.config is not None else {}

@@ -30,7 +30,11 @@
   type debt in the main curses application; the first curses typing pass
   annotates shared sorting and rendering helpers and reduces its mypy report
   from 100 errors to 56, while the second pass covers BIND onboarding, DNSSEC
-  onboarding and project information views and reduces the remainder to 33
+  onboarding and project information views and reduces the remainder to 33;
+  typed transaction result views, record validation, multi-zone sessions and
+  DNSSEC operation plans reduce the remaining report to 15; typing the BIND
+  access editors and managed-zone migration flows completes strict mypy
+  coverage of the main curses application and adds it to CI
 
 - a dependency-free AST audit inventories missing public API docstrings, while
   CI initially enforces complete documentation only for the new critical

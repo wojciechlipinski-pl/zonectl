@@ -30,7 +30,8 @@ def test_secondary_edit_requires_plan_dry_run_and_exact_name() -> None:
     assert "Wpisz pełną nazwę grupy" in source
     assert "commit=True, activate=True" in source
     assert "Powód zmiany secondary" in source
-    assert "reason=reason.strip()" in source
+    assert ").strip()" in source
+    assert "reason=reason" in source
 
 
 def test_secondary_address_editor_uses_mc_keybindings() -> None:
@@ -62,7 +63,8 @@ def test_acl_editor_uses_mc_keys_and_guarded_transaction() -> None:
     assert "Wpisz pełną nazwę ACL" in workflow
     assert "commit=True, activate=True" in workflow
     assert "Powód zmiany ACL" in workflow
-    assert "reason=reason.strip()" in workflow
+    assert ").strip()" in workflow
+    assert "reason=reason" in workflow
 
 
 def test_bind_access_tui_presents_impact_risk_and_operational_health() -> None:

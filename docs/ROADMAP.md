@@ -189,7 +189,11 @@ zrealizowane, a `[ ]` pozostają do wykonania.
   funkcji sortowania i renderowania, zmniejszając raport mypy ze 100 do 56
   błędów. Drugi etap typuje onboarding BIND, audyt i import DNSSEC oraz ekran
   informacji o projekcie, pozostawiając 33 błędy przed objęciem całego pliku
-  bramką.
+  bramką. Trzeci etap typuje wspólne widoki wyników, walidację rekordów,
+  sesję wielu stref oraz plany i wyniki transakcji DNSSEC, redukując raport
+  do 15 błędów. Ostatni etap typuje obsługę ACL i secondary, edytory list oraz
+  migrację i relokację stref; cały `curses_app.py` przechodzi rygorystyczny
+  audyt i zostaje objęty bramką CI.
 - [ ] Dodać automatyczne formatowanie i lint.
 - [x] Dodać testy integracyjne z odseparowaną konfiguracją i prawdziwymi
   narzędziami walidacyjnymi BIND, bez kontaktu z produkcyjnym `rndc`.

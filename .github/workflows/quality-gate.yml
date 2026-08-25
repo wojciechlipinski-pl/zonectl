@@ -74,6 +74,7 @@ jobs:
             src/zonectl/ui/rpz_status_view.py \
             src/zonectl/ui/semantic_status.py \
             src/zonectl/ui/zone_details_view.py \
+            src/zonectl/ui/curses_app.py \
             src/zonectl/core/dnssec_enable_transaction.py \
             src/zonectl/core/multi_zone_session.py \
             scripts/audit_public_api.py

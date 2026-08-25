@@ -88,6 +88,7 @@ def test_quality_gate_type_checks_only_incremental_critical_scope() -> None:
         "ui/zone_details_view.py",
     ):
         assert module in text
+    assert "ui/curses_app.py" in text
     assert "dnssec_enable_transaction.py" in text
     assert "multi_zone_session.py" in text
     assert "scripts/audit_public_api.py" in text
