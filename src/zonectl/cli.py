@@ -1081,13 +1081,13 @@ def main(argv: list[str] | None = None) -> int:
             print("BŁĄD: właściwa zmiana wymaga niepustego --reason.", file=sys.stderr)
             return 2
         try:
-            plan = BindZoneSecondaryPlanner(args.root_config).plan(args.zone, args.pairs)
+            zone_secondary_plan = BindZoneSecondaryPlanner(args.root_config).plan(args.zone, args.pairs)
             if applying:
-                result = BindSecondaryTransaction(
+                zone_secondary_result = BindSecondaryTransaction(
                     args.backup_root, args.manifest_directory,
                     root_config=args.root_config,
                 ).apply(
-                    plan.transaction_plan(), commit=args.commit,
+                    zone_secondary_plan.transaction_plan(), commit=args.commit,
                     activate=args.activate, reason=args.reason,
                 )
         except (BindZoneSecondaryError, OSError) as exc:
@@ -1095,31 +1095,31 @@ def main(argv: list[str] | None = None) -> int:
             return 2
         if applying:
             if args.json:
-                print(json.dumps(asdict(result), ensure_ascii=False, indent=2))
+                print(json.dumps(asdict(zone_secondary_result), ensure_ascii=False, indent=2))
             else:
-                print(f"Transakcja: {result.transaction_id}")
-                print(f"Strefa:     {plan.zone}")
-                print(f"Status:     {result.status}")
-                print(f"Pary były:  {', '.join(plan.old_pairs) or '-'}")
-                print(f"Pary są:    {', '.join(plan.new_pairs) or '-'}")
-                print(f"Ryzyko:     {plan.impact.risk}")
-                print(f"Commit:     {'TAK' if result.committed else 'NIE'}")
-                print(f"Rollback:   {'TAK' if result.rolled_back else 'NIE'}")
+                print(f"Transakcja: {zone_secondary_result.transaction_id}")
+                print(f"Strefa:     {zone_secondary_plan.zone}")
+                print(f"Status:     {zone_secondary_result.status}")
+                print(f"Pary były:  {', '.join(zone_secondary_plan.old_pairs) or '-'}")
+                print(f"Pary są:    {', '.join(zone_secondary_plan.new_pairs) or '-'}")
+                print(f"Ryzyko:     {zone_secondary_plan.impact.risk}")
+                print(f"Commit:     {'TAK' if zone_secondary_result.committed else 'NIE'}")
+                print(f"Rollback:   {'TAK' if zone_secondary_result.rolled_back else 'NIE'}")
                 print("\nEtapy:")
-                for step in result.steps:
+                for step in zone_secondary_result.steps:
                     print(f"[{'OK' if step.ok else 'BŁĄD'}] {step.name}: {step.message}")
-            return 0 if result.status in {"DRY-RUN", "COMMIT"} else 1
+            return 0 if zone_secondary_result.status in {"DRY-RUN", "COMMIT"} else 1
         if args.json:
-            print(json.dumps(asdict(plan), ensure_ascii=False, indent=2, default=str))
+            print(json.dumps(asdict(zone_secondary_plan), ensure_ascii=False, indent=2, default=str))
         else:
-            print(f"PLAN PRZYPISANIA SECONDARY — {plan.zone}")
-            print(f"Pary były: {', '.join(plan.old_pairs) or '-'}")
-            print(f"Pary będą: {', '.join(plan.new_pairs) or '-'}")
-            print(f"Ryzyko:    {plan.impact.risk}")
-            print(f"Walidacja: {'OK' if plan.validation_ok else 'BŁĄD'}")
-            print("\n" + (plan.diff or "Brak zmian."))
+            print(f"PLAN PRZYPISANIA SECONDARY — {zone_secondary_plan.zone}")
+            print(f"Pary były: {', '.join(zone_secondary_plan.old_pairs) or '-'}")
+            print(f"Pary będą: {', '.join(zone_secondary_plan.new_pairs) or '-'}")
+            print(f"Ryzyko:    {zone_secondary_plan.impact.risk}")
+            print(f"Walidacja: {'OK' if zone_secondary_plan.validation_ok else 'BŁĄD'}")
+            print("\n" + (zone_secondary_plan.diff or "Brak zmian."))
             print("\nWynik: DRY-RUN — niczego nie zmieniono")
-        return 0 if plan.validation_ok else 1
+        return 0 if zone_secondary_plan.validation_ok else 1
     if args.command == "bind" and args.bind_command == "secondary-apply":
         if args.commit != args.activate:
             print(
@@ -1137,110 +1137,110 @@ def main(argv: list[str] | None = None) -> int:
             print("BŁĄD: właściwa zmiana wymaga niepustego --reason.", file=sys.stderr)
             return 2
         try:
-            plan = BindSecondaryPlanner(args.root_config).plan(
+            secondary_apply_plan = BindSecondaryPlanner(args.root_config).plan(
                 args.name, args.addresses
             )
-            result = BindSecondaryTransaction(
+            secondary_apply_result = BindSecondaryTransaction(
                 args.backup_root,
                 args.manifest_directory,
                 root_config=args.root_config,
             ).apply(
-                plan, commit=args.commit, activate=args.activate,
+                secondary_apply_plan, commit=args.commit, activate=args.activate,
                 reason=args.reason,
             )
         except (BindSecondaryPlanError, OSError) as exc:
             print(f"BŁĄD: {exc}", file=sys.stderr)
             return 2
         if args.json:
-            print(json.dumps(asdict(result), ensure_ascii=False, indent=2))
+            print(json.dumps(asdict(secondary_apply_result), ensure_ascii=False, indent=2))
         else:
-            print(f"Transakcja: {result.transaction_id}")
-            print(f"Grupa:       {result.group}")
-            print(f"Status:      {result.status}")
-            print(f"Role:        {', '.join(result.roles)}")
-            print(f"Adresy były: {', '.join(result.old_addresses)}")
-            print(f"Adresy są:   {', '.join(result.new_addresses)}")
-            print(f"Strefy:      {len(result.zones)}")
-            print(f"Commit:      {'TAK' if result.committed else 'NIE'}")
-            print(f"Rollback:    {'TAK' if result.rolled_back else 'NIE'}")
-            if result.backup:
-                print(f"Backup:      {result.backup}")
-            if result.manifest:
-                print(f"Manifest:    {result.manifest}")
+            print(f"Transakcja: {secondary_apply_result.transaction_id}")
+            print(f"Grupa:       {secondary_apply_result.group}")
+            print(f"Status:      {secondary_apply_result.status}")
+            print(f"Role:        {', '.join(secondary_apply_result.roles)}")
+            print(f"Adresy były: {', '.join(secondary_apply_result.old_addresses)}")
+            print(f"Adresy są:   {', '.join(secondary_apply_result.new_addresses)}")
+            print(f"Strefy:      {len(secondary_apply_result.zones)}")
+            print(f"Commit:      {'TAK' if secondary_apply_result.committed else 'NIE'}")
+            print(f"Rollback:    {'TAK' if secondary_apply_result.rolled_back else 'NIE'}")
+            if secondary_apply_result.backup:
+                print(f"Backup:      {secondary_apply_result.backup}")
+            if secondary_apply_result.manifest:
+                print(f"Manifest:    {secondary_apply_result.manifest}")
             print("\nEtapy:")
-            for step in result.steps:
+            for step in secondary_apply_result.steps:
                 print(f"[{'OK' if step.ok else 'BŁĄD'}] {step.name}: {step.message}")
-        return 0 if result.status in {"DRY-RUN", "COMMIT"} else 1
+        return 0 if secondary_apply_result.status in {"DRY-RUN", "COMMIT"} else 1
     if args.command == "bind" and args.bind_command == "access-impact":
         try:
             inventory = BindAccessInventoryReader(args.root_config).collect()
-            report = BindAccessImpactReporter().build(
+            impact_report = BindAccessImpactReporter().build(
                 inventory, args.name, args.entries
             )
         except (BindAccessInventoryError, BindAccessImpactError, OSError) as exc:
             print(f"BŁĄD: {exc}", file=sys.stderr)
             return 2
         if args.json:
-            print(json.dumps(report.to_dict(), ensure_ascii=False, indent=2))
+            print(json.dumps(impact_report.to_dict(), ensure_ascii=False, indent=2))
         else:
             print("RAPORT WPŁYWU ACL/SECONDARY — TYLKO ODCZYT")
-            print(f"Definicja:    {report.name} ({report.kind})")
-            print(f"Źródło:       {report.source}:{report.line}")
-            print(f"Ryzyko:       {report.risk}")
-            print("Role:         " + (", ".join(report.roles) or "nieużywana"))
-            print("Strefy:       " + (", ".join(report.zones) or "-"))
-            print("Zależne ACL:  " + (", ".join(report.dependent_definitions) or "-"))
-            print("Wpisy obecne: " + (", ".join(report.current_entries) or "-"))
-            print("Kandydat:     " + (", ".join(report.candidate_entries) or "-"))
-            print("Dodawane:     " + (", ".join(report.added_entries) or "-"))
-            print("Usuwane:      " + (", ".join(report.removed_entries) or "-"))
+            print(f"Definicja:    {impact_report.name} ({impact_report.kind})")
+            print(f"Źródło:       {impact_report.source}:{impact_report.line}")
+            print(f"Ryzyko:       {impact_report.risk}")
+            print("Role:         " + (", ".join(impact_report.roles) or "nieużywana"))
+            print("Strefy:       " + (", ".join(impact_report.zones) or "-"))
+            print("Zależne ACL:  " + (", ".join(impact_report.dependent_definitions) or "-"))
+            print("Wpisy obecne: " + (", ".join(impact_report.current_entries) or "-"))
+            print("Kandydat:     " + (", ".join(impact_report.candidate_entries) or "-"))
+            print("Dodawane:     " + (", ".join(impact_report.added_entries) or "-"))
+            print("Usuwane:      " + (", ".join(impact_report.removed_entries) or "-"))
             print("\nUŻYCIA")
-            for usage in report.usages:
+            for usage in impact_report.usages:
                 location = f"{usage.source}:{usage.line}"
                 zone = f" — strefa {usage.zone}" if usage.zone else ""
                 print(
                     f"[{usage.role}] {usage.directive} — {location}{zone}"
                     f" — przez {', '.join(usage.via)}"
                 )
-            if report.blockers:
+            if impact_report.blockers:
                 print("\nBLOKADY")
-                for blocker in report.blockers:
+                for blocker in impact_report.blockers:
                     print(f"- {blocker}")
             print("\nWynik: raport odczytowy — niczego nie zmieniono")
-        return 1 if report.blockers else 0
+        return 1 if impact_report.blockers else 0
     if args.command == "bind" and args.bind_command == "secondary-plan":
         try:
-            plan = BindSecondaryPlanner(args.root_config).plan(
+            secondary_plan = BindSecondaryPlanner(args.root_config).plan(
                 args.name, args.addresses
             )
         except (BindSecondaryPlanError, OSError) as exc:
             print(f"BŁĄD: {exc}", file=sys.stderr)
             return 2
         if args.json:
-            print(json.dumps(plan.to_dict(), ensure_ascii=False, indent=2))
+            print(json.dumps(secondary_plan.to_dict(), ensure_ascii=False, indent=2))
         else:
             print("PLAN ZMIANY GRUPY SECONDARY — BEZ ZMIAN W SYSTEMIE")
-            print(f"Grupa:       {plan.name}")
-            print(f"Typ:         {plan.kind}")
-            print(f"Role:        {', '.join(plan.roles)}")
-            print(f"Plik:        {plan.source}")
-            print(f"Adresy były: {', '.join(plan.old_addresses)}")
-            print(f"Adresy będą: {', '.join(plan.new_addresses)}")
-            print(f"Strefy ({len(plan.zones)}):")
-            for zone in plan.zones:
+            print(f"Grupa:       {secondary_plan.name}")
+            print(f"Typ:         {secondary_plan.kind}")
+            print(f"Role:        {', '.join(secondary_plan.roles)}")
+            print(f"Plik:        {secondary_plan.source}")
+            print(f"Adresy były: {', '.join(secondary_plan.old_addresses)}")
+            print(f"Adresy będą: {', '.join(secondary_plan.new_addresses)}")
+            print(f"Strefy ({len(secondary_plan.zones)}):")
+            for zone in secondary_plan.zones:
                 print(f"  {zone}")
-            print(f"Walidacja:   {'OK' if plan.validation_ok else 'BŁĄD'}")
-            print(f"named-checkconf: {plan.validation_message}")
-            if plan.impact:
-                print(f"Ryzyko wpływu: {plan.impact.risk}")
+            print(f"Walidacja:   {'OK' if secondary_plan.validation_ok else 'BŁĄD'}")
+            print(f"named-checkconf: {secondary_plan.validation_message}")
+            if secondary_plan.impact:
+                print(f"Ryzyko wpływu: {secondary_plan.impact.risk}")
                 print(
                     "Usuwane wpisy: "
-                    + (", ".join(plan.impact.removed_entries) or "-")
+                    + (", ".join(secondary_plan.impact.removed_entries) or "-")
                 )
             print("\nPlanowany diff:\n")
-            print(plan.diff or "Brak zmian.")
+            print(secondary_plan.diff or "Brak zmian.")
             print("\nWynik: DRY-RUN — niczego nie zmieniono")
-        return 0 if plan.validation_ok else 1
+        return 0 if secondary_plan.validation_ok else 1
     if args.command == "bind" and args.bind_command == "secondary-health":
         try:
             inventory = BindAccessInventoryReader(args.root_config).collect()
@@ -1254,64 +1254,76 @@ def main(argv: list[str] | None = None) -> int:
         if missing:
             print("BŁĄD: Nieznane pary secondary: " + ", ".join(missing), file=sys.stderr)
             return 2
-        pairs = tuple(
-            pair for pair in secondary.pairs
-            if pair.status == "PASS"
-            and (not selected or pair.name.casefold() in selected)
+        health_pairs = tuple(
+            health_pair for health_pair in secondary.pairs
+            if health_pair.status == "PASS"
+            and (not selected or health_pair.name.casefold() in selected)
         )
         gate = BindSecondaryHealthGate()
-        payload = []
+        health_rows = []
         failed = False
-        for pair in pairs:
-            servers = tuple(dict.fromkeys(pair.notify_addresses))
+        for health_pair in health_pairs:
+            servers = tuple(dict.fromkeys(health_pair.notify_addresses))
             skipped_zones = tuple(
-                zone for zone in pair.zones if "rpz" in zone.casefold()
+                health_zone for health_zone in health_pair.zones
+                if "rpz" in health_zone.casefold()
             )
             auditable_zones = tuple(
-                zone for zone in pair.zones if zone not in skipped_zones
+                health_zone for health_zone in health_pair.zones
+                if health_zone not in skipped_zones
             )
-            results = gate.check(auditable_zones, servers)
-            failed = failed or any(item.status == "FAIL" for item in results)
-            payload.append({
-                "pair": pair.name, "servers": list(servers),
-                "skipped_zones": list(skipped_zones),
-                "results": [asdict(item) for item in results],
-            })
+            health_results = gate.check(auditable_zones, servers)
+            failed = failed or any(
+                health_result.status == "FAIL"
+                for health_result in health_results
+            )
+            health_rows.append(
+                (health_pair.name, servers, skipped_zones, health_results)
+            )
         if args.json:
-            print(json.dumps(payload, ensure_ascii=False, indent=2))
+            health_payload = [
+                {
+                    "pair": pair_name,
+                    "servers": list(servers),
+                    "skipped_zones": list(skipped_zones),
+                    "results": [asdict(health_result) for health_result in health_results],
+                }
+                for pair_name, servers, skipped_zones, health_results in health_rows
+            ]
+            print(json.dumps(health_payload, ensure_ascii=False, indent=2))
         else:
             print("AUDYT OPERACYJNY SECONDARY — TYLKO ODCZYT")
-            for item in payload:
-                print(f"\nPARA {item['pair']}")
-                print("Serwery: " + (", ".join(item["servers"]) or "-"))
-                for zone in item["skipped_zones"]:
-                    print(f"[SKIP] {zone} — osobny profil RPZ")
-                for result in item["results"]:
+            for pair_name, servers, skipped_zones, health_results in health_rows:
+                print(f"\nPARA {pair_name}")
+                print("Serwery: " + (", ".join(servers) or "-"))
+                for skipped_zone in skipped_zones:
+                    print(f"[SKIP] {skipped_zone} — osobny profil RPZ")
+                for health_result in health_results:
                     serials = ", ".join(
-                        f"{obs['server']}={obs['serial'] or '-'}"
-                        for obs in result["observations"]
+                        f"{observation.server}={observation.serial or '-'}"
+                        for observation in health_result.observations
                     ) or "-"
                     print(
-                        f"[{result['status']}] {result['zone']} — "
-                        f"primary={result['primary_serial'] or '-'}; "
+                        f"[{health_result.status}] {health_result.zone} — "
+                        f"primary={health_result.primary_serial or '-'}; "
                         f"secondary: {serials}"
                     )
-                    print(f"  {result['message']}")
+                    print(f"  {health_result.message}")
             print("\nWynik: audyt odczytowy — niczego nie zmieniono")
         return 1 if failed else 0
     if args.command == "bind" and args.bind_command == "secondary-report":
         try:
             inventory = BindAccessInventoryReader(args.root_config).collect()
-            report = BindSecondaryReporter().build(inventory)
+            secondary_report = BindSecondaryReporter().build(inventory)
         except (BindAccessInventoryError, OSError) as exc:
             print(f"BŁĄD: {exc}", file=sys.stderr)
             return 2
         if args.json:
-            print(json.dumps(report.to_dict(), ensure_ascii=False, indent=2))
+            print(json.dumps(secondary_report.to_dict(), ensure_ascii=False, indent=2))
         else:
             print("RAPORT GRUP SECONDARY — TYLKO ODCZYT")
             print("\nGRUPY")
-            for group in report.groups:
+            for group in secondary_report.groups:
                 print(
                     f"[{','.join(group.roles) or 'nieużywana'}] {group.name} "
                     f"({group.kind}) — {group.source}:{group.line}"
@@ -1320,7 +1332,7 @@ def main(argv: list[str] | None = None) -> int:
                 print("  Strefy: " + (", ".join(group.zones) or "-"))
                 print(f"  Użycia: {group.usage_count}")
             print("\nPARY LOGICZNE")
-            for pair in report.pairs:
+            for pair in secondary_report.pairs:
                 print(f"[{pair.status}] {pair.name}")
                 print(
                     "  Notify: "
@@ -1352,7 +1364,7 @@ def main(argv: list[str] | None = None) -> int:
         if args.commit and not (args.reason or "").strip():
             print("BŁĄD: właściwa zmiana wymaga niepustego --reason.", file=sys.stderr)
             return 2
-        replacements: dict[str, str] = {}
+        acl_apply_replacements: dict[str, str] = {}
         try:
             if args.entries is not None and (args.replace or args.keep_duplicates):
                 raise BindAclPlanError(
@@ -1362,42 +1374,42 @@ def main(argv: list[str] | None = None) -> int:
                 old, new = value.split("=", 1)
                 if not old.strip() or not new.strip():
                     raise ValueError
-                replacements[old.strip()] = new.strip()
-            plan = BindAclPlanner(args.root_config).plan(
+                acl_apply_replacements[old.strip()] = new.strip()
+            acl_apply_plan = BindAclPlanner(args.root_config).plan(
                 args.name,
-                replacements=replacements,
+                replacements=acl_apply_replacements,
                 remove_duplicates=not args.keep_duplicates,
                 entries=args.entries,
             )
-            result = BindAclTransaction(
+            acl_apply_result = BindAclTransaction(
                 args.backup_root,
                 args.manifest_directory,
                 root_config=args.root_config,
             ).apply(
-                plan, commit=args.commit, activate=args.activate,
+                acl_apply_plan, commit=args.commit, activate=args.activate,
                 reason=args.reason,
             )
         except (BindAclPlanError, OSError, ValueError) as exc:
             print(f"BŁĄD: {str(exc) or 'nieprawidłowe --replace'}", file=sys.stderr)
             return 2
         if args.json:
-            print(json.dumps(asdict(result), ensure_ascii=False, indent=2))
+            print(json.dumps(asdict(acl_apply_result), ensure_ascii=False, indent=2))
         else:
-            print(f"Transakcja: {result.transaction_id}")
-            print(f"ACL:         {result.acl}")
-            print(f"Status:      {result.status}")
-            print(f"Commit:      {'TAK' if result.committed else 'NIE'}")
-            print(f"Rollback:    {'TAK' if result.rolled_back else 'NIE'}")
-            if result.backup:
-                print(f"Backup:      {result.backup}")
-            if result.manifest:
-                print(f"Manifest:    {result.manifest}")
+            print(f"Transakcja: {acl_apply_result.transaction_id}")
+            print(f"ACL:         {acl_apply_result.acl}")
+            print(f"Status:      {acl_apply_result.status}")
+            print(f"Commit:      {'TAK' if acl_apply_result.committed else 'NIE'}")
+            print(f"Rollback:    {'TAK' if acl_apply_result.rolled_back else 'NIE'}")
+            if acl_apply_result.backup:
+                print(f"Backup:      {acl_apply_result.backup}")
+            if acl_apply_result.manifest:
+                print(f"Manifest:    {acl_apply_result.manifest}")
             print("\nEtapy:")
-            for step in result.steps:
+            for step in acl_apply_result.steps:
                 print(f"[{'OK' if step.ok else 'BŁĄD'}] {step.name}: {step.message}")
-        return 0 if result.status in {"DRY-RUN", "COMMIT"} else 1
+        return 0 if acl_apply_result.status in {"DRY-RUN", "COMMIT"} else 1
     if args.command == "bind" and args.bind_command == "acl-plan":
-        replacements: dict[str, str] = {}
+        acl_plan_replacements: dict[str, str] = {}
         try:
             if args.entries is not None and (args.replace or args.keep_duplicates):
                 raise BindAclPlanError(
@@ -1407,10 +1419,10 @@ def main(argv: list[str] | None = None) -> int:
                 old, new = value.split("=", 1)
                 if not old.strip() or not new.strip():
                     raise ValueError
-                replacements[old.strip()] = new.strip()
-            plan = BindAclPlanner(args.root_config).plan(
+                acl_plan_replacements[old.strip()] = new.strip()
+            acl_plan = BindAclPlanner(args.root_config).plan(
                 args.name,
-                replacements=replacements,
+                replacements=acl_plan_replacements,
                 remove_duplicates=not args.keep_duplicates,
                 entries=args.entries,
             )
@@ -1419,38 +1431,38 @@ def main(argv: list[str] | None = None) -> int:
             print(f"BŁĄD: {detail}", file=sys.stderr)
             return 2
         if args.json:
-            print(json.dumps(plan.to_dict(), ensure_ascii=False, indent=2))
+            print(json.dumps(acl_plan.to_dict(), ensure_ascii=False, indent=2))
         else:
             print(f"PLAN UPORZĄDKOWANIA ACL — BEZ ZMIAN W SYSTEMIE")
-            print(f"ACL:         {plan.name}")
-            print(f"Plik:        {plan.source}")
-            print(f"Walidacja:   {'OK' if plan.validation_ok else 'BŁĄD'}")
-            print(f"named-checkconf: {plan.validation_message}")
-            if plan.impact:
-                print(f"Ryzyko wpływu: {plan.impact.risk}")
-                print("Role:        " + (", ".join(plan.impact.roles) or "nieużywana"))
-                print("Strefy:      " + (", ".join(plan.impact.zones) or "-"))
+            print(f"ACL:         {acl_plan.name}")
+            print(f"Plik:        {acl_plan.source}")
+            print(f"Walidacja:   {'OK' if acl_plan.validation_ok else 'BŁĄD'}")
+            print(f"named-checkconf: {acl_plan.validation_message}")
+            if acl_plan.impact:
+                print(f"Ryzyko wpływu: {acl_plan.impact.risk}")
+                print("Role:        " + (", ".join(acl_plan.impact.roles) or "nieużywana"))
+                print("Strefy:      " + (", ".join(acl_plan.impact.zones) or "-"))
                 print(
                     "Usuwane:      "
-                    + (", ".join(plan.impact.removed_entries) or "-")
+                    + (", ".join(acl_plan.impact.removed_entries) or "-")
                 )
-                if plan.impact.blockers:
+                if acl_plan.impact.blockers:
                     print("Blokady wpływu:")
-                    for blocker in plan.impact.blockers:
+                    for blocker in acl_plan.impact.blockers:
                         print(f"  {blocker}")
             print("\nPlanowany diff:\n")
-            print(plan.diff or "Brak zmian.")
+            print(acl_plan.diff or "Brak zmian.")
             print("\nZamiany:")
-            for value in plan.replacements or ("-",):
+            for value in acl_plan.replacements or ("-",):
                 print(f"  {value}")
             print("Usunięte duplikaty:")
-            for value in plan.removed_duplicates or ("-",):
+            for value in acl_plan.removed_duplicates or ("-",):
                 print(f"  {value}")
             print("\nWynik: DRY-RUN — niczego nie zmieniono")
-        return 0 if plan.validation_ok else 1
+        return 0 if acl_plan.validation_ok else 1
     if args.command == "bind" and args.bind_command == "onboarding-report":
         try:
-            report = BindOnboardingReporter(args.root_config).collect()
+            onboarding_report = BindOnboardingReporter(args.root_config).collect()
         except (
             BindDiscoveryError,
             BindAccessInventoryError,
@@ -1460,33 +1472,33 @@ def main(argv: list[str] | None = None) -> int:
             print(f"BŁĄD: {exc}", file=sys.stderr)
             return 2
         if args.json:
-            print(json.dumps(report.to_dict(), ensure_ascii=False, indent=2))
+            print(json.dumps(onboarding_report.to_dict(), ensure_ascii=False, indent=2))
         else:
             print("GOTOWOŚĆ ŚRODOWISKA BIND — TYLKO ODCZYT")
-            print(f"Konfiguracja:       {report.root_config}")
-            print(f"Pliki konfiguracji: {report.config_files}")
-            print(f"Strefy:             {report.zones}")
-            print(f"DNSSEC:             {report.dnssec_zones}")
+            print(f"Konfiguracja:       {onboarding_report.root_config}")
+            print(f"Pliki konfiguracji: {onboarding_report.config_files}")
+            print(f"Strefy:             {onboarding_report.zones}")
+            print(f"DNSSEC:             {onboarding_report.dnssec_zones}")
             print("\nKLASYFIKACJA")
-            for item in report.classes:
-                print(f"[{item.state:<8}] {item.count:>3} — {item.description}")
+            for onboarding_class in onboarding_report.classes:
+                print(f"[{onboarding_class.state:<8}] {onboarding_class.count:>3} — {onboarding_class.description}")
             print("\nKONFIGURACJA WSPÓŁDZIELONA")
-            print(f"ACL:                {report.acl_definitions}")
-            print(f"Grupy secondary:    {report.secondary_groups}")
-            print(f"Integracje RPZ:     {report.rpz_integrations}")
-            print(f"Tryby RPZ:          {', '.join(report.rpz_modes) or '-'}")
-            print(f"\nKandydaci:          {report.import_candidates}")
-            print(f"Zablokowane:        {report.blocked}")
-            if report.blockers:
+            print(f"ACL:                {onboarding_report.acl_definitions}")
+            print(f"Grupy secondary:    {onboarding_report.secondary_groups}")
+            print(f"Integracje RPZ:     {onboarding_report.rpz_integrations}")
+            print(f"Tryby RPZ:          {', '.join(onboarding_report.rpz_modes) or '-'}")
+            print(f"\nKandydaci:          {onboarding_report.import_candidates}")
+            print(f"Zablokowane:        {onboarding_report.blocked}")
+            if onboarding_report.blockers:
                 print("\nSZCZEGÓŁY BLOKAD")
-                for item in report.blockers:
-                    print(f"[{item.category:<9}] {item.name} — {item.reason}")
-            print(f"Następny krok:      {report.next_action}")
+                for onboarding_blocker in onboarding_report.blockers:
+                    print(f"[{onboarding_blocker.category:<9}] {onboarding_blocker.name} — {onboarding_blocker.reason}")
+            print(f"Następny krok:      {onboarding_report.next_action}")
             print("\nWynik: raport odczytowy — niczego nie zaimportowano")
         return 0
     if args.command == "bind" and args.bind_command == "environment-report":
         try:
-            report = BindEnvironmentReporter(
+            environment_report = BindEnvironmentReporter(
                 args.root_config,
                 timer_unit=args.timer_unit,
                 service_unit=args.service_unit,
@@ -1496,19 +1508,19 @@ def main(argv: list[str] | None = None) -> int:
             print(f"BŁĄD: {exc}", file=sys.stderr)
             return 2
         if args.json:
-            print(json.dumps(report.to_dict(), ensure_ascii=False, indent=2))
+            print(json.dumps(environment_report.to_dict(), ensure_ascii=False, indent=2))
         else:
             print("RAPORT ŚRODOWISKA BIND — TYLKO ODCZYT")
-            print(f"Konfiguracja:       {report.root_config}")
-            print(f"Pliki konfiguracji: {len(report.config_files)}")
-            print(f"Strefy:             {report.zone_count}")
-            print(f"Primary:            {report.primary_count}")
-            print(f"Secondary:          {report.secondary_count}")
-            print(f"DNSSEC:             {report.dnssec_count}")
+            print(f"Konfiguracja:       {environment_report.root_config}")
+            print(f"Pliki konfiguracji: {len(environment_report.config_files)}")
+            print(f"Strefy:             {environment_report.zone_count}")
+            print(f"Primary:            {environment_report.primary_count}")
+            print(f"Secondary:          {environment_report.secondary_count}")
+            print(f"DNSSEC:             {environment_report.dnssec_count}")
             print("\nINTEGRACJE RPZ")
-            if not report.rpz:
+            if not environment_report.rpz:
                 print("- brak aktywnej strefy response-policy")
-            for rpz in report.rpz:
+            for rpz in environment_report.rpz:
                 age = f"{rpz.age_seconds} s" if rpz.age_seconds is not None else "-"
                 print(f"[{rpz.health}] {rpz.zone}")
                 print(f"  Tryb zarządzania: {rpz.mode}")
@@ -1526,43 +1538,44 @@ def main(argv: list[str] | None = None) -> int:
                 print(f"  Aktualizator:      {rpz.updater_path or '-'}")
                 for finding in rpz.findings:
                     print(f"  UWAGA: {finding}")
-            for finding in report.findings:
+            for finding in environment_report.findings:
                 print(f"UWAGA: {finding}")
             print("\nWynik: raport odczytowy — niczego nie zmieniono")
         return 1 if any(
-            item.health in {"FAILED", "STALE", "DISABLED"} for item in report.rpz
+            rpz_item.health in {"FAILED", "STALE", "DISABLED"}
+            for rpz_item in environment_report.rpz
         ) else 0
     if args.command == "bind" and args.bind_command == "rpz-managed-plan":
         try:
-            plan = RpzManagedPlanner(
+            rpz_managed_plan = RpzManagedPlanner(
                 args.root_config, zone=args.zone, source_url=args.source_url
             ).plan()
         except (BindDiscoveryError, OSError) as exc:
             print(f"BŁĄD: {exc}", file=sys.stderr)
             return 2
         if args.json:
-            print(json.dumps(plan.to_dict(), ensure_ascii=False, indent=2))
+            print(json.dumps(rpz_managed_plan.to_dict(), ensure_ascii=False, indent=2))
         else:
             print("PLAN OPCJONALNEJ INTEGRACJI CERT POLSKA RPZ — TYLKO ODCZYT")
-            print(f"Status:       {plan.status}")
-            print(f"Strefa:       {plan.zone}")
-            print(f"Źródło:       {plan.source_url}")
-            print(f"Plik strefy:  {plan.zone_file}")
-            print(f"Deklaracja:   {plan.declaration_file}")
-            print(f"Opcje BIND:   {plan.options_file or '-'}")
-            print(f"Aktualizator: {plan.updater_file}")
-            print(f"Usługa:       {plan.service_file}")
-            print(f"Timer:        {plan.timer_file}")
-            print(f"Backup:       {plan.backup_root}")
+            print(f"Status:       {rpz_managed_plan.status}")
+            print(f"Strefa:       {rpz_managed_plan.zone}")
+            print(f"Źródło:       {rpz_managed_plan.source_url}")
+            print(f"Plik strefy:  {rpz_managed_plan.zone_file}")
+            print(f"Deklaracja:   {rpz_managed_plan.declaration_file}")
+            print(f"Opcje BIND:   {rpz_managed_plan.options_file or '-'}")
+            print(f"Aktualizator: {rpz_managed_plan.updater_file}")
+            print(f"Usługa:       {rpz_managed_plan.service_file}")
+            print(f"Timer:        {rpz_managed_plan.timer_file}")
+            print(f"Backup:       {rpz_managed_plan.backup_root}")
             print("\nKONFLIKTY")
-            for conflict in plan.conflicts or ("-",):
+            for conflict in rpz_managed_plan.conflicts or ("-",):
                 print(f"- {conflict}")
             print("\nPLANOWANE ETAPY PRZYSZŁEJ TRANSAKCJI")
-            for step in plan.steps:
+            for step in rpz_managed_plan.steps:
                 print(f"- {step}")
-            print(f"\nNastępny krok: {plan.next_action}")
+            print(f"\nNastępny krok: {rpz_managed_plan.next_action}")
             print("\nWynik: PLAN — niczego nie zapisano i nie zmieniono BIND")
-        return 0 if plan.status == "READY" else 1
+        return 0 if rpz_managed_plan.status == "READY" else 1
     if args.command == "bind" and args.bind_command == "rpz-managed-dry-run":
         try:
             plan = RpzManagedPlanner(

@@ -193,7 +193,10 @@ zrealizowane, a `[ ]` pozostają do wykonania.
   sesję wielu stref oraz plany i wyniki transakcji DNSSEC, redukując raport
   do 15 błędów. Ostatni etap typuje obsługę ACL i secondary, edytory list oraz
   migrację i relokację stref; cały `curses_app.py` przechodzi rygorystyczny
-  audyt i zostaje objęty bramką CI.
+  audyt i zostaje objęty bramką CI. Pierwszy etap porządkowania głównego CLI
+  rozdziela typy wyników poleceń BIND access, ACL, secondary, onboardingu i
+  MANAGED RPZ, zmniejszając liczbę błędów należących do `cli.py` z 304 do 196;
+  moduł zostanie objęty bramką dopiero po pełnym domknięciu audytu.
 - [ ] Dodać automatyczne formatowanie i lint.
 - [x] Dodać testy integracyjne z odseparowaną konfiguracją i prawdziwymi
   narzędziami walidacyjnymi BIND, bez kontaktu z produkcyjnym `rndc`.

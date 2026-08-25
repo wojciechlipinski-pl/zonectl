@@ -34,7 +34,10 @@
   typed transaction result views, record validation, multi-zone sessions and
   DNSSEC operation plans reduce the remaining report to 15; typing the BIND
   access editors and managed-zone migration flows completes strict mypy
-  coverage of the main curses application and adds it to CI
+  coverage of the main curses application and adds it to CI; the first CLI
+  pass isolates BIND access, ACL, secondary, onboarding and managed RPZ
+  command results, reducing errors owned by `cli.py` from 304 to 196 without
+  yet admitting the incomplete module to the strict gate
 
 - a dependency-free AST audit inventories missing public API docstrings, while
   CI initially enforces complete documentation only for the new critical
