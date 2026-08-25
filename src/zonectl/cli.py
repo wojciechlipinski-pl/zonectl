@@ -1808,7 +1808,7 @@ def main(argv: list[str] | None = None) -> int:
             )
             return 2
         wanted = args.name.strip().rstrip(".").casefold()
-        zone = next(
+        confirm_zone = next(
             (
                 item
                 for item in zones
@@ -1816,7 +1816,7 @@ def main(argv: list[str] | None = None) -> int:
             ),
             None,
         )
-        if zone is None:
+        if confirm_zone is None:
             print(f"BŁĄD: Nie znaleziono strefy: {args.name}", file=sys.stderr)
             return 2
         resolvers = tuple(
@@ -1825,32 +1825,32 @@ def main(argv: list[str] | None = None) -> int:
         local_server = args.server or config.toolkit.get(
             "local_server", "127.0.0.1"
         )
-        checker = DnssecDsChecker(
+        confirm_checker = DnssecDsChecker(
             local_server=local_server,
             timeout=int(config.toolkit.get("dig_timeout", "3")),
         )
-        result = DnssecConfirmDsTransaction(
+        confirm_result = DnssecConfirmDsTransaction(
             args.manifest_directory,
-            checker=checker.collect,
+            checker=confirm_checker.collect,
         ).apply(
-            zone.name,
+            confirm_zone.name,
             resolvers,
             commit=args.commit,
             acknowledge_published=args.acknowledge_published,
         )
         if args.json:
-            print(json.dumps(asdict(result), ensure_ascii=False, indent=2))
+            print(json.dumps(asdict(confirm_result), ensure_ascii=False, indent=2))
         else:
-            print(f"Transakcja: {result.transaction_id}")
-            print(f"Strefa:     {result.zone}")
-            print(f"Status:     {result.status}")
-            print(f"Commit:     {'TAK' if result.committed else 'NIE'}")
-            if result.manifest:
-                print(f"Manifest:   {result.manifest}")
+            print(f"Transakcja: {confirm_result.transaction_id}")
+            print(f"Strefa:     {confirm_result.zone}")
+            print(f"Status:     {confirm_result.status}")
+            print(f"Commit:     {'TAK' if confirm_result.committed else 'NIE'}")
+            if confirm_result.manifest:
+                print(f"Manifest:   {confirm_result.manifest}")
             print("\nEtapy:")
-            for step in result.steps:
-                print(f"[{'OK' if step.ok else 'BŁĄD'}] {step.name}: {step.message}")
-        return 0 if result.status in {"DRY-RUN", "CONFIRMED"} else 1
+            for confirm_step in confirm_result.steps:
+                print(f"[{'OK' if confirm_step.ok else 'BŁĄD'}] {confirm_step.name}: {confirm_step.message}")
+        return 0 if confirm_result.status in {"DRY-RUN", "CONFIRMED"} else 1
     if (
         args.command == "dnssec"
         and args.dnssec_command == "prepare-finalize-serial"
@@ -1881,27 +1881,27 @@ def main(argv: list[str] | None = None) -> int:
                 file=sys.stderr,
             )
             return 2
-        result = DnssecFinalizeSerialTransaction(args.backup_root).apply(
+        finalize_result = DnssecFinalizeSerialTransaction(args.backup_root).apply(
             display_zone.name,
             discovered.source_file,
             commit=args.commit,
         )
         if args.json:
-            print(json.dumps(asdict(result), ensure_ascii=False, indent=2))
+            print(json.dumps(asdict(finalize_result), ensure_ascii=False, indent=2))
         else:
-            print(f"Transakcja:       {result.transaction_id}")
-            print(f"Strefa:           {result.zone}")
-            print(f"Status:           {result.status}")
-            print(f"Serial źródłowy:  {result.previous_serial or '-'}")
-            print(f"Serial serwowany: {result.served_serial or '-'}")
-            print(f"Nowy serial:      {result.new_serial or '-'}")
-            print(f"Commit:           {'TAK' if result.committed else 'NIE'}")
-            if result.backup:
-                print(f"Backup:           {result.backup}")
+            print(f"Transakcja:       {finalize_result.transaction_id}")
+            print(f"Strefa:           {finalize_result.zone}")
+            print(f"Status:           {finalize_result.status}")
+            print(f"Serial źródłowy:  {finalize_result.previous_serial or '-'}")
+            print(f"Serial serwowany: {finalize_result.served_serial or '-'}")
+            print(f"Nowy serial:      {finalize_result.new_serial or '-'}")
+            print(f"Commit:           {'TAK' if finalize_result.committed else 'NIE'}")
+            if finalize_result.backup:
+                print(f"Backup:           {finalize_result.backup}")
             print("\nEtapy:")
-            for step in result.steps:
-                print(f"[{'OK' if step.ok else 'BŁĄD'}] {step.name}: {step.message}")
-        return 0 if result.status in {"DRY-RUN", "COMMIT"} else 1
+            for finalize_step in finalize_result.steps:
+                print(f"[{'OK' if finalize_step.ok else 'BŁĄD'}] {finalize_step.name}: {finalize_step.message}")
+        return 0 if finalize_result.status in {"DRY-RUN", "COMMIT"} else 1
     if args.command == "dnssec" and args.dnssec_command in {
         "disable-plan",
         "disable-apply",
@@ -1934,7 +1934,7 @@ def main(argv: list[str] | None = None) -> int:
             )
             return 2
         try:
-            plan = DnssecDisablePlanner().plan(discovered)
+            disable_plan = DnssecDisablePlanner().plan(discovered)
         except (DnssecDisablePlanError, OSError) as exc:
             print(f"BŁĄD: {exc}", file=sys.stderr)
             return 2
@@ -1942,50 +1942,50 @@ def main(argv: list[str] | None = None) -> int:
             resolvers = tuple(
                 args.disable_resolvers or ("1.1.1.1", "8.8.8.8", "9.9.9.9")
             )
-            checker = DnssecWithdrawalChecker(
+            withdrawal_checker = DnssecWithdrawalChecker(
                 timeout=int(config.toolkit.get("dig_timeout", "3")),
             )
 
             def ds_absent(zone_name: str) -> bool | None:
-                outcome = checker.collect(zone_name, resolvers)
+                outcome = withdrawal_checker.collect(zone_name, resolvers)
                 if outcome.status == "READY_FOR_WITHDRAWN":
                     return True
                 if outcome.status == "BLOCKED":
                     return False
                 return None
 
-            result = DnssecDisableTransaction(
+            disable_result = DnssecDisableTransaction(
                 args.backup_root,
                 args.manifest_directory,
                 root_config=args.root_config,
                 ds_gate=ds_absent,
             ).apply(
-                plan,
+                disable_plan,
                 stage=args.stage,
                 commit=args.commit,
                 activate=args.activate,
                 acknowledge_unsigned=args.acknowledge_unsigned,
             )
             if args.json:
-                print(json.dumps(asdict(result), ensure_ascii=False, indent=2))
+                print(json.dumps(asdict(disable_result), ensure_ascii=False, indent=2))
             else:
-                print(f"Transakcja: {result.transaction_id}")
-                print(f"Strefa:     {result.zone}")
-                print(f"Etap:       {result.stage}")
-                print(f"Status:     {result.status}")
-                print(f"Commit:     {'TAK' if result.committed else 'NIE'}")
-                if result.kasp_states:
-                    print(f"Stany KASP: {', '.join(result.kasp_states)}")
-                if result.backup_directory:
-                    print(f"Backup:     {result.backup_directory}")
-                if result.manifest:
-                    print(f"Manifest:   {result.manifest}")
+                print(f"Transakcja: {disable_result.transaction_id}")
+                print(f"Strefa:     {disable_result.zone}")
+                print(f"Etap:       {disable_result.stage}")
+                print(f"Status:     {disable_result.status}")
+                print(f"Commit:     {'TAK' if disable_result.committed else 'NIE'}")
+                if disable_result.kasp_states:
+                    print(f"Stany KASP: {', '.join(disable_result.kasp_states)}")
+                if disable_result.backup_directory:
+                    print(f"Backup:     {disable_result.backup_directory}")
+                if disable_result.manifest:
+                    print(f"Manifest:   {disable_result.manifest}")
                 print("\nEtapy:")
-                for step in result.steps:
+                for disable_step in disable_result.steps:
                     print(
-                        f"[{'OK' if step.ok else 'BŁĄD'}] {step.name}: {step.message}"
+                        f"[{'OK' if disable_step.ok else 'BŁĄD'}] {disable_step.name}: {disable_step.message}"
                     )
-            return 0 if result.status in {"DRY-RUN", "COMMIT"} else 1
+            return 0 if disable_result.status in {"DRY-RUN", "COMMIT"} else 1
         if args.dnssec_command == "withdrawal-backup":
             local_server = args.server or config.toolkit.get(
                 "local_server", "127.0.0.1"
@@ -1999,53 +1999,53 @@ def main(argv: list[str] | None = None) -> int:
                     local_server=local_server,
                     resolver=resolvers[0],
                     timeout=timeout,
-                ).collect(display_zone, plan.key_directory).to_dict()
+                ).collect(display_zone, disable_plan.key_directory).to_dict()
             except Exception as exc:
                 report_payload = {"status": "ERROR", "error": str(exc)}
             try:
                 check_payload = DnssecDsChecker(
                     local_server=local_server,
                     timeout=timeout,
-                ).collect(plan.zone, resolvers).to_dict()
+                ).collect(disable_plan.zone, resolvers).to_dict()
             except Exception as exc:
                 check_payload = {"status": "ERROR", "error": str(exc)}
-            result = DnssecWithdrawalBackup(args.backup_root).create(
-                plan,
+            withdrawal_backup_result = DnssecWithdrawalBackup(args.backup_root).create(
+                disable_plan,
                 commit=args.commit,
                 dnssec_report=report_payload,
                 ds_check=check_payload,
             )
             if args.json:
-                print(json.dumps(asdict(result), ensure_ascii=False, indent=2))
+                print(json.dumps(asdict(withdrawal_backup_result), ensure_ascii=False, indent=2))
             else:
-                print(f"Transakcja: {result.transaction_id}")
-                print(f"Strefa:     {result.zone}")
-                print(f"Status:     {result.status}")
-                print(f"Commit:     {'TAK' if result.committed else 'NIE'}")
-                if result.package:
-                    print(f"Pakiet:     {result.package}")
-                if result.manifest:
-                    print(f"Manifest:   {result.manifest}")
+                print(f"Transakcja: {withdrawal_backup_result.transaction_id}")
+                print(f"Strefa:     {withdrawal_backup_result.zone}")
+                print(f"Status:     {withdrawal_backup_result.status}")
+                print(f"Commit:     {'TAK' if withdrawal_backup_result.committed else 'NIE'}")
+                if withdrawal_backup_result.package:
+                    print(f"Pakiet:     {withdrawal_backup_result.package}")
+                if withdrawal_backup_result.manifest:
+                    print(f"Manifest:   {withdrawal_backup_result.manifest}")
                 print("\nEtapy:")
-                for step in result.steps:
-                    print(f"[{'OK' if step.ok else 'BŁĄD'}] {step.name}: {step.message}")
-            return 0 if result.status in {"DRY-RUN", "BACKUP-CREATED"} else 1
+                for withdrawal_backup_step in withdrawal_backup_result.steps:
+                    print(f"[{'OK' if withdrawal_backup_step.ok else 'BŁĄD'}] {withdrawal_backup_step.name}: {withdrawal_backup_step.message}")
+            return 0 if withdrawal_backup_result.status in {"DRY-RUN", "BACKUP-CREATED"} else 1
         if args.json:
-            print(json.dumps(plan.to_dict(), ensure_ascii=False, indent=2))
+            print(json.dumps(disable_plan.to_dict(), ensure_ascii=False, indent=2))
         else:
             print("PLAN WYCOFANIA DNSSEC — BEZ ZMIAN W SYSTEMIE")
-            print(f"Strefa:          {plan.zone}")
-            print(f"Plik strefy:     {plan.zone_file}")
-            print(f"Deklaracja:      {plan.declaration_file}")
-            print(f"Polityka:        {plan.policy}")
-            print(f"Katalog kluczy:  {plan.key_directory or '-'}")
-            print(f"Pliki kluczy:    {len(plan.key_files)}")
-            print(f"Artefakty BIND:  {len(plan.signing_artifacts)}")
+            print(f"Strefa:          {disable_plan.zone}")
+            print(f"Plik strefy:     {disable_plan.zone_file}")
+            print(f"Deklaracja:      {disable_plan.declaration_file}")
+            print(f"Polityka:        {disable_plan.policy}")
+            print(f"Katalog kluczy:  {disable_plan.key_directory or '-'}")
+            print(f"Pliki kluczy:    {len(disable_plan.key_files)}")
+            print(f"Artefakty BIND:  {len(disable_plan.signing_artifacts)}")
             print("\nKońcowy diff — wolno zastosować dopiero po wycofaniu DS:\n")
-            print(plan.unified_diff, end="")
+            print(disable_plan.unified_diff, end="")
             print("\nObowiązkowe etapy:")
-            for index, action in enumerate(plan.actions, start=1):
-                print(f"{index}. {action}")
+            for action_index, disable_action in enumerate(disable_plan.actions, start=1):
+                print(f"{action_index}. {disable_action}")
             print("\nWynik: DRY-RUN — niczego nie zmieniono")
         return 0
     if args.command == "dnssec" and args.dnssec_command in {"enable-plan", "enable"}:
