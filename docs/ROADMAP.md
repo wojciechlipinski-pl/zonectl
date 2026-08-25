@@ -178,7 +178,8 @@ zrealizowane, a `[ ]` pozostają do wykonania.
   audytowych, analizę wpływu ACL, health secondary i parser konfiguracji BIND,
   a następnie planowanie przypisań secondary, transakcje ACL i secondary,
   inwentaryzację stref nieaktywnych, blokady sesji edycji oraz bezstratny
-  adapter dokumentu, serializację, zapis kandydatów i dziennik audytowy.
+  adapter dokumentu, serializację, zapis kandydatów, dziennik audytowy,
+  główny silnik transakcji i sesję edycji strefy.
 - [ ] Dodać automatyczne formatowanie i lint.
 - [x] Dodać testy integracyjne z odseparowaną konfiguracją i prawdziwymi
   narzędziami walidacyjnymi BIND, bez kontaktu z produkcyjnym `rndc`.

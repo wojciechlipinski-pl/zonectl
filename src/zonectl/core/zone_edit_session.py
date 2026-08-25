@@ -254,7 +254,9 @@ class ZoneEditSession:
         temporary = Path(temporary_name)
 
         try:
-            os.fchmod(fd, 0o640)
+            fchmod = getattr(os, "fchmod", None)
+            if fchmod is not None:
+                fchmod(fd, 0o640)
 
             with os.fdopen(fd, "w", encoding="utf-8") as handle:
                 handle.write(content)
@@ -262,7 +264,8 @@ class ZoneEditSession:
                 os.fsync(handle.fileno())
 
             os.replace(temporary, destination)
-            directory_fd = os.open(directory, os.O_DIRECTORY)
+            directory_flag = int(getattr(os, "O_DIRECTORY", 0))
+            directory_fd = os.open(directory, directory_flag)
 
             try:
                 os.fsync(directory_fd)

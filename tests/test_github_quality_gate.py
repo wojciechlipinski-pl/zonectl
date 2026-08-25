@@ -63,4 +63,6 @@ def test_quality_gate_type_checks_only_incremental_critical_scope() -> None:
     assert "zone_document_adapter.py" in text
     assert "zone_writer.py" in text
     assert "zone_serializer.py" in text
+    assert "transaction.py" in text
+    assert "zone_edit_session.py" in text
     assert "scripts/audit_public_api.py" in text

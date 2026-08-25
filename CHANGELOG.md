@@ -21,7 +21,8 @@
   BIND configuration parsing; secondary planning and ACL/secondary
   transactions, inactive-zone inventory and inter-process edit locks are
   included in the same incremental gate, followed by lossless document
-  adaptation, zone serialization, candidate writing and audit logging
+  adaptation, zone serialization, candidate writing, audit logging, the core
+  transaction engine and zone edit sessions
 
 - a dependency-free AST audit inventories missing public API docstrings, while
   CI initially enforces complete documentation only for the new critical

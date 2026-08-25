@@ -52,6 +52,8 @@ jobs:
             src/zonectl/core/zone_document_adapter.py \
             src/zonectl/core/zone_writer.py \
             src/zonectl/core/zone_serializer.py \
+            src/zonectl/core/transaction.py \
+            src/zonectl/core/zone_edit_session.py \
             scripts/audit_public_api.py
 
   tests:
