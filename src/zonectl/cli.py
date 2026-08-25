@@ -2266,11 +2266,11 @@ def main(argv: list[str] | None = None) -> int:
             print(f"BŁĄD: Nie znaleziono strefy: {args.name}", file=sys.stderr)
             return 2
 
-        zone = matches[0]
+        report_zone = matches[0]
         local_server = args.server or config.toolkit.get(
             "local_server", "127.0.0.1"
         )
-        key_directory = zone.key_directory
+        key_directory = report_zone.key_directory
         if key_directory is None:
             configured_directory = config.toolkit.get(
                 "dnssec_key_directory", "/var/lib/bind/keys"
@@ -2281,14 +2281,14 @@ def main(argv: list[str] | None = None) -> int:
                 else None
             )
 
-        report = DnssecReporter(
+        dnssec_report = DnssecReporter(
             local_server=local_server,
             resolver=args.resolver,
             timeout=int(config.toolkit.get("dig_timeout", "3")),
-        ).collect(zone, key_directory)
+        ).collect(report_zone, key_directory)
 
         if args.json:
-            print(json.dumps(report.to_dict(), ensure_ascii=False, indent=2))
+            print(json.dumps(dnssec_report.to_dict(), ensure_ascii=False, indent=2))
         else:
             def yes_no(value: bool | None) -> str:
                 if value is True:
@@ -2297,37 +2297,37 @@ def main(argv: list[str] | None = None) -> int:
                     return "NIE"
                 return "NIEZNANY"
 
-            print(f"DNSSEC REPORT — {report.zone}")
-            print(f"Status:             {report.status}")
-            print(f"Skonfigurowany:     {yes_no(report.configured)}")
-            print(f"dnssec-policy:      {report.dnssec_policy or '-'}")
-            print(f"inline-signing:     {yes_no(report.inline_signing)}")
-            print(f"Strefa załadowana:  {yes_no(report.loaded)}")
-            print(f"Podpisywanie BIND:  {yes_no(report.signing)}")
-            if report.rndc_status:
+            print(f"DNSSEC REPORT — {dnssec_report.zone}")
+            print(f"Status:             {dnssec_report.status}")
+            print(f"Skonfigurowany:     {yes_no(dnssec_report.configured)}")
+            print(f"dnssec-policy:      {dnssec_report.dnssec_policy or '-'}")
+            print(f"inline-signing:     {yes_no(dnssec_report.inline_signing)}")
+            print(f"Strefa załadowana:  {yes_no(dnssec_report.loaded)}")
+            print(f"Podpisywanie BIND:  {yes_no(dnssec_report.signing)}")
+            if dnssec_report.rndc_status:
                 print("Stan KASP z rndc:")
-                for line in report.rndc_status:
-                    print(f"  {line}")
-            print(f"Katalog kluczy:     {report.key_directory or '-'}")
-            print(f"Pliki kluczy:       {len(report.key_files)}")
-            for path in report.key_files:
-                print(f"  {path}")
-            print(f"DNSKEY:             {len(report.dnskey_records)}")
-            for record in report.dnskey_records:
-                print(f"  {record}")
-            print(f"RRSIG DNSKEY:       {len(report.rrsig_records)}")
+                for rndc_line in dnssec_report.rndc_status:
+                    print(f"  {rndc_line}")
+            print(f"Katalog kluczy:     {dnssec_report.key_directory or '-'}")
+            print(f"Pliki kluczy:       {len(dnssec_report.key_files)}")
+            for key_path in dnssec_report.key_files:
+                print(f"  {key_path}")
+            print(f"DNSKEY:             {len(dnssec_report.dnskey_records)}")
+            for dnskey_record in dnssec_report.dnskey_records:
+                print(f"  {dnskey_record}")
+            print(f"RRSIG DNSKEY:       {len(dnssec_report.rrsig_records)}")
             print("DS obliczony lokalnie:")
-            for record in report.calculated_ds or ("-",):
-                print(f"  {record}")
+            for calculated_record in dnssec_report.calculated_ds or ("-",):
+                print(f"  {calculated_record}")
             print("DS widoczny publicznie:")
-            for record in report.parent_ds_records or ("-",):
-                print(f"  {record}")
-            print(f"Zgodność DS:        {yes_no(report.parent_ds_matches)}")
-            for warning in report.warnings:
-                print(f"OSTRZEŻENIE: {warning}")
-            for error in report.errors:
-                print(f"BŁĄD: {error}")
-            guidance = build_dnssec_guidance(report)
+            for parent_record in dnssec_report.parent_ds_records or ("-",):
+                print(f"  {parent_record}")
+            print(f"Zgodność DS:        {yes_no(dnssec_report.parent_ds_matches)}")
+            for report_warning in dnssec_report.warnings:
+                print(f"OSTRZEŻENIE: {report_warning}")
+            for report_error in dnssec_report.errors:
+                print(f"BŁĄD: {report_error}")
+            guidance = build_dnssec_guidance(dnssec_report)
             print("\nWSKAZÓWKI OPERATORA")
             print(f"Etap:               {guidance.stage}")
             print(f"Stan:               {guidance.title}")
@@ -2344,7 +2344,7 @@ def main(argv: list[str] | None = None) -> int:
                 )
             )
 
-        return 1 if report.status == "FAIL" else 0
+        return 1 if dnssec_report.status == "FAIL" else 0
     if args.command == "zone":
         if args.zone_command == "migration-apply":
             if args.commit != args.activate:
@@ -2360,40 +2360,40 @@ def main(argv: list[str] | None = None) -> int:
                     file=sys.stderr,
                 )
                 return 2
-            planner = ManagedZoneMigrationPlanner(
+            migration_planner = ManagedZoneMigrationPlanner(
                 root_config=args.root_config,
                 local_config=args.local_config,
                 managed_config=args.managed_config,
                 managed_zone_directory=args.managed_zone_directory,
             )
             try:
-                plan = planner.plan(wanted)
-                result = ManagedZoneMigrationTransaction(
+                migration_apply_plan = migration_planner.plan(wanted)
+                migration_apply_result = ManagedZoneMigrationTransaction(
                     args.backup_root,
                     args.manifest_directory,
                     root_config=args.root_config,
-                ).apply(plan, commit=args.commit, activate=args.activate)
+                ).apply(migration_apply_plan, commit=args.commit, activate=args.activate)
             except (ManagedZoneMigrationError, OSError) as exc:
                 print(f"BŁĄD: {exc}", file=sys.stderr)
                 return 2
             if args.json:
-                print(json.dumps(asdict(result), ensure_ascii=False, indent=2))
+                print(json.dumps(asdict(migration_apply_result), ensure_ascii=False, indent=2))
             else:
-                print(f"Transakcja: {result.transaction_id}")
-                print(f"Strefa:     {result.zone}")
-                print(f"Status:     {result.status}")
-                print(f"Commit:     {'TAK' if result.committed else 'NIE'}")
-                print(f"Rollback:   {'TAK' if result.rolled_back else 'NIE'}")
-                if result.backup_directory:
-                    print(f"Backup:     {result.backup_directory}")
-                if result.manifest:
-                    print(f"Manifest:   {result.manifest}")
+                print(f"Transakcja: {migration_apply_result.transaction_id}")
+                print(f"Strefa:     {migration_apply_result.zone}")
+                print(f"Status:     {migration_apply_result.status}")
+                print(f"Commit:     {'TAK' if migration_apply_result.committed else 'NIE'}")
+                print(f"Rollback:   {'TAK' if migration_apply_result.rolled_back else 'NIE'}")
+                if migration_apply_result.backup_directory:
+                    print(f"Backup:     {migration_apply_result.backup_directory}")
+                if migration_apply_result.manifest:
+                    print(f"Manifest:   {migration_apply_result.manifest}")
                 print("\nEtapy:")
-                for step in result.steps:
-                    print(f"[{'OK' if step.ok else 'BŁĄD'}] {step.name}: {step.message}")
-            return 0 if result.status in {"DRY-RUN", "COMMIT"} else 1
+                for migration_apply_step in migration_apply_result.steps:
+                    print(f"[{'OK' if migration_apply_step.ok else 'BŁĄD'}] {migration_apply_step.name}: {migration_apply_step.message}")
+            return 0 if migration_apply_result.status in {"DRY-RUN", "COMMIT"} else 1
         if args.zone_command in {"migration-inventory", "migration-plan"}:
-            planner = ManagedZoneMigrationPlanner(
+            migration_query_planner = ManagedZoneMigrationPlanner(
                 root_config=args.root_config,
                 local_config=args.local_config,
                 managed_config=args.managed_config,
@@ -2401,89 +2401,89 @@ def main(argv: list[str] | None = None) -> int:
             )
             try:
                 if args.zone_command == "migration-inventory":
-                    items = planner.inventory()
+                    migration_items = migration_query_planner.inventory()
                     if args.json:
                         print(json.dumps(
-                            [item.to_dict() for item in items],
+                            [migration_item.to_dict() for migration_item in migration_items],
                             ensure_ascii=False,
                             indent=2,
                         ))
-                    elif not items:
+                    elif not migration_items:
                         print("Nie znaleziono aktywnych deklaracji stref BIND.")
                     else:
                         print(f"{'STAN':<20} {'STREFA':<32} {'TYP':<12} DEKLARACJA")
-                        for item in items:
+                        for migration_item in migration_items:
                             print(
-                                f"{item.state:<20} {item.name:<32} "
-                                f"{item.zone_type:<12} {item.config_file}"
+                                f"{migration_item.state:<20} {migration_item.name:<32} "
+                                f"{migration_item.zone_type:<12} {migration_item.config_file}"
                             )
-                            print(f"  {item.reason}")
+                            print(f"  {migration_item.reason}")
                     return 0
 
-                plan = planner.plan(args.name)
+                migration_plan = migration_query_planner.plan(args.name)
                 if args.json:
-                    print(json.dumps(plan.to_dict(), ensure_ascii=False, indent=2))
+                    print(json.dumps(migration_plan.to_dict(), ensure_ascii=False, indent=2))
                 else:
                     print(f"PLAN MIGRACJI STREFY — BEZ ZMIAN W SYSTEMIE")
-                    print(f"Strefa:       {plan.zone}")
-                    print(f"Źródło:       {plan.source_config}")
-                    print(f"Deklaracja:   {plan.declaration_file}")
-                    print(f"Indeks:       {plan.managed_config}")
+                    print(f"Strefa:       {migration_plan.zone}")
+                    print(f"Źródło:       {migration_plan.source_config}")
+                    print(f"Deklaracja:   {migration_plan.declaration_file}")
+                    print(f"Indeks:       {migration_plan.managed_config}")
                     print("\nPlanowane diffy:\n")
-                    print(plan.source_diff, end="")
-                    print(plan.declaration_diff, end="")
-                    print(plan.managed_diff, end="")
+                    print(migration_plan.source_diff, end="")
+                    print(migration_plan.declaration_diff, end="")
+                    print(migration_plan.managed_diff, end="")
                     print("\nPlanowane etapy:")
-                    for action in plan.actions:
-                        print(f"- {action}")
+                    for migration_action in migration_plan.actions:
+                        print(f"- {migration_action}")
                     print("\nWynik: DRY-RUN — niczego nie zmieniono")
                 return 0
             except (ManagedZoneMigrationError, OSError) as exc:
                 print(f"BŁĄD: {exc}", file=sys.stderr)
                 return 2
         if args.zone_command == "safety":
-            selected = zones
+            selected_zones = zones
             if args.name:
                 wanted = args.name.strip().rstrip(".").casefold()
-                selected = [
-                    zone
-                    for zone in zones
-                    if zone.name.rstrip(".").casefold() == wanted
+                selected_zones = [
+                    safety_zone
+                    for safety_zone in zones
+                    if safety_zone.name.rstrip(".").casefold() == wanted
                 ]
-                if not selected:
+                if not selected_zones:
                     print(f"BŁĄD: Nie znaleziono strefy: {args.name}", file=sys.stderr)
                     return 2
-            payload = [
+            safety_payload = [
                 {
-                    "zone": zone.name,
-                    "health_profile": zone.health_profile,
-                    "dnssec_policy": zone.dnssec_policy,
-                    "inline_signing": zone.inline_signing,
+                    "zone": safety_zone.name,
+                    "health_profile": safety_zone.health_profile,
+                    "dnssec_policy": safety_zone.dnssec_policy,
+                    "inline_signing": safety_zone.inline_signing,
                     "lifecycle_allowed": not (
-                        zone.health_profile.casefold() == "rpz"
-                        or zone.dnssec_policy
-                        or zone.inline_signing
+                        safety_zone.health_profile.casefold() == "rpz"
+                        or safety_zone.dnssec_policy
+                        or safety_zone.inline_signing
                     ),
                 }
-                for zone in selected
+                for safety_zone in selected_zones
             ]
             if args.json:
-                print(json.dumps(payload, ensure_ascii=False, indent=2))
+                print(json.dumps(safety_payload, ensure_ascii=False, indent=2))
             else:
                 print(
                     f"{'STREFA':<32} {'PROFIL':<14} {'DNSSEC-POLICY':<18} "
                     "INLINE  CYKL ŻYCIA"
                 )
-                for item in payload:
+                for safety_row in safety_payload:
                     print(
-                        f"{item['zone']:<32} {item['health_profile']:<14} "
-                        f"{(item['dnssec_policy'] or '-'):<18} "
-                        f"{('TAK' if item['inline_signing'] else 'NIE'):<7} "
-                        f"{'DOZWOLONY' if item['lifecycle_allowed'] else 'BLOKADA'}"
+                        f"{safety_row['zone']:<32} {safety_row['health_profile']:<14} "
+                        f"{(safety_row['dnssec_policy'] or '-'):<18} "
+                        f"{('TAK' if safety_row['inline_signing'] else 'NIE'):<7} "
+                        f"{'DOZWOLONY' if safety_row['lifecycle_allowed'] else 'BLOKADA'}"
                     )
             return 0
         if args.zone_command == "inventory":
-            records = ZoneInventory(
+            inventory_records = ZoneInventory(
                 disabled_root=args.disabled_root,
                 quarantine_root=args.quarantine_root,
                 disable_manifest_directory=args.disable_manifest_directory,
@@ -2491,29 +2491,29 @@ def main(argv: list[str] | None = None) -> int:
             if args.json:
                 print(
                     json.dumps(
-                        [record.to_dict() for record in records],
+                        [inventory_record.to_dict() for inventory_record in inventory_records],
                         ensure_ascii=False,
                         indent=2,
                     )
                 )
-            elif not records:
+            elif not inventory_records:
                 print("Brak wyłączonych i skarantannowanych stref.")
             else:
                 print(
                     f"{'STAN':<13} {'STREFA':<32} {'DATA':<25} "
                     "OPERATOR  PRZYCZYNA"
                 )
-                for record in records:
+                for inventory_record in inventory_records:
                     print(
-                        f"{record.state:<13} {record.zone:<32} "
-                        f"{record.timestamp:<25} {record.operator:<9} "
-                        f"{record.reason}"
+                        f"{inventory_record.state:<13} {inventory_record.zone:<32} "
+                        f"{inventory_record.timestamp:<25} {inventory_record.operator:<9} "
+                        f"{inventory_record.reason}"
                     )
-                    print(f"  {record.location}")
+                    print(f"  {inventory_record.location}")
             return 0
         if args.zone_command == "quarantine-retention":
             try:
-                records = QuarantineRetentionAuditor(
+                retention_records = QuarantineRetentionAuditor(
                     quarantine_root=args.quarantine_root,
                     retention_days=args.retention_days,
                 ).records()
@@ -2521,17 +2521,17 @@ def main(argv: list[str] | None = None) -> int:
                 print(f"BŁĄD: {exc}", file=sys.stderr)
                 return 2
             if args.json:
-                print(json.dumps([item.to_dict() for item in records], ensure_ascii=False, indent=2))
+                print(json.dumps([retention_record.to_dict() for retention_record in retention_records], ensure_ascii=False, indent=2))
             else:
                 print("PLAN RETENCJI KWARANTANNY — TYLKO ODCZYT")
                 print(f"Okres retencji: {format_days_pl(args.retention_days)}")
-                if not records:
+                if not retention_records:
                     print("Brak pakietów kwarantanny.")
-                for item in records:
-                    age = "-" if item.age_days is None else str(item.age_days)
-                    print(f"[{item.state:<8}] {item.zone} — wiek {age} dni")
-                    print(f"  {item.reason}")
-                    print(f"  {item.package}")
+                for retention_record in retention_records:
+                    age = "-" if retention_record.age_days is None else str(retention_record.age_days)
+                    print(f"[{retention_record.state:<8}] {retention_record.zone} — wiek {age} dni")
+                    print(f"  {retention_record.reason}")
+                    print(f"  {retention_record.package}")
                 print("Wynik: raport odczytowy — niczego nie usunięto")
             return 0
         if args.zone_command == "quarantine-purge":

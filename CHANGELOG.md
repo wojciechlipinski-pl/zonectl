@@ -42,7 +42,9 @@
   inventory or audit values, reducing the remaining CLI report to 139; typed
   DS confirmation, serial finalization, DNSSEC withdrawal planning, apply and
   recovery backup results reduce it further to 95; separating DNSSEC enable,
-  DS health checks and withdrawal confirmation values leaves 75 CLI errors
+  DS health checks and withdrawal confirmation values leaves 75 CLI errors;
+  typed DNSSEC reporting, managed-zone migration, lifecycle safety inventory
+  and quarantine retention reporting reduce the remainder to 51
 
 - a dependency-free AST audit inventories missing public API docstrings, while
   CI initially enforces complete documentation only for the new critical

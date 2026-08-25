@@ -201,8 +201,11 @@ zrealizowane, a `[ ]` pozostają do wykonania.
   typuje potwierdzenie DS, finalizację seriala oraz plan, wykonanie
   i pakiet bezpieczeństwa wycofania DNSSEC, pozostawiając 95 błędów. Czwarty
   etap rozdziela plan i wynik włączenia DNSSEC, kontrole DS oraz
-  potwierdzenie wycofania, pozostawiając 75 błędów. Moduł zostanie objęty
-  bramką dopiero po pełnym domknięciu audytu.
+  potwierdzenie wycofania, pozostawiając 75 błędów. Piąty etap typuje raport
+  DNSSEC, migrację zarządzanych stref, raport
+  bezpieczeństwa cyklu życia, inwentaryzację i retencję kwarantanny,
+  pozostawiając 51 błędów. Moduł zostanie objęty bramką dopiero po pełnym
+  domknięciu audytu.
 - [ ] Dodać automatyczne formatowanie i lint.
 - [x] Dodać testy integracyjne z odseparowaną konfiguracją i prawdziwymi
   narzędziami walidacyjnymi BIND, bez kontaktu z produkcyjnym `rndc`.
