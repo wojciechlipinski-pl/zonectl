@@ -44,7 +44,9 @@
   recovery backup results reduce it further to 95; separating DNSSEC enable,
   DS health checks and withdrawal confirmation values leaves 75 CLI errors;
   typed DNSSEC reporting, managed-zone migration, lifecycle safety inventory
-  and quarantine retention reporting reduce the remainder to 51
+  and quarantine retention reporting reduce the remainder to 51; separating
+  purge, quarantine recovery, disable, restore and create transaction values
+  leaves only 12 CLI errors before final admission to the strict gate
 
 - a dependency-free AST audit inventories missing public API docstrings, while
   CI initially enforces complete documentation only for the new critical

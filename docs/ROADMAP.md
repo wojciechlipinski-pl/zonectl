@@ -204,8 +204,9 @@ zrealizowane, a `[ ]` pozostają do wykonania.
   potwierdzenie wycofania, pozostawiając 75 błędów. Piąty etap typuje raport
   DNSSEC, migrację zarządzanych stref, raport
   bezpieczeństwa cyklu życia, inwentaryzację i retencję kwarantanny,
-  pozostawiając 51 błędów. Moduł zostanie objęty bramką dopiero po pełnym
-  domknięciu audytu.
+  pozostawiając 51 błędów. Szósty etap rozdziela purge, odtwarzanie z
+  kwarantanny, kwarantannę oraz transakcje disable, restore i create,
+  pozostawiając 12 błędów przed końcowym objęciem modułu bramką.
 - [ ] Dodać automatyczne formatowanie i lint.
 - [x] Dodać testy integracyjne z odseparowaną konfiguracją i prawdziwymi
   narzędziami walidacyjnymi BIND, bez kontaktu z produkcyjnym `rndc`.

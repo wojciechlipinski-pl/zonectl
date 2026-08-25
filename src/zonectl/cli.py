@@ -2535,37 +2535,37 @@ def main(argv: list[str] | None = None) -> int:
                 print("Wynik: raport odczytowy — niczego nie usunięto")
             return 0
         if args.zone_command == "quarantine-purge":
-            transaction = QuarantinePurgeTransaction(
+            purge_transaction = QuarantinePurgeTransaction(
                 quarantine_root=args.quarantine_root,
                 audit_directory=args.audit_directory,
                 staging_root=args.staging_root,
                 retention_days=args.retention_days,
             )
             try:
-                plan = transaction.plan(args.name, args.package, reason=args.reason)
+                purge_plan = purge_transaction.plan(args.name, args.package, reason=args.reason)
             except (QuarantinePurgeError, ValueError) as exc:
                 print(f"BŁĄD: {exc}", file=sys.stderr)
                 return 2
-            result = transaction.apply(
-                plan,
+            purge_result = purge_transaction.apply(
+                purge_plan,
                 commit=args.commit,
                 confirmation=args.confirm,
                 package_confirmation=args.confirm_package,
             )
             if args.json:
-                print(json.dumps(asdict(result), ensure_ascii=False, indent=2))
+                print(json.dumps(asdict(purge_result), ensure_ascii=False, indent=2))
             else:
-                print(f"Transakcja: {result.transaction_id}")
-                print(f"Strefa:     {result.zone}")
-                print(f"Pakiet:     {result.package}")
-                print(f"Status:     {result.status}")
-                print(f"Commit:     {'TAK' if result.committed else 'NIE'}")
-                if result.manifest:
-                    print(f"Manifest:   {result.manifest}")
+                print(f"Transakcja: {purge_result.transaction_id}")
+                print(f"Strefa:     {purge_result.zone}")
+                print(f"Pakiet:     {purge_result.package}")
+                print(f"Status:     {purge_result.status}")
+                print(f"Commit:     {'TAK' if purge_result.committed else 'NIE'}")
+                if purge_result.manifest:
+                    print(f"Manifest:   {purge_result.manifest}")
                 print("\nEtapy:")
-                for step in result.steps:
-                    print(f"[{'OK' if step.ok else 'BŁĄD'}] {step.name}: {step.message}")
-            return 0 if result.status in {"DRY-RUN", "PURGED"} else 2
+                for purge_step in purge_result.steps:
+                    print(f"[{'OK' if purge_step.ok else 'BŁĄD'}] {purge_step.name}: {purge_step.message}")
+            return 0 if purge_result.status in {"DRY-RUN", "PURGED"} else 2
         if args.zone_command in {
             "disable",
             "restore",
@@ -2582,7 +2582,7 @@ def main(argv: list[str] | None = None) -> int:
         if args.zone_command == "quarantine-restore":
             name = args.name.strip().rstrip(".").casefold()
             try:
-                plan = QuarantineRestoreTransaction.plan(
+                quarantine_restore_plan = QuarantineRestoreTransaction.plan(
                     name,
                     package_directory=args.package,
                     zone_file=args.zone_directory / name,
@@ -2592,8 +2592,8 @@ def main(argv: list[str] | None = None) -> int:
                     managed_index=args.managed_config,
                     root_config=args.root_config,
                 )
-                result = QuarantineRestoreTransaction().apply(
-                    plan, commit=args.commit
+                quarantine_restore_result = QuarantineRestoreTransaction().apply(
+                    quarantine_restore_plan, commit=args.commit
                 )
             except (QuarantineRestoreError, OSError, json.JSONDecodeError) as exc:
                 print(f"BŁĄD: {exc}", file=sys.stderr)
@@ -2601,24 +2601,24 @@ def main(argv: list[str] | None = None) -> int:
             if args.json:
                 print(
                     json.dumps(
-                        asdict(result), ensure_ascii=False, indent=2
+                        asdict(quarantine_restore_result), ensure_ascii=False, indent=2
                     )
                 )
             else:
-                print(f"Transakcja: {result.transaction_id}")
-                print(f"Strefa:     {result.zone}")
-                print(f"Status:     {result.status}")
-                print(f"Pakiet:     {result.package_directory}")
-                print(f"Commit:     {'TAK' if result.committed else 'NIE'}")
-                print(f"Rollback:   {'TAK' if result.rolled_back else 'NIE'}")
+                print(f"Transakcja: {quarantine_restore_result.transaction_id}")
+                print(f"Strefa:     {quarantine_restore_result.zone}")
+                print(f"Status:     {quarantine_restore_result.status}")
+                print(f"Pakiet:     {quarantine_restore_result.package_directory}")
+                print(f"Commit:     {'TAK' if quarantine_restore_result.committed else 'NIE'}")
+                print(f"Rollback:   {'TAK' if quarantine_restore_result.rolled_back else 'NIE'}")
                 print("\nEtapy:")
-                for step in result.steps:
-                    marker = "OK" if step.ok else "BŁĄD"
-                    print(f"[{marker}] {step.name}: {step.message}")
+                for quarantine_restore_step in quarantine_restore_result.steps:
+                    marker = "OK" if quarantine_restore_step.ok else "BŁĄD"
+                    print(f"[{marker}] {quarantine_restore_step.name}: {quarantine_restore_step.message}")
             return (
                 0
-                if result.ok
-                and result.status in {"DRY-RUN", "RESTORED"}
+                if quarantine_restore_result.ok
+                and quarantine_restore_result.status in {"DRY-RUN", "RESTORED"}
                 else 2
             )
         if args.zone_command == "quarantine":
@@ -2627,7 +2627,7 @@ def main(argv: list[str] | None = None) -> int:
                 args.managed_zone_directory / f"{name}.conf"
             )
             try:
-                plan = ZoneQuarantineTransaction.plan(
+                quarantine_plan = ZoneQuarantineTransaction.plan(
                     name,
                     zone_file=args.zone_directory / name,
                     archived_declaration=(
@@ -2638,8 +2638,8 @@ def main(argv: list[str] | None = None) -> int:
                     quarantine_root=args.quarantine_root,
                     reason=args.reason,
                 )
-                result = ZoneQuarantineTransaction().apply(
-                    plan,
+                quarantine_result = ZoneQuarantineTransaction().apply(
+                    quarantine_plan,
                     commit=args.commit,
                     confirmation=args.confirm,
                 )
@@ -2649,31 +2649,31 @@ def main(argv: list[str] | None = None) -> int:
             if args.json:
                 print(
                     json.dumps(
-                        asdict(result), ensure_ascii=False, indent=2
+                        asdict(quarantine_result), ensure_ascii=False, indent=2
                     )
                 )
             else:
-                print(f"Transakcja: {result.transaction_id}")
-                print(f"Strefa:     {result.zone}")
-                print(f"Status:     {result.status}")
-                print(f"Przyczyna:  {result.reason}")
-                print(f"Commit:     {'TAK' if result.committed else 'NIE'}")
-                if result.package_directory:
-                    print(f"Pakiet:     {result.package_directory}")
+                print(f"Transakcja: {quarantine_result.transaction_id}")
+                print(f"Strefa:     {quarantine_result.zone}")
+                print(f"Status:     {quarantine_result.status}")
+                print(f"Przyczyna:  {quarantine_result.reason}")
+                print(f"Commit:     {'TAK' if quarantine_result.committed else 'NIE'}")
+                if quarantine_result.package_directory:
+                    print(f"Pakiet:     {quarantine_result.package_directory}")
                 print("\nEtapy:")
-                for step in result.steps:
-                    marker = "OK" if step.ok else "BŁĄD"
-                    print(f"[{marker}] {step.name}: {step.message}")
+                for quarantine_step in quarantine_result.steps:
+                    marker = "OK" if quarantine_step.ok else "BŁĄD"
+                    print(f"[{marker}] {quarantine_step.name}: {quarantine_step.message}")
             return (
                 0
-                if result.ok
-                and result.status in {"DRY-RUN", "QUARANTINED"}
+                if quarantine_result.ok
+                and quarantine_result.status in {"DRY-RUN", "QUARANTINED"}
                 else 2
             )
         if args.zone_command == "restore":
             name = args.name.strip().rstrip(".").casefold()
             try:
-                plan = ZoneRestoreTransaction.plan(
+                restore_plan = ZoneRestoreTransaction.plan(
                     name,
                     zone_file=args.zone_directory / name,
                     declaration_file=(
@@ -2683,40 +2683,40 @@ def main(argv: list[str] | None = None) -> int:
                     disabled_root=args.disabled_root,
                     root_config=args.root_config,
                 )
-                result = ZoneRestoreTransaction(
+                restore_result = ZoneRestoreTransaction(
                     args.manifest_directory,
-                ).apply(plan, commit=args.commit)
+                ).apply(restore_plan, commit=args.commit)
             except (ZoneRestoreError, OSError) as exc:
                 print(f"BŁĄD: {exc}", file=sys.stderr)
                 return 2
             if args.json:
                 print(
                     json.dumps(
-                        asdict(result), ensure_ascii=False, indent=2
+                        asdict(restore_result), ensure_ascii=False, indent=2
                     )
                 )
             else:
-                print(f"Transakcja: {result.transaction_id}")
-                print(f"Strefa:     {result.zone}")
-                print(f"Status:     {result.status}")
-                print(f"Commit:     {'TAK' if result.committed else 'NIE'}")
-                print(f"Rollback:   {'TAK' if result.rolled_back else 'NIE'}")
-                if result.manifest:
-                    print(f"Manifest:   {result.manifest}")
+                print(f"Transakcja: {restore_result.transaction_id}")
+                print(f"Strefa:     {restore_result.zone}")
+                print(f"Status:     {restore_result.status}")
+                print(f"Commit:     {'TAK' if restore_result.committed else 'NIE'}")
+                print(f"Rollback:   {'TAK' if restore_result.rolled_back else 'NIE'}")
+                if restore_result.manifest:
+                    print(f"Manifest:   {restore_result.manifest}")
                 print("\nEtapy:")
-                for step in result.steps:
-                    marker = "OK" if step.ok else "BŁĄD"
-                    print(f"[{marker}] {step.name}: {step.message}")
+                for restore_step in restore_result.steps:
+                    marker = "OK" if restore_step.ok else "BŁĄD"
+                    print(f"[{marker}] {restore_step.name}: {restore_step.message}")
             return (
                 0
-                if result.ok
-                and result.status in {"DRY-RUN", "RESTORED"}
+                if restore_result.ok
+                and restore_result.status in {"DRY-RUN", "RESTORED"}
                 else 2
             )
         if args.zone_command == "disable":
             name = args.name.strip().rstrip(".").casefold()
             try:
-                plan = ZoneDisableTransaction.plan(
+                disable_zone_plan = ZoneDisableTransaction.plan(
                     name,
                     zone_file=args.zone_directory / name,
                     declaration_file=(
@@ -2727,39 +2727,39 @@ def main(argv: list[str] | None = None) -> int:
                     disabled_root=args.disabled_root,
                     reason=args.reason,
                 )
-                result = ZoneDisableTransaction(
+                disable_zone_result = ZoneDisableTransaction(
                     args.manifest_directory,
-                ).apply(plan, commit=args.commit)
+                ).apply(disable_zone_plan, commit=args.commit)
             except (ZoneDisableError, OSError) as exc:
                 print(f"BŁĄD: {exc}", file=sys.stderr)
                 return 2
             if args.json:
                 print(
                     json.dumps(
-                        asdict(result), ensure_ascii=False, indent=2
+                        asdict(disable_zone_result), ensure_ascii=False, indent=2
                     )
                 )
             else:
-                print(f"Transakcja: {result.transaction_id}")
-                print(f"Strefa:     {result.zone}")
-                print(f"Status:     {result.status}")
-                print(f"Przyczyna:  {result.reason}")
-                print(f"Commit:     {'TAK' if result.committed else 'NIE'}")
-                print(f"Rollback:   {'TAK' if result.rolled_back else 'NIE'}")
-                if result.manifest:
-                    print(f"Manifest:   {result.manifest}")
+                print(f"Transakcja: {disable_zone_result.transaction_id}")
+                print(f"Strefa:     {disable_zone_result.zone}")
+                print(f"Status:     {disable_zone_result.status}")
+                print(f"Przyczyna:  {disable_zone_result.reason}")
+                print(f"Commit:     {'TAK' if disable_zone_result.committed else 'NIE'}")
+                print(f"Rollback:   {'TAK' if disable_zone_result.rolled_back else 'NIE'}")
+                if disable_zone_result.manifest:
+                    print(f"Manifest:   {disable_zone_result.manifest}")
                 print("\nEtapy:")
-                for step in result.steps:
-                    marker = "OK" if step.ok else "BŁĄD"
-                    print(f"[{marker}] {step.name}: {step.message}")
+                for disable_zone_step in disable_zone_result.steps:
+                    marker = "OK" if disable_zone_step.ok else "BŁĄD"
+                    print(f"[{marker}] {disable_zone_step.name}: {disable_zone_step.message}")
             return (
                 0
-                if result.ok
-                and result.status in {"DRY-RUN", "DISABLED"}
+                if disable_zone_result.ok
+                and disable_zone_result.status in {"DRY-RUN", "DISABLED"}
                 else 2
             )
         try:
-            plan = ZoneLifecyclePlanner(zones).plan_create(
+            create_plan = ZoneLifecyclePlanner(zones).plan_create(
                 ZoneCreateRequest(
                     name=args.name,
                     primary_ns=args.primary_ns,
@@ -2783,61 +2783,61 @@ def main(argv: list[str] | None = None) -> int:
             print(f"BŁĄD: {exc}", file=sys.stderr)
             return 2
         if args.zone_command == "create":
-            result = ZoneCreateTransaction(
+            create_result = ZoneCreateTransaction(
                 args.manifest_directory,
                 root_config=args.root_config,
             ).apply(
-                plan,
+                create_plan,
                 commit=args.commit,
                 activate=args.commit,
             )
             if args.json:
                 print(
                     json.dumps(
-                        asdict(result),
+                        asdict(create_result),
                         ensure_ascii=False,
                         indent=2,
                     )
                 )
             else:
-                print(f"Transakcja: {result.transaction_id}")
-                print(f"Strefa:     {result.zone}")
-                print(f"Status:     {result.status}")
-                print(f"Commit:     {'TAK' if result.committed else 'NIE'}")
-                print(f"Rollback:   {'TAK' if result.rolled_back else 'NIE'}")
-                if result.manifest:
-                    print(f"Manifest:   {result.manifest}")
+                print(f"Transakcja: {create_result.transaction_id}")
+                print(f"Strefa:     {create_result.zone}")
+                print(f"Status:     {create_result.status}")
+                print(f"Commit:     {'TAK' if create_result.committed else 'NIE'}")
+                print(f"Rollback:   {'TAK' if create_result.rolled_back else 'NIE'}")
+                if create_result.manifest:
+                    print(f"Manifest:   {create_result.manifest}")
                 print("\nEtapy:")
-                for step in result.steps:
-                    marker = "OK" if step.ok else "BŁĄD"
-                    print(f"[{marker}] {step.name}: {step.message}")
+                for create_step in create_result.steps:
+                    marker = "OK" if create_step.ok else "BŁĄD"
+                    print(f"[{marker}] {create_step.name}: {create_step.message}")
             return (
                 0
-                if result.ok and result.status in {"DRY-RUN", "COMMIT"}
+                if create_result.ok and create_result.status in {"DRY-RUN", "COMMIT"}
                 else 2
             )
         if args.json:
             print(
                 json.dumps(
-                    plan.to_dict(),
+                    create_plan.to_dict(),
                     ensure_ascii=False,
                     indent=2,
                 )
             )
         else:
             print("PLAN UTWORZENIA STREFY — BEZ ZMIAN W SYSTEMIE")
-            print(f"Strefa:       {plan.zone_name}")
-            print(f"Plik:         {plan.zone_file}")
-            print(f"Konfiguracja: {plan.managed_config}")
-            print(f"Deklaracja:   {plan.zone_declaration_file}")
-            print(f"Serial:       {plan.serial}")
+            print(f"Strefa:       {create_plan.zone_name}")
+            print(f"Plik:         {create_plan.zone_file}")
+            print(f"Konfiguracja: {create_plan.managed_config}")
+            print(f"Deklaracja:   {create_plan.zone_declaration_file}")
+            print(f"Serial:       {create_plan.serial}")
             print("\nPlik strefy:\n")
-            print(plan.zone_text, end="")
+            print(create_plan.zone_text, end="")
             print("\nDeklaracja BIND:\n")
-            print(plan.bind_declaration, end="")
+            print(create_plan.bind_declaration, end="")
             print("\nPlanowane etapy:")
-            for action in plan.actions:
-                print(f"- {action}")
+            for create_action in create_plan.actions:
+                print(f"- {create_action}")
         return 0
     if args.command == "domains":
         if args.grouped:
