@@ -53,4 +53,8 @@ def test_quality_gate_type_checks_only_incremental_critical_scope() -> None:
     assert "bind_secondary_health.py" in text
     assert "bind_access_impact.py" in text
     assert "bind_config.py" in text
+    assert "bind_secondary_plan.py" in text
+    assert "bind_zone_secondary.py" in text
+    assert "bind_acl_transaction.py" in text
+    assert "bind_secondary_transaction.py" in text
     assert "scripts/audit_public_api.py" in text

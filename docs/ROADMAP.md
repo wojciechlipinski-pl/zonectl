@@ -175,7 +175,8 @@ zrealizowane, a `[ ]` pozostają do wykonania.
   strefy do kwarantanny i jej bezpiecznego odtwarzania, a także wykrywanie
   konfiguracji oraz planowanie i transakcje migracji i relokacji zarządzanych
   plików stref. Kolejny zakres obejmuje bezpieczną serializację manifestów
-  audytowych, analizę wpływu ACL, health secondary i parser konfiguracji BIND.
+  audytowych, analizę wpływu ACL, health secondary i parser konfiguracji BIND,
+  a następnie planowanie przypisań secondary oraz transakcje ACL i secondary.
 - [ ] Dodać automatyczne formatowanie i lint.
 - [x] Dodać testy integracyjne z odseparowaną konfiguracją i prawdziwymi
   narzędziami walidacyjnymi BIND, bez kontaktu z produkcyjnym `rndc`.
