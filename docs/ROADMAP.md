@@ -176,7 +176,8 @@ zrealizowane, a `[ ]` pozostają do wykonania.
   konfiguracji oraz planowanie i transakcje migracji i relokacji zarządzanych
   plików stref. Kolejny zakres obejmuje bezpieczną serializację manifestów
   audytowych, analizę wpływu ACL, health secondary i parser konfiguracji BIND,
-  a następnie planowanie przypisań secondary oraz transakcje ACL i secondary.
+  a następnie planowanie przypisań secondary, transakcje ACL i secondary,
+  inwentaryzację stref nieaktywnych oraz blokady sesji edycji.
 - [ ] Dodać automatyczne formatowanie i lint.
 - [x] Dodać testy integracyjne z odseparowaną konfiguracją i prawdziwymi
   narzędziami walidacyjnymi BIND, bez kontaktu z produkcyjnym `rndc`.

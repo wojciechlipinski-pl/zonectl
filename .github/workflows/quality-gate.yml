@@ -46,6 +46,8 @@ jobs:
             src/zonectl/core/bind_zone_secondary.py \
             src/zonectl/core/bind_acl_transaction.py \
             src/zonectl/core/bind_secondary_transaction.py \
+            src/zonectl/core/zone_inventory.py \
+            src/zonectl/core/edit_lock.py \
             scripts/audit_public_api.py
 
   tests:
