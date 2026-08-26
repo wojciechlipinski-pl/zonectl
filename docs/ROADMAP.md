@@ -515,7 +515,7 @@ zaczynając od raportu wpływu tylko do odczytu.
   sumy SHA-256 oraz brak plików `/etc/bind`.
 - [x] Przetestować aktualizację 4.8.3 → 4.9.0 bez zmiany struktury, metadanych
   ani zawartości `/etc/bind`, przy aktywnej usłudze i poprawnym raporcie.
-- [ ] Scalić gałąź, utworzyć tag `v4.9.0` i uruchomić zatwierdzony release.
+- [x] Scalić gałąź, utworzyć tag `v4.9.0` i uruchomić zatwierdzony release.
 
 ## ZoneCTL 4.9 — semantyczna czytelność TUI
 
@@ -544,9 +544,9 @@ zaczynając od raportu wpływu tylko do odczytu.
 - [x] Zweryfikować formularz wizualnie i przeprowadzić produkcyjny dry-run bez
   zapisywania zmiany.
 
-### Informacja zwrotna podczas oczekiwania
+## ZoneCTL 4.10 — informacja zwrotna podczas oczekiwania
 
-- [ ] Dodać wspólny komponent animowanego wskaźnika pracy TUI dla operacji,
+- [x] Dodać wspólny komponent animowanego wskaźnika pracy TUI dla operacji,
   których czasu zakończenia nie można wiarygodnie określić.
 - [ ] Pokazywać nazwę bieżącego etapu i upływający czas bez prezentowania
   pozornego procentowego postępu.
@@ -560,6 +560,10 @@ zaczynając od raportu wpływu tylko do odczytu.
   nieinteraktywnym.
 - [ ] Nie udostępniać anulowania operacji, dopóki poszczególne transakcje nie
   mają bezpiecznie zdefiniowanego punktu przerwania i rollbacku.
+
+Wydania `4.9.x` pozostają linią stabilizacyjną przeznaczoną na poprawki
+błędów, bezpieczeństwa i pakietów. Rozszerzenia polityk DNSSEC/KASP oraz
+wielojęzyczność są planowane dla ZoneCTL 5.0.
 
 ## Rozwój po osiągnięciu pełnej funkcjonalności podstawowej
 

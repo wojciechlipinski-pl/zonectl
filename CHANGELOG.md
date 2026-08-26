@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Added
+
+- a side-effect-free TUI wait-indicator model provides deterministic Braille
+  and ASCII animation frames, elapsed-time presentation, non-interactive
+  suppression and explicit semantic completion results as the foundation for
+  ZoneCTL 4.10 integrations
+
 ## 4.9.0 - 2026-08-25
 
 ### Fixed
