@@ -548,14 +548,14 @@ zaczynając od raportu wpływu tylko do odczytu.
 
 - [x] Dodać wspólny komponent animowanego wskaźnika pracy TUI dla operacji,
   których czasu zakończenia nie można wiarygodnie określić.
-- [ ] Pokazywać nazwę bieżącego etapu i upływający czas bez prezentowania
+- [x] Pokazywać nazwę bieżącego etapu i upływający czas bez prezentowania
   pozornego procentowego postępu.
 - [ ] Zastosować wskaźnik najpierw podczas głównego odświeżania stref oraz
   oczekiwania na stan BIND po aktywacji lub rollbacku, a następnie rozszerzyć
   go na kontrole DNSSEC, DS i secondary.
-- [ ] Po zakończeniu zastępować animację jawnym wynikiem semantycznym:
+- [x] Po zakończeniu zastępować animację jawnym wynikiem semantycznym:
   zielonym `PASS`, żółtym `WARN` albo czerwonym `FAIL` wraz z opisem.
-- [ ] Zapewnić wariant ASCII `| / - \\` dla terminali bez poprawnej obsługi
+- [x] Zapewnić wariant ASCII `| / - \\` dla terminali bez poprawnej obsługi
   znaków Braille'a oraz wyłączać animację w JSON, logach i środowisku
   nieinteraktywnym.
 - [ ] Nie udostępniać anulowania operacji, dopóki poszczególne transakcje nie

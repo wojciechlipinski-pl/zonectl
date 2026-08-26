@@ -20,9 +20,11 @@ from zonectl.ui.semantic_status import (
     state_health,
     text_health,
 )
+from zonectl.ui.wait_indicator import WaitIndicator, render_wait_result
 
 import curses
 import queue
+import sys
 import threading
 import textwrap
 from collections.abc import Sequence
@@ -172,6 +174,8 @@ class CursesApp:
         self.messages: queue.Queue[tuple[str, ZoneStatus]] = queue.Queue()
         self.stop_event = threading.Event()
         self.worker: threading.Thread | None = None
+        self.refresh_indicator: WaitIndicator | None = None
+        self.refresh_notice: str | None = None
         self._rebuild_rows()
 
     def run(self) -> None:
@@ -279,6 +283,12 @@ class CursesApp:
             if not force:
                 return
             return  # do not start two concurrent scans
+        encoding = (sys.stdout.encoding or "").lower()
+        self.refresh_indicator = WaitIndicator.start(
+            "Odświeżanie stref",
+            ascii_only="utf" not in encoding,
+        )
+        self.refresh_notice = None
         self.worker = threading.Thread(target=self._refresh_worker, daemon=True)
         self.worker.start()
 
@@ -305,7 +315,54 @@ class CursesApp:
                 break
             self.statuses[name] = status
             changed = True
+        self._complete_refresh_if_ready()
         return changed
+
+    def _complete_refresh_if_ready(self) -> None:
+        """Replace the spinner after the asynchronous scan has completed."""
+        worker = self.worker
+        if (
+            self.refresh_indicator is None
+            or worker is None
+            or worker.is_alive()
+            or not self.messages.empty()
+        ):
+            return
+        health = Health.PASS
+        if any(status.health is Health.FAIL for status in self.statuses.values()):
+            health = Health.FAIL
+        elif any(status.health is Health.WARN for status in self.statuses.values()):
+            health = Health.WARN
+        self.refresh_notice = render_wait_result(
+            "Odświeżanie stref",
+            health,
+            detail=f"sprawdzono {len(self.statuses)}/{len(self.all_zones)}",
+        )
+        self.refresh_indicator = None
+
+    def _draw_refresh_status(
+        self,
+        win: curses.window,
+        *,
+        row: int,
+        width: int,
+    ) -> None:
+        """Draw an indeterminate refresh frame or its semantic result."""
+        text = ""
+        attr = curses.A_DIM
+        if self.refresh_indicator is not None:
+            text = self.refresh_indicator.render()
+            if curses.has_colors():
+                attr |= curses.color_pair(4)
+        elif self.refresh_notice is not None:
+            text = self.refresh_notice
+            attr = self._semantic_attr(text, bold_failure=True)
+        if not text:
+            return
+        try:
+            win.addnstr(row, 0, f" {text}", max(0, width - 1), attr)
+        except curses.error:
+            return
 
     def _zone_key(self, zone: Zone) -> tuple[int | str, ...]:
         status = self.statuses.get(zone.name, ZoneStatus(zone=zone))
@@ -376,6 +433,7 @@ class CursesApp:
             f"Szukaj: {self.query or '-'}"
         )
         win.addnstr(2, 0, subtitle, max(0, width - 1), curses.A_BOLD)
+        self._draw_refresh_status(win, row=3, width=width)
         list_header = 4
         list_top = 6
         panel_enabled = width >= 118 and height >= 28

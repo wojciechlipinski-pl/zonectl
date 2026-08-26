@@ -8,6 +8,9 @@
   and ASCII animation frames, elapsed-time presentation, non-interactive
   suppression and explicit semantic completion results as the foundation for
   ZoneCTL 4.10 integrations
+- the main TUI zone refresh now renders the shared indeterminate indicator
+  while its existing background worker scans zones, then replaces it with an
+  explicit semantic result without blocking keyboard input
 
 ## 4.9.0 - 2026-08-25
 
