@@ -1,7 +1,7 @@
 # Safe screenshot specification
 
-This document defines how public ZoneCTL screenshots must be produced. The
-generator and images are planned for release 4.8.
+This document defines how public ZoneCTL screenshots must be produced. An
+isolated main-screen renderer was introduced after release 4.10.
 
 ## Mandatory isolation
 
@@ -22,7 +22,55 @@ identity. It must run from deterministic fixtures in a temporary directory.
 No real domain, server name, public address, email address, username, key,
 token, transaction identifier or production filesystem path may appear.
 
-## Planned images
+## Isolated renderer
+
+Run the first documentation view from the repository root:
+
+```console
+PYTHONPATH=src .venv/bin/python scripts/run_screenshot_demo.py
+```
+
+The demo imports the production renderers but replaces BIND checks with
+deterministic in-memory results. Available keys are:
+
+- `r` — repeat the synthetic refresh and capture the wait dialog;
+- `a` — open the production add-record form with synthetic zone context;
+- `z` — open the production new-zone wizard with synthetic defaults;
+- `b` — show the isolated BIND environment summary;
+- `d` — show the production DNSSEC 4.10 layout with a fictional DS;
+- `l` — show a synthetic DNS record list;
+- `q`, `Esc` or `F10` — exit the current view or the demo.
+
+## Published gallery
+
+The images below were captured from the isolated renderer. They contain only
+reserved example domains, documentation address ranges and a fictional DS.
+
+### Responsive wait dialog
+
+![Main zone list with a centered wait dialog](images/tui-main-wait.png)
+
+### BIND environment summary
+
+![Synthetic read-only BIND environment report](images/tui-bind-environment.png)
+
+### DNSSEC operational status
+
+![Synthetic DNSSEC policy, KASP and delegation report](images/tui-dnssec-status.png)
+
+### DNS record list
+
+![Synthetic DNS record list](images/tui-records.png)
+
+### Adding a record
+
+![Add-record form using synthetic zone data](images/tui-add-record.png)
+
+### Creating a zone
+
+![New-zone wizard using synthetic defaults](images/tui-create-zone.png)
+
+## Future additions
 
 | File | View | Required content |
 |---|---|---|
