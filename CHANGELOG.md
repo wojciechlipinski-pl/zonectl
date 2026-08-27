@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 4.10.0 - 2026-08-27
+
 ### Added
 
 - a side-effect-free TUI wait-indicator model provides deterministic Braille

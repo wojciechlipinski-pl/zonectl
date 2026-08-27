@@ -1,3 +1,12 @@
+zonectl (4.10.0-1) unstable; urgency=medium
+
+  * Add centered, animated wait dialogs for slow TUI reads and transactions.
+  * Cover BIND, DNSSEC, RPZ, record and zone lifecycle operations consistently.
+  * Add Home/End zone navigation and preserve RPZ record-preview routing.
+  * Keep the main refresh responsive after returning from modal operations.
+
+ -- Wojciech Lipiński <wojciech.lipinski.elk@gmail.com>  Thu, 27 Aug 2026 17:00:00 +0200
+
 zonectl (4.9.0-1) unstable; urgency=medium
 
   * Add semantic TUI status colors, safe multiline SOA editing and refresh UX.

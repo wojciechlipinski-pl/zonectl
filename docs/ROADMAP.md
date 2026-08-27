@@ -550,7 +550,7 @@ zaczynając od raportu wpływu tylko do odczytu.
   których czasu zakończenia nie można wiarygodnie określić.
 - [x] Pokazywać nazwę bieżącego etapu i upływający czas bez prezentowania
   pozornego procentowego postępu.
-- [ ] Zastosować wskaźnik najpierw podczas głównego odświeżania stref oraz
+- [x] Zastosować wskaźnik najpierw podczas głównego odświeżania stref oraz
   oczekiwania na stan BIND po aktywacji lub rollbacku, a następnie rozszerzyć
   go na kontrole DNSSEC, DS i secondary.
   Integracja głównego odświeżania, odczytowy audyt propagacji secondary,
@@ -579,7 +579,19 @@ zaczynając od raportu wpływu tylko do odczytu.
   mają bezpiecznie zdefiniowanego punktu przerwania i rollbacku.
   Audyt AST blokuje nowe commity TUI omijające wspólne, nieanulowalne okno.
 
-Wydania `4.9.x` pozostają linią stabilizacyjną przeznaczoną na poprawki
+### Bramka wydania ZoneCTL 4.10.0
+
+- [x] Objąć wspólną ramką reprezentatywne operacje odczytowe, dry-runy oraz
+  transakcje BIND, DNSSEC, RPZ, rekordów i cyklu życia stref.
+- [x] Przeprowadzić audyt wizualny na serwerze produkcyjnym, w tym odświeżanie,
+  duży plik RPZ, zapis rekordu i raport DNSSEC.
+- [x] Usunąć zależność zamykania ramki głównego odświeżania od dodatkowego
+  naciśnięcia klawisza i zabezpieczyć zachowanie testem regresji.
+- [ ] Zbudować końcowe wheel i DEB 4.10.0, zweryfikować ich sumy, metadane oraz
+  brak plików `/etc/bind`, a następnie przetestować aktualizację z 4.9.0-1.
+- [ ] Scalić gałąź, utworzyć tag `v4.10.0` i uruchomić zatwierdzony release.
+
+Wydania `4.10.x` pozostają linią stabilizacyjną przeznaczoną na poprawki
 błędów, bezpieczeństwa i pakietów. Rozszerzenia polityk DNSSEC/KASP oraz
 wielojęzyczność są planowane dla ZoneCTL 5.0.
 

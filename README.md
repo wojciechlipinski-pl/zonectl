@@ -11,7 +11,7 @@ atomic replacement and rollback.
 
 ## Current release
 
-**4.9.0 — safer lifecycle operations and semantic TUI status**
+**4.10.0 — responsive framed wait dialogs across the TUI**
 
 ## Highlights
 
@@ -43,7 +43,7 @@ exact patch version.
 Install the Debian package attached to the GitHub release:
 
 ```bash
-sudo apt install ./zonectl_4.9.0-1_all.deb
+sudo apt install ./zonectl_4.10.0-1_all.deb
 zctl --version
 ```
 
@@ -239,8 +239,8 @@ delete DNSSEC keys or recovery packages.
 PYTHONPATH=src .venv/bin/python -m pytest -q
 ```
 
-Release 4.9.0 passes more than 800 automated tests, including isolated BIND
-validation, forced rollback gates and production read-only secondary audits.
+Release 4.10.0 passes more than 870 automated tests, including framed wait
+dialog coverage, isolated BIND validation and guarded transaction workflows.
 
 ## License
 
