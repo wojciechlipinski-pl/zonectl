@@ -1,7 +1,7 @@
 # Safe screenshot specification
 
-This document defines how public ZoneCTL screenshots must be produced. The
-generator and images are planned for release 4.8.
+This document defines how public ZoneCTL screenshots must be produced. An
+isolated main-screen renderer was introduced after release 4.10.
 
 ## Mandatory isolation
 
@@ -21,6 +21,27 @@ identity. It must run from deterministic fixtures in a temporary directory.
 
 No real domain, server name, public address, email address, username, key,
 token, transaction identifier or production filesystem path may appear.
+
+## Isolated renderer
+
+Run the first documentation view from the repository root:
+
+```console
+PYTHONPATH=src .venv/bin/python scripts/run_screenshot_demo.py
+```
+
+The demo imports the production renderers but replaces BIND checks with
+deterministic in-memory results. Available keys are:
+
+- `r` — repeat the synthetic refresh and capture the wait dialog;
+- `a` — open the production add-record form with synthetic zone context;
+- `z` — open the production new-zone wizard with synthetic defaults;
+- `b` — show the isolated BIND environment summary;
+- `d` — show the production DNSSEC 4.10 layout with a fictional DS;
+- `l` — show a synthetic DNS record list;
+- `q`, `Esc` or `F10` — exit the current view or the demo.
+
+Additional reports remain planned until they have equivalent isolation.
 
 ## Planned images
 
