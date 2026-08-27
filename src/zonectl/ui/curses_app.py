@@ -20,15 +20,18 @@ from zonectl.ui.semantic_status import (
     state_health,
     text_health,
 )
+from zonectl.ui.wait_indicator import WaitIndicator
 
 import curses
 import queue
+import sys
 import threading
 import textwrap
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from pathlib import Path
+from typing import TypeVar
 
 from .. import __version__
 from ..core.bind import BindService
@@ -117,6 +120,9 @@ from ..core.zone_lifecycle import (
 from ..presentation import transaction_lines, transaction_title
 
 
+T = TypeVar("T")
+
+
 @dataclass(slots=True)
 class Row:
     kind: str  # group | zone
@@ -172,6 +178,7 @@ class CursesApp:
         self.messages: queue.Queue[tuple[str, ZoneStatus]] = queue.Queue()
         self.stop_event = threading.Event()
         self.worker: threading.Thread | None = None
+        self.refresh_indicator: WaitIndicator | None = None
         self._rebuild_rows()
 
     def run(self) -> None:
@@ -188,10 +195,16 @@ class CursesApp:
             if changed and self.SORTS[self.sort_index] != "A-Z":
                 self._rebuild_rows(keep_zone=self._selected_zone_name())
             self._draw(stdscr)
+            # Modal wait views restore blocking input when they finish.  The
+            # main screen must remain time-driven so background refresh
+            # completion and spinner frames are consumed without a keypress.
+            stdscr.timeout(150)
             key = self._get_key(
                 stdscr,
                 restore_timeout=150,
             )
+            if self.refresh_indicator is not None:
+                continue
             if key in (ord("q"), 27, curses.KEY_F10):
                 break
             if key == curses.KEY_F1:
@@ -200,6 +213,10 @@ class CursesApp:
                 self.selected = min(self.selected + 1, max(0, len(self.rows) - 1))
             elif key in (curses.KEY_UP, ord("k")):
                 self.selected = max(0, self.selected - 1)
+            elif key == curses.KEY_HOME:
+                self._move_to_boundary_zone(last=False)
+            elif key == curses.KEY_END:
+                self._move_to_boundary_zone(last=True)
             elif key in (10, 13, curses.KEY_ENTER):
                 self._activate(stdscr)
             elif key == ord(" "):
@@ -279,8 +296,132 @@ class CursesApp:
             if not force:
                 return
             return  # do not start two concurrent scans
+        self.refresh_indicator = self._new_wait_indicator("Odświeżanie stref")
         self.worker = threading.Thread(target=self._refresh_worker, daemon=True)
         self.worker.start()
+
+    @staticmethod
+    def _new_wait_indicator(label: str) -> WaitIndicator:
+        """Build a terminal-compatible indicator for an interactive TUI."""
+        encoding = (sys.stdout.encoding or "").lower()
+        return WaitIndicator.start(label, ascii_only="utf" not in encoding)
+
+    def _run_with_wait_indicator(
+        self,
+        win: curses.window,
+        *,
+        title: str,
+        label: str,
+        operation: Callable[[], T],
+    ) -> T:
+        """Run a non-cancellable operation while keeping curses responsive."""
+        indicator = self._new_wait_indicator(label)
+        with ThreadPoolExecutor(max_workers=1) as pool:
+            future = pool.submit(operation)
+            try:
+                win.timeout(100)
+                while not future.done():
+                    self._draw_wait_box(win, title=title, indicator=indicator)
+                    win.refresh()
+                    win.getch()
+                return future.result()
+            finally:
+                try:
+                    win.timeout(-1)
+                except curses.error:
+                    pass
+
+    def _draw_wait_box(
+        self,
+        win: curses.window,
+        *,
+        title: str,
+        indicator: WaitIndicator,
+    ) -> None:
+        """Draw a centered framed overlay for an indeterminate operation."""
+        height, width = win.getmaxyx()
+        if height < 9 or width < 34:
+            text = indicator.render()
+            try:
+                win.addnstr(
+                    max(0, height // 2),
+                    1,
+                    text,
+                    max(1, width - 2),
+                    curses.A_BOLD,
+                )
+            except curses.error:
+                pass
+            return
+        box_height = 9
+        box_width = min(72, width - 4)
+        top = max(0, (height - box_height) // 2)
+        left = max(0, (width - box_width) // 2)
+        inner_width = max(1, box_width - 2)
+        try:
+            for row in range(top, top + box_height):
+                win.addnstr(
+                    row, left, " " * box_width, box_width, curses.A_NORMAL,
+                )
+            win.addch(top, left, curses.ACS_ULCORNER)
+            win.hline(top, left + 1, curses.ACS_HLINE, inner_width)
+            win.addch(top, left + box_width - 1, curses.ACS_URCORNER)
+            win.vline(top + 1, left, curses.ACS_VLINE, box_height - 2)
+            win.vline(
+                top + 1, left + box_width - 1, curses.ACS_VLINE, box_height - 2,
+            )
+            win.addch(top + box_height - 1, left, curses.ACS_LLCORNER)
+            win.hline(
+                top + box_height - 1,
+                left + 1,
+                curses.ACS_HLINE,
+                inner_width,
+            )
+            win.addch(
+                top + box_height - 1,
+                left + box_width - 1,
+                curses.ACS_LRCORNER,
+            )
+            win.addnstr(
+                top,
+                left + 2,
+                f" {title} ",
+                max(1, box_width - 4),
+                curses.A_BOLD,
+            )
+            attr = curses.A_BOLD
+            if curses.has_colors():
+                attr |= curses.color_pair(4)
+            stage = indicator.label
+            activity = (
+                f"{indicator.frame()}  {indicator.elapsed():.1f} s"
+                if indicator.animated
+                else f"{indicator.elapsed():.1f} s"
+            )
+            notice = "Operacji nie można anulować — oczekiwanie na wynik."
+            win.addnstr(
+                top + 2,
+                left + max(2, (box_width - len(stage)) // 2),
+                stage,
+                max(1, box_width - 4),
+                curses.A_BOLD,
+            )
+            win.addnstr(
+                top + 4,
+                left + max(2, (box_width - len(activity)) // 2),
+                activity,
+                max(1, box_width - 4),
+                attr,
+            )
+            win.addnstr(
+                top + 6,
+                left + max(2, (box_width - len(notice)) // 2),
+                notice,
+                max(1, box_width - 4),
+                curses.A_DIM,
+            )
+        except curses.error:
+            return
 
     def _refresh_worker(self) -> None:
         with ThreadPoolExecutor(max_workers=min(8, max(1, len(self.all_zones)))) as pool:
@@ -305,7 +446,20 @@ class CursesApp:
                 break
             self.statuses[name] = status
             changed = True
+        self._complete_refresh_if_ready()
         return changed
+
+    def _complete_refresh_if_ready(self) -> None:
+        """Replace the spinner after the asynchronous scan has completed."""
+        worker = self.worker
+        if (
+            self.refresh_indicator is None
+            or worker is None
+            or worker.is_alive()
+            or not self.messages.empty()
+        ):
+            return
+        self.refresh_indicator = None
 
     def _zone_key(self, zone: Zone) -> tuple[int | str, ...]:
         status = self.statuses.get(zone.name, ZoneStatus(zone=zone))
@@ -460,6 +614,12 @@ class CursesApp:
         self._draw_main_footer(win, height - 2, width)
         if not panel_enabled:
             draw_project_credits(win)
+        if self.refresh_indicator is not None:
+            self._draw_wait_box(
+                win,
+                title="Odświeżanie stref",
+                indicator=self.refresh_indicator,
+            )
         win.refresh()
 
     def _draw_main_footer(self, win: curses.window, row: int, width: int) -> None:
@@ -593,6 +753,14 @@ class CursesApp:
         elif row.zone:
             self._domain_view(win, row.zone)
 
+    def _move_to_boundary_zone(self, *, last: bool) -> None:
+        """Wybiera pierwszą lub ostatnią domenę, pomijając nagłówki grup."""
+        zone_rows = [
+            index for index, row in enumerate(self.rows) if row.zone is not None
+        ]
+        if zone_rows:
+            self.selected = zone_rows[-1] if last else zone_rows[0]
+
     def _selected_zone_preview(self, win: curses.window) -> None:
         """Otwiera kontekstowy podgląd F3; dla RPZ pokazuje stan integracji."""
         if not self.rows:
@@ -633,32 +801,41 @@ class CursesApp:
             if self.config is not None
             else Path("/etc/bind/named.conf")
         )
-        try:
-            report = BindEnvironmentReporter(
-                root_config,
-                rpz_max_age=zone.rpz_max_age,
-            ).collect()
-            environment = next(
-                item
-                for item in report.rpz
-                if item.zone.rstrip(".").casefold()
-                == zone.name.rstrip(".").casefold()
-            )
-            view = RpzStatusView.build(environment)
-        except (OSError, RuntimeError, StopIteration) as exc:
-            self._message_view(
-                win,
-                title=f"RPZ: {zone.name} — błąd raportu",
-                lines=[str(exc)],
-                error=True,
-            )
-            return
-        self._message_view(
-            win,
-            title=view.title,
-            lines=list(view.lines),
-            error=view.health in {"FAILED", "STALE"},
-        )
+        while True:
+            try:
+                report = self._run_with_wait_indicator(
+                    win,
+                    title=f"Status RPZ: {zone.name}",
+                    label="Kontrola pliku, BIND i usług systemd",
+                    operation=lambda: BindEnvironmentReporter(
+                        root_config,
+                        rpz_max_age=zone.rpz_max_age,
+                    ).collect(),
+                )
+                environment = next(
+                    item
+                    for item in report.rpz
+                    if item.zone.rstrip(".").casefold()
+                    == zone.name.rstrip(".").casefold()
+                )
+                view = RpzStatusView.build(environment)
+                refresh = self._message_view(
+                    win,
+                    title=view.title,
+                    lines=list(view.lines),
+                    error=view.health in {"FAILED", "STALE"},
+                    refresh_keys=(curses.KEY_F3, ord("r"), ord("R")),
+                )
+            except (OSError, RuntimeError, StopIteration) as exc:
+                refresh = self._message_view(
+                    win,
+                    title=f"RPZ: {zone.name} — błąd raportu",
+                    lines=[str(exc)],
+                    error=True,
+                    refresh_keys=(curses.KEY_F3, ord("r"), ord("R")),
+                )
+            if not refresh:
+                return
 
     def _bind_onboarding_view(self, win: curses.window) -> None:
         """Pokazuje gotowość istniejącego BIND bez wykonywania importu."""
@@ -668,7 +845,12 @@ class CursesApp:
             else Path("/etc/bind/named.conf")
         )
         try:
-            report = BindOnboardingReporter(root_config).collect()
+            report = self._run_with_wait_indicator(
+                win,
+                title="Rozpoznawanie BIND",
+                label="Inwentaryzacja konfiguracji i stref",
+                operation=lambda: BindOnboardingReporter(root_config).collect(),
+            )
             view = BindOnboardingView.build(report)
         except (OSError, RuntimeError) as exc:
             self._message_view(
@@ -840,7 +1022,14 @@ class CursesApp:
                 key = self._get_key(win)
                 if key in (10, 13, curses.KEY_ENTER) and report.candidates:
                     self._onboarding_candidates_view(win, report.candidates)
-                    report, view = self._refresh_onboarding_report(report.root_config)
+                    report, view = self._run_with_wait_indicator(
+                        win,
+                        title="Odświeżanie onboardingu BIND",
+                        label="Ponowna inwentaryzacja konfiguracji i stref",
+                        operation=lambda: self._refresh_onboarding_report(
+                            report.root_config
+                        ),
+                    )
                 elif key == curses.KEY_F5:
                     dnssec = tuple(
                         item for item in report.blockers
@@ -848,8 +1037,13 @@ class CursesApp:
                     )
                     if dnssec:
                         self._onboarding_dnssec_view(win, dnssec)
-                        report, view = self._refresh_onboarding_report(
-                            report.root_config
+                        report, view = self._run_with_wait_indicator(
+                            win,
+                            title="Odświeżanie onboardingu BIND",
+                            label="Ponowna inwentaryzacja konfiguracji i stref",
+                            operation=lambda: self._refresh_onboarding_report(
+                                report.root_config
+                            ),
                         )
                 elif key in (curses.KEY_DOWN, ord("j")):
                     offset = min(offset + 1, maximum)
@@ -1259,13 +1453,24 @@ class CursesApp:
             ).split(",") if item.strip()
         )
         try:
-            results = DnssecOnboardingAuditor(
-                local_server=toolkit.get("dnssec_local_server", "127.0.0.1"),
-                resolvers=resolvers,
-                timeout=int(toolkit.get("dnssec_timeout", "3")),
-            ).audit(
-                zones,
-                Path(toolkit.get("dnssec_key_directory", "/var/lib/bind/keys")),
+            results = self._run_with_wait_indicator(
+                win,
+                title="Zbiorczy audyt DNSSEC",
+                label="Kontrola KASP, delegacji i serwerów autorytatywnych",
+                operation=lambda: DnssecOnboardingAuditor(
+                    local_server=toolkit.get(
+                        "dnssec_local_server", "127.0.0.1"
+                    ),
+                    resolvers=resolvers,
+                    timeout=int(toolkit.get("dnssec_timeout", "3")),
+                ).audit(
+                    zones,
+                    Path(
+                        toolkit.get(
+                            "dnssec_key_directory", "/var/lib/bind/keys"
+                        )
+                    ),
+                ),
             )
         except (OSError, RuntimeError, ValueError) as exc:
             self._message_view(
@@ -1411,7 +1616,12 @@ class CursesApp:
                 Path(toolkit.get("zone_migration_manifest_dir", "/var/backups/zonectl-zone-migration/manifests")),
                 root_config=planner.root_config,
             )
-            result = transaction.apply(plan)
+            result = self._run_with_wait_indicator(
+                win,
+                title=f"Dry-run importu DNSSEC: {zone_name}",
+                label="Walidacja planu bez zmian w BIND",
+                operation=lambda: transaction.apply(plan),
+            )
             lines = self._migration_result_lines(result) + [
                 "", "Dry-run DNSSEC — nie zapisano konfiguracji, kluczy ani stanu KASP."
             ]
@@ -1481,7 +1691,12 @@ class CursesApp:
             )
             return False
         try:
-            zone, resolvers, key_directory, before = self._dnssec_import_gate(zone_name)
+            zone, resolvers, key_directory, before = self._run_with_wait_indicator(
+                win,
+                title=f"Bramka importu DNSSEC: {zone_name}",
+                label="Kontrola KASP, DNSKEY i delegacji DS",
+                operation=lambda: self._dnssec_import_gate(zone_name),
+            )
             plan = planner.plan(zone_name, allow_dnssec=True)
             toolkit = self.config.toolkit if self.config is not None else {}
 
@@ -1516,7 +1731,12 @@ class CursesApp:
                 root_config=planner.root_config,
                 loaded_verifier=verify_dnssec,
             )
-            dry_run = transaction.apply(plan)
+            dry_run = self._run_with_wait_indicator(
+                win,
+                title=f"Kontrola importu DNSSEC: {zone_name}",
+                label="Walidacja planu przed zatwierdzeniem",
+                operation=lambda: transaction.apply(plan),
+            )
             self._onboarding_result_view(
                 win, title=f"Kontrola DNSSEC przed importem: {zone_name}",
                 result=dry_run, profile="DNSSEC",
@@ -1537,7 +1757,14 @@ class CursesApp:
                 win, f"Importować deklarację DNSSEC {zone_name} i przeładować BIND?"
             ):
                 return False
-            result = transaction.apply(plan, commit=True, activate=True)
+            result = self._run_with_wait_indicator(
+                win,
+                title=f"Import DNSSEC: {zone_name}",
+                label="Walidacja, aktywacja i kontrola DNSSEC",
+                operation=lambda: transaction.apply(
+                    plan, commit=True, activate=True
+                ),
+            )
             self._onboarding_result_view(
                 win, title=f"Wynik importu DNSSEC: {zone_name}",
                 result=result, profile="DNSSEC",
@@ -1573,7 +1800,12 @@ class CursesApp:
                 ),
                 root_config=planner.root_config,
             )
-            result = transaction.apply(plan)
+            result = self._run_with_wait_indicator(
+                win,
+                title=f"Dry-run importu: {zone_name}",
+                label="Walidacja planu bez zmian w BIND",
+                operation=lambda: transaction.apply(plan),
+            )
             lines = self._migration_result_lines(result)
             lines.extend(
                 (
@@ -1624,7 +1856,12 @@ class CursesApp:
                 ),
                 root_config=planner.root_config,
             )
-            dry_run = transaction.apply(plan)
+            dry_run = self._run_with_wait_indicator(
+                win,
+                title=f"Kontrola importu: {zone_name}",
+                label="Walidacja planu przed zatwierdzeniem",
+                operation=lambda: transaction.apply(plan),
+            )
             self._onboarding_result_view(
                 win, title=f"Kontrola przed importem: {zone_name}",
                 result=dry_run, profile="PRIMARY",
@@ -1651,7 +1888,14 @@ class CursesApp:
                 f"Importować deklarację {zone_name} i przeładować BIND?",
             ):
                 return False
-            result = transaction.apply(plan, commit=True, activate=True)
+            result = self._run_with_wait_indicator(
+                win,
+                title=f"Import strefy: {zone_name}",
+                label="Walidacja, aktywacja i kontrola BIND",
+                operation=lambda: transaction.apply(
+                    plan, commit=True, activate=True
+                ),
+            )
             self._onboarding_result_view(
                 win, title=f"Wynik importu: {zone_name}",
                 result=result, profile="PRIMARY",
@@ -1806,9 +2050,17 @@ class CursesApp:
             ):
                 break
 
-        result = ZoneCreateTransaction(
+        transaction = ZoneCreateTransaction(
             Path("/var/backups/zonectl-zone-create/manifests")
-        ).apply(plan, commit=True, activate=True)
+        )
+        result = self._run_with_wait_indicator(
+            win,
+            title=f"Tworzenie strefy: {plan.zone_name}",
+            label="Zapis, walidacja i aktywacja strefy",
+            operation=lambda: transaction.apply(
+                plan, commit=True, activate=True
+            ),
+        )
         lines = [
             f"Status: {result.status}",
             f"Commit: {'TAK' if result.committed else 'NIE'}",
@@ -1856,14 +2108,23 @@ class CursesApp:
                 error=True,
             )
             return
+        transaction_engine = self.transaction_engine
 
         try:
-            session = existing_session or ZoneEditSession(
-                zone,
-                self.transaction_engine,
-                read_only=self.read_only,
-                edit_lock_directory=self.edit_lock_directory,
-            )
+            if existing_session is not None:
+                session = existing_session
+            else:
+                session = self._run_with_wait_indicator(
+                    win,
+                    title=f"Rekordy strefy: {zone.name}",
+                    label="Odczyt i analiza pliku strefy",
+                    operation=lambda: ZoneEditSession(
+                        zone,
+                        transaction_engine,
+                        read_only=self.read_only,
+                        edit_lock_directory=self.edit_lock_directory,
+                    ),
+                )
         except ZoneEditLockedError as exc:
             self._message_view(
                 win,
@@ -2101,8 +2362,11 @@ class CursesApp:
                     continue
 
                 try:
-                    save_result = session.save(
-                        commit=True,
+                    save_result = self._run_with_wait_indicator(
+                        win,
+                        title=f"Zapis rekordów: {zone.name}",
+                        label="Walidacja i zapis transakcji rekordów",
+                        operation=lambda: session.save(commit=True),
                     )
                 except Exception as exc:
                     self._message_view(
@@ -2454,7 +2718,8 @@ class CursesApp:
         title: str,
         lines: Sequence[str],
         error: bool = False,
-    ) -> None:
+        refresh_keys: Sequence[int] = (),
+    ) -> bool:
         """Wyświetla zawijany i przewijany modalny komunikat."""
         title_attr = curses.A_REVERSE | curses.A_BOLD
         body_attr = (
@@ -2496,9 +2761,11 @@ class CursesApp:
                     self._draw_message_view_48(
                         win, title, wrapped, offset, visible, error, divider
                     )
+                refresh_hint = " F3/r odśwież " if refresh_keys else ""
                 footer = (
                     f" Linie {offset + 1}-{min(len(wrapped), offset + visible)}"
-                    f"/{len(wrapped)}  ↑/↓ PgUp/PgDn Home/End  q/Esc powrót "
+                    f"/{len(wrapped)}  ↑/↓ PgUp/PgDn Home/End "
+                    f"{refresh_hint} q/Esc powrót "
                 )
                 win.addnstr(
                     height - 1,
@@ -2521,10 +2788,12 @@ class CursesApp:
                     offset = 0
                 elif key == curses.KEY_END:
                     offset = maximum
+                elif key in refresh_keys:
+                    return True
                 else:
-                    return
+                    return False
         except curses.error:
-            pass
+            return False
         finally:
             try:
                 win.timeout(150)
@@ -3014,7 +3283,12 @@ class CursesApp:
                     continue
 
                 try:
-                    save_result = session.save(commit=True)
+                    save_result = self._run_with_wait_indicator(
+                        win,
+                        title=f"Zapis rekordów: {zone.name}",
+                        label="Walidacja i zapis transakcji rekordów",
+                        operation=lambda: session.save(commit=True),
+                    )
                 except Exception as exc:
                     self._message_view(
                         win,
@@ -3943,7 +4217,12 @@ class CursesApp:
                     )
                     win.refresh()
                     try:
-                        view = self._collect_dnssec_status(zone)
+                        view = self._run_with_wait_indicator(
+                            win,
+                            title=f"Status DNSSEC: {zone.name}",
+                            label="Pobieranie stanu KASP, DS i serwerów",
+                            operation=lambda: self._collect_dnssec_status(zone),
+                        )
                         error = None
                     except Exception as exc:
                         view = None
@@ -4028,7 +4307,12 @@ class CursesApp:
                 elif key == curses.KEY_F3:
                     try:
                         if view is not None and view.operation == "CONFIRM_DS":
-                            checked = self._collect_dnssec_status(zone)
+                            checked = self._run_with_wait_indicator(
+                                win,
+                                title=f"Kontrola DS: {zone.name}",
+                                label="Odpytywanie delegacji i serwerów autorytatywnych",
+                                operation=lambda: self._collect_dnssec_status(zone),
+                            )
                             self._message_view(
                                 win,
                                 title=f"Kontrola DS przed potwierdzeniem: {zone.name}",
@@ -4090,7 +4374,12 @@ class CursesApp:
                         continue
                     if view.operation == "WITHDRAWAL":
                         try:
-                            backup_result = self._dnssec_withdrawal_backup(zone)
+                            backup_result = self._run_with_wait_indicator(
+                                win,
+                                title=f"Dry-run backupu DNSSEC: {zone.name}",
+                                label="Weryfikacja materiału bez tworzenia pakietu",
+                                operation=lambda: self._dnssec_withdrawal_backup(zone),
+                            )
                             self._message_view(
                                 win,
                                 title=f"Dry-run backupu DNSSEC: {zone.name}",
@@ -4120,8 +4409,13 @@ class CursesApp:
                                         f"Utworzyć backup wycofania DNSSEC dla {zone.name}?",
                                         key_reader=self._get_key,
                                     ):
-                                        committed_backup = self._dnssec_withdrawal_backup(
-                                            zone, commit=True
+                                        committed_backup = self._run_with_wait_indicator(
+                                            win,
+                                            title=f"Backup DNSSEC: {zone.name}",
+                                            label="Weryfikacja i tworzenie pakietu wycofania",
+                                            operation=lambda: self._dnssec_withdrawal_backup(
+                                                zone, commit=True
+                                            ),
                                         )
                                         self._message_view(
                                             win,
@@ -4142,7 +4436,12 @@ class CursesApp:
                         continue
                     if view.operation == "CONFIRM_DS":
                         try:
-                            confirm_result = self._dnssec_confirm_ds(zone)
+                            confirm_result = self._run_with_wait_indicator(
+                                win,
+                                title=f"Dry-run potwierdzenia DS: {zone.name}",
+                                label="Kontrola delegacji bez zmiany stanu KASP",
+                                operation=lambda: self._dnssec_confirm_ds(zone),
+                            )
                             self._message_view(
                                 win,
                                 title=f"Dry-run potwierdzenia DS: {zone.name}",
@@ -4170,8 +4469,13 @@ class CursesApp:
                                         f"Potwierdzić opublikowany DS dla {zone.name}?",
                                         key_reader=self._get_key,
                                     ):
-                                        committed_confirmation = self._dnssec_confirm_ds(
-                                            zone, commit=True
+                                        committed_confirmation = self._run_with_wait_indicator(
+                                            win,
+                                            title=f"Potwierdzenie DS: {zone.name}",
+                                            label="Kontrola delegacji i aktualizacja stanu KASP",
+                                            operation=lambda: self._dnssec_confirm_ds(
+                                                zone, commit=True
+                                            ),
                                         )
                                         self._message_view(
                                             win,
@@ -4193,7 +4497,12 @@ class CursesApp:
                     if view.operation != "FINALIZE":
                         if view.operation == "ENABLE":
                             try:
-                                enable_result = self._dnssec_enable_dry_run(zone)
+                                enable_result = self._run_with_wait_indicator(
+                                    win,
+                                    title=f"Dry-run włączenia DNSSEC: {zone.name}",
+                                    label="Walidacja planu bez zmian w BIND",
+                                    operation=lambda: self._dnssec_enable_dry_run(zone),
+                                )
                                 self._message_view(
                                     win,
                                     title=f"Dry-run włączenia DNSSEC: {zone.name}",
@@ -4225,7 +4534,12 @@ class CursesApp:
                                             f"Włączyć i aktywować DNSSEC dla {zone.name}?",
                                             key_reader=self._get_key,
                                         ):
-                                            committed_enable = self._dnssec_enable_commit(zone)
+                                            committed_enable = self._run_with_wait_indicator(
+                                                win,
+                                                title=f"Włączanie DNSSEC: {zone.name}",
+                                                label="Walidacja, aktywacja i kontrola BIND",
+                                                operation=lambda: self._dnssec_enable_commit(zone),
+                                            )
                                             self._message_view(
                                                 win,
                                                 title=(
@@ -4259,7 +4573,12 @@ class CursesApp:
                         refresh = True
                         continue
                     try:
-                        finalize_result = self._dnssec_finalize_dry_run(zone)
+                        finalize_result = self._run_with_wait_indicator(
+                            win,
+                            title=f"Dry-run finalizacji DNSSEC: {zone.name}",
+                            label="Walidacja finalizacji bez zmian w BIND",
+                            operation=lambda: self._dnssec_finalize_dry_run(zone),
+                        )
                         self._message_view(
                             win,
                             title=f"Dry-run finalizacji: {zone.name}",
@@ -4300,7 +4619,12 @@ class CursesApp:
                                         lines=["Nie zmieniono BIND."],
                                     )
                                 else:
-                                    committed_finalize = self._dnssec_finalize_commit(zone)
+                                    committed_finalize = self._run_with_wait_indicator(
+                                        win,
+                                        title=f"Finalizacja DNSSEC: {zone.name}",
+                                        label="Walidacja, aktywacja i kontrola BIND",
+                                        operation=lambda: self._dnssec_finalize_commit(zone),
+                                    )
                                     self._message_view(
                                         win,
                                         title=(
@@ -4864,7 +5188,12 @@ class CursesApp:
                         if current is not None:
                             zone = current
                     try:
-                        status = self.bind.quick_status(zone)
+                        status = self._run_with_wait_indicator(
+                            win,
+                            title=f"Odświeżanie strefy: {zone.name}",
+                            label="Kontrola BIND, SOA i propagacji",
+                            operation=lambda: self.bind.quick_status(zone),
+                        )
                         self.statuses[zone.name] = status
                     except Exception as exc:
                         status = ZoneStatus(
@@ -4881,18 +5210,13 @@ class CursesApp:
                 continue
 
             if key in (ord("r"), ord("R")):
-                notice = "Sprawdzanie strefy..."
-
-                put(
-                    height - 4,
-                    2,
-                    notice,
-                    curses.A_BOLD,
-                )
-                win.refresh()
-
                 try:
-                    status = self.bind.quick_status(zone)
+                    status = self._run_with_wait_indicator(
+                        win,
+                        title=f"Odświeżanie strefy: {zone.name}",
+                        label="Kontrola BIND, SOA i propagacji",
+                        operation=lambda: self.bind.quick_status(zone),
+                    )
                     self.statuses[zone.name] = status
                     notice = "Odświeżono dane strefy."
                 except Exception as exc:
@@ -4964,16 +5288,32 @@ class CursesApp:
                     Path("/var/backups/zonectl-bind-secondary/manifests"),
                     root_config=self._bind_root_config(),
                 )
-                dry_run = transaction.apply(plan.transaction_plan())
+                dry_run = self._run_with_wait_indicator(
+                    win,
+                    title=f"Dry-run secondary: {zone.name}",
+                    label="Walidacja przypisania bez zmian w BIND",
+                    operation=lambda: transaction.apply(
+                        plan.transaction_plan()
+                    ),
+                )
                 self._message_view(win, title="Dry-run przypisania", lines=self._secondary_result_lines(dry_run))
                 confirmation = CursesDialogs.text_input(win, " Wpisz pełną nazwę strefy: ")
                 if (confirmation or "").rstrip(".").casefold() != zone.name.rstrip(".").casefold():
                     self._message_view(win, title="Anulowano", lines=["Nazwa strefy nie jest zgodna."])
                     continue
                 if CursesDialogs.confirm(win, f"Zastosować przypisania dla {zone.name}"):
-                    result = transaction.apply(
-                        plan.transaction_plan(), commit=True, activate=True,
-                        reason="Zmiana przypisania secondary zatwierdzona w TUI",
+                    result = self._run_with_wait_indicator(
+                        win,
+                        title=f"Przypisanie secondary: {zone.name}",
+                        label="Walidacja, aktywacja i kontrola BIND",
+                        operation=lambda: transaction.apply(
+                            plan.transaction_plan(),
+                            commit=True, activate=True,
+                            reason=(
+                                "Zmiana przypisania secondary "
+                                "zatwierdzona w TUI"
+                            ),
+                        ),
                     )
                     self._message_view(win, title="Transakcja przypisania", lines=self._secondary_result_lines(result), error=result.status != "COMMIT")
                     if result.status == "COMMIT":
@@ -5127,7 +5467,14 @@ class CursesApp:
             )
             return
         zones = tuple(zone for zone in pair.zones if "rpz" not in zone.casefold())
-        results = BindSecondaryHealthGate().check(zones, pair.notify_addresses)
+        results = self._run_with_wait_indicator(
+            win,
+            title=f"Audyt secondary: {pair.name}",
+            label="Sprawdzanie propagacji secondary",
+            operation=lambda: BindSecondaryHealthGate().check(
+                zones, pair.notify_addresses,
+            ),
+        )
         lines = [
             f"Para: {pair.name}",
             f"Serwery: {', '.join(pair.notify_addresses)}",
@@ -5179,7 +5526,12 @@ class CursesApp:
             Path("/var/backups/zonectl-bind-acl/manifests"),
             root_config=self._bind_root_config(),
         )
-        dry_run = transaction.apply(plan)
+        dry_run = self._run_with_wait_indicator(
+            win,
+            title=f"Dry-run ACL: {name}",
+            label="Walidacja planu bez zmian w BIND",
+            operation=lambda: transaction.apply(plan),
+        )
         self._message_view(
             win, title=f"Dry-run ACL: {name}",
             lines=self._secondary_result_lines(dry_run),
@@ -5200,9 +5552,15 @@ class CursesApp:
                 lines=["Commit wymaga niepustego uzasadnienia."], error=True,
             )
             return
-        result = transaction.apply(
-            plan, commit=True, activate=True,
-            reason=reason,
+        result = self._run_with_wait_indicator(
+            win,
+            title=f"Transakcja ACL: {name}",
+            label="Walidacja, aktywacja i kontrola BIND",
+            operation=lambda: transaction.apply(
+                plan,
+                commit=True, activate=True,
+                reason=reason,
+            ),
         )
         self._message_view(
             win, title=f"Transakcja ACL: {name}",
@@ -5297,7 +5655,12 @@ class CursesApp:
             Path("/var/backups/zonectl-bind-secondary/manifests"),
             root_config=self._bind_root_config(),
         )
-        dry_run = transaction.apply(plan)
+        dry_run = self._run_with_wait_indicator(
+            win,
+            title=f"Dry-run secondary: {name}",
+            label="Walidacja planu bez zmian w BIND",
+            operation=lambda: transaction.apply(plan),
+        )
         self._message_view(
             win, title=f"Dry-run secondary: {name}",
             lines=self._secondary_result_lines(dry_run),
@@ -5324,9 +5687,15 @@ class CursesApp:
                 lines=["Commit wymaga niepustego uzasadnienia."], error=True,
             )
             return
-        result = transaction.apply(
-            plan, commit=True, activate=True,
-            reason=reason,
+        result = self._run_with_wait_indicator(
+            win,
+            title=f"Transakcja secondary: {name}",
+            label="Walidacja, aktywacja i kontrola BIND",
+            operation=lambda: transaction.apply(
+                plan,
+                commit=True, activate=True,
+                reason=reason,
+            ),
         )
         self._message_view(
             win, title=f"Transakcja secondary: {name}",
@@ -5599,7 +5968,12 @@ class CursesApp:
                 Path(toolkit.get("zone_migration_manifest_dir", "/var/backups/zonectl-zone-migration/manifests")),
                 root_config=planner.root_config,
             )
-            dry_run = transaction.apply(plan)
+            dry_run = self._run_with_wait_indicator(
+                win,
+                title=f"Dry-run relokacji: {zone.name}",
+                label="Walidacja relokacji bez zmian w BIND",
+                operation=lambda: transaction.apply(plan),
+            )
             self._message_view(
                 win, title=f"Dry-run relokacji: {zone.name}",
                 lines=self._migration_result_lines(dry_run),
@@ -5617,7 +5991,14 @@ class CursesApp:
                 return False
             if not CursesDialogs.confirm(win, f"Relokować plik i przeładować BIND dla {zone.name}?"):
                 return False
-            result = transaction.apply(plan, commit=True, activate=True)
+            result = self._run_with_wait_indicator(
+                win,
+                title=f"Relokacja strefy: {zone.name}",
+                label="Przenoszenie pliku, walidacja i aktywacja BIND",
+                operation=lambda: transaction.apply(
+                    plan, commit=True, activate=True
+                ),
+            )
             self._message_view(
                 win, title=f"Wynik relokacji: {zone.name}",
                 lines=self._migration_result_lines(result),
@@ -5678,7 +6059,12 @@ class CursesApp:
                 ),
                 root_config=planner.root_config,
             )
-            dry_run = transaction.apply(plan)
+            dry_run = self._run_with_wait_indicator(
+                win,
+                title=f"Dry-run migracji: {zone.name}",
+                label="Walidacja migracji bez zmian w BIND",
+                operation=lambda: transaction.apply(plan),
+            )
             self._message_view(
                 win,
                 title=f"Dry-run migracji: {zone.name}",
@@ -5702,7 +6088,14 @@ class CursesApp:
                 win, f"Migrować i przeładować BIND dla {zone.name}?"
             ):
                 return False
-            result = transaction.apply(plan, commit=True, activate=True)
+            result = self._run_with_wait_indicator(
+                win,
+                title=f"Migracja strefy: {zone.name}",
+                label="Migracja deklaracji, walidacja i aktywacja BIND",
+                operation=lambda: transaction.apply(
+                    plan, commit=True, activate=True
+                ),
+            )
             self._message_view(
                 win,
                 title=f"Wynik migracji: {zone.name}",

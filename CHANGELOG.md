@@ -2,6 +2,72 @@
 
 ## Unreleased
 
+## 4.10.0 - 2026-08-27
+
+### Added
+
+- a side-effect-free TUI wait-indicator model provides deterministic Braille
+  and ASCII animation frames, elapsed-time presentation, non-interactive
+  suppression and explicit semantic completion results as the foundation for
+  ZoneCTL 4.10 integrations
+- the main TUI zone refresh now renders the shared centered wait dialog while
+  its existing background worker scans zones, temporarily suppresses actions
+  that could leave the modal operation, then returns directly to the updated
+  zone list and its checked counter without a redundant completion banner
+- the read-only secondary propagation audit uses a shared non-cancellable
+  centered and framed wait view, keeping curses responsive while preserving
+  the health gate's existing commands, retry timing and result semantics
+- committing changes from both record-editing views now uses the same centered,
+  non-cancellable wait dialog while preserving the existing transaction
+  result, validation, activation and rollback flow
+- ACL, secondary-group and zone-secondary assignment commits use the shared
+  wait dialog across validation, BIND activation and operational checks
+- zone creation, BIND/DNSSEC onboarding import, managed-zone migration and
+  managed-file relocation now use the same wait dialog for their commit and
+  activation phases
+- DNSSEC enablement, DS confirmation, withdrawal backup and finalization use
+  non-cancellable wait dialogs while their transactional validation and BIND
+  activation complete
+- an AST-based regression audit rejects any new TUI `commit=True` call that
+  bypasses the shared wait dialog, while explicitly checking the two internal
+  DNSSEC commit helpers at their framed call sites
+- transactional dry-runs for onboarding, ACL, secondary assignment and
+  managed-zone migration or relocation display the same responsive wait
+  dialog while isolated BIND validation runs
+- DNSSEC status refreshes, delegation checks and all DNSSEC/DS dry-runs use
+  framed wait views during KASP, resolver and authoritative-server queries
+- RPZ environment reports, BIND onboarding discovery and refresh, bulk DNSSEC
+  readiness audits and the DNSSEC import pre-gate complete the coverage of
+  TUI operations that invoke external services or potentially slow checks
+- F3 on an RPZ row opens the framed integration report, while Enter preserves
+  the domain-details path and its read-only F3 record preview
+- the RPZ report remains open after loading; F3 or `r` reruns the framed
+  environment check, while q, Esc, Backspace and F10 return to the zone list
+- Home and End on the main list select the first and last actual domains,
+  skipping group-header rows
+- refreshing zone details and the post-migration status check use the framed
+  wait view instead of an inline terminal notice
+- opening a record list creates and parses a new edit session behind the wait
+  dialog, which is especially visible for large RPZ files
+
+### Fixed
+
+- the main TUI restores timed input polling after modal wait views, allowing
+  an asynchronous zone refresh to remove its dialog immediately on completion
+  without requiring an extra keypress
+
+### Verification
+
+- CI-built wheel and Debian artifacts for 4.10.0 passed SHA-256, metadata,
+  entry-point and package-content checks, including confirmation that the DEB
+  does not ship `/etc/bind`
+- a production upgrade from 4.9.0-1 to 4.10.0-1 preserved BIND configuration
+  structure, metadata and all non-RPZ content; the sole concurrent RPZ content
+  change was attributed by systemd timestamps and logs to the scheduled,
+  successful `zonectl-cert-rpz.service` run
+- post-upgrade validation passed `named-checkconf`, `named-checkzone`, active
+  BIND state and a visual audit of refresh, RPZ loading and Home/End navigation
+
 ## 4.9.0 - 2026-08-25
 
 ### Fixed

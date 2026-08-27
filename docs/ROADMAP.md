@@ -515,7 +515,7 @@ zaczynając od raportu wpływu tylko do odczytu.
   sumy SHA-256 oraz brak plików `/etc/bind`.
 - [x] Przetestować aktualizację 4.8.3 → 4.9.0 bez zmiany struktury, metadanych
   ani zawartości `/etc/bind`, przy aktywnej usłudze i poprawnym raporcie.
-- [ ] Scalić gałąź, utworzyć tag `v4.9.0` i uruchomić zatwierdzony release.
+- [x] Scalić gałąź, utworzyć tag `v4.9.0` i uruchomić zatwierdzony release.
 
 ## ZoneCTL 4.9 — semantyczna czytelność TUI
 
@@ -544,22 +544,60 @@ zaczynając od raportu wpływu tylko do odczytu.
 - [x] Zweryfikować formularz wizualnie i przeprowadzić produkcyjny dry-run bez
   zapisywania zmiany.
 
-### Informacja zwrotna podczas oczekiwania
+## ZoneCTL 4.10 — informacja zwrotna podczas oczekiwania
 
-- [ ] Dodać wspólny komponent animowanego wskaźnika pracy TUI dla operacji,
+- [x] Dodać wspólny komponent animowanego wskaźnika pracy TUI dla operacji,
   których czasu zakończenia nie można wiarygodnie określić.
-- [ ] Pokazywać nazwę bieżącego etapu i upływający czas bez prezentowania
+- [x] Pokazywać nazwę bieżącego etapu i upływający czas bez prezentowania
   pozornego procentowego postępu.
-- [ ] Zastosować wskaźnik najpierw podczas głównego odświeżania stref oraz
+- [x] Zastosować wskaźnik najpierw podczas głównego odświeżania stref oraz
   oczekiwania na stan BIND po aktywacji lub rollbacku, a następnie rozszerzyć
   go na kontrole DNSSEC, DS i secondary.
-- [ ] Po zakończeniu zastępować animację jawnym wynikiem semantycznym:
+  Integracja głównego odświeżania, odczytowy audyt propagacji secondary,
+  transakcyjny zapis zmian rekordów, commity ACL/secondary oraz tworzenie,
+  onboarding, migracja i relokacja stref oraz commity DNSSEC/DS są gotowe.
+  Ramka obejmuje również odpowiadające im dry-runy transakcyjne BIND.
+  Kontrole stanu DNSSEC, delegacji DS i wszystkie dry-runy DNSSEC/DS także
+  korzystają ze wspólnego okna.
+  Końcowy audyt obejmuje ponadto raport RPZ, onboarding BIND, zbiorczy audyt
+  DNSSEC i bramkę DNSSEC przed importem; lokalne parsery pozostają bez modala.
+  Dla wiersza RPZ `F3` prowadzi do raportu integracji, a `Enter` zachowuje
+  ekran szczegółów i dostępny w nim podgląd rekordów `F3`. W otwartym
+  raporcie integracji `F3` i `r` ponawiają kontrolę przez ramkę.
+- [x] Przywracać cykliczne odpytywanie głównej pętli po zamknięciu modala, aby
+  zakończone odświeżanie samo zdejmowało ramkę bez dodatkowego klawisza.
+- [x] Obsłużyć `Home` i `End` na głównej liście jako przejście do
+  pierwszej i ostatniej domeny z pominięciem nagłówków grup.
+- [x] Pokazywać ramkę podczas odświeżania szczegółów strefy oraz
+  wczytywania i parsowania dużych plików rekordów, w tym RPZ.
+- [x] Po zakończeniu zastępować animację jawnym wynikiem semantycznym:
   zielonym `PASS`, żółtym `WARN` albo czerwonym `FAIL` wraz z opisem.
-- [ ] Zapewnić wariant ASCII `| / - \\` dla terminali bez poprawnej obsługi
+- [x] Zapewnić wariant ASCII `| / - \\` dla terminali bez poprawnej obsługi
   znaków Braille'a oraz wyłączać animację w JSON, logach i środowisku
   nieinteraktywnym.
-- [ ] Nie udostępniać anulowania operacji, dopóki poszczególne transakcje nie
+- [x] Nie udostępniać anulowania operacji, dopóki poszczególne transakcje nie
   mają bezpiecznie zdefiniowanego punktu przerwania i rollbacku.
+  Audyt AST blokuje nowe commity TUI omijające wspólne, nieanulowalne okno.
+
+### Bramka wydania ZoneCTL 4.10.0
+
+- [x] Objąć wspólną ramką reprezentatywne operacje odczytowe, dry-runy oraz
+  transakcje BIND, DNSSEC, RPZ, rekordów i cyklu życia stref.
+- [x] Przeprowadzić audyt wizualny na serwerze produkcyjnym, w tym odświeżanie,
+  duży plik RPZ, zapis rekordu i raport DNSSEC.
+- [x] Usunąć zależność zamykania ramki głównego odświeżania od dodatkowego
+  naciśnięcia klawisza i zabezpieczyć zachowanie testem regresji.
+- [x] Zbudować końcowe wheel i DEB 4.10.0, zweryfikować ich sumy, metadane oraz
+  brak plików `/etc/bind`, a następnie przetestować aktualizację z 4.9.0-1.
+  Aktualizacja produkcyjna zachowała konfigurację BIND; jedyną współbieżną
+  zmianę treści przypisano na podstawie czasu i dziennika do prawidłowego
+  przebiegu timera CERT Polska RPZ. Walidacja BIND i audyt TUI zakończyły się
+  powodzeniem.
+- [ ] Scalić gałąź, utworzyć tag `v4.10.0` i uruchomić zatwierdzony release.
+
+Wydania `4.10.x` pozostają linią stabilizacyjną przeznaczoną na poprawki
+błędów, bezpieczeństwa i pakietów. Rozszerzenia polityk DNSSEC/KASP oraz
+wielojęzyczność są planowane dla ZoneCTL 5.0.
 
 ## Rozwój po osiągnięciu pełnej funkcjonalności podstawowej
 

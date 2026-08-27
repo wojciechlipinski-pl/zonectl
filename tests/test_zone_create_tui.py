@@ -66,6 +66,11 @@ def test_tui_wizard_creates_and_adds_zone(monkeypatch) -> None:
         "_message_view",
         lambda *args, **kwargs: messages.append(kwargs),
     )
+    monkeypatch.setattr(
+        app,
+        "_run_with_wait_indicator",
+        lambda win, *, title, label, operation: operation(),
+    )
 
     def apply(self, plan, *, commit=False, activate=False):
         assert commit is True and activate is True
@@ -171,6 +176,11 @@ def test_tui_wizard_returns_to_preserved_form_after_preview(monkeypatch) -> None
         lambda *args, **kwargs: next(confirmations),
     )
     monkeypatch.setattr(app, "_message_view", lambda *args, **kwargs: None)
+    monkeypatch.setattr(
+        app,
+        "_run_with_wait_indicator",
+        lambda win, *, title, label, operation: operation(),
+    )
 
     def apply(self, plan, *, commit=False, activate=False):
         assert "admin.example.pl." in plan.zone_text

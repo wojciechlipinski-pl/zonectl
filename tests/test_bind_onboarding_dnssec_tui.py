@@ -34,7 +34,8 @@ def test_dnssec_commit_has_fresh_gates_and_transactional_rollback_path() -> None
     assert "Wpisz pełną nazwę strefy DNSSEC" in commit
     assert "loaded_verifier=verify_dnssec" in commit
     assert "after == before" in commit
-    assert "transaction.apply(plan, commit=True, activate=True)" in commit
+    assert "self._run_with_wait_indicator" in commit
+    assert "commit=True, activate=True" in commit
 
 
 def test_dnssec_import_results_use_shared_transaction_layout() -> None:
