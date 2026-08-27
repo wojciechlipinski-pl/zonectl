@@ -587,8 +587,12 @@ zaczynając od raportu wpływu tylko do odczytu.
   duży plik RPZ, zapis rekordu i raport DNSSEC.
 - [x] Usunąć zależność zamykania ramki głównego odświeżania od dodatkowego
   naciśnięcia klawisza i zabezpieczyć zachowanie testem regresji.
-- [ ] Zbudować końcowe wheel i DEB 4.10.0, zweryfikować ich sumy, metadane oraz
+- [x] Zbudować końcowe wheel i DEB 4.10.0, zweryfikować ich sumy, metadane oraz
   brak plików `/etc/bind`, a następnie przetestować aktualizację z 4.9.0-1.
+  Aktualizacja produkcyjna zachowała konfigurację BIND; jedyną współbieżną
+  zmianę treści przypisano na podstawie czasu i dziennika do prawidłowego
+  przebiegu timera CERT Polska RPZ. Walidacja BIND i audyt TUI zakończyły się
+  powodzeniem.
 - [ ] Scalić gałąź, utworzyć tag `v4.10.0` i uruchomić zatwierdzony release.
 
 Wydania `4.10.x` pozostają linią stabilizacyjną przeznaczoną na poprawki

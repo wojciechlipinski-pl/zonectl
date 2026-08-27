@@ -56,6 +56,18 @@
   an asynchronous zone refresh to remove its dialog immediately on completion
   without requiring an extra keypress
 
+### Verification
+
+- CI-built wheel and Debian artifacts for 4.10.0 passed SHA-256, metadata,
+  entry-point and package-content checks, including confirmation that the DEB
+  does not ship `/etc/bind`
+- a production upgrade from 4.9.0-1 to 4.10.0-1 preserved BIND configuration
+  structure, metadata and all non-RPZ content; the sole concurrent RPZ content
+  change was attributed by systemd timestamps and logs to the scheduled,
+  successful `zonectl-cert-rpz.service` run
+- post-upgrade validation passed `named-checkconf`, `named-checkzone`, active
+  BIND state and a visual audit of refresh, RPZ loading and Home/End navigation
+
 ## 4.9.0 - 2026-08-25
 
 ### Fixed
