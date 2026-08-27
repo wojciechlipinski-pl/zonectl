@@ -110,7 +110,8 @@ def test_guarded_import_requires_dry_run_name_and_confirmation() -> None:
     assert "transaction.apply(plan)" in commit
     assert "Wpisz pełną nazwę strefy" in commit
     assert "CursesDialogs.confirm" in commit
-    assert "transaction.apply(plan, commit=True, activate=True)" in commit
+    assert "self._run_with_wait_indicator" in commit
+    assert "commit=True, activate=True" in commit
     assert "self.read_only" in commit
 
 

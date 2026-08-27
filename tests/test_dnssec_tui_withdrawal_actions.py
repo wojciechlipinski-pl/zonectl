@@ -256,7 +256,8 @@ def test_confirm_ds_ui_requires_fresh_check_and_exact_confirmation() -> None:
     assert "Kontrola DS przed potwierdzeniem" in source
     assert "Wpisz pełną nazwę strefy, aby potwierdzić DS" in source
     assert "Potwierdzić opublikowany DS" in source
-    assert "committed_confirmation = self._dnssec_confirm_ds(" in source
+    assert "committed_confirmation = self._run_with_wait_indicator(" in source
+    assert "self._dnssec_confirm_ds(" in source
 
 
 @pytest.mark.parametrize(

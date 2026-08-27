@@ -65,6 +65,11 @@ def test_f8_delete_commit_rereads_active_file(
         "_transaction_result_view",
         lambda win, result: None,
     )
+    monkeypatch.setattr(
+        app,
+        "_run_with_wait_indicator",
+        lambda win, *, title, label, operation: operation(),
+    )
     monkeypatch.setattr(app, "_start_refresh", lambda force=False: None)
     monkeypatch.setattr(
         CursesDialogs,

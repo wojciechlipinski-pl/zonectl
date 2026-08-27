@@ -26,7 +26,8 @@ def test_secondary_edit_requires_plan_dry_run_and_exact_name() -> None:
     source = inspect.getsource(CursesApp._edit_secondary_group)
 
     assert "planner.plan(name, addresses)" in source
-    assert "dry_run = transaction.apply(plan)" in source
+    assert "dry_run = self._run_with_wait_indicator" in source
+    assert "transaction.apply(plan)" in source
     assert "Wpisz pełną nazwę grupy" in source
     assert "commit=True, activate=True" in source
     assert "Powód zmiany secondary" in source
@@ -59,7 +60,8 @@ def test_acl_editor_uses_mc_keys_and_guarded_transaction() -> None:
     for key in ("KEY_IC", "KEY_F4", "KEY_F8", "KEY_DC", "KEY_F2"):
         assert key in editor
     assert "entries=entries" in workflow
-    assert "dry_run = transaction.apply(plan)" in workflow
+    assert "dry_run = self._run_with_wait_indicator" in workflow
+    assert "transaction.apply(plan)" in workflow
     assert "Wpisz pełną nazwę ACL" in workflow
     assert "commit=True, activate=True" in workflow
     assert "Powód zmiany ACL" in workflow
@@ -85,5 +87,6 @@ def test_zone_details_open_secondary_assignment_with_f5() -> None:
     assert "curses.KEY_F5" in details
     assert "_zone_secondary_view" in details
     assert "planner.plan(zone.name" in workflow
-    assert "transaction.apply(plan.transaction_plan())" in workflow
+    assert "operation=lambda: transaction.apply(" in workflow
+    assert "plan.transaction_plan()" in workflow
     assert "commit=True, activate=True" in workflow

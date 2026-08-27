@@ -553,13 +553,29 @@ zaczynając od raportu wpływu tylko do odczytu.
 - [ ] Zastosować wskaźnik najpierw podczas głównego odświeżania stref oraz
   oczekiwania na stan BIND po aktywacji lub rollbacku, a następnie rozszerzyć
   go na kontrole DNSSEC, DS i secondary.
+  Integracja głównego odświeżania, odczytowy audyt propagacji secondary,
+  transakcyjny zapis zmian rekordów, commity ACL/secondary oraz tworzenie,
+  onboarding, migracja i relokacja stref oraz commity DNSSEC/DS są gotowe.
+  Ramka obejmuje również odpowiadające im dry-runy transakcyjne BIND.
+  Kontrole stanu DNSSEC, delegacji DS i wszystkie dry-runy DNSSEC/DS także
+  korzystają ze wspólnego okna.
+  Końcowy audyt obejmuje ponadto raport RPZ, onboarding BIND, zbiorczy audyt
+  DNSSEC i bramkę DNSSEC przed importem; lokalne parsery pozostają bez modala.
+  Dla wiersza RPZ `F3` prowadzi do raportu integracji, a `Enter` zachowuje
+  ekran szczegółów i dostępny w nim podgląd rekordów `F3`. W otwartym
+  raporcie integracji `F3` i `r` ponawiają kontrolę przez ramkę.
+- [x] Obsłużyć `Home` i `End` na głównej liście jako przejście do
+  pierwszej i ostatniej domeny z pominięciem nagłówków grup.
+- [x] Pokazywać ramkę podczas odświeżania szczegółów strefy oraz
+  wczytywania i parsowania dużych plików rekordów, w tym RPZ.
 - [x] Po zakończeniu zastępować animację jawnym wynikiem semantycznym:
   zielonym `PASS`, żółtym `WARN` albo czerwonym `FAIL` wraz z opisem.
 - [x] Zapewnić wariant ASCII `| / - \\` dla terminali bez poprawnej obsługi
   znaków Braille'a oraz wyłączać animację w JSON, logach i środowisku
   nieinteraktywnym.
-- [ ] Nie udostępniać anulowania operacji, dopóki poszczególne transakcje nie
+- [x] Nie udostępniać anulowania operacji, dopóki poszczególne transakcje nie
   mają bezpiecznie zdefiniowanego punktu przerwania i rollbacku.
+  Audyt AST blokuje nowe commity TUI omijające wspólne, nieanulowalne okno.
 
 Wydania `4.9.x` pozostają linią stabilizacyjną przeznaczoną na poprawki
 błędów, bezpieczeństwa i pakietów. Rozszerzenia polityk DNSSEC/KASP oraz

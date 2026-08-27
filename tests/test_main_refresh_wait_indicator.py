@@ -1,4 +1,5 @@
 import threading
+import inspect
 from pathlib import Path
 
 from zonectl.core.models import Health, Zone, ZoneStatus
@@ -30,10 +31,9 @@ def test_main_refresh_starts_visible_wait_indicator(monkeypatch) -> None:
 
     assert app.refresh_indicator is not None
     assert "Odświeżanie stref" in app.refresh_indicator.render()
-    assert app.refresh_notice is None
 
 
-def test_completed_refresh_replaces_spinner_with_pass() -> None:
+def test_completed_refresh_removes_spinner_and_keeps_zone_status() -> None:
     item = zone()
     app = CursesApp([item], bind=object())
     app.worker = FinishedThread()
@@ -43,12 +43,10 @@ def test_completed_refresh_replaces_spinner_with_pass() -> None:
     app._complete_refresh_if_ready()
 
     assert app.refresh_indicator is None
-    assert app.refresh_notice == (
-        "[PASS] Odświeżanie stref: sprawdzono 1/1"
-    )
+    assert app.statuses[item.name].health is Health.PASS
 
 
-def test_completed_refresh_preserves_warning_and_failure_semantics() -> None:
+def test_completed_refresh_leaves_warning_and_failure_in_zone_rows() -> None:
     first = zone("warn.test")
     second = zone("fail.test")
     app = CursesApp([first, second], bind=object())
@@ -59,9 +57,9 @@ def test_completed_refresh_preserves_warning_and_failure_semantics() -> None:
 
     app._complete_refresh_if_ready()
 
-    assert app.refresh_notice == (
-        "[FAIL] Odświeżanie stref: sprawdzono 2/2"
-    )
+    assert app.refresh_indicator is None
+    assert app.statuses[first.name].health is Health.WARN
+    assert app.statuses[second.name].health is Health.FAIL
 
 
 def test_running_worker_keeps_indicator_active() -> None:
@@ -75,4 +73,16 @@ def test_running_worker_keeps_indicator_active() -> None:
     app._complete_refresh_if_ready()
 
     assert app.refresh_indicator is not None
-    assert app.refresh_notice is None
+
+
+def test_main_refresh_uses_centered_wait_box_and_blocks_actions() -> None:
+    draw = inspect.getsource(CursesApp._draw)
+    main = inspect.getsource(CursesApp._main)
+
+    assert "self._draw_wait_box" in draw
+    assert 'title="Odświeżanie stref"' in draw
+    assert "_draw_refresh_status" not in draw
+    assert "if self.refresh_indicator is not None" in main
+    assert main.index("if self.refresh_indicator is not None") < main.index(
+        'if key in (ord("q"), 27, curses.KEY_F10)'
+    )
