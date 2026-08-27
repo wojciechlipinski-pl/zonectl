@@ -41,9 +41,36 @@ deterministic in-memory results. Available keys are:
 - `l` — show a synthetic DNS record list;
 - `q`, `Esc` or `F10` — exit the current view or the demo.
 
-Additional reports remain planned until they have equivalent isolation.
+## Published gallery
 
-## Planned images
+The images below were captured from the isolated renderer. They contain only
+reserved example domains, documentation address ranges and a fictional DS.
+
+### Responsive wait dialog
+
+![Main zone list with a centered wait dialog](images/tui-main-wait.png)
+
+### BIND environment summary
+
+![Synthetic read-only BIND environment report](images/tui-bind-environment.png)
+
+### DNSSEC operational status
+
+![Synthetic DNSSEC policy, KASP and delegation report](images/tui-dnssec-status.png)
+
+### DNS record list
+
+![Synthetic DNS record list](images/tui-records.png)
+
+### Adding a record
+
+![Add-record form using synthetic zone data](images/tui-add-record.png)
+
+### Creating a zone
+
+![New-zone wizard using synthetic defaults](images/tui-create-zone.png)
+
+## Future additions
 
 | File | View | Required content |
 |---|---|---|

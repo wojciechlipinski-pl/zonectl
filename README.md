@@ -27,6 +27,18 @@ atomic replacement and rollback.
 - install or migrate the optional CERT Polska RPZ integration transactionally,
   with five-minute updates, validation, monitoring and rollback.
 
+## Screenshots
+
+The ZoneCTL TUI presents operational state directly in the terminal and keeps
+long-running checks responsive with centered, non-cancellable wait dialogs.
+All names, addresses, keys and environment values shown below are synthetic.
+
+![ZoneCTL main screen with a framed wait dialog](docs/images/tui-main-wait.png)
+
+![ZoneCTL DNSSEC operational status](docs/images/tui-dnssec-status.png)
+
+[View the complete screenshot gallery](docs/SCREENSHOTS.md).
+
 ## Requirements
 
 - Debian 13 or another compatible Linux distribution;
