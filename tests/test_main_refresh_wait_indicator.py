@@ -86,3 +86,14 @@ def test_main_refresh_uses_centered_wait_box_and_blocks_actions() -> None:
     assert main.index("if self.refresh_indicator is not None") < main.index(
         'if key in (ord("q"), 27, curses.KEY_F10)'
     )
+
+
+def test_main_loop_restores_polling_after_modal_wait_view() -> None:
+    main = inspect.getsource(CursesApp._main)
+
+    draw = "self._draw(stdscr)"
+    polling = "stdscr.timeout(150)"
+    read_key = "key = self._get_key("
+    loop_body = main[main.index("while not self.stop_event.is_set():") :]
+
+    assert loop_body.index(draw) < loop_body.index(polling) < loop_body.index(read_key)

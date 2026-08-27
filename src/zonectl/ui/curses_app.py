@@ -195,6 +195,10 @@ class CursesApp:
             if changed and self.SORTS[self.sort_index] != "A-Z":
                 self._rebuild_rows(keep_zone=self._selected_zone_name())
             self._draw(stdscr)
+            # Modal wait views restore blocking input when they finish.  The
+            # main screen must remain time-driven so background refresh
+            # completion and spinner frames are consumed without a keypress.
+            stdscr.timeout(150)
             key = self._get_key(
                 stdscr,
                 restore_timeout=150,

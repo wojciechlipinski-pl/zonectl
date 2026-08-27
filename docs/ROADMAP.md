@@ -564,6 +564,8 @@ zaczynając od raportu wpływu tylko do odczytu.
   Dla wiersza RPZ `F3` prowadzi do raportu integracji, a `Enter` zachowuje
   ekran szczegółów i dostępny w nim podgląd rekordów `F3`. W otwartym
   raporcie integracji `F3` i `r` ponawiają kontrolę przez ramkę.
+- [x] Przywracać cykliczne odpytywanie głównej pętli po zamknięciu modala, aby
+  zakończone odświeżanie samo zdejmowało ramkę bez dodatkowego klawisza.
 - [x] Obsłużyć `Home` i `End` na głównej liście jako przejście do
   pierwszej i ostatniej domeny z pominięciem nagłówków grup.
 - [x] Pokazywać ramkę podczas odświeżania szczegółów strefy oraz

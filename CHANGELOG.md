@@ -48,6 +48,12 @@
 - opening a record list creates and parses a new edit session behind the wait
   dialog, which is especially visible for large RPZ files
 
+### Fixed
+
+- the main TUI restores timed input polling after modal wait views, allowing
+  an asynchronous zone refresh to remove its dialog immediately on completion
+  without requiring an extra keypress
+
 ## 4.9.0 - 2026-08-25
 
 ### Fixed
