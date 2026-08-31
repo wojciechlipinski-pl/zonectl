@@ -2,6 +2,9 @@
 
 [English](en/OPERATIONS.md) | [Polski](OPERATIONS.md)
 
+Pełne odtwarzanie hosta i wybór ścieżki po incydencie opisuje osobny
+[runbook odtwarzania po awarii](DISASTER_RECOVERY.md).
+
 ## Zasady bezpieczeństwa
 
 - Polecenia zmieniające strefy wykonuj jako `root`.

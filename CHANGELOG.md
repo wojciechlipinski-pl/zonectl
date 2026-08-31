@@ -4,6 +4,9 @@
 
 ### Changed
 
+- document Polish and English disaster-recovery procedures for a failed zone
+  transaction, unavailable BIND service and complete host restoration,
+  including DNSSEC and managed RPZ verification gates
 - normalize Python sources and tests with Ruff, and enforce formatting plus
   lint checks in the quality-gate workflow
 

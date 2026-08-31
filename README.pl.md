@@ -35,6 +35,9 @@ syntetyczne.
 
 [Zobacz kompletną galerię zrzutów](docs/SCREENSHOTS.md).
 
+Eksploatacja: [instrukcja operatorska](docs/OPERATIONS.md) ·
+[odtwarzanie po awarii](docs/DISASTER_RECOVERY.md)
+
 ## Cykl życia stref
 
 ZoneCTL potrafi transakcyjnie tworzyć i aktywować strefy, odwracalnie je

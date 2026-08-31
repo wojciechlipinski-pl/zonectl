@@ -39,6 +39,9 @@ All names, addresses, keys and environment values shown below are synthetic.
 
 [View the complete screenshot gallery](docs/SCREENSHOTS.md).
 
+Operations: [operator guide](docs/en/OPERATIONS.md) ·
+[disaster recovery](docs/en/DISASTER_RECOVERY.md)
+
 ## Requirements
 
 - Debian 13 or another compatible Linux distribution;
