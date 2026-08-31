@@ -2,6 +2,9 @@
 
 [English](OPERATIONS.md) | [Polski](../OPERATIONS.md)
 
+For incident triage and complete host restoration, see the separate
+[disaster-recovery runbook](DISASTER_RECOVERY.md).
+
 This guide describes safe operating procedures for ZoneCTL 4.7. Examples use
 `example.pl`; replace it with the intended zone only after reviewing the plan.
 

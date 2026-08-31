@@ -280,7 +280,9 @@ zrealizowane, a `[ ]` pozostają do wykonania.
 - [ ] Dodać przykłady obsługi każdego wspieranego typu rekordu.
 - [x] Dodać bezpieczne, syntetyczne zrzuty ekranów TUI generowane bez dostępu
   do konfiguracji produkcyjnej.
-- [ ] Przygotować instrukcję odtwarzania po awarii.
+- [x] Przygotować polską i angielską instrukcję odtwarzania po awarii,
+  rozdzielając rollback pojedynczej strefy, naprawę niedostępnego BIND,
+  pełne odtworzenie hosta oraz kontrolę DNSSEC i zarządzanej integracji RPZ.
 - [ ] Opisać procedurę wydania nowej wersji.
 - [ ] Prowadzić listę wspieranych wersji Pythona, BIND i systemów.
 - [x] Przygotować publiczną dokumentację w języku polskim i angielskim.
