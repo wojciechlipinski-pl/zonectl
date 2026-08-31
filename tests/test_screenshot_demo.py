@@ -35,6 +35,12 @@ def test_screenshot_demo_uses_only_reserved_names_and_addresses() -> None:
     assert "2001:db8::10" in source
     assert "DnssecStatusView" in source
     assert '"A1" * 32' in source
+    assert "_show_access_report" in source
+    assert "_show_transaction_result" in source
+    assert "_show_rollback_result" in source
+    assert 'status="COMMITTED"' in source
+    assert 'status="ROLLED-BACK"' in source
+    assert "/tmp/zonectl-demo/backups/" in source
 
 
 def _png_chunk_types(path: Path) -> list[bytes]:

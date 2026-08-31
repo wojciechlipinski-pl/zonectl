@@ -12,6 +12,7 @@ import curses
 import time
 
 from zonectl.core.models import Health, Zone, ZoneStatus
+from zonectl.core.transaction import StepResult, TransactionResult
 from zonectl.core.zone_parser import DNSRecord
 from zonectl.ui.curses_app import CursesApp
 from zonectl.ui.dnssec_status_view import DnssecStatusView
@@ -85,6 +86,12 @@ class ScreenshotDemoApp(CursesApp):
                 self._show_dnssec_report(stdscr)
             elif key == ord("l"):
                 self._show_record_list(stdscr)
+            elif key == ord("c"):
+                self._show_access_report(stdscr)
+            elif key == ord("t"):
+                self._show_transaction_result(stdscr)
+            elif key == ord("x"):
+                self._show_rollback_result(stdscr)
         self.stop_event.set()
 
     def _show_bind_report(self, win: curses.window) -> None:
@@ -183,6 +190,69 @@ class ScreenshotDemoApp(CursesApp):
                 "",
                 "Status: BEZ ZMIAN — dane wyłącznie demonstracyjne",
             ],
+        )
+
+    def _show_access_report(self, win: curses.window) -> None:
+        self._message_view(
+            win,
+            title="ACL i secondary — demonstracja",
+            lines=[
+                "KONTROLA DOSTĘPU BIND",
+                "ACL trusted-dns       PASS   192.0.2.0/24; 2001:db8::/32",
+                "ACL transfer-partners PASS   198.51.100.53; 2001:db8:1::53",
+                "",
+                "PARY SECONDARY",
+                "edge-eu      PASS  notify=192.0.2.53 transfer=192.0.2.53",
+                "edge-backup  PASS  notify=198.51.100.53 transfer=198.51.100.53",
+                "",
+                "PRZYPISANIE STREFY",
+                "alpha.example.test  edge-eu, edge-backup",
+                "",
+                "Wynik: PASS — konfiguracja wyłącznie demonstracyjna",
+            ],
+        )
+
+    def _show_transaction_result(self, win: curses.window) -> None:
+        self._transaction_result_view(
+            win,
+            TransactionResult(
+                transaction_id="demo-transaction-001",
+                zone="alpha.example.test",
+                committed=True,
+                status="COMMITTED",
+                backup="/tmp/zonectl-demo/backups/alpha.example.test",
+                steps=[
+                    StepResult("named-checkzone", True, "Kandydat poprawny"),
+                    StepResult("backup", True, "Utworzono chroniony backup"),
+                    StepResult("atomic-install", True, "Zainstalowano atomowo"),
+                    StepResult("rndc-reload", True, "Strefa przeładowana"),
+                    StepResult("serial-check", True, "Załadowano oczekiwany SOA"),
+                ],
+            ),
+        )
+
+    def _show_rollback_result(self, win: curses.window) -> None:
+        self._transaction_result_view(
+            win,
+            TransactionResult(
+                transaction_id="demo-rollback-001",
+                zone="alpha.example.test",
+                committed=True,
+                status="ROLLED-BACK",
+                rolled_back=True,
+                backup="/tmp/zonectl-demo/backups/alpha.example.test",
+                steps=[
+                    StepResult("named-checkzone", True, "Kandydat poprawny"),
+                    StepResult("backup", True, "Utworzono chroniony backup"),
+                    StepResult(
+                        "activation-check",
+                        False,
+                        "Kontrolowana awaria demonstracyjna",
+                    ),
+                    StepResult("rollback", True, "Przywrócono poprzedni plik"),
+                    StepResult("rndc-reload", True, "Poprzednia strefa aktywna"),
+                ],
+            ),
         )
 
     @staticmethod

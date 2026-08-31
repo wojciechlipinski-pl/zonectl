@@ -39,6 +39,9 @@ deterministic in-memory results. Available keys are:
 - `b` — show the isolated BIND environment summary;
 - `d` — show the production DNSSEC 4.10 layout with a fictional DS;
 - `l` — show a synthetic DNS record list;
+- `c` — show synthetic ACLs, secondary pairs and a zone assignment;
+- `t` — show a successful synthetic transaction in the production renderer;
+- `x` — show a controlled failure followed by a successful rollback;
 - `q`, `Esc` or `F10` — exit the current view or the demo.
 
 ## Published gallery
@@ -77,9 +80,9 @@ reserved example domains, documentation address ranges and a fictional DS.
 | `tui-main.png` | main zone list | mixed PASS/WARN states and example zones |
 | `records-editor.png` | record editor | synthetic A, AAAA, MX, TXT and CAA records |
 | `dnssec-status.png` | DNSSEC workflow | safe propagation stage and fictional DS |
-| `bind-access.png` | ACL/secondary | documentation networks and logical pairs |
-| `transaction-result.png` | transaction | plan, validation, backup and successful commit |
-| `rollback-result.png` | controlled failure | rollback completed without production details |
+| `tui-bind-access.png` | ACL/secondary | ready to capture with `c` |
+| `tui-transaction-result.png` | transaction | ready to capture with `t` |
+| `tui-rollback-result.png` | controlled failure | ready to capture with `x` |
 
 ## Presentation rules
 
