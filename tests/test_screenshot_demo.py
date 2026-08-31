@@ -63,11 +63,14 @@ def test_published_screenshots_have_no_textual_metadata() -> None:
     images = sorted(IMAGES.glob("*.png"))
     assert [image.name for image in images] == [
         "tui-add-record.png",
+        "tui-bind-access.png",
         "tui-bind-environment.png",
         "tui-create-zone.png",
         "tui-dnssec-status.png",
         "tui-main-wait.png",
         "tui-records.png",
+        "tui-rollback-result.png",
+        "tui-transaction-result.png",
     ]
     forbidden_metadata = {b"tEXt", b"zTXt", b"iTXt", b"eXIf"}
     for image in images:

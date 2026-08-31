@@ -283,7 +283,7 @@ zrealizowane, a `[ ]` pozostają do wykonania.
 - [x] Dodać bezpieczne, syntetyczne zrzuty ekranów TUI generowane bez dostępu
   do konfiguracji produkcyjnej.
 - [x] Rozszerzyć izolowany demonstrator o syntetyczne widoki ACL/secondary,
-  udanej transakcji i zakończonego rollbacku, gotowe do przechwycenia bez
+  udanej transakcji i zakończonego rollbacku oraz opublikować ich zrzuty bez
   dostępu do hosta, sieci ani konfiguracji BIND.
 - [x] Przygotować polską i angielską instrukcję odtwarzania po awarii,
   rozdzielając rollback pojedynczej strefy, naprawę niedostępnego BIND,

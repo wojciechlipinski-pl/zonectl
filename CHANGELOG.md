@@ -6,7 +6,7 @@
 
 - extend the isolated screenshot demonstrator with synthetic ACL/secondary,
   successful transaction and completed rollback views using production TUI
-  message and transaction renderers
+  message and transaction renderers, and publish their metadata-free captures
 - document Polish and English disaster-recovery procedures for a failed zone
   transaction, unavailable BIND service and complete host restoration,
   including DNSSEC and managed RPZ verification gates
