@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import ast
+import struct
 from pathlib import Path
 
 
 SCRIPT = Path("scripts/run_screenshot_demo.py")
+IMAGES = Path("docs/images")
 
 
 def test_screenshot_demo_is_isolated_from_host_and_network() -> None:
@@ -33,3 +35,34 @@ def test_screenshot_demo_uses_only_reserved_names_and_addresses() -> None:
     assert "2001:db8::10" in source
     assert "DnssecStatusView" in source
     assert '"A1" * 32' in source
+
+
+def _png_chunk_types(path: Path) -> list[bytes]:
+    data = path.read_bytes()
+    assert data.startswith(b"\x89PNG\r\n\x1a\n")
+    chunks: list[bytes] = []
+    offset = 8
+    while offset < len(data):
+        length = struct.unpack(">I", data[offset : offset + 4])[0]
+        chunk_type = data[offset + 4 : offset + 8]
+        chunks.append(chunk_type)
+        offset += 12 + length
+        if chunk_type == b"IEND":
+            break
+    assert offset == len(data)
+    return chunks
+
+
+def test_published_screenshots_have_no_textual_metadata() -> None:
+    images = sorted(IMAGES.glob("*.png"))
+    assert [image.name for image in images] == [
+        "tui-add-record.png",
+        "tui-bind-environment.png",
+        "tui-create-zone.png",
+        "tui-dnssec-status.png",
+        "tui-main-wait.png",
+        "tui-records.png",
+    ]
+    forbidden_metadata = {b"tEXt", b"zTXt", b"iTXt", b"eXIf"}
+    for image in images:
+        assert not forbidden_metadata.intersection(_png_chunk_types(image))

@@ -270,7 +270,7 @@ zrealizowane, a `[ ]` pozostają do wykonania.
 ## Dokumentacja
 
 - [ ] Dodać przykłady obsługi każdego wspieranego typu rekordu.
-- [ ] Dodać bezpieczne, syntetyczne zrzuty ekranów TUI generowane bez dostępu
+- [x] Dodać bezpieczne, syntetyczne zrzuty ekranów TUI generowane bez dostępu
   do konfiguracji produkcyjnej.
 - [ ] Przygotować instrukcję odtwarzania po awarii.
 - [ ] Opisać procedurę wydania nowej wersji.
@@ -332,18 +332,18 @@ odczytowe; import wymaga osobnego planu, dry-runu i potwierdzenia operatora.
 
 ### Bezpieczne materiały demonstracyjne
 
-Materiały promocyjne i koncepcyjne zostały przygotowane. Deterministyczny
-generator danych demonstracyjnych został przesunięty poza krytyczny zakres 4.8.
+Deterministyczny demonstrator i pierwsza publiczna galeria zostały wydane
+w ZoneCTL 4.10.1. Brakujące widoki pozostają zakresem jakościowym 4.11.
 
-- [ ] (później) Dodać deterministyczny generator demonstracyjnego stanu TUI, który nie
+- [x] Dodać deterministyczny generator demonstracyjnego stanu TUI, który nie
   czyta `/etc/bind`, `/var/lib/bind`, nazw hostów ani danych operatora.
-- [ ] Przygotować porównawczy zestaw publikacyjny: dwa wierne, zanonimizowane
-  zrzuty bieżącego TUI oraz dwa obrazy jednoznacznie opisane jako koncepcja
-  docelowego interfejsu.
-- [ ] Wygenerować ekrany: lista stref, rekordy, DNSSEC, ACL, secondary oraz
-  wynik transakcji.
-- [ ] Zapisać obrazy w `docs/images/` i osadzić je w obu wersjach README.
-- [ ] Dodać test wykrywający w obrazach/metadanych i plikach demonstracyjnych
+- [x] Opublikować pochodzące z rzeczywistego renderera syntetyczne ekrany:
+  listę stref z ramką oczekiwania, raport BIND, DNSSEC, rekordy oraz formularze
+  dodawania rekordu i tworzenia strefy.
+- [ ] Uzupełnić galerię 4.11 o widoki ACL/secondary, wyniku transakcji oraz
+  kontrolowanego rollbacku.
+- [x] Zapisać obrazy w `docs/images/` i osadzić je w obu wersjach README.
+- [x] Dodać test wykrywający w metadanych obrazów i plikach demonstracyjnych
   zabronione nazwy produkcyjne.
 
 ### Docelowy wygląd TUI
@@ -371,7 +371,7 @@ Szczegółowe kryteria zgodności z opublikowanymi grafikami określa
 - [x] Po udanym zapisie rekordów bezwarunkowo przeładowywać aktywny plik
   strefy w bieżącej sesji TUI oraz obsługiwać zgodnie z belką oba klawisze
   usuwania: `F8` i `Delete`.
-- [ ] Traktować grafiki koncepcyjne wyłącznie jako wzorzec projektu; publiczne
+- [x] Traktować grafiki koncepcyjne wyłącznie jako wzorzec projektu; publiczne
   zrzuty oznaczane jako działająca aplikacja muszą pochodzić z rzeczywistego
   renderera ZoneCTL na danych demonstracyjnych.
 
@@ -593,7 +593,7 @@ zaczynając od raportu wpływu tylko do odczytu.
   zmianę treści przypisano na podstawie czasu i dziennika do prawidłowego
   przebiegu timera CERT Polska RPZ. Walidacja BIND i audyt TUI zakończyły się
   powodzeniem.
-- [ ] Scalić gałąź, utworzyć tag `v4.10.0` i uruchomić zatwierdzony release.
+- [x] Scalić gałąź, utworzyć tag `v4.10.0` i uruchomić zatwierdzony release.
 
 Wydania `4.10.x` pozostają linią stabilizacyjną przeznaczoną na poprawki
 błędów, bezpieczeństwa i pakietów. Rozszerzenia polityk DNSSEC/KASP oraz

@@ -11,7 +11,7 @@ atomic replacement and rollback.
 
 ## Current release
 
-**4.10.0 — responsive framed wait dialogs across the TUI**
+**4.10.1 — isolated synthetic TUI screenshot gallery**
 
 ## Highlights
 
@@ -55,7 +55,7 @@ exact patch version.
 Install the Debian package attached to the GitHub release:
 
 ```bash
-sudo apt install ./zonectl_4.10.0-1_all.deb
+sudo apt install ./zonectl_4.10.1-1_all.deb
 zctl --version
 ```
 

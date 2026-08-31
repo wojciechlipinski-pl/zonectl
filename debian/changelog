@@ -1,3 +1,11 @@
+zonectl (4.10.1-1) unstable; urgency=medium
+
+  * Publish an isolated synthetic TUI screenshot demonstrator and gallery.
+  * Add privacy regression checks for demo sources and PNG metadata.
+  * Synchronize Polish documentation and the post-4.10 development roadmap.
+
+ -- Wojciech Lipiński <wojciech.lipinski.elk@gmail.com>  Mon, 31 Aug 2026 14:00:00 +0200
+
 zonectl (4.10.0-1) unstable; urgency=medium
 
   * Add centered, animated wait dialogs for slow TUI reads and transactions.
