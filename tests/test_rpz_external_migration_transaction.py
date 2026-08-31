@@ -27,28 +27,48 @@ def _plan(tmp_path: Path) -> RpzExternalMigrationPlan:
         path.write_text(content.replace("UPDATER", str(updater)), encoding="utf-8")
         digest = hashlib.sha256(path.read_bytes()).hexdigest()
         artifacts.append(
-            RpzMigrationArtifact(role, path, True, path.stat().st_uid,
-                                 path.stat().st_gid, "-rw-r--r--", digest)
+            RpzMigrationArtifact(
+                role,
+                path,
+                True,
+                path.stat().st_uid,
+                path.stat().st_gid,
+                "-rw-r--r--",
+                digest,
+            )
         )
     managed = tmp_path / "managed"
     return RpzExternalMigrationPlan(
-        "READY", "cert-rpz.local", "external.timer", "external.service",
-        True, True, tuple(artifacts), managed / "updater",
-        managed / "managed.service", managed / "managed.timer",
-        tmp_path / "backups", (), (), "dalej",
+        "READY",
+        "cert-rpz.local",
+        "external.timer",
+        "external.service",
+        True,
+        True,
+        tuple(artifacts),
+        managed / "updater",
+        managed / "managed.service",
+        managed / "managed.timer",
+        tmp_path / "backups",
+        (),
+        (),
+        "dalej",
     )
 
 
 def test_transaction_requires_both_flags_and_exact_confirmation(tmp_path: Path) -> None:
     plan = _plan(tmp_path)
     tx = RpzExternalMigrationTransaction(
-        tmp_path / "backups", tmp_path / "manifests",
+        tmp_path / "backups",
+        tmp_path / "manifests",
         root_config=tmp_path / "named.conf",
         command_runner=lambda command, timeout: (_ for _ in ()).throw(AssertionError()),
     )
     assert tx.apply(plan, commit=True).status == "REJECTED"
     assert tx.apply(plan, activate=True).status == "REJECTED"
-    assert tx.apply(plan, commit=True, activate=True, confirm="wrong").status == "REJECTED"
+    assert (
+        tx.apply(plan, commit=True, activate=True, confirm="wrong").status == "REJECTED"
+    )
 
 
 def test_changed_source_hash_blocks_before_dry_run(tmp_path: Path) -> None:
@@ -75,8 +95,10 @@ def test_forced_activation_failure_restores_external_timer(tmp_path: Path) -> No
         return CommandResult(0, "OK\n", "")
 
     result = RpzExternalMigrationTransaction(
-        tmp_path / "backups", tmp_path / "manifests",
-        root_config=tmp_path / "named.conf", command_runner=runner,
+        tmp_path / "backups",
+        tmp_path / "manifests",
+        root_config=tmp_path / "named.conf",
+        command_runner=runner,
     ).apply(plan, commit=True, activate=True, confirm=plan.zone)
 
     assert result.status == "ROLLED-BACK"
@@ -89,9 +111,12 @@ def test_forced_activation_failure_restores_external_timer(tmp_path: Path) -> No
     assert result.manifest and Path(result.manifest).is_file()
 
 
-def test_successful_transaction_keeps_external_files_as_recovery_source(tmp_path: Path) -> None:
+def test_successful_transaction_keeps_external_files_as_recovery_source(
+    tmp_path: Path,
+) -> None:
     plan = _plan(tmp_path)
     before = {item.role: item.path.read_bytes() for item in plan.artifacts}
+
     def runner(command: list[str], timeout: int) -> CommandResult:
         if command[:2] == ["rndc", "zonestatus"]:
             return CommandResult(0, "serial: 124\n", "")
@@ -100,9 +125,12 @@ def test_successful_transaction_keeps_external_files_as_recovery_source(tmp_path
         if "--property=Result" in command:
             return CommandResult(0, "success\n", "")
         return CommandResult(0, "active\n", "")
+
     result = RpzExternalMigrationTransaction(
-        tmp_path / "backups", tmp_path / "manifests",
-        root_config=tmp_path / "named.conf", command_runner=runner,
+        tmp_path / "backups",
+        tmp_path / "manifests",
+        root_config=tmp_path / "named.conf",
+        command_runner=runner,
     ).apply(plan, commit=True, activate=True, confirm=plan.zone)
     assert result.status == "COMMIT"
     assert result.committed and result.activated
@@ -112,7 +140,9 @@ def test_successful_transaction_keeps_external_files_as_recovery_source(tmp_path
     assert before == {item.role: item.path.read_bytes() for item in plan.artifacts}
 
 
-def test_post_gate_failure_rolls_back_when_managed_service_result_fails(tmp_path: Path) -> None:
+def test_post_gate_failure_rolls_back_when_managed_service_result_fails(
+    tmp_path: Path,
+) -> None:
     plan = _plan(tmp_path)
 
     def runner(command: list[str], timeout: int) -> CommandResult:
@@ -125,11 +155,15 @@ def test_post_gate_failure_rolls_back_when_managed_service_result_fails(tmp_path
         return CommandResult(0, "active\n", "")
 
     result = RpzExternalMigrationTransaction(
-        tmp_path / "backups", tmp_path / "manifests",
-        root_config=tmp_path / "named.conf", command_runner=runner,
+        tmp_path / "backups",
+        tmp_path / "manifests",
+        root_config=tmp_path / "named.conf",
+        command_runner=runner,
     ).apply(plan, commit=True, activate=True, confirm=plan.zone)
     assert result.status == "ROLLED-BACK"
-    assert any(step.name == "managed-service-result" and not step.ok for step in result.steps)
+    assert any(
+        step.name == "managed-service-result" and not step.ok for step in result.steps
+    )
 
 
 def test_stale_zone_after_cutover_forces_rollback(tmp_path: Path) -> None:
@@ -146,8 +180,10 @@ def test_stale_zone_after_cutover_forces_rollback(tmp_path: Path) -> None:
         return CommandResult(0, "active\n", "")
 
     result = RpzExternalMigrationTransaction(
-        tmp_path / "backups", tmp_path / "manifests",
-        root_config=tmp_path / "named.conf", command_runner=runner,
+        tmp_path / "backups",
+        tmp_path / "manifests",
+        root_config=tmp_path / "named.conf",
+        command_runner=runner,
         clock=lambda: zone_file.stat().st_mtime + 601,
     ).apply(plan, commit=True, activate=True, confirm=plan.zone)
     assert result.status == "ROLLED-BACK"

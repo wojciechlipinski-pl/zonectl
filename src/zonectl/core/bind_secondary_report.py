@@ -40,8 +40,11 @@ class SecondaryPairReport:
     def to_dict(self) -> dict[str, object]:
         data = asdict(self)
         for field in (
-            "notify_groups", "transfer_groups", "notify_addresses",
-            "transfer_addresses", "zones",
+            "notify_groups",
+            "transfer_groups",
+            "notify_addresses",
+            "transfer_addresses",
+            "zones",
         ):
             data[field] = list(data[field])
         return data
@@ -82,7 +85,8 @@ class BindSecondaryReporter:
                     zones.setdefault(key, set()).add(usage.zone)
 
         relevant = [
-            item for item in inventory.definitions
+            item
+            for item in inventory.definitions
             if item.name.casefold() in roles
             or self._base_name(item.name) != item.name.casefold()
         ]
@@ -114,12 +118,16 @@ class BindSecondaryReporter:
                     name=base,
                     notify_groups=tuple(group.name for group in notify),
                     transfer_groups=tuple(group.name for group in transfer),
-                    notify_addresses=tuple(dict.fromkeys(
-                        entry for group in notify for entry in group.entries
-                    )),
-                    transfer_addresses=tuple(dict.fromkeys(
-                        entry for group in transfer for entry in group.entries
-                    )),
+                    notify_addresses=tuple(
+                        dict.fromkeys(
+                            entry for group in notify for entry in group.entries
+                        )
+                    ),
+                    transfer_addresses=tuple(
+                        dict.fromkeys(
+                            entry for group in transfer for entry in group.entries
+                        )
+                    ),
                     zones=tuple(all_zones),
                     status=status,
                 )
@@ -135,6 +143,4 @@ class BindSecondaryReporter:
 
     @staticmethod
     def _base_name(name: str) -> str:
-        return re.sub(
-            r"[-_.](?:notify|transfer|secondary|slave)$", "", name.casefold()
-        )
+        return re.sub(r"[-_.](?:notify|transfer|secondary|slave)$", "", name.casefold())

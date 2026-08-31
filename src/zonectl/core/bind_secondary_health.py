@@ -32,7 +32,10 @@ Query = Callable[[str, str], SecondarySoaObservation]
 
 class BindSecondaryHealthGate:
     def __init__(
-        self, *, query: Query | None = None, attempts: int = 3,
+        self,
+        *,
+        query: Query | None = None,
+        attempts: int = 3,
         interval_seconds: float = 2.0,
     ) -> None:
         self.query = query or self._query_soa
@@ -51,7 +54,8 @@ class BindSecondaryHealthGate:
                 latest[zone] = observations
                 local = primary[zone]
                 if (
-                    local.authoritative and local.serial is not None
+                    local.authoritative
+                    and local.serial is not None
                     and all(
                         item.authoritative and item.serial == local.serial
                         for item in observations
@@ -61,18 +65,21 @@ class BindSecondaryHealthGate:
             if unresolved and attempt + 1 < self.attempts:
                 time.sleep(self.interval_seconds)
         return tuple(
-            self._classify(zone, primary[zone], latest.get(zone, ()))
-            for zone in zones
+            self._classify(zone, primary[zone], latest.get(zone, ())) for zone in zones
         )
 
     @staticmethod
     def _classify(
-        zone: str, primary: SecondarySoaObservation,
+        zone: str,
+        primary: SecondarySoaObservation,
         observations: tuple[SecondarySoaObservation, ...],
     ) -> SecondaryZoneHealth:
         if not primary.authoritative or primary.serial is None:
             return SecondaryZoneHealth(
-                zone, "FAIL", primary.serial, (),
+                zone,
+                "FAIL",
+                primary.serial,
+                (),
                 "Lokalny primary nie zwrócił autorytatywnego SOA",
             )
         if observations and all(
@@ -80,15 +87,20 @@ class BindSecondaryHealthGate:
             for item in observations
         ):
             return SecondaryZoneHealth(
-                zone, "PASS", primary.serial, observations,
+                zone,
+                "PASS",
+                primary.serial,
+                observations,
                 "Secondary zwracają autorytatywny SOA zgodny z primary",
             )
         if not observations or any(
-            not item.authoritative or item.serial is None
-            for item in observations
+            not item.authoritative or item.serial is None for item in observations
         ):
             return SecondaryZoneHealth(
-                zone, "FAIL", primary.serial, observations,
+                zone,
+                "FAIL",
+                primary.serial,
+                observations,
                 "Co najmniej jeden secondary nie zwraca autorytatywnego SOA",
             )
         if any(
@@ -97,20 +109,36 @@ class BindSecondaryHealthGate:
             if serial is not None
         ):
             return SecondaryZoneHealth(
-                zone, "FAIL", primary.serial, observations,
+                zone,
+                "FAIL",
+                primary.serial,
+                observations,
                 "Secondary ma serial wyższy niż lokalny primary",
             )
         return SecondaryZoneHealth(
-            zone, "PENDING", primary.serial, observations,
+            zone,
+            "PENDING",
+            primary.serial,
+            observations,
             "Transfer strefy jest jeszcze w toku; serial secondary jest niższy",
         )
 
     @staticmethod
     def _query_soa(server: str, zone: str) -> SecondarySoaObservation:
-        outcome = run([
-            "dig", f"@{server}", zone, "SOA", "+norecurse",
-            "+comments", "+answer", "+time=2", "+tries=1",
-        ], 10)
+        outcome = run(
+            [
+                "dig",
+                f"@{server}",
+                zone,
+                "SOA",
+                "+norecurse",
+                "+comments",
+                "+answer",
+                "+time=2",
+                "+tries=1",
+            ],
+            10,
+        )
         output = "\n".join((outcome.stdout, outcome.stderr)).strip()
         flags = re.search(r"flags:\s*([^;]+);", output, re.IGNORECASE)
         authoritative = bool(flags and "aa" in flags.group(1).split())
@@ -118,7 +146,9 @@ class BindSecondaryHealthGate:
         for line in output.splitlines():
             fields = line.split()
             try:
-                soa = next(i for i, value in enumerate(fields) if value.upper() == "SOA")
+                soa = next(
+                    i for i, value in enumerate(fields) if value.upper() == "SOA"
+                )
                 serial = int(fields[soa + 3])
                 break
             except (StopIteration, IndexError, ValueError):

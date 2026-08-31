@@ -16,8 +16,8 @@ def test_detects_duplicate_invalid_and_noncanonical_entries(tmp_path: Path) -> N
     audit = _audit(
         tmp_path,
         'acl "trusted" { 192.0.2.0/24; 192.0.2.0/24; '
-        '198.51.100/24; 192.0.2.1/24; };\n'
-        'options { allow-recursion { trusted; }; };\n',
+        "198.51.100/24; 192.0.2.1/24; };\n"
+        "options { allow-recursion { trusted; }; };\n",
     )
     codes = [item.code for item in audit.findings]
     assert "DUPLICATE_ENTRY" in codes
@@ -30,7 +30,7 @@ def test_detects_unknown_reference_and_reports_zone(tmp_path: Path) -> None:
     audit = _audit(
         tmp_path,
         'zone "example.pl" { type primary; file "/x"; '
-        'allow-transfer { missing-group; }; };\n',
+        "allow-transfer { missing-group; }; };\n",
     )
     finding = next(x for x in audit.findings if x.code == "UNKNOWN_REFERENCE")
     assert finding.zones == ("example.pl",)
@@ -47,7 +47,7 @@ def test_clean_configuration_passes(tmp_path: Path) -> None:
     audit = _audit(
         tmp_path,
         'acl "trusted" { localhost; 192.0.2.0/24; };\n'
-        'options { allow-query { trusted; }; };\n',
+        "options { allow-query { trusted; }; };\n",
     )
     assert audit.status == "PASS"
     assert audit.findings == ()

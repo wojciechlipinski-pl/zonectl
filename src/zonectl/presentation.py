@@ -27,11 +27,7 @@ def transaction_lines(
             action = str(operation.get("action", "?"))
             field = operation.get("field")
             value = operation.get("value")
-            assignment = (
-                f" {field}={value}"
-                if action == "SET" and field
-                else ""
-            )
+            assignment = f" {field}={value}" if action == "SET" and field else ""
             lines.append(
                 "  "
                 f"SELECT {operation.get('query', '?')} "
@@ -43,19 +39,13 @@ def transaction_lines(
 
     for step in result.steps:
         marker = "OK" if step.ok else "BŁĄD"
-        lines.append(
-            f"[{marker:<4}] {step.name}: {step.message}"
-        )
+        lines.append(f"[{marker:<4}] {step.name}: {step.message}")
 
         if not step.ok:
             if step.stdout.strip():
-                lines.append(
-                    f"  stdout: {step.stdout.strip()}"
-                )
+                lines.append(f"  stdout: {step.stdout.strip()}")
             if step.stderr.strip():
-                lines.append(
-                    f"  stderr: {step.stderr.strip()}"
-                )
+                lines.append(f"  stderr: {step.stderr.strip()}")
 
     return lines
 

@@ -46,9 +46,7 @@ def test_f8_delete_commit_rereads_active_file(
 ) -> None:
     source = tmp_path / "example.test"
     source.write_text(
-        "$TTL 3600\n"
-        "@ IN NS ns1.example.test.\n"
-        "@ IN NS old.example.test.\n",
+        "$TTL 3600\n@ IN NS ns1.example.test.\n@ IN NS old.example.test.\n",
         encoding="utf-8",
     )
     zone = Zone(name="example.test", file=source)
@@ -82,9 +80,7 @@ def test_f8_delete_commit_rereads_active_file(
         staticmethod(
             lambda win, **kwargs: rendered.append(
                 tuple(
-                    view.record.rdata
-                    for view in kwargs["records"]
-                    if not view.deleted
+                    view.record.rdata for view in kwargs["records"] if not view.deleted
                 )
             )
         ),

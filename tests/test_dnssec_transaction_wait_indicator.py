@@ -7,18 +7,23 @@ from zonectl.ui.curses_app import CursesApp
 
 def test_dnssec_commits_use_shared_wait_dialog() -> None:
     source = inspect.getsource(CursesApp._dnssec_status_view)
+    source = "".join(source.split())
 
     expected = (
-        ('title=f"Włączanie DNSSEC: {zone.name}"',
-         "operation=lambda: self._dnssec_enable_commit(zone)"),
-        ('title=f"Potwierdzenie DS: {zone.name}"',
-         "self._dnssec_confirm_ds("),
-        ('title=f"Backup DNSSEC: {zone.name}"',
-         "self._dnssec_withdrawal_backup("),
-        ('title=f"Finalizacja DNSSEC: {zone.name}"',
-         "operation=lambda: self._dnssec_finalize_commit(zone)"),
+        (
+            'title=f"Włączanie DNSSEC: {zone.name}"',
+            "operation=lambda: self._dnssec_enable_commit(zone)",
+        ),
+        ('title=f"Potwierdzenie DS: {zone.name}"', "self._dnssec_confirm_ds("),
+        ('title=f"Backup DNSSEC: {zone.name}"', "self._dnssec_withdrawal_backup("),
+        (
+            'title=f"Finalizacja DNSSEC: {zone.name}"',
+            "operation=lambda: self._dnssec_finalize_commit(zone)",
+        ),
     )
     for title, operation in expected:
+        title = "".join(title.split())
+        operation = "".join(operation.split())
         title_at = source.index(title)
         wait_at = source.rindex("self._run_with_wait_indicator", 0, title_at)
         operation_at = source.index(operation, title_at)

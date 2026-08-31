@@ -11,9 +11,13 @@ class _EmptyConfig:
 
 def _plan(status: str = "READY") -> RpzManagedPlan:
     return RpzManagedPlan(
-        status, "cert-rpz.local", "https://hole.cert.pl/domains/v2/domains_rpz.db",
-        Path("/etc/bind/named.conf"), Path("/var/lib/zonectl/rpz/domains_rpz.db"),
-        Path("/etc/bind/zonectl-rpz.conf"), Path("/usr/lib/zonectl/update-cert-rpz"),
+        status,
+        "cert-rpz.local",
+        "https://hole.cert.pl/domains/v2/domains_rpz.db",
+        Path("/etc/bind/named.conf"),
+        Path("/var/lib/zonectl/rpz/domains_rpz.db"),
+        Path("/etc/bind/zonectl-rpz.conf"),
+        Path("/usr/lib/zonectl/update-cert-rpz"),
         Path("/etc/systemd/system/zonectl-cert-rpz.service"),
         Path("/etc/systemd/system/zonectl-cert-rpz.timer"),
         Path("/var/backups/zonectl-rpz"),

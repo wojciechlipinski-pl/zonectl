@@ -20,7 +20,9 @@ class FakeChecker:
         pass
 
     def collect(self, zone, resolvers):
-        raise AssertionError("checker is passed through, not called by fake transaction")
+        raise AssertionError(
+            "checker is passed through, not called by fake transaction"
+        )
 
 
 class FakeTransaction:
@@ -61,9 +63,9 @@ def test_confirm_ds_requires_both_confirmation_flags(monkeypatch, capsys) -> Non
     configure(monkeypatch)
 
     assert cli.main(["dnssec", "confirm-ds", "example.pl", "--commit"]) == 2
-    assert cli.main(
-        ["dnssec", "confirm-ds", "example.pl", "--acknowledge-published"]
-    ) == 2
+    assert (
+        cli.main(["dnssec", "confirm-ds", "example.pl", "--acknowledge-published"]) == 2
+    )
 
     assert "--commit i --acknowledge-published" in capsys.readouterr().err
     assert FakeTransaction.calls == []

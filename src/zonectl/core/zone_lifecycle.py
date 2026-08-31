@@ -22,14 +22,10 @@ def normalize_zone_name(value: str) -> str:
     """Znormalizuj i zwaliduj nazwę strefy DNS."""
     name = value.strip().rstrip(".").casefold()
     if not name or len(name) > 253 or "." not in name:
-        raise ZoneLifecycleError(
-            "Nazwa strefy musi być pełną nazwą domenową"
-        )
+        raise ZoneLifecycleError("Nazwa strefy musi być pełną nazwą domenową")
     labels = name.split(".")
     if any(not _LABEL.fullmatch(label) for label in labels):
-        raise ZoneLifecycleError(
-            f"Nieprawidłowa nazwa strefy: {value}"
-        )
+        raise ZoneLifecycleError(f"Nieprawidłowa nazwa strefy: {value}")
     return name
 
 
@@ -38,9 +34,7 @@ def normalize_fqdn(value: str, field: str) -> str:
     try:
         name = normalize_zone_name(value)
     except ZoneLifecycleError as exc:
-        raise ZoneLifecycleError(
-            f"Nieprawidłowe pole {field}: {value}"
-        ) from exc
+        raise ZoneLifecycleError(f"Nieprawidłowe pole {field}: {value}") from exc
     return f"{name}."
 
 
@@ -52,9 +46,7 @@ class ZoneCreateRequest:
     nameservers: tuple[str, ...]
     zone_directory: Path = Path("/var/lib/bind/Primary")
     managed_config: Path = Path("/etc/bind/zonectl-zones.conf")
-    managed_zone_directory: Path = Path(
-        "/etc/bind/zonectl-zones.d"
-    )
+    managed_zone_directory: Path = Path("/etc/bind/zonectl-zones.d")
     default_ttl: int = 3600
     refresh: int = 3600
     retry: int = 900
@@ -85,9 +77,7 @@ class ZoneCreatePlan:
         payload = asdict(self)
         payload["zone_file"] = str(self.zone_file)
         payload["managed_config"] = str(self.managed_config)
-        payload["zone_declaration_file"] = str(
-            self.zone_declaration_file
-        )
+        payload["zone_declaration_file"] = str(self.zone_declaration_file)
         payload["groups_config"] = str(self.groups_config)
         return payload
 
@@ -101,10 +91,7 @@ class ZoneLifecyclePlanner:
         *,
         today_provider: Callable[[], date] = date.today,
     ) -> None:
-        self._existing = {
-            zone.name.rstrip(".").casefold()
-            for zone in existing_zones
-        }
+        self._existing = {zone.name.rstrip(".").casefold() for zone in existing_zones}
         self._today_provider = today_provider
 
     @staticmethod
@@ -128,9 +115,7 @@ class ZoneLifecyclePlanner:
                 f"Operacja {operation} jest zablokowana dla automatycznej "
                 f"strefy RPZ: {zone.name}"
             )
-        if zone is not None and (
-            zone.dnssec_policy or zone.inline_signing
-        ):
+        if zone is not None and (zone.dnssec_policy or zone.inline_signing):
             details = []
             if zone.dnssec_policy:
                 details.append(f"dnssec-policy={zone.dnssec_policy}")
@@ -145,9 +130,7 @@ class ZoneLifecyclePlanner:
         """Zbuduj plan utworzenia strefy bez zapisywania plików."""
         zone_name = normalize_zone_name(request.name)
         if zone_name in self._existing:
-            raise ZoneLifecycleError(
-                f"Strefa już istnieje: {zone_name}"
-            )
+            raise ZoneLifecycleError(f"Strefa już istnieje: {zone_name}")
         if not 0 < request.default_ttl <= 2147483647:
             raise ZoneLifecycleError("TTL musi być dodatnią liczbą")
         for value, label, allow_zero in (
@@ -159,8 +142,7 @@ class ZoneLifecyclePlanner:
             minimum = 0 if allow_zero else 1
             if not minimum <= value <= 2147483647:
                 raise ZoneLifecycleError(
-                    f"Parametr SOA {label} musi mieć zakres "
-                    f"{minimum}–2147483647"
+                    f"Parametr SOA {label} musi mieć zakres {minimum}–2147483647"
                 )
         if request.expire <= max(request.refresh, request.retry):
             raise ZoneLifecycleError(
@@ -174,14 +156,11 @@ class ZoneLifecyclePlanner:
         admin = normalize_fqdn(request.admin, "admin")
         nameservers = tuple(
             dict.fromkeys(
-                normalize_fqdn(value, "nameserver")
-                for value in request.nameservers
+                normalize_fqdn(value, "nameserver") for value in request.nameservers
             )
         )
         if not nameservers:
-            raise ZoneLifecycleError(
-                "Wymagany jest co najmniej jeden serwer NS"
-            )
+            raise ZoneLifecycleError("Wymagany jest co najmniej jeden serwer NS")
         if primary_ns not in nameservers:
             raise ZoneLifecycleError(
                 "primary_ns musi znajdować się na liście nameservers"
@@ -190,19 +169,13 @@ class ZoneLifecyclePlanner:
         ipv4 = self._address(request.apex_ipv4, 4)
         ipv6 = self._address(request.apex_ipv6, 6)
         if request.add_www and not (ipv4 or ipv6):
-            raise ZoneLifecycleError(
-                "Rekord www wymaga adresu apex IPv4 lub IPv6"
-            )
+            raise ZoneLifecycleError("Rekord www wymaga adresu apex IPv4 lub IPv6")
 
         serial = int(self._today_provider().strftime("%Y%m%d") + "00")
-        zone_file = (
-            request.zone_directory.expanduser().resolve()
-            / zone_name
-        )
+        zone_file = request.zone_directory.expanduser().resolve() / zone_name
         managed_config = request.managed_config.expanduser().resolve()
         declaration_file = (
-            request.managed_zone_directory.expanduser().resolve()
-            / f"{zone_name}.conf"
+            request.managed_zone_directory.expanduser().resolve() / f"{zone_name}.conf"
         )
         zone_text = self._zone_text(
             request,
@@ -232,15 +205,16 @@ class ZoneLifecyclePlanner:
         ]
         if groups_text is not None:
             actions.append(
-                f"przypisz {zone_name} do grupy {group} w "
-                f"{request.groups_config}"
+                f"przypisz {zone_name} do grupy {group} w {request.groups_config}"
             )
-        actions.extend((
-            f"wykonaj named-checkzone {zone_name}",
-            "wykonaj named-checkconf",
-            "wykonaj rndc reconfig",
-            f"potwierdź załadowanie strefy {zone_name}",
-        ))
+        actions.extend(
+            (
+                f"wykonaj named-checkzone {zone_name}",
+                "wykonaj named-checkconf",
+                "wykonaj rndc reconfig",
+                f"potwierdź załadowanie strefy {zone_name}",
+            )
+        )
         return ZoneCreatePlan(
             zone_name=zone_name,
             zone_file=zone_file,
@@ -261,12 +235,17 @@ class ZoneLifecyclePlanner:
         if group.casefold() == "pozostałe".casefold():
             return None
 
-        text = path.expanduser().read_text(encoding="utf-8") if path.exists() else "groups:\n"
+        text = (
+            path.expanduser().read_text(encoding="utf-8")
+            if path.exists()
+            else "groups:\n"
+        )
         lines = text.splitlines()
         heading = f"  {group}:"
         try:
             start = next(
-                index for index, line in enumerate(lines)
+                index
+                for index, line in enumerate(lines)
                 if line.strip().casefold() == f"{group}:".casefold()
                 and len(line) - len(line.lstrip(" ")) == 2
             )
@@ -284,7 +263,7 @@ class ZoneLifecyclePlanner:
                 ):
                     end = index
                     break
-            if any(line.strip() == f"- {zone_name}" for line in lines[start + 1:end]):
+            if any(line.strip() == f"- {zone_name}" for line in lines[start + 1 : end]):
                 raise ZoneLifecycleError(
                     f"Strefa {zone_name} jest już przypisana do grupy {group}"
                 )
@@ -303,9 +282,7 @@ class ZoneLifecyclePlanner:
                 f"Nieprawidłowy adres IPv{version}: {value}"
             ) from exc
         if address.version != version:
-            raise ZoneLifecycleError(
-                f"Oczekiwano adresu IPv{version}: {value}"
-            )
+            raise ZoneLifecycleError(f"Oczekiwano adresu IPv{version}: {value}")
         return str(address)
 
     @staticmethod
@@ -336,7 +313,7 @@ class ZoneLifecyclePlanner:
         if ipv6:
             lines.append(f"@ IN AAAA {ipv6}")
         if request.add_www:
-            lines.append("@ IN TXT \"ZoneCTL: www records below\"")
+            lines.append('@ IN TXT "ZoneCTL: www records below"')
             if ipv4:
                 lines.append(f"www IN A {ipv4}")
             if ipv6:

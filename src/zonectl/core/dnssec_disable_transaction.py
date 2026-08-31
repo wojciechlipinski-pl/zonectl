@@ -90,9 +90,7 @@ def read_kasp_states(zone: str, timeout: int = 30) -> KaspReading:
     outcome = run(["rndc", "dnssec", "-status", zone], timeout)
     if outcome.returncode != 0:
         detail = (outcome.stderr or outcome.stdout).strip()
-        return KaspReading(
-            None, (), f"rndc zwrócił kod {outcome.returncode}: {detail}"
-        )
+        return KaspReading(None, (), f"rndc zwrócił kod {outcome.returncode}: {detail}")
     found = _KEY_STATE.findall(outcome.stdout or "")
     if not found:
         return KaspReading(
@@ -146,9 +144,7 @@ class DnssecDisableTransaction:
         )
         result = DnssecDisableResult(txid, plan.zone, "PLAN")
         result.stage = stage
-        target_text = (
-            plan.insecure_text if stage == "insecure" else plan.candidate_text
-        )
+        target_text = plan.insecure_text if stage == "insecure" else plan.candidate_text
 
         conflict = self._preflight(plan, target_text)
         if conflict is not None:
@@ -337,8 +333,7 @@ class DnssecDisableTransaction:
             return DnssecDisableStep(
                 "kasp-gate",
                 False,
-                f"Blokada: KASP nie schował jeszcze kluczy ({visible}). "
-                + guidance,
+                f"Blokada: KASP nie schował jeszcze kluczy ({visible}). " + guidance,
             )
         if acknowledge_unsigned:
             return DnssecDisableStep(

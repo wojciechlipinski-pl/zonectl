@@ -69,7 +69,11 @@ class CursesDialogs:
             )
 
             return CursesDialogs._edit_line(
-                win, row, len(prompt), initial, available,
+                win,
+                row,
+                len(prompt),
+                initial,
+                available,
             )
 
         except KeyboardInterrupt:
@@ -181,6 +185,7 @@ class CursesDialogs:
                 win.refresh()
             except curses.error:
                 pass
+
     @staticmethod
     def _get_key(win: curses.window) -> int:
         """Read one key, normalizing xterm/PuTTY escape sequences."""
@@ -212,8 +217,12 @@ class CursesDialogs:
 
     @classmethod
     def _edit_line(
-        cls, win: curses.window, row: int, column: int,
-        initial: str, available: int,
+        cls,
+        win: curses.window,
+        row: int,
+        column: int,
+        initial: str,
+        available: int,
     ) -> str | None:
         """Edit a real initial buffer with cursor, Delete and Home/End."""
         value = list(initial)
@@ -225,7 +234,7 @@ class CursesDialogs:
             elif cursor >= offset + available:
                 offset = cursor - available + 1
             offset = max(0, offset)
-            visible = "".join(value[offset:offset + available])
+            visible = "".join(value[offset : offset + available])
             win.move(row, column)
             win.clrtoeol()
             win.addnstr(row, column, visible.ljust(available), available)

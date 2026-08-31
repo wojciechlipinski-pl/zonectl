@@ -163,7 +163,7 @@ def test_secondary_zone_is_read_only(tmp_path: Path) -> None:
 def test_ignores_commented_zone(tmp_path: Path) -> None:
     config = tmp_path / "named.conf"
     config.write_text(
-        '''
+        """
         // zone "commented-one.pl" {
         //     type master;
         //     file "/tmp/commented-one.pl";
@@ -182,7 +182,7 @@ def test_ignores_commented_zone(tmp_path: Path) -> None:
             type master;
             file "/tmp/active.pl";
         };
-        ''',
+        """,
         encoding="utf-8",
     )
 
@@ -194,7 +194,7 @@ def test_ignores_commented_zone(tmp_path: Path) -> None:
 def test_duplicate_zone_is_reported(tmp_path: Path) -> None:
     config = tmp_path / "named.conf"
     config.write_text(
-        '''
+        """
         zone "example.pl" {
             type master;
             file "/tmp/first";
@@ -204,7 +204,7 @@ def test_duplicate_zone_is_reported(tmp_path: Path) -> None:
             type master;
             file "/tmp/second";
         };
-        ''',
+        """,
         encoding="utf-8",
     )
 

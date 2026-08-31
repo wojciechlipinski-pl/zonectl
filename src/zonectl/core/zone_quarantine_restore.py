@@ -19,6 +19,7 @@ from .runner import run
 @dataclass(frozen=True, slots=True)
 class QuarantineRestorePlan:
     """Validated package, metadata and target paths for restoration."""
+
     zone_name: str
     package_directory: Path
     package_manifest: Path
@@ -40,6 +41,7 @@ class QuarantineRestorePlan:
 @dataclass(slots=True)
 class QuarantineRestoreStep:
     """One observable step of a quarantine restoration transaction."""
+
     name: str
     ok: bool
     message: str
@@ -48,6 +50,7 @@ class QuarantineRestoreStep:
 @dataclass(slots=True)
 class QuarantineRestoreResult:
     """Final status, package path and rollback state for restoration."""
+
     transaction_id: str
     zone: str
     status: str
@@ -119,7 +122,10 @@ class QuarantineRestoreTransaction:
         file_hashes: dict[str, str] = dict(files)
         for filename, expected in file_hashes.items():
             path = package_directory / filename
-            if not path.is_file() or QuarantineRestoreTransaction._sha256(path) != expected:
+            if (
+                not path.is_file()
+                or QuarantineRestoreTransaction._sha256(path) != expected
+            ):
                 raise QuarantineRestoreError(f"Błędna suma kontrolna: {filename}")
         if set(file_hashes) != {"zone.db", "zone.conf"}:
             raise QuarantineRestoreError("Manifest ma niekompletną listę plików")
@@ -149,9 +155,7 @@ class QuarantineRestoreTransaction:
             return mode, uid, gid
 
         zone_mode, zone_uid, zone_gid = file_metadata("zone.db")
-        declaration_mode, declaration_uid, declaration_gid = file_metadata(
-            "zone.conf"
-        )
+        declaration_mode, declaration_uid, declaration_gid = file_metadata("zone.conf")
         if zone_file.exists() or active_declaration.exists():
             raise QuarantineRestoreError("Docelowe pliki strefy już istnieją")
         include_line = f'include "{active_declaration}";'
@@ -226,9 +230,7 @@ class QuarantineRestoreTransaction:
             self._atomic_write(
                 plan.active_declaration,
                 plan.packaged_declaration.read_bytes(),
-                plan.declaration_mode
-                if plan.declaration_mode is not None
-                else 0o640,
+                plan.declaration_mode if plan.declaration_mode is not None else 0o640,
                 plan.declaration_uid
                 if plan.declaration_uid is not None
                 else declaration_parent.st_uid,
@@ -237,7 +239,9 @@ class QuarantineRestoreTransaction:
                 else declaration_parent.st_gid,
             )
             declaration_created = True
-            separator = b"" if not index_original or index_original.endswith(b"\n") else b"\n"
+            separator = (
+                b"" if not index_original or index_original.endswith(b"\n") else b"\n"
+            )
             self._atomic_write(
                 plan.managed_index,
                 index_original + separator + (plan.include_line + "\n").encode(),
@@ -247,7 +251,9 @@ class QuarantineRestoreTransaction:
             )
             index_written = True
             result.steps.append(
-                QuarantineRestoreStep("configuration", True, "Odtworzono deklarację i include")
+                QuarantineRestoreStep(
+                    "configuration", True, "Odtworzono deklarację i include"
+                )
             )
             check_config = self.config_validator(plan.root_config)
             result.steps.append(check_config)
@@ -284,7 +290,9 @@ class QuarantineRestoreTransaction:
                 if activation_attempted:
                     restored = self.activator(plan.zone_name)
                     result.steps.append(
-                        QuarantineRestoreStep("rndc-reconfig-rollback", restored.ok, restored.message)
+                        QuarantineRestoreStep(
+                            "rndc-reconfig-rollback", restored.ok, restored.message
+                        )
                     )
                     if not restored.ok:
                         raise RuntimeError(restored.message)
@@ -295,7 +303,9 @@ class QuarantineRestoreTransaction:
                 )
             else:
                 result.steps.append(
-                    QuarantineRestoreStep("rollback", True, "Usunięto odtworzone kopie robocze")
+                    QuarantineRestoreStep(
+                        "rollback", True, "Usunięto odtworzone kopie robocze"
+                    )
                 )
             result.rolled_back = rollback_ok
             result.status = "ROLLED-BACK" if rollback_ok else "ROLLBACK-FAILED"
@@ -306,7 +316,9 @@ class QuarantineRestoreTransaction:
         return hashlib.sha256(path.read_bytes()).hexdigest()
 
     @staticmethod
-    def _atomic_write(path: Path, content: bytes, mode: int, uid: int, gid: int) -> None:
+    def _atomic_write(
+        path: Path, content: bytes, mode: int, uid: int, gid: int
+    ) -> None:
         path.parent.mkdir(parents=True, exist_ok=True, mode=0o750)
         fd, name = tempfile.mkstemp(prefix=f".{path.name}.", dir=path.parent)
         temporary = Path(name)
@@ -326,17 +338,29 @@ class QuarantineRestoreTransaction:
     @staticmethod
     def _validate_zone(name: str, path: Path) -> QuarantineRestoreStep:
         outcome = run(["named-checkzone", name, str(path)], 30)
-        return QuarantineRestoreStep("named-checkzone", outcome.returncode == 0, (outcome.stdout or outcome.stderr).strip() or f"kod {outcome.returncode}")
+        return QuarantineRestoreStep(
+            "named-checkzone",
+            outcome.returncode == 0,
+            (outcome.stdout or outcome.stderr).strip() or f"kod {outcome.returncode}",
+        )
 
     @staticmethod
     def _validate_config(path: Path) -> QuarantineRestoreStep:
         outcome = run(["named-checkconf", str(path)], 30)
-        return QuarantineRestoreStep("named-checkconf", outcome.returncode == 0, (outcome.stdout or outcome.stderr).strip() or f"kod {outcome.returncode}")
+        return QuarantineRestoreStep(
+            "named-checkconf",
+            outcome.returncode == 0,
+            (outcome.stdout or outcome.stderr).strip() or f"kod {outcome.returncode}",
+        )
 
     @staticmethod
     def _activate_bind(_name: str) -> QuarantineRestoreStep:
         outcome = run(["rndc", "reconfig"], 30)
-        return QuarantineRestoreStep("rndc-reconfig", outcome.returncode == 0, (outcome.stdout or outcome.stderr).strip() or f"kod {outcome.returncode}")
+        return QuarantineRestoreStep(
+            "rndc-reconfig",
+            outcome.returncode == 0,
+            (outcome.stdout or outcome.stderr).strip() or f"kod {outcome.returncode}",
+        )
 
     @staticmethod
     def _verify_loaded(name: str) -> QuarantineRestoreStep:
@@ -348,4 +372,8 @@ class QuarantineRestoreTransaction:
             if attempt < 9:
                 time.sleep(0.25)
         assert outcome is not None
-        return QuarantineRestoreStep("rndc-zonestatus", outcome.returncode == 0, (outcome.stdout or outcome.stderr).strip() or f"kod {outcome.returncode}")
+        return QuarantineRestoreStep(
+            "rndc-zonestatus",
+            outcome.returncode == 0,
+            (outcome.stdout or outcome.stderr).strip() or f"kod {outcome.returncode}",
+        )

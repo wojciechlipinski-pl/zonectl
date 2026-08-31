@@ -111,7 +111,7 @@ class ZoneModelTests(unittest.TestCase):
         added = record(
             "temporary.example.org.",
             "TXT",
-            "\"temporary\"",
+            '"temporary"',
         )
 
         index = self.model.add(added)

@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from typing import Any
 
 import curses
 
@@ -121,9 +120,7 @@ class RecordEditor:
                 adjust_offset()
 
                 visible_width = max(1, max_width)
-                visible = "".join(
-                    value[offset : offset + visible_width]
-                )
+                visible = "".join(value[offset : offset + visible_width])
 
                 try:
                     win.move(row, column)
@@ -378,13 +375,14 @@ class RecordEditor:
                 except curses.error:
                     has_colors = False
                 heading_attr = curses.A_BOLD | (
-                    curses.color_pair(4)
-                    if has_colors else curses.A_NORMAL
+                    curses.color_pair(4) if has_colors else curses.A_NORMAL
                 )
                 try:
                     for row in range(2, height - 2):
                         win.addnstr(
-                            row, divider + 1, " " * (width - divider - 2),
+                            row,
+                            divider + 1,
+                            " " * (width - divider - 2),
                             width - divider - 2,
                         )
                         win.addch(row, divider, curses.ACS_VLINE, curses.A_DIM)
@@ -404,17 +402,17 @@ class RecordEditor:
                 panel_row = 4
                 for label, value in preview:
                     put(panel_row, right, label)
-                    for part in [str(value)[i:i + max(1, right_width - 13)] for i in range(0, max(1, len(str(value))), max(1, right_width - 13))]:
+                    for part in [
+                        str(value)[i : i + max(1, right_width - 13)]
+                        for i in range(
+                            0, max(1, len(str(value))), max(1, right_width - 13)
+                        )
+                    ]:
                         put(panel_row, right + 13, part)
                         panel_row += 1
                     panel_row += 1
 
-            footer = (
-                " ↑/↓ pole"
-                "   Enter edytuj"
-                "   F2 zapisz"
-                "   Esc anuluj "
-            )
+            footer = " ↑/↓ pole   Enter edytuj   F2 zapisz   Esc anuluj "
             put(
                 height - 2,
                 0,
@@ -447,8 +445,7 @@ class RecordEditor:
                     initial_value=values[active],
                     max_width=max(
                         1,
-                        (divider - 15) if width >= 100 and height >= 20
-                        else width - 14,
+                        (divider - 15) if width >= 100 and height >= 20 else width - 14,
                     ),
                 )
 
@@ -513,10 +510,17 @@ class RecordEditor:
         if ttl is not None and not 0 <= ttl <= 2147483647:
             return None, "TTL musi mieć zakres 0–2147483647."
 
-        rdata = " ".join((
-            primary.strip(), administrator.strip(), soa[2],
-            refresh.strip(), retry.strip(), expire.strip(), minimum.strip(),
-        ))
+        rdata = " ".join(
+            (
+                primary.strip(),
+                administrator.strip(),
+                soa[2],
+                refresh.strip(),
+                retry.strip(),
+                expire.strip(),
+                minimum.strip(),
+            )
+        )
         validation_error = validate_rdata("SOA", rdata)
         if validation_error:
             return None, validation_error
@@ -534,11 +538,21 @@ class RecordEditor:
             return None
 
         labels = (
-            "Primary NS", "Administrator", "Refresh", "Retry",
-            "Expire", "Minimum", "TTL",
+            "Primary NS",
+            "Administrator",
+            "Refresh",
+            "Retry",
+            "Expire",
+            "Minimum",
+            "TTL",
         )
         values = [
-            soa[0], soa[1], soa[3], soa[4], soa[5], soa[6],
+            soa[0],
+            soa[1],
+            soa[3],
+            soa[4],
+            soa[5],
+            soa[6],
             "" if record.ttl is None else str(record.ttl),
         ]
         active = 0
@@ -555,9 +569,13 @@ class RecordEditor:
         def build() -> tuple[DNSRecord | None, str]:
             return self.build_soa_record(
                 record,
-                primary=values[0], administrator=values[1],
-                refresh=values[2], retry=values[3], expire=values[4],
-                minimum=values[5], ttl_text=values[6],
+                primary=values[0],
+                administrator=values[1],
+                refresh=values[2],
+                retry=values[3],
+                expire=values[4],
+                minimum=values[5],
+                ttl_text=values[6],
             )
 
         try:
@@ -570,14 +588,21 @@ class RecordEditor:
                         return
                     try:
                         win.addnstr(
-                            row, column, str(text),
-                            max(0, width - column - 1), attr,
+                            row,
+                            column,
+                            str(text),
+                            max(0, width - column - 1),
+                            attr,
                         )
                     except curses.error:
                         pass
 
-                put(0, 0, f" Edycja SOA: {zone.name} ".ljust(width),
-                    curses.A_REVERSE | curses.A_BOLD)
+                put(
+                    0,
+                    0,
+                    f" Edycja SOA: {zone.name} ".ljust(width),
+                    curses.A_REVERSE | curses.A_BOLD,
+                )
                 put(2, 2, "Serial", curses.A_BOLD)
                 put(2, 20, f"{soa[2]} (automatycznie podbijany przy zapisie)")
                 for index, (label, value) in enumerate(zip(labels, values)):
@@ -585,14 +610,18 @@ class RecordEditor:
                     selected = index == active
                     attr = active_field_attr() if selected else curses.A_NORMAL
                     put(row, 0, field_marker(selected), attr)
-                    put(row, 2, f"{label:<15}: ",
-                        attr if selected else curses.A_BOLD)
+                    put(row, 2, f"{label:<15}: ", attr if selected else curses.A_BOLD)
                     put(row, 20, value, attr)
                 if message:
                     put(height - 4, 2, message, self._error_attr)
-                put(height - 2, 0,
-                    " ↑/↓ pole   Enter edytuj   F2 zatwierdź zmianę   Esc anuluj ".ljust(width),
-                    curses.A_REVERSE)
+                put(
+                    height - 2,
+                    0,
+                    " ↑/↓ pole   Enter edytuj   F2 zatwierdź zmianę   Esc anuluj ".ljust(
+                        width
+                    ),
+                    curses.A_REVERSE,
+                )
                 win.refresh()
                 key = self._get_key(win)
 
@@ -609,7 +638,9 @@ class RecordEditor:
                 if key in (10, 13, curses.KEY_ENTER):
                     self._save_requested = False
                     edited = self._edit_line(
-                        win=win, row=4 + active * 2, column=20,
+                        win=win,
+                        row=4 + active * 2,
+                        column=20,
                         initial_value=values[active],
                         max_width=max(1, width - 22),
                     )

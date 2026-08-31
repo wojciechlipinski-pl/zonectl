@@ -94,9 +94,7 @@ def test_tui_wizard_creates_and_adds_zone(monkeypatch) -> None:
     app._create_zone_wizard(FakeWindow())
 
     assert [zone.name for zone in app.all_zones] == ["new.example"]
-    assert app.all_zones[0].file == Path(
-        "/var/lib/bind/Primary/new.example"
-    )
+    assert app.all_zones[0].file == Path("/var/lib/bind/Primary/new.example")
     assert app.all_zones[0].group == "Klienci"
     assert len(messages) == 2
 
@@ -117,15 +115,17 @@ def test_tui_wizard_cancel_before_plan_has_no_effect(monkeypatch) -> None:
 def test_tui_wizard_shows_validation_error(monkeypatch) -> None:
     app = CursesApp([], bind=object())
     messages = []
-    forms = iter((
-        ZoneCreateForm(
-            "bad_name",
-            "ns1.example.pl.",
-            "hostmaster.example.pl.",
-            "ns1.example.pl.",
-        ),
-        None,
-    ))
+    forms = iter(
+        (
+            ZoneCreateForm(
+                "bad_name",
+                "ns1.example.pl.",
+                "hostmaster.example.pl.",
+                "ns1.example.pl.",
+            ),
+            None,
+        )
+    )
     monkeypatch.setattr(
         ZoneCreateDialog,
         "collect",
@@ -152,12 +152,16 @@ def test_tui_wizard_shows_validation_error(monkeypatch) -> None:
 def test_tui_wizard_returns_to_preserved_form_after_preview(monkeypatch) -> None:
     app = CursesApp([], bind=object())
     first = ZoneCreateForm(
-        "test-zone.example", "ns1.example.pl.",
-        "hostmaster.example.pl.", "ns1.example.pl.",
+        "test-zone.example",
+        "ns1.example.pl.",
+        "hostmaster.example.pl.",
+        "ns1.example.pl.",
     )
     corrected = ZoneCreateForm(
-        "test-zone.example", "ns1.example.pl.",
-        "admin.example.pl.", "ns1.example.pl.",
+        "test-zone.example",
+        "ns1.example.pl.",
+        "admin.example.pl.",
+        "ns1.example.pl.",
     )
     initial_values = []
     forms = iter((first, corrected))
@@ -165,8 +169,7 @@ def test_tui_wizard_returns_to_preserved_form_after_preview(monkeypatch) -> None
         ZoneCreateDialog,
         "collect",
         lambda *args, **kwargs: (
-            initial_values.append(kwargs.get("initial"))
-            or next(forms)
+            initial_values.append(kwargs.get("initial")) or next(forms)
         ),
     )
     confirmations = iter((False, True))
@@ -185,12 +188,16 @@ def test_tui_wizard_returns_to_preserved_form_after_preview(monkeypatch) -> None
     def apply(self, plan, *, commit=False, activate=False):
         assert "admin.example.pl." in plan.zone_text
         return ZoneCreateResult(
-            "tx", plan.zone_name, "COMMIT", committed=True,
+            "tx",
+            plan.zone_name,
+            "COMMIT",
+            committed=True,
             steps=[ZoneCreateStep("loaded", True, "OK")],
         )
 
     monkeypatch.setattr(
-        "zonectl.ui.curses_app.ZoneCreateTransaction.apply", apply,
+        "zonectl.ui.curses_app.ZoneCreateTransaction.apply",
+        apply,
     )
 
     app._create_zone_wizard(FakeWindow())

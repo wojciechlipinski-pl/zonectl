@@ -78,9 +78,7 @@ class DnssecStatusView:
             "STAN KASP",
         ]
         kasp_lines = [
-            line.strip()
-            for line in report.rndc_status
-            if line.strip().startswith("-")
+            line.strip() for line in report.rndc_status if line.strip().startswith("-")
         ]
         lines.extend(kasp_lines or ["- brak danych KASP"])
         lines.extend(("", "DS DO PUBLIKACJI U REJESTRATORA"))
@@ -116,11 +114,7 @@ class DnssecStatusView:
         else:
             lines.append(
                 "Publikacja DS        "
-                + (
-                    "DOZWOLONA"
-                    if publication_allowed
-                    else "JESZCZE ZABLOKOWANA"
-                )
+                + ("DOZWOLONA" if publication_allowed else "JESZCZE ZABLOKOWANA")
             )
         return cls(
             zone=report.zone,
@@ -163,12 +157,8 @@ class DnssecStatusView:
                 continue
             key_tag, algorithm, digest_type = fields[:3]
             digest = "".join(fields[3:]).upper()
-            algorithm_label = cls._algorithm_label(
-                algorithm, cls.DNSSEC_ALGORITHMS
-            )
-            digest_label = cls._algorithm_label(
-                digest_type, cls.DS_DIGEST_ALGORITHMS
-            )
+            algorithm_label = cls._algorithm_label(algorithm, cls.DNSSEC_ALGORITHMS)
+            digest_label = cls._algorithm_label(digest_type, cls.DS_DIGEST_ALGORITHMS)
             if index:
                 lines.append("")
             lines.extend(

@@ -124,9 +124,7 @@ def test_insecure_commit_swaps_policy_and_keeps_inline_signing(
 ) -> None:
     plan, declaration = setup_plan(tmp_path)
 
-    result = engine(tmp_path).apply(
-        plan, stage="insecure", commit=True, activate=True
-    )
+    result = engine(tmp_path).apply(plan, stage="insecure", commit=True, activate=True)
 
     assert result.status == "COMMIT"
     text = declaration.read_text(encoding="utf-8")

@@ -60,7 +60,8 @@ class BindAclPlanner:
     ) -> BindAclPlan:
         inventory = BindAccessInventoryReader(self.root_config).collect()
         matches = [
-            item for item in inventory.definitions
+            item
+            for item in inventory.definitions
             if item.kind == "acl" and item.name.casefold() == name.casefold()
         ]
         if len(matches) != 1:
@@ -72,7 +73,8 @@ class BindAclPlanner:
         masked = BindAccessInventoryReader._mask_comments(original)
         match = next(
             (
-                found for found in self._acl.finditer(masked)
+                found
+                for found in self._acl.finditer(masked)
                 if (found.group("quoted") or found.group("plain")).casefold()
                 == name.casefold()
             ),
@@ -81,7 +83,9 @@ class BindAclPlanner:
         if match is None:
             raise BindAclPlanError(f"Nie można wydzielić bloku ACL {name}")
         opening = masked.find("{", match.start(), match.end())
-        closing = BindConfigDiscovery._find_block_end(masked, opening, definition.source)
+        closing = BindConfigDiscovery._find_block_end(
+            masked, opening, definition.source
+        )
         body = original[opening + 1 : closing]
         if entries is None:
             candidate_body, changed, removed = self._rewrite_body(
@@ -111,8 +115,10 @@ class BindAclPlanner:
         if impact.blockers:
             validation_ok = False
             validation_message = (
-                validation_message + "; " if validation_message else ""
-            ) + "raport wpływu: " + "; ".join(impact.blockers)
+                (validation_message + "; " if validation_message else "")
+                + "raport wpływu: "
+                + "; ".join(impact.blockers)
+            )
         return BindAclPlan(
             name=name,
             source=definition.source,
@@ -150,7 +156,9 @@ class BindAclPlanner:
             seen.add(key)
             result.append(value)
         if name.casefold() == "trusted" and "localhost" not in {
-            value.lstrip("!").casefold() for value in result if not value.startswith("!")
+            value.lstrip("!").casefold()
+            for value in result
+            if not value.startswith("!")
         }:
             raise BindAclPlanError("ACL trusted musi zachować wpis localhost")
         return tuple(result)
@@ -242,7 +250,9 @@ class BindAclPlanner:
             )
             root_copy = temporary_root / self.root_config.relative_to(config_root)
             outcome = run(["named-checkconf", str(root_copy)], 30)
-            detail = (outcome.stdout or outcome.stderr).strip() or f"kod {outcome.returncode}"
+            detail = (
+                outcome.stdout or outcome.stderr
+            ).strip() or f"kod {outcome.returncode}"
             return outcome.returncode == 0, detail
         except (OSError, ValueError) as exc:
             return False, str(exc)

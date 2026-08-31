@@ -114,9 +114,7 @@ class DiscoveryResult:
         wanted = name.rstrip(".").casefold()
 
         matches = [
-            zone
-            for zone in self.zones
-            if zone.name.rstrip(".").casefold() == wanted
+            zone for zone in self.zones if zone.name.rstrip(".").casefold() == wanted
         ]
 
         if not matches:
@@ -149,12 +147,12 @@ class BindConfigDiscovery:
 
     _zone_start_re = re.compile(
         r'\bzone\s+["\'](?P<name>[^"\']+)["\']\s*'
-        r'(?:IN\s*)?\{',
+        r"(?:IN\s*)?\{",
         re.IGNORECASE,
     )
 
     _type_re = re.compile(
-        r'\btype\s+(?P<value>[A-Za-z_-]+)\s*;',
+        r"\btype\s+(?P<value>[A-Za-z_-]+)\s*;",
         re.IGNORECASE,
     )
 
@@ -164,12 +162,12 @@ class BindConfigDiscovery:
     )
 
     _dnssec_policy_re = re.compile(
-        r'\bdnssec-policy\s+(?P<value>[^;]+?)\s*;',
+        r"\bdnssec-policy\s+(?P<value>[^;]+?)\s*;",
         re.IGNORECASE,
     )
 
     _inline_signing_re = re.compile(
-        r'\binline-signing\s+(?P<value>yes|no)\s*;',
+        r"\binline-signing\s+(?P<value>yes|no)\s*;",
         re.IGNORECASE,
     )
 
@@ -287,8 +285,7 @@ class BindConfigDiscovery:
 
             if opening < 0:
                 raise BindDiscoveryError(
-                    f"Nie znaleziono początku bloku strefy "
-                    f'w pliku {source.path}'
+                    f"Nie znaleziono początku bloku strefy w pliku {source.path}"
                 )
 
             closing = self._find_block_end(
@@ -297,7 +294,7 @@ class BindConfigDiscovery:
                 source.path,
             )
 
-            body = source.text[opening + 1:closing]
+            body = source.text[opening + 1 : closing]
             name = match.group("name").rstrip(".")
 
             zone = self._zone_from_block(
@@ -324,11 +321,14 @@ class BindConfigDiscovery:
         body: str,
         config_file: Path,
     ) -> ZoneConfig:
-        zone_type = (self._match_value(
-            self._type_re,
-            body,
-            default="unknown",
-        ) or "unknown").lower()
+        zone_type = (
+            self._match_value(
+                self._type_re,
+                body,
+                default="unknown",
+            )
+            or "unknown"
+        ).lower()
 
         raw_file = self._match_value(
             self._file_re,
@@ -337,9 +337,7 @@ class BindConfigDiscovery:
         )
 
         source_file = (
-            self._resolve_zone_path(raw_file, config_file.parent)
-            if raw_file
-            else None
+            self._resolve_zone_path(raw_file, config_file.parent) if raw_file else None
         )
 
         dnssec_policy = self._match_value(
@@ -349,13 +347,13 @@ class BindConfigDiscovery:
         )
 
         inline_signing = (
-            (self._match_value(
+            self._match_value(
                 self._inline_signing_re,
                 body,
                 default="no",
-            ) or "no").lower()
-            == "yes"
-        )
+            )
+            or "no"
+        ).lower() == "yes"
 
         raw_key_directory = self._match_value(
             self._key_directory_re,
@@ -381,9 +379,7 @@ class BindConfigDiscovery:
             signed_file = Path(f"{source_file}.signed")
             signed_journal_file = Path(f"{source_file}.signed.jnl")
 
-        source_exists = bool(
-            source_file is not None and source_file.is_file()
-        )
+        source_exists = bool(source_file is not None and source_file.is_file())
 
         source_writable = bool(
             source_file is not None
@@ -394,17 +390,12 @@ class BindConfigDiscovery:
             )
         )
 
-        journal_exists = bool(
-            journal_file is not None and journal_file.exists()
-        )
+        journal_exists = bool(journal_file is not None and journal_file.exists())
 
-        signed_exists = bool(
-            signed_file is not None and signed_file.exists()
-        )
+        signed_exists = bool(signed_file is not None and signed_file.exists())
 
         signed_journal_exists = bool(
-            signed_journal_file is not None
-            and signed_journal_file.exists()
+            signed_journal_file is not None and signed_journal_file.exists()
         )
 
         return ZoneConfig(
@@ -501,9 +492,7 @@ class BindConfigDiscovery:
                 if depth == 0:
                     return index
 
-        raise BindDiscoveryError(
-            f"Niedomknięty blok konfiguracji w {source_path}"
-        )
+        raise BindDiscoveryError(f"Niedomknięty blok konfiguracji w {source_path}")
 
     @staticmethod
     def _strip_comments(text: str) -> str:

@@ -34,10 +34,12 @@ def test_add_record_creates_pending_add_change() -> None:
 
 def soa_record() -> DNSRecord:
     return DNSRecord(
-        owner="example.pl.", ttl=3600, rrclass="IN", rtype="SOA",
+        owner="example.pl.",
+        ttl=3600,
+        rrclass="IN",
+        rtype="SOA",
         rdata=(
-            "ns1.example.pl. hostmaster.example.pl. "
-            "2026082101 3600 900 1209600 300"
+            "ns1.example.pl. hostmaster.example.pl. 2026082101 3600 900 1209600 300"
         ),
         raw="",
     )
@@ -46,8 +48,12 @@ def soa_record() -> DNSRecord:
 def test_build_soa_record_preserves_serial() -> None:
     updated, error = RecordEditor.build_soa_record(
         soa_record(),
-        primary="ns2.example.pl.", administrator="dns.example.pl.",
-        refresh="7200", retry="1200", expire="604800", minimum="600",
+        primary="ns2.example.pl.",
+        administrator="dns.example.pl.",
+        refresh="7200",
+        retry="1200",
+        expire="604800",
+        minimum="600",
         ttl_text="",
     )
 
@@ -55,17 +61,20 @@ def test_build_soa_record_preserves_serial() -> None:
     assert updated is not None
     assert updated.ttl is None
     assert updated.rdata == (
-        "ns2.example.pl. dns.example.pl. "
-        "2026082101 7200 1200 604800 600"
+        "ns2.example.pl. dns.example.pl. 2026082101 7200 1200 604800 600"
     )
 
 
 def test_build_soa_record_rejects_invalid_timer() -> None:
     updated, error = RecordEditor.build_soa_record(
         soa_record(),
-        primary="ns1.example.pl.", administrator="hostmaster.example.pl.",
-        refresh="not-a-number", retry="900", expire="1209600",
-        minimum="300", ttl_text="3600",
+        primary="ns1.example.pl.",
+        administrator="hostmaster.example.pl.",
+        refresh="not-a-number",
+        retry="900",
+        expire="1209600",
+        minimum="300",
+        ttl_text="3600",
     )
 
     assert updated is None
@@ -76,11 +85,14 @@ def test_edit_record_routes_soa_to_dedicated_editor(monkeypatch) -> None:
     expected = soa_record()
     editor = RecordEditor()
     monkeypatch.setattr(
-        editor, "edit_soa_dialog", lambda win, record, zone: expected,
+        editor,
+        "edit_soa_dialog",
+        lambda win, record, zone: expected,
     )
 
     result = editor.edit_record_dialog(
-        object(), soa_record(),
+        object(),
+        soa_record(),
         Zone(name="example.pl", file=Path("/tmp/example.pl")),
     )
 

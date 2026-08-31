@@ -60,20 +60,14 @@ class BulkOperation:
         try:
             tokens = shlex.split(action_text)
         except ValueError as exc:
-            raise BulkOperationError(
-                f"Nieprawidłowe cudzysłowy: {exc}"
-            ) from exc
+            raise BulkOperationError(f"Nieprawidłowe cudzysłowy: {exc}") from exc
 
         if len(tokens) != 2 or tokens[0].casefold() != "set":
-            raise BulkOperationError(
-                "SET wymaga jednego przypisania, np. SET ttl=7200"
-            )
+            raise BulkOperationError("SET wymaga jednego przypisania, np. SET ttl=7200")
 
         assignment = tokens[1]
         if "=" not in assignment:
-            raise BulkOperationError(
-                "Brak znaku '=' w przypisaniu SET"
-            )
+            raise BulkOperationError("Brak znaku '=' w przypisaniu SET")
 
         field, value = assignment.split("=", 1)
         field = {
@@ -82,24 +76,16 @@ class BulkOperation:
         }.get(field.casefold(), field.casefold())
 
         if field not in {"ttl", "value"}:
-            raise BulkOperationError(
-                "SET obsługuje obecnie pola ttl i value"
-            )
+            raise BulkOperationError("SET obsługuje obecnie pola ttl i value")
         if value == "":
-            raise BulkOperationError(
-                f"Wartość pola {field} nie może być pusta"
-            )
+            raise BulkOperationError(f"Wartość pola {field} nie może być pusta")
         if field == "ttl" and value != "-":
             try:
                 ttl = int(value)
             except ValueError as exc:
-                raise BulkOperationError(
-                    "TTL musi być liczbą lub '-'"
-                ) from exc
+                raise BulkOperationError("TTL musi być liczbą lub '-'") from exc
             if not 0 <= ttl <= 2147483647:
-                raise BulkOperationError(
-                    "TTL musi mieć zakres 0–2147483647"
-                )
+                raise BulkOperationError("TTL musi mieć zakres 0–2147483647")
 
         return cls(
             query=query,
@@ -112,11 +98,7 @@ class BulkOperation:
         self,
         model: ZoneModel,
     ) -> list[ZoneRecordView]:
-        visible = [
-            view
-            for view in model.record_views
-            if not view.deleted
-        ]
+        visible = [view for view in model.record_views if not view.deleted]
         return RecordFilter(self.query).apply(
             visible,
             model.zone_name,
@@ -124,9 +106,7 @@ class BulkOperation:
 
     def _replacement(self, record: DNSRecord) -> DNSRecord:
         if self.action is not BulkAction.SET:
-            raise BulkOperationError(
-                "Operacja DELETE nie tworzy rekordu zastępczego"
-            )
+            raise BulkOperationError("Operacja DELETE nie tworzy rekordu zastępczego")
         if self.field == "ttl":
             ttl = None if self.value == "-" else int(self.value or "")
             candidate = replace(record, ttl=ttl)
@@ -136,15 +116,9 @@ class BulkOperation:
             raise BulkOperationError("Brak obsługiwanego pola SET")
 
         issues = validate_record(candidate)
-        errors = [
-            issue.message
-            for issue in issues
-            if issue.severity.value == "ERROR"
-        ]
+        errors = [issue.message for issue in issues if issue.severity.value == "ERROR"]
         if errors:
-            raise BulkOperationError(
-                f"{record.owner}: {errors[0]}"
-            )
+            raise BulkOperationError(f"{record.owner}: {errors[0]}")
         return candidate
 
     def matches(self, model: ZoneModel) -> list[BulkMatch]:
@@ -168,10 +142,7 @@ class BulkOperation:
         self,
         model: ZoneModel,
     ) -> list[DNSRecord]:
-        changes = {
-            match.identifier: match.after
-            for match in self.matches(model)
-        }
+        changes = {match.identifier: match.after for match in self.matches(model)}
         return [
             replacement
             for view in model.record_views

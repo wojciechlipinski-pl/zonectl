@@ -117,9 +117,7 @@ class DnssecDsChecker:
         kasp_output = kasp.stdout + kasp.stderr
         kasp_ready = kasp.returncode == 0 and self._kasp_ready(kasp_output)
         kasp_ds_state = (
-            self._kasp_ds_state(kasp_output)
-            if kasp.returncode == 0
-            else None
+            self._kasp_ds_state(kasp_output) if kasp.returncode == 0 else None
         )
 
         local = self._dig(self.local_server, zone, "DNSKEY")
@@ -223,7 +221,9 @@ class DnssecDsChecker:
             next_action = "Nie publikuj DS; poczekaj na gotowość KASP."
         else:
             status = "NOT_PUBLISHED"
-            next_action = "DS nie jest widoczny; opublikuj go u rejestratora lub poczekaj."
+            next_action = (
+                "DS nie jest widoczny; opublikuj go u rejestratora lub poczekaj."
+            )
 
         return DnssecDsCheck(
             zone=zone,

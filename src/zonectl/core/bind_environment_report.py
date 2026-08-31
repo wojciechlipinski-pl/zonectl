@@ -130,7 +130,9 @@ class BindEnvironmentReporter:
             try:
                 text = path.read_text(encoding="utf-8", errors="replace")
             except OSError as exc:
-                raise BindDiscoveryError(f"Nie można odczytać konfiguracji {path}: {exc}") from exc
+                raise BindDiscoveryError(
+                    f"Nie można odczytać konfiguracji {path}: {exc}"
+                ) from exc
             text = BindConfigDiscovery._strip_comments(text)
             for policy in self._response_policy_re.finditer(text):
                 for match in self._policy_zone_re.finditer(policy.group("body")):
@@ -156,9 +158,7 @@ class BindEnvironmentReporter:
         timer_enabled = self._systemctl_bool("is-enabled", timer_unit)
         timer_active = self._systemctl_bool("is-active", timer_unit)
         service_result = self._systemctl_property(service_unit, "Result")
-        timer_last_trigger = self._systemctl_property(
-            timer_unit, "LastTriggerUSec"
-        )
+        timer_last_trigger = self._systemctl_property(timer_unit, "LastTriggerUSec")
         timer_next_elapse = self._systemctl_property(
             timer_unit, "NextElapseUSecRealtime"
         )
@@ -184,7 +184,13 @@ class BindEnvironmentReporter:
         else:
             health = "STALE"
 
-        mode = "MANAGED" if managed else "EXTERNAL" if timer_enabled or updater_path else "OFF"
+        mode = (
+            "MANAGED"
+            if managed
+            else "EXTERNAL"
+            if timer_enabled or updater_path
+            else "OFF"
+        )
         serial = values.get("serial")
         raw_nodes = values.get("nodes")
         nodes = int(raw_nodes) if raw_nodes and raw_nodes.isdigit() else None

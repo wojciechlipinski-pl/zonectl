@@ -84,8 +84,7 @@ def test_pending_changes_f2_commits_and_reloads_session(
 ) -> None:
     source = tmp_path / "example.pl"
     source.write_text(
-        "$TTL 3600\n"
-        "www 300 IN A 192.0.2.10\n",
+        "$TTL 3600\nwww 300 IN A 192.0.2.10\n",
         encoding="utf-8",
     )
     zone = Zone(name="example.pl", file=source)
@@ -138,6 +137,5 @@ def test_pending_changes_f2_commits_and_reloads_session(
     assert session.model.change_count == 0
     assert session.model.records[0].rdata == "192.0.2.40"
     assert source.read_text(encoding="utf-8") == (
-        "$TTL 3600\n"
-        "www\t300\tIN\tA\t192.0.2.40\n"
+        "$TTL 3600\nwww\t300\tIN\tA\t192.0.2.40\n"
     )

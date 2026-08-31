@@ -24,10 +24,14 @@ def _arguments(tmp_path: Path) -> tuple[list[str], Path]:
     )
     index.write_text("", encoding="utf-8")
     return [
-        "--root-config", str(root),
-        "--local-config", str(local),
-        "--managed-config", str(index),
-        "--managed-zone-directory", str(managed),
+        "--root-config",
+        str(root),
+        "--local-config",
+        str(local),
+        "--managed-config",
+        str(index),
+        "--managed-zone-directory",
+        str(managed),
     ], local
 
 
@@ -59,9 +63,7 @@ def test_migration_plan_cli_is_read_only(monkeypatch, tmp_path, capsys) -> None:
     assert not (tmp_path / "bind/zonectl-zones.d/example.pl.conf").exists()
 
 
-def test_migration_plan_cli_rejects_unknown_zone(
-    monkeypatch, tmp_path, capsys
-) -> None:
+def test_migration_plan_cli_rejects_unknown_zone(monkeypatch, tmp_path, capsys) -> None:
     monkeypatch.setattr(cli.ToolkitConfig, "load", lambda self: _EmptyConfig())
     paths, _ = _arguments(tmp_path)
 
@@ -89,9 +91,7 @@ def test_migration_apply_requires_both_write_flags(
     monkeypatch.setattr(cli.ToolkitConfig, "load", lambda self: _EmptyConfig())
     paths, _ = _arguments(tmp_path)
 
-    code = cli.main([
-        "zone", "migration-apply", "example.pl", *paths, "--commit"
-    ])
+    code = cli.main(["zone", "migration-apply", "example.pl", *paths, "--commit"])
 
     assert code == 2
     assert "--commit i --activate" in capsys.readouterr().err

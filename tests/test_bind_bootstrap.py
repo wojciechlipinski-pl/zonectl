@@ -34,9 +34,7 @@ def test_plan_has_no_side_effects(tmp_path: Path) -> None:
         managed_zone_directory=declarations,
         root_config=root,
     )
-    result = BindBootstrapTransaction(
-        manifests, config_validator=valid
-    ).apply(plan)
+    result = BindBootstrapTransaction(manifests, config_validator=valid).apply(plan)
     assert result.status == "DRY-RUN"
     assert not index.exists()
     assert not declarations.exists()
@@ -55,9 +53,9 @@ def test_commit_creates_index_directory_include_backup_and_manifest(
         managed_zone_directory=declarations,
         root_config=root,
     )
-    result = BindBootstrapTransaction(
-        manifests, config_validator=valid
-    ).apply(plan, commit=True)
+    result = BindBootstrapTransaction(manifests, config_validator=valid).apply(
+        plan, commit=True
+    )
     assert result.status == "COMMIT"
     assert index.read_text().startswith("# ZoneCTL")
     assert declarations.is_dir()
@@ -73,9 +71,7 @@ def test_existing_index_is_preserved_and_bootstrap_is_idempotent(
     local, root, index, declarations, manifests = layout(tmp_path)
     index.write_text('// keep\ninclude "/custom/example.conf";\n')
     declarations.mkdir()
-    transaction = BindBootstrapTransaction(
-        manifests, config_validator=valid
-    )
+    transaction = BindBootstrapTransaction(manifests, config_validator=valid)
     first = transaction.apply(
         transaction.plan(
             local_config=local,
@@ -107,9 +103,7 @@ def test_validation_failure_restores_original_state(tmp_path: Path) -> None:
     def invalid(_path: Path) -> BindBootstrapStep:
         return BindBootstrapStep("named-checkconf", False, "bad config")
 
-    transaction = BindBootstrapTransaction(
-        manifests, config_validator=invalid
-    )
+    transaction = BindBootstrapTransaction(manifests, config_validator=invalid)
     result = transaction.apply(
         transaction.plan(
             local_config=local,

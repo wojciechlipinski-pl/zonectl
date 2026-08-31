@@ -20,9 +20,9 @@ def setup(tmp_path: Path):
         name: hashlib.sha256((package / name).read_bytes()).hexdigest()
         for name in ("zone.db", "zone.conf")
     }
-    (package / "manifest.json").write_text(json.dumps({
-        "zone": "example.invalid", "status": "QUARANTINED", "files": files
-    }))
+    (package / "manifest.json").write_text(
+        json.dumps({"zone": "example.invalid", "status": "QUARANTINED", "files": files})
+    )
     zone = tmp_path / "zones/example.invalid"
     declaration = tmp_path / "bind/zones.d/example.invalid.conf"
     index = tmp_path / "bind/zones.conf"
@@ -30,8 +30,11 @@ def setup(tmp_path: Path):
     declaration.parent.mkdir(parents=True)
     index.write_text("# empty\n")
     plan = QuarantineRestoreTransaction.plan(
-        "example.invalid", package_directory=package, zone_file=zone,
-        active_declaration=declaration, managed_index=index,
+        "example.invalid",
+        package_directory=package,
+        zone_file=zone,
+        active_declaration=declaration,
+        managed_index=index,
         root_config=tmp_path / "bind/named.conf",
     )
     return package, zone, declaration, index, plan
@@ -69,7 +72,9 @@ def test_restore_keeps_package_and_activates_working_files(tmp_path: Path) -> No
 
 def test_failed_activation_rolls_back_but_keeps_package(tmp_path: Path) -> None:
     package, zone, declaration, index, plan = setup(tmp_path)
-    result = engine(loaded=lambda name: QuarantineRestoreStep("loaded", False, "no")).apply(plan, commit=True)
+    result = engine(
+        loaded=lambda name: QuarantineRestoreStep("loaded", False, "no")
+    ).apply(plan, commit=True)
     assert result.status == "ROLLED-BACK"
     assert not zone.exists() and not declaration.exists()
     assert package.is_dir()
@@ -80,6 +85,9 @@ def test_modified_package_is_rejected(tmp_path: Path) -> None:
     (package / "zone.db").write_text("tampered\n")
     with pytest.raises(QuarantineRestoreError, match="suma kontrolna"):
         QuarantineRestoreTransaction.plan(
-            "example.invalid", package_directory=package, zone_file=zone,
-            active_declaration=declaration, managed_index=index,
+            "example.invalid",
+            package_directory=package,
+            zone_file=zone,
+            active_declaration=declaration,
+            managed_index=index,
         )

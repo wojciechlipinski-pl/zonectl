@@ -219,10 +219,7 @@ def validate_rdata(rtype: str, rdata: str) -> str | None:
     elif kind == "SOA":
         fields = value.replace("(", " ").replace(")", " ").split()
         if len(fields) != 7:
-            return (
-                "SOA wymaga: primary hostmaster serial refresh retry "
-                "expire minimum."
-            )
+            return "SOA wymaga: primary hostmaster serial refresh retry expire minimum."
         if not is_valid_dns_name(fields[0]) or not is_valid_dns_name(fields[1]):
             return "SOA zawiera niepoprawną nazwę primary lub hostmaster."
         for field, label, maximum in (
@@ -241,9 +238,7 @@ def validate_rdata(rtype: str, rdata: str) -> str | None:
         except ValueError as exc:
             return f"NAPTR zawiera nieprawidłowe cudzysłowy: {exc}"
         if len(fields) != 6:
-            return (
-                "NAPTR wymaga: order preference flags service regexp replacement."
-            )
+            return "NAPTR wymaga: order preference flags service regexp replacement."
         for field, label in zip(fields[:2], ("Order NAPTR", "Preference NAPTR")):
             _, error = _integer(field, label, 0, 65535)
             if error:
@@ -448,9 +443,7 @@ def validate_zone(
         target_types = {item.rtype.upper() for item in target_records}
         if not target_records:
             severity = (
-                ValidationSeverity.ERROR
-                if kind == "NS"
-                else ValidationSeverity.WARN
+                ValidationSeverity.ERROR if kind == "NS" else ValidationSeverity.WARN
             )
             issues.append(
                 ValidationIssue(
@@ -472,9 +465,7 @@ def validate_zone(
             )
         if kind in {"MX", "NS", "SRV"} and not target_types.intersection({"A", "AAAA"}):
             severity = (
-                ValidationSeverity.ERROR
-                if kind == "NS"
-                else ValidationSeverity.WARN
+                ValidationSeverity.ERROR if kind == "NS" else ValidationSeverity.WARN
             )
             issues.append(
                 ValidationIssue(

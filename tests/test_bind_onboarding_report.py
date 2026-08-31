@@ -1,5 +1,3 @@
-from pathlib import Path
-
 from zonectl.core.bind_onboarding_report import BindOnboardingReporter
 
 

@@ -8,7 +8,7 @@ def test_onboarding_summary_routes_f5_to_dnssec_profile() -> None:
     footer = inspect.getsource(CursesApp._onboarding_footer)
     view = inspect.getsource(CursesApp._onboarding_dnssec_view)
     assert "F5 DNSSEC" in footer
-    assert "item.category == \"DNSSEC\"" in summary
+    assert 'item.category == "DNSSEC"' in summary
     assert "F3 plan" in view
     assert "F4 dry-run" in view
     assert "F6 importuj" in view

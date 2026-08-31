@@ -29,9 +29,7 @@ def model(*, read_only: bool = False) -> ZoneModel:
 
 
 def test_parse_set_ttl() -> None:
-    operation = BulkOperation.parse(
-        "SELECT type:A ttl:300 SET ttl=7200"
-    )
+    operation = BulkOperation.parse("SELECT type:A ttl:300 SET ttl=7200")
     assert operation.action is BulkAction.SET
     assert operation.query == "type:A ttl:300"
     assert operation.field == "ttl"
@@ -39,9 +37,7 @@ def test_parse_set_ttl() -> None:
 
 
 def test_parse_quoted_value() -> None:
-    operation = BulkOperation.parse(
-        'SELECT type:TXT SET value="new text"'
-    )
+    operation = BulkOperation.parse('SELECT type:TXT SET value="new text"')
     assert operation.field == "value"
     assert operation.value == "new text"
 
@@ -68,9 +64,7 @@ def test_invalid_command_is_rejected(command: str) -> None:
 
 def test_set_ttl_changes_all_matches_as_one_undo_step() -> None:
     zone = model()
-    operation = BulkOperation.parse(
-        "SELECT type:A SET ttl=7200"
-    )
+    operation = BulkOperation.parse("SELECT type:A SET ttl=7200")
 
     assert operation.apply(zone) == 2
     assert [item.ttl for item in zone.records[:2]] == [7200, 7200]
@@ -84,9 +78,7 @@ def test_set_ttl_changes_all_matches_as_one_undo_step() -> None:
 
 def test_delete_changes_all_matches_as_one_undo_step() -> None:
     zone = model()
-    operation = BulkOperation.parse(
-        "SELECT type:A DELETE"
-    )
+    operation = BulkOperation.parse("SELECT type:A DELETE")
 
     assert operation.apply(zone) == 2
     assert [item.rtype for item in zone.records] == ["MX", "TXT"]
@@ -97,9 +89,7 @@ def test_delete_changes_all_matches_as_one_undo_step() -> None:
 
 def test_set_missing_ttl_to_explicit_value() -> None:
     zone = model()
-    operation = BulkOperation.parse(
-        "SELECT ttl:- SET ttl=600"
-    )
+    operation = BulkOperation.parse("SELECT ttl:- SET ttl=600")
 
     assert operation.apply(zone) == 1
     assert zone.records[-1].ttl == 600
@@ -107,9 +97,7 @@ def test_set_missing_ttl_to_explicit_value() -> None:
 
 def test_set_ttl_to_inherited_value() -> None:
     zone = model()
-    operation = BulkOperation.parse(
-        "SELECT type:MX SET ttl=-"
-    )
+    operation = BulkOperation.parse("SELECT type:MX SET ttl=-")
 
     assert operation.apply(zone) == 1
     assert zone.records[2].ttl is None
@@ -117,9 +105,7 @@ def test_set_ttl_to_inherited_value() -> None:
 
 def test_invalid_type_specific_value_is_rejected() -> None:
     zone = model()
-    operation = BulkOperation.parse(
-        "SELECT type:A SET value=999.999.999.999"
-    )
+    operation = BulkOperation.parse("SELECT type:A SET value=999.999.999.999")
 
     with pytest.raises(BulkOperationError, match="IPv4"):
         operation.matches(zone)
@@ -129,9 +115,7 @@ def test_invalid_type_specific_value_is_rejected() -> None:
 
 def test_read_only_model_rejects_bulk_change() -> None:
     zone = model(read_only=True)
-    operation = BulkOperation.parse(
-        "SELECT type:A DELETE"
-    )
+    operation = BulkOperation.parse("SELECT type:A DELETE")
 
     with pytest.raises(ZoneModelReadOnlyError):
         operation.apply(zone)
@@ -139,9 +123,7 @@ def test_read_only_model_rejects_bulk_change() -> None:
 
 def test_bulk_operation_metadata_is_removed_by_single_undo() -> None:
     zone = model()
-    operation = BulkOperation.parse(
-        "SELECT type:A SET ttl=7200"
-    )
+    operation = BulkOperation.parse("SELECT type:A SET ttl=7200")
 
     assert operation.apply(zone) == 2
     assert zone.transaction_metadata["bulk_operation_count"] == 1

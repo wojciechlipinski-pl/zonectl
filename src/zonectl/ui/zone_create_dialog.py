@@ -100,11 +100,17 @@ class ZoneCreateDialog:
                 height, width = win.getmaxyx()
                 available = max(1, width - column - 2)
                 offset = max(0, cursor - available + 1)
-                visible = "".join(value[offset:offset + available])
+                visible = "".join(value[offset : offset + available])
                 try:
                     win.move(row, column)
                     win.clrtoeol()
-                    win.addnstr(row, column, visible.ljust(available), available, curses.A_REVERSE)
+                    win.addnstr(
+                        row,
+                        column,
+                        visible.ljust(available),
+                        available,
+                        curses.A_REVERSE,
+                    )
                     win.move(row, min(width - 2, column + cursor - offset))
                     win.refresh()
                 except curses.error:
@@ -157,15 +163,31 @@ class ZoneCreateDialog:
         group_index = group_options.index(default_group)
         values = (
             [
-                initial.name, initial.group, initial.primary_ns, initial.admin,
-                initial.nameservers, str(initial.refresh), str(initial.retry),
-                str(initial.expire), str(initial.negative_ttl), initial.ipv4,
+                initial.name,
+                initial.group,
+                initial.primary_ns,
+                initial.admin,
+                initial.nameservers,
+                str(initial.refresh),
+                str(initial.retry),
+                str(initial.expire),
+                str(initial.negative_ttl),
+                initial.ipv4,
                 initial.ipv6,
             ]
             if initial is not None
             else [
-                "", default_group, primary_ns, admin, nameservers,
-                "3600", "900", "1209600", "3600", "", "",
+                "",
+                default_group,
+                primary_ns,
+                admin,
+                nameservers,
+                "3600",
+                "900",
+                "1209600",
+                "3600",
+                "",
+                "",
             ]
         )
         add_www = initial.add_www if initial is not None else False
@@ -181,7 +203,10 @@ class ZoneCreateDialog:
             win.erase()
             height, width = win.getmaxyx()
             self._put(
-                win, 0, 0, " Kreator nowej strefy DNS ".ljust(width),
+                win,
+                0,
+                0,
+                " Kreator nowej strefy DNS ".ljust(width),
                 curses.A_REVERSE | curses.A_BOLD,
             )
             for index, label in enumerate(self.LABELS):
@@ -197,8 +222,10 @@ class ZoneCreateDialog:
                     attr if is_active else curses.A_BOLD,
                 )
                 text = (
-                    "[ TAK ]" if add_www else "[ NIE ]"
-                ) if index == len(self.LABELS) - 1 else values[index]
+                    ("[ TAK ]" if add_www else "[ NIE ]")
+                    if index == len(self.LABELS) - 1
+                    else values[index]
+                )
                 self._put(win, row, 23, text.ljust(max(1, width - 25)), attr)
             self._put(
                 win,

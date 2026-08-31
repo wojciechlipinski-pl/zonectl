@@ -79,8 +79,7 @@ def test_success_confirms_kasp_and_writes_manifest(tmp_path: Path) -> None:
 
     def action(name: str):
         return lambda zone: (
-            calls.append((name, zone))
-            or DnssecConfirmStep(name, True, "OK")
+            calls.append((name, zone)) or DnssecConfirmStep(name, True, "OK")
         )
 
     result = DnssecConfirmDsTransaction(
@@ -123,9 +122,7 @@ def test_default_confirmer_uses_published_checkds(monkeypatch) -> None:
     step = DnssecConfirmDsTransaction._confirm("example.pl")
 
     assert step.ok is True
-    assert calls == [
-        (["rndc", "dnssec", "-checkds", "published", "example.pl"], 15)
-    ]
+    assert calls == [(["rndc", "dnssec", "-checkds", "published", "example.pl"], 15)]
 
 
 def test_default_verifier_rejects_hidden_ds(monkeypatch) -> None:

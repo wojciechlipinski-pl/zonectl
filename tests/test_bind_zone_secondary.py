@@ -6,13 +6,14 @@ from zonectl.core.bind_zone_secondary import BindZoneSecondaryPlanner
 def _config(tmp_path: Path) -> Path:
     root = tmp_path / "named.conf"
     root.write_text(
-        'primaries dns2-notify { 192.0.2.53; };\n'
-        'acl dns2-transfer { 192.0.2.53; };\n'
-        'primaries he-notify { 192.0.2.54; };\n'
-        'acl he-transfer { 192.0.2.55; };\n'
+        "primaries dns2-notify { 192.0.2.53; };\n"
+        "acl dns2-transfer { 192.0.2.53; };\n"
+        "primaries he-notify { 192.0.2.54; };\n"
+        "acl he-transfer { 192.0.2.55; };\n"
         'zone "example.pl" { type primary; file "/tmp/example";\n'
-        ' also-notify { dns2-notify; };\n'
-        ' allow-transfer { dns2-transfer; };\n};\n', encoding="utf-8"
+        " also-notify { dns2-notify; };\n"
+        " allow-transfer { dns2-transfer; };\n};\n",
+        encoding="utf-8",
     )
     return root
 
@@ -20,12 +21,21 @@ def _config(tmp_path: Path) -> Path:
 def test_plan_assigns_complete_logical_pairs(tmp_path: Path, monkeypatch) -> None:
     root = _config(tmp_path)
     monkeypatch.setattr(
-        BindZoneSecondaryPlanner, "available_pairs",
-        lambda self: __import__("zonectl.core.bind_secondary_report", fromlist=["BindSecondaryReporter"])
-        .BindSecondaryReporter().build(
-            __import__("zonectl.core.bind_access_inventory", fromlist=["BindAccessInventoryReader"])
-            .BindAccessInventoryReader(root).collect()
-        ).pairs,
+        BindZoneSecondaryPlanner,
+        "available_pairs",
+        lambda self: __import__(
+            "zonectl.core.bind_secondary_report", fromlist=["BindSecondaryReporter"]
+        )
+        .BindSecondaryReporter()
+        .build(
+            __import__(
+                "zonectl.core.bind_access_inventory",
+                fromlist=["BindAccessInventoryReader"],
+            )
+            .BindAccessInventoryReader(root)
+            .collect()
+        )
+        .pairs,
     )
     monkeypatch.setattr(
         "zonectl.core.bind_secondary_plan.BindSecondaryPlanner._validate_candidate",
@@ -39,7 +49,9 @@ def test_plan_assigns_complete_logical_pairs(tmp_path: Path, monkeypatch) -> Non
     assert root.read_text() == plan.original_text
 
 
-def test_transaction_adapter_preserves_audit_context(tmp_path: Path, monkeypatch) -> None:
+def test_transaction_adapter_preserves_audit_context(
+    tmp_path: Path, monkeypatch
+) -> None:
     root = _config(tmp_path)
     monkeypatch.setattr(
         "zonectl.core.bind_secondary_plan.BindSecondaryPlanner._validate_candidate",
@@ -54,9 +66,7 @@ def test_transaction_adapter_preserves_audit_context(tmp_path: Path, monkeypatch
     assert adapted.operational_addresses == ("192.0.2.53",)
 
 
-def test_removing_last_secondary_pair_is_high_risk(
-    tmp_path: Path, monkeypatch
-) -> None:
+def test_removing_last_secondary_pair_is_high_risk(tmp_path: Path, monkeypatch) -> None:
     root = _config(tmp_path)
     monkeypatch.setattr(
         "zonectl.core.bind_secondary_plan.BindSecondaryPlanner._validate_candidate",

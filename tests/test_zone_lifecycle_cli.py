@@ -60,9 +60,7 @@ class FakeSafetyConfig:
 
 
 def test_zone_safety_json_reports_dnssec_block(monkeypatch, capsys) -> None:
-    monkeypatch.setattr(
-        cli.ToolkitConfig, "load", lambda self: FakeSafetyConfig()
-    )
+    monkeypatch.setattr(cli.ToolkitConfig, "load", lambda self: FakeSafetyConfig())
 
     code = cli.main(["zone", "safety", "--json"])
 
@@ -74,12 +72,8 @@ def test_zone_safety_json_reports_dnssec_block(monkeypatch, capsys) -> None:
     assert signed["lifecycle_allowed"] is False
 
 
-def test_dnssec_disable_is_rejected_before_planning(
-    monkeypatch, capsys
-) -> None:
-    monkeypatch.setattr(
-        cli.ToolkitConfig, "load", lambda self: FakeSafetyConfig()
-    )
+def test_dnssec_disable_is_rejected_before_planning(monkeypatch, capsys) -> None:
+    monkeypatch.setattr(cli.ToolkitConfig, "load", lambda self: FakeSafetyConfig())
 
     code = cli.main(
         [
@@ -96,12 +90,8 @@ def test_dnssec_disable_is_rejected_before_planning(
     assert "strefy DNSSEC" in capsys.readouterr().err
 
 
-def test_rpz_disable_is_rejected_before_planning(
-    monkeypatch, capsys
-) -> None:
-    monkeypatch.setattr(
-        cli.ToolkitConfig, "load", lambda self: FakeRpzConfig()
-    )
+def test_rpz_disable_is_rejected_before_planning(monkeypatch, capsys) -> None:
+    monkeypatch.setattr(cli.ToolkitConfig, "load", lambda self: FakeRpzConfig())
 
     code = cli.main(
         [
@@ -269,9 +259,7 @@ def test_disable_cli_defaults_to_dry_run(
     capsys,
     tmp_path: Path,
 ) -> None:
-    monkeypatch.setattr(
-        cli.ToolkitConfig, "load", lambda self: FakeConfig()
-    )
+    monkeypatch.setattr(cli.ToolkitConfig, "load", lambda self: FakeConfig())
     zone = tmp_path / "zones/example.invalid"
     declaration = tmp_path / "bind/zones.d/example.invalid.conf"
     index = tmp_path / "bind/zones.conf"
@@ -320,9 +308,7 @@ def test_restore_cli_defaults_to_dry_run(
     capsys,
     tmp_path: Path,
 ) -> None:
-    monkeypatch.setattr(
-        cli.ToolkitConfig, "load", lambda self: FakeConfig()
-    )
+    monkeypatch.setattr(cli.ToolkitConfig, "load", lambda self: FakeConfig())
     zone = tmp_path / "zones/example.invalid"
     declaration = tmp_path / "bind/zones.d/example.invalid.conf"
     archived = tmp_path / "disabled/example.invalid/example.invalid.conf"
@@ -370,9 +356,7 @@ def test_quarantine_cli_passes_commit_and_confirmation(
     capsys,
     tmp_path: Path,
 ) -> None:
-    monkeypatch.setattr(
-        cli.ToolkitConfig, "load", lambda self: FakeConfig()
-    )
+    monkeypatch.setattr(cli.ToolkitConfig, "load", lambda self: FakeConfig())
     zone = tmp_path / "zones/example.invalid"
     active = tmp_path / "bind/zones.d/example.invalid.conf"
     archived = tmp_path / "disabled/example.invalid/example.invalid.conf"
@@ -430,9 +414,7 @@ def test_quarantine_restore_cli_uses_explicit_package(
     capsys,
     tmp_path: Path,
 ) -> None:
-    monkeypatch.setattr(
-        cli.ToolkitConfig, "load", lambda self: FakeConfig()
-    )
+    monkeypatch.setattr(cli.ToolkitConfig, "load", lambda self: FakeConfig())
     package = tmp_path / "package"
     package.mkdir()
     (package / "zone.db").write_text("zone\n")
@@ -444,11 +426,13 @@ def test_quarantine_restore_cli_uses_explicit_package(
         for name in ("zone.db", "zone.conf")
     }
     (package / "manifest.json").write_text(
-        json.dumps({
-            "zone": "example.invalid",
-            "status": "QUARANTINED",
-            "files": files,
-        })
+        json.dumps(
+            {
+                "zone": "example.invalid",
+                "status": "QUARANTINED",
+                "files": files,
+            }
+        )
     )
     zones = tmp_path / "zones"
     declarations = tmp_path / "bind/zones.d"
@@ -469,22 +453,28 @@ def test_quarantine_restore_cli_uses_explicit_package(
         )
 
     monkeypatch.setattr(cli.QuarantineRestoreTransaction, "apply", apply)
-    code = cli.main([
-        "zone", "quarantine-restore", "example.invalid",
-        "--package", str(package),
-        "--zone-directory", str(zones),
-        "--managed-config", str(index),
-        "--managed-zone-directory", str(declarations),
-    ])
+    code = cli.main(
+        [
+            "zone",
+            "quarantine-restore",
+            "example.invalid",
+            "--package",
+            str(package),
+            "--zone-directory",
+            str(zones),
+            "--managed-config",
+            str(index),
+            "--managed-zone-directory",
+            str(declarations),
+        ]
+    )
     assert code == 0
     assert calls == [(False, package)]
     assert "Status:     DRY-RUN" in capsys.readouterr().out
 
 
 def test_inventory_cli_outputs_json(monkeypatch, capsys, tmp_path: Path) -> None:
-    monkeypatch.setattr(
-        cli.ToolkitConfig, "load", lambda self: FakeConfig()
-    )
+    monkeypatch.setattr(cli.ToolkitConfig, "load", lambda self: FakeConfig())
     package = tmp_path / "quarantine/example.invalid/tx-1"
     package.mkdir(parents=True)
     (package / "manifest.json").write_text(

@@ -15,10 +15,7 @@ from zonectl.core.zone_lifecycle import (
 
 
 pytestmark = pytest.mark.skipif(
-    not (
-        shutil.which("named-checkzone")
-        and shutil.which("named-checkconf")
-    ),
+    not (shutil.which("named-checkzone") and shutil.which("named-checkconf")),
     reason="Brak narzędzi walidacyjnych BIND",
 )
 
@@ -80,23 +77,17 @@ def test_real_named_checkzone_failure_rolls_back(
     candidate = plan(tmp_path)
     broken = replace(
         candidate,
-        zone_text=candidate.zone_text
-        + "broken IN A 999.999.999.999\n",
+        zone_text=candidate.zone_text + "broken IN A 999.999.999.999\n",
     )
 
-    result = ZoneCreateTransaction(
-        tmp_path / "manifests"
-    ).apply(broken, commit=True)
+    result = ZoneCreateTransaction(tmp_path / "manifests").apply(broken, commit=True)
 
     assert result.status == "ROLLED-BACK"
     assert result.rolled_back is True
     assert not broken.zone_file.exists()
     assert not broken.managed_config.exists()
     assert not broken.zone_declaration_file.exists()
-    assert any(
-        step.name == "named-checkzone" and not step.ok
-        for step in result.steps
-    )
+    assert any(step.name == "named-checkzone" and not step.ok for step in result.steps)
 
 
 def test_named_checkconf_uses_root_configuration_context(
@@ -111,8 +102,7 @@ def test_named_checkconf_uses_root_configuration_context(
         encoding="utf-8",
     )
     root_config.write_text(
-        f'include "{definitions}";\n'
-        f'include "{candidate.managed_config}";\n',
+        f'include "{definitions}";\ninclude "{candidate.managed_config}";\n',
         encoding="utf-8",
     )
     declaration = candidate.bind_declaration.replace(
@@ -127,6 +117,6 @@ def test_named_checkconf_uses_root_configuration_context(
     ).apply(candidate, commit=True)
 
     assert result.status == "COMMIT"
-    assert next(
-        step for step in result.steps if step.name == "named-checkconf"
-    ).ok is True
+    assert (
+        next(step for step in result.steps if step.name == "named-checkconf").ok is True
+    )

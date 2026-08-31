@@ -126,7 +126,7 @@ def test_insecure_policy_accepts_removed_key_and_signatures() -> None:
             return CommandResult(
                 0,
                 "dnssec-policy: insecure\n"
-                    "zone signing: no\n"
+                "zone signing: no\n"
                 "Key has been removed from the zone\n"
                 "- goal: hidden\n"
                 "- dnskey: unretentive\n"

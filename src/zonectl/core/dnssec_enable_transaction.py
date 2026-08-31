@@ -98,21 +98,41 @@ class DnssecEnableTransaction:
         target_created = False
         config_written = False
         activation_attempted = False
-        before_sidecars = set(plan.target_zone_file.parent.glob(plan.target_zone_file.name + ".*"))
-        before_keys = set(plan.key_directory.glob(f"K{plan.zone.rstrip('.')}.*")) if plan.key_directory.exists() else set()
+        before_sidecars = set(
+            plan.target_zone_file.parent.glob(plan.target_zone_file.name + ".*")
+        )
+        before_keys = (
+            set(plan.key_directory.glob(f"K{plan.zone.rstrip('.')}.*"))
+            if plan.key_directory.exists()
+            else set()
+        )
         try:
             backup_directory.mkdir(parents=True, mode=0o750)
-            self._copy_backup(plan.declaration_file, backup_directory / "bind-declaration.conf")
-            self._copy_backup(plan.source_zone_file, backup_directory / "zone-source.db")
-            result.steps.append(DnssecEnableStep("backup", True, f"Backup: {backup_directory}"))
+            self._copy_backup(
+                plan.declaration_file, backup_directory / "bind-declaration.conf"
+            )
+            self._copy_backup(
+                plan.source_zone_file, backup_directory / "zone-source.db"
+            )
+            result.steps.append(
+                DnssecEnableStep("backup", True, f"Backup: {backup_directory}")
+            )
 
             plan.key_directory.mkdir(parents=True, exist_ok=True, mode=0o750)
-            result.steps.append(DnssecEnableStep("key-directory", True, str(plan.key_directory)))
+            result.steps.append(
+                DnssecEnableStep("key-directory", True, str(plan.key_directory))
+            )
 
             if plan.migration_required:
-                self._atomic_copy_to_parent_owner(plan.source_zone_file, plan.target_zone_file)
+                self._atomic_copy_to_parent_owner(
+                    plan.source_zone_file, plan.target_zone_file
+                )
                 target_created = True
-                result.steps.append(DnssecEnableStep("zone-migration", True, f"Skopiowano {plan.target_zone_file}"))
+                result.steps.append(
+                    DnssecEnableStep(
+                        "zone-migration", True, f"Skopiowano {plan.target_zone_file}"
+                    )
+                )
 
             zone_step = self.zone_validator(plan.zone, plan.target_zone_file)
             result.steps.append(zone_step)
@@ -127,7 +147,11 @@ class DnssecEnableTransaction:
                 declaration_stat.st_gid,
             )
             config_written = True
-            result.steps.append(DnssecEnableStep("configuration", True, f"Zaktualizowano {plan.declaration_file}"))
+            result.steps.append(
+                DnssecEnableStep(
+                    "configuration", True, f"Zaktualizowano {plan.declaration_file}"
+                )
+            )
 
             config_step = self.config_validator(self.root_config)
             result.steps.append(config_step)
@@ -136,7 +160,11 @@ class DnssecEnableTransaction:
 
             if activate:
                 activation_attempted = True
-                for action in (self.activator, self.loaded_verifier, self.dnssec_verifier):
+                for action in (
+                    self.activator,
+                    self.loaded_verifier,
+                    self.dnssec_verifier,
+                ):
                     step = action(plan.zone)
                     result.steps.append(step)
                     if not step.ok:
@@ -158,13 +186,19 @@ class DnssecEnableTransaction:
                     )
                 if activation_attempted:
                     restore = self.activator(plan.zone)
-                    result.steps.append(DnssecEnableStep("rndc-reconfig-rollback", restore.ok, restore.message))
+                    result.steps.append(
+                        DnssecEnableStep(
+                            "rndc-reconfig-rollback", restore.ok, restore.message
+                        )
+                    )
                     if not restore.ok:
                         rollback_ok = False
                 if target_created:
                     plan.target_zone_file.unlink(missing_ok=True)
                 self._remove_new_artifacts(
-                    plan.target_zone_file.parent.glob(plan.target_zone_file.name + ".*"),
+                    plan.target_zone_file.parent.glob(
+                        plan.target_zone_file.name + ".*"
+                    ),
                     before_sidecars,
                 )
                 self._remove_new_artifacts(
@@ -173,20 +207,34 @@ class DnssecEnableTransaction:
                 )
             except OSError as rollback_error:
                 rollback_ok = False
-                result.steps.append(DnssecEnableStep("rollback", False, str(rollback_error)))
+                result.steps.append(
+                    DnssecEnableStep("rollback", False, str(rollback_error))
+                )
             else:
-                result.steps.append(DnssecEnableStep("rollback", rollback_ok, "Przywrócono stan sprzed transakcji"))
+                result.steps.append(
+                    DnssecEnableStep(
+                        "rollback", rollback_ok, "Przywrócono stan sprzed transakcji"
+                    )
+                )
             result.rolled_back = rollback_ok
-            return self._finish(result, "ROLLED-BACK" if rollback_ok else "ROLLBACK-FAILED")
+            return self._finish(
+                result, "ROLLED-BACK" if rollback_ok else "ROLLBACK-FAILED"
+            )
 
     @staticmethod
     def _preflight(plan: DnssecEnablePlan) -> DnssecEnableStep | None:
         if not plan.declaration_file.is_file() or not plan.source_zone_file.is_file():
-            return DnssecEnableStep("preflight", False, "Brak deklaracji lub pliku źródłowego")
+            return DnssecEnableStep(
+                "preflight", False, "Brak deklaracji lub pliku źródłowego"
+            )
         if plan.declaration_file.read_text(encoding="utf-8") != plan.original_text:
-            return DnssecEnableStep("preflight", False, "Konfiguracja zmieniła się od utworzenia planu")
+            return DnssecEnableStep(
+                "preflight", False, "Konfiguracja zmieniła się od utworzenia planu"
+            )
         if plan.migration_required and plan.target_zone_file.exists():
-            return DnssecEnableStep("preflight", False, f"Cel już istnieje: {plan.target_zone_file}")
+            return DnssecEnableStep(
+                "preflight", False, f"Cel już istnieje: {plan.target_zone_file}"
+            )
         sidecars = list(
             plan.target_zone_file.parent.glob(plan.target_zone_file.name + ".*")
         )
@@ -222,8 +270,12 @@ class DnssecEnableTransaction:
             path = self.manifest_directory / f"{result.transaction_id}.json"
             result.manifest = str(path)
             payload = asdict(result)
-            payload["saved_at"] = datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds")
-            path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+            payload["saved_at"] = (
+                datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds")
+            )
+            path.write_text(
+                json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8"
+            )
         return result
 
     @staticmethod
@@ -234,7 +286,9 @@ class DnssecEnableTransaction:
             os.chown(target, owner.st_uid, owner.st_gid)
 
     @staticmethod
-    def _atomic_write(path: Path, content: bytes, mode: int, uid: int, gid: int) -> None:
+    def _atomic_write(
+        path: Path, content: bytes, mode: int, uid: int, gid: int
+    ) -> None:
         path.parent.mkdir(parents=True, exist_ok=True, mode=0o750)
         fd, name = tempfile.mkstemp(prefix=f".{path.name}.", dir=path.parent)
         temporary = Path(name)
@@ -253,13 +307,17 @@ class DnssecEnableTransaction:
     @classmethod
     def _atomic_copy_exact(cls, source: Path, target: Path) -> None:
         stat = source.stat()
-        cls._atomic_write(target, source.read_bytes(), stat.st_mode & 0o777, stat.st_uid, stat.st_gid)
+        cls._atomic_write(
+            target, source.read_bytes(), stat.st_mode & 0o777, stat.st_uid, stat.st_gid
+        )
 
     @classmethod
     def _atomic_copy_to_parent_owner(cls, source: Path, target: Path) -> None:
         target.parent.mkdir(parents=True, exist_ok=True, mode=0o750)
         parent = target.parent.stat()
-        cls._atomic_write(target, source.read_bytes(), 0o640, parent.st_uid, parent.st_gid)
+        cls._atomic_write(
+            target, source.read_bytes(), 0o640, parent.st_uid, parent.st_gid
+        )
 
     @staticmethod
     def _remove_new_artifacts(
@@ -273,25 +331,45 @@ class DnssecEnableTransaction:
     @staticmethod
     def _validate_zone(zone: str, path: Path) -> DnssecEnableStep:
         outcome = run(["named-checkzone", zone, str(path)], 30)
-        return DnssecEnableStep("named-checkzone", outcome.returncode == 0, (outcome.stdout or outcome.stderr).strip() or f"kod {outcome.returncode}")
+        return DnssecEnableStep(
+            "named-checkzone",
+            outcome.returncode == 0,
+            (outcome.stdout or outcome.stderr).strip() or f"kod {outcome.returncode}",
+        )
 
     @staticmethod
     def _validate_config(path: Path) -> DnssecEnableStep:
         outcome = run(["named-checkconf", str(path)], 30)
-        return DnssecEnableStep("named-checkconf", outcome.returncode == 0, (outcome.stdout or outcome.stderr).strip() or f"kod {outcome.returncode}")
+        return DnssecEnableStep(
+            "named-checkconf",
+            outcome.returncode == 0,
+            (outcome.stdout or outcome.stderr).strip() or f"kod {outcome.returncode}",
+        )
 
     @staticmethod
     def _activate_bind(_zone: str) -> DnssecEnableStep:
         outcome = run(["rndc", "reconfig"], 30)
-        return DnssecEnableStep("rndc-reconfig", outcome.returncode == 0, (outcome.stdout or outcome.stderr).strip() or f"kod {outcome.returncode}")
+        return DnssecEnableStep(
+            "rndc-reconfig",
+            outcome.returncode == 0,
+            (outcome.stdout or outcome.stderr).strip() or f"kod {outcome.returncode}",
+        )
 
     @staticmethod
     def _verify_loaded(zone: str) -> DnssecEnableStep:
         outcome = run(["rndc", "zonestatus", zone], 30)
-        return DnssecEnableStep("rndc-zonestatus", outcome.returncode == 0, (outcome.stdout or outcome.stderr).strip() or f"kod {outcome.returncode}")
+        return DnssecEnableStep(
+            "rndc-zonestatus",
+            outcome.returncode == 0,
+            (outcome.stdout or outcome.stderr).strip() or f"kod {outcome.returncode}",
+        )
 
     @staticmethod
     def _verify_dnssec(zone: str) -> DnssecEnableStep:
         outcome = run(["rndc", "dnssec", "-status", zone], 30)
         ok = outcome.returncode == 0 and "zone signing" in outcome.stdout.casefold()
-        return DnssecEnableStep("dnssec-status", ok, (outcome.stdout or outcome.stderr).strip() or f"kod {outcome.returncode}")
+        return DnssecEnableStep(
+            "dnssec-status",
+            ok,
+            (outcome.stdout or outcome.stderr).strip() or f"kod {outcome.returncode}",
+        )

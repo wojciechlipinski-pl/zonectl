@@ -39,8 +39,7 @@ def engine(tmp_path: Path, *, unavailable=None):
         tmp_path / "manifests",
         config_validator=lambda path: ok("named-checkconf"),
         activator=lambda name: ok("rndc-reconfig"),
-        unavailable_verifier=unavailable
-        or (lambda name: ok("rndc-zone-unavailable")),
+        unavailable_verifier=unavailable or (lambda name: ok("rndc-zone-unavailable")),
     )
 
 

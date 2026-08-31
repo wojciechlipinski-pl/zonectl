@@ -118,10 +118,7 @@ class ZoneModel:
                 for entry in self._entries
             ],
             next_identifier=self._next_identifier,
-            bulk_operations=[
-                dict(operation)
-                for operation in self._bulk_operations
-            ],
+            bulk_operations=[dict(operation) for operation in self._bulk_operations],
         )
 
     def _remember(self) -> None:
@@ -134,36 +131,26 @@ class ZoneModel:
             )
 
     def _visible_entries(self) -> list[_RecordEntry]:
-        return [
-            entry
-            for entry in self._entries
-            if entry.current is not None
-        ]
+        return [entry for entry in self._entries if entry.current is not None]
 
     def _entry_at(self, index: int) -> _RecordEntry:
         entries = self._visible_entries()
 
         if index < 0 or index >= len(entries):
-            raise IndexError(
-                f"Indeks rekordu poza zakresem: {index}"
-            )
+            raise IndexError(f"Indeks rekordu poza zakresem: {index}")
 
         return entries[index]
 
     @property
     def records(self) -> tuple[DNSRecord, ...]:
         return tuple(
-            entry.current
-            for entry in self._entries
-            if entry.current is not None
+            entry.current for entry in self._entries if entry.current is not None
         )
 
     @property
     def original_records(self) -> tuple[DNSRecord, ...]:
         return tuple(
-            entry.original
-            for entry in self._entries
-            if entry.original is not None
+            entry.original for entry in self._entries if entry.original is not None
         )
 
     @property
@@ -264,10 +251,7 @@ class ZoneModel:
         return {
             "change_count": self.change_count,
             "bulk_operation_count": len(self._bulk_operations),
-            "bulk_operations": [
-                dict(operation)
-                for operation in self._bulk_operations
-            ],
+            "bulk_operations": [dict(operation) for operation in self._bulk_operations],
         }
 
     def describe_last_bulk_operation(
@@ -295,9 +279,7 @@ class ZoneModel:
             if entry.identifier == identifier:
                 return entry
 
-        raise KeyError(
-            f"Nie znaleziono rekordu o identyfikatorze: {identifier}"
-        )
+        raise KeyError(f"Nie znaleziono rekordu o identyfikatorze: {identifier}")
 
     def replace_by_identifier(
         self,
@@ -309,9 +291,7 @@ class ZoneModel:
         previous = entry.current
 
         if previous is None:
-            raise RuntimeError(
-                "Nie można edytować usuniętego rekordu"
-            )
+            raise RuntimeError("Nie można edytować usuniętego rekordu")
 
         if previous == record:
             return previous
@@ -326,9 +306,7 @@ class ZoneModel:
         previous = entry.current
 
         if previous is None:
-            raise RuntimeError(
-                "Rekord jest już usunięty"
-            )
+            raise RuntimeError("Rekord jest już usunięty")
 
         self._remember()
         entry.current = None
@@ -349,9 +327,7 @@ class ZoneModel:
         previous = entry.current
 
         if previous is None:
-            raise RuntimeError(
-                "Nie można edytować usuniętego rekordu"
-            )
+            raise RuntimeError("Nie można edytować usuniętego rekordu")
 
         if previous == record:
             return previous
@@ -367,9 +343,7 @@ class ZoneModel:
         previous = entry.current
 
         if previous is None:
-            raise RuntimeError(
-                "Rekord jest już usunięty"
-            )
+            raise RuntimeError("Rekord jest już usunięty")
 
         self._remember()
         entry.current = None
@@ -392,9 +366,7 @@ class ZoneModel:
         for identifier, record in replacements.items():
             entry = self._entry_by_identifier(identifier)
             if entry.current is None:
-                raise RuntimeError(
-                    "Nie można edytować usuniętego rekordu"
-                )
+                raise RuntimeError("Nie można edytować usuniętego rekordu")
             if entry.current != record:
                 pending.append((entry, record))
 

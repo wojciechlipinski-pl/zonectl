@@ -20,10 +20,7 @@ class FakeConfig:
         source.write_text("zone\n")
         declaration = tmp_path / "named.conf.local"
         declaration.write_text(
-            'zone "example.pl" {\n'
-            "    type primary;\n"
-            f'    file "{source}";\n'
-            "};\n"
+            f'zone "example.pl" {{\n    type primary;\n    file "{source}";\n}};\n'
         )
         self.zone = Zone("example.pl", source)
         self.discovered = ZoneConfig(
@@ -95,9 +92,7 @@ def test_enable_passes_explicit_double_confirmation(
 ) -> None:
     configure(monkeypatch, tmp_path)
 
-    code = cli.main(
-        ["dnssec", "enable", "example.pl", "--commit", "--activate"]
-    )
+    code = cli.main(["dnssec", "enable", "example.pl", "--commit", "--activate"])
 
     assert code == 0
     assert FakeTransaction.calls[-1] == (True, True)

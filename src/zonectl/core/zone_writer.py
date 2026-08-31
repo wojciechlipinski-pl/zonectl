@@ -83,9 +83,7 @@ class ZoneWriter:
         ):
             return node.raw
 
-        raise ZoneWriteError(
-            f"Nieobsługiwany typ węzła: {type(node).__name__}"
-        )
+        raise ZoneWriteError(f"Nieobsługiwany typ węzła: {type(node).__name__}")
 
     def render_modified_record(
         self,
@@ -130,8 +128,7 @@ class ZoneWriter:
         tokens = self._soa_token_spans(node.raw)
         try:
             soa_index = next(
-                index for index, token in enumerate(tokens)
-                if token[2].upper() == "SOA"
+                index for index, token in enumerate(tokens) if token[2].upper() == "SOA"
             )
         except StopIteration as exc:
             raise ZoneWriteError("Nie można odnaleźć typu SOA w bloku") from exc
@@ -141,7 +138,7 @@ class ZoneWriter:
             raise ZoneWriteError("Wielowierszowy SOA nie zawiera siedmiu pól")
 
         replacements: list[tuple[int, int, str]] = []
-        for token, value in zip(tokens[soa_index + 1:soa_index + 8], rdata):
+        for token, value in zip(tokens[soa_index + 1 : soa_index + 8], rdata):
             replacements.append((token[0], token[1], value))
 
         ttl_token = next(
@@ -149,9 +146,7 @@ class ZoneWriter:
             None,
         )
         if ttl_token is not None and node.record.ttl is not None:
-            replacements.append(
-                (ttl_token[0], ttl_token[1], str(node.record.ttl))
-            )
+            replacements.append((ttl_token[0], ttl_token[1], str(node.record.ttl)))
         elif ttl_token is not None and node.record.ttl is None:
             end = ttl_token[1]
             while end < len(node.raw) and node.raw[end] in " \t":
@@ -161,16 +156,15 @@ class ZoneWriter:
             insert_at = tokens[soa_index][0]
             class_token = next(
                 (
-                    token for token in tokens[:soa_index]
+                    token
+                    for token in tokens[:soa_index]
                     if token[2].upper() in {"IN", "CH", "HS"}
                 ),
                 None,
             )
             if class_token is not None:
                 insert_at = class_token[0]
-            replacements.append(
-                (insert_at, insert_at, f"{node.record.ttl} ")
-            )
+            replacements.append((insert_at, insert_at, f"{node.record.ttl} "))
 
         rendered = node.raw
         for start, end, value in sorted(replacements, reverse=True):
@@ -216,22 +210,16 @@ class ZoneWriter:
         rdata = record.rdata.strip()
 
         if not rtype:
-            raise ZoneWriteError(
-                "Rekord nie posiada typu DNS"
-            )
+            raise ZoneWriteError("Rekord nie posiada typu DNS")
 
         if not rdata:
-            raise ZoneWriteError(
-                f"Rekord {owner} {rtype} nie posiada danych RDATA"
-            )
+            raise ZoneWriteError(f"Rekord {owner} {rtype} nie posiada danych RDATA")
 
         fields: list[str] = [owner]
 
         if record.ttl is not None:
             if record.ttl < 0:
-                raise ZoneWriteError(
-                    f"TTL nie może być ujemny: {record.ttl}"
-                )
+                raise ZoneWriteError(f"TTL nie może być ujemny: {record.ttl}")
 
             fields.append(str(record.ttl))
 
@@ -267,17 +255,11 @@ class ZoneWriter:
             fd, raw_path = tempfile.mkstemp(
                 prefix=prefix,
                 suffix=suffix,
-                dir=(
-                    str(target_directory)
-                    if target_directory is not None
-                    else None
-                ),
+                dir=(str(target_directory) if target_directory is not None else None),
                 text=True,
             )
         except OSError as exc:
-            raise ZoneWriteError(
-                f"Nie można utworzyć pliku kandydata: {exc}"
-            ) from exc
+            raise ZoneWriteError(f"Nie można utworzyć pliku kandydata: {exc}") from exc
 
         path = Path(raw_path)
 

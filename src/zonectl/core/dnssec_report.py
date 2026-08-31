@@ -209,9 +209,7 @@ class DnssecReporter:
         signing_result = self._command(["rndc", "dnssec", "-status", zone.name], 8)
         rndc_text = (signing_result.stdout + signing_result.stderr).strip()
         rndc_status = tuple(
-            line.rstrip()
-            for line in rndc_text.splitlines()
-            if line.strip()
+            line.rstrip() for line in rndc_text.splitlines() if line.strip()
         )
         signing: bool | None
         if signing_result.returncode != 0:
@@ -220,7 +218,9 @@ class DnssecReporter:
         else:
             signing = self._signing_state(rndc_text)
             if signing is None:
-                warnings.append("Wynik rndc nie określa jednoznacznie stanu podpisywania.")
+                warnings.append(
+                    "Wynik rndc nie określa jednoznacznie stanu podpisywania."
+                )
 
         dnskey_result = self._dig(self.local_server, zone.name, "DNSKEY")
         dnskeys = _answer_rdata(dnskey_result.stdout, "DNSKEY")
@@ -257,7 +257,9 @@ class DnssecReporter:
 
         withdrawing = (zone.dnssec_policy or "").casefold() == "insecure"
         if configured and not withdrawing and signing is False:
-            errors.append("DNSSEC jest skonfigurowany, ale BIND nie raportuje podpisywania.")
+            errors.append(
+                "DNSSEC jest skonfigurowany, ale BIND nie raportuje podpisywania."
+            )
         if configured and not withdrawing and not dnskeys:
             errors.append("DNSSEC jest skonfigurowany, ale brak lokalnego DNSKEY.")
         if configured and not withdrawing and not rrsigs:

@@ -107,32 +107,40 @@ class BindSecondaryTransaction:
         current = plan.source.read_text(encoding="utf-8", errors="replace")
         if current != plan.original_text:
             result.status = "CONFLICT"
-            result.steps.append(BindSecondaryStep(
-                "preflight", False, f"Plik zmienił się: {plan.source}"
-            ))
+            result.steps.append(
+                BindSecondaryStep(
+                    "preflight", False, f"Plik zmienił się: {plan.source}"
+                )
+            )
             return result
         if not plan.validation_ok:
             result.status = "BLOCKED"
-            result.steps.append(BindSecondaryStep(
-                "candidate-validation", False, plan.validation_message
-            ))
+            result.steps.append(
+                BindSecondaryStep(
+                    "candidate-validation", False, plan.validation_message
+                )
+            )
             return result
         if not commit:
             result.status = "DRY-RUN"
-            result.steps.append(BindSecondaryStep(
-                "dry-run", True, "Nie zmieniono konfiguracji ani BIND"
-            ))
+            result.steps.append(
+                BindSecondaryStep(
+                    "dry-run", True, "Nie zmieniono konfiguracji ani BIND"
+                )
+            )
             return result
         if plan.impact is not None and plan.impact.risk == "HIGH":
             result.status = "BLOCKED"
-            result.steps.append(BindSecondaryStep(
-                "impact-gate",
-                False,
-                "Zmiana HIGH jest zablokowana przed backupem: role "
-                f"{', '.join(plan.impact.roles) or '-'}; usuwane wpisy: "
-                f"{', '.join(plan.impact.removed_entries) or '-'}. "
-                "Nie można odłączyć ostatniego aktywnego secondary.",
-            ))
+            result.steps.append(
+                BindSecondaryStep(
+                    "impact-gate",
+                    False,
+                    "Zmiana HIGH jest zablokowana przed backupem: role "
+                    f"{', '.join(plan.impact.roles) or '-'}; usuwane wpisy: "
+                    f"{', '.join(plan.impact.removed_entries) or '-'}. "
+                    "Nie można odłączyć ostatniego aktywnego secondary.",
+                )
+            )
             return result
 
         self.backup_root.mkdir(parents=True, exist_ok=True, mode=0o750)
@@ -150,9 +158,11 @@ class BindSecondaryTransaction:
                 metadata.st_uid,
                 metadata.st_gid,
             )
-            result.steps.append(BindSecondaryStep(
-                "configuration", True, f"Zaktualizowano {plan.source}"
-            ))
+            result.steps.append(
+                BindSecondaryStep(
+                    "configuration", True, f"Zaktualizowano {plan.source}"
+                )
+            )
             check = self.config_validator(self.root_config)
             result.steps.append(check)
             if not check.ok:
@@ -186,11 +196,13 @@ class BindSecondaryTransaction:
                 )
                 if activation_attempted:
                     rollback_reload = self.activator()
-                    result.steps.append(BindSecondaryStep(
-                        "rndc-reconfig-rollback",
-                        rollback_reload.ok,
-                        rollback_reload.message,
-                    ))
+                    result.steps.append(
+                        BindSecondaryStep(
+                            "rndc-reconfig-rollback",
+                            rollback_reload.ok,
+                            rollback_reload.message,
+                        )
+                    )
                     rollback_ok = rollback_reload.ok
                 rollback_state = BindSecondaryStep(
                     "post-rollback-state",
@@ -202,13 +214,15 @@ class BindSecondaryTransaction:
                 rollback_ok = rollback_ok and rollback_state.ok
             except OSError as rollback_error:
                 rollback_ok = False
-                result.steps.append(BindSecondaryStep(
-                    "rollback", False, str(rollback_error)
-                ))
+                result.steps.append(
+                    BindSecondaryStep("rollback", False, str(rollback_error))
+                )
             if rollback_ok:
-                result.steps.append(BindSecondaryStep(
-                    "rollback", True, "Przywrócono konfigurację sprzed transakcji"
-                ))
+                result.steps.append(
+                    BindSecondaryStep(
+                        "rollback", True, "Przywrócono konfigurację sprzed transakcji"
+                    )
+                )
             result.rolled_back = rollback_ok
             result.status = "ROLLED-BACK" if rollback_ok else "ROLLBACK-FAILED"
         after_entries = (
@@ -244,15 +258,16 @@ class BindSecondaryTransaction:
         else:
             inventory = BindAccessInventoryReader(self.root_config).collect()
             matches = [
-                item for item in inventory.definitions
+                item
+                for item in inventory.definitions
                 if item.kind == plan.kind
                 and item.name.casefold() == plan.name.casefold()
             ]
             ok = len(matches) == 1 and matches[0].entries == plan.new_addresses
         detail = (
             "Aktywna konfiguracja secondary odpowiada zatwierdzonemu planowi"
-            if ok else
-            "Aktywna konfiguracja secondary nie odpowiada zatwierdzonemu planowi"
+            if ok
+            else "Aktywna konfiguracja secondary nie odpowiada zatwierdzonemu planowi"
         )
         return BindSecondaryStep("post-config-state", ok, detail)
 
@@ -261,28 +276,30 @@ class BindSecondaryTransaction:
         zones = tuple(zone for zone in plan.zones if "rpz" not in zone.casefold())
         if not zones or not plan.operational_addresses:
             return BindSecondaryStep(
-                "secondary-operational", True,
+                "secondary-operational",
+                True,
                 "Brak stref lub adresów wymagających kontroli SOA",
             )
-        reports = BindSecondaryHealthGate().check(
-            zones, plan.operational_addresses
-        )
+        reports = BindSecondaryHealthGate().check(zones, plan.operational_addresses)
         failed = tuple(report for report in reports if report.status == "FAIL")
         pending = tuple(report for report in reports if report.status == "PENDING")
         if failed:
             return BindSecondaryStep(
-                "secondary-operational", False,
+                "secondary-operational",
+                False,
                 "Błąd autorytatywności/SOA: "
                 + ", ".join(report.zone for report in failed),
             )
         if pending:
             return BindSecondaryStep(
-                "secondary-operational", True,
+                "secondary-operational",
+                True,
                 "PENDING — transfer SOA trwa dla: "
                 + ", ".join(report.zone for report in pending),
             )
         return BindSecondaryStep(
-            "secondary-operational", True,
+            "secondary-operational",
+            True,
             "PASS — secondary zwracają autorytatywne SOA zgodne z primary",
         )
 
@@ -290,19 +307,39 @@ class BindSecondaryTransaction:
         self.manifest_directory.mkdir(parents=True, exist_ok=True, mode=0o750)
         path = self.manifest_directory / f"{result.transaction_id}.json"
         result.manifest = str(path)
-        payload = safe_manifest_payload(result, (
-            "transaction_id", "group", "status", "roles", "old_addresses",
-            "new_addresses", "zones", "committed", "rolled_back", "backup",
-            "manifest", "operator", "reason", "risk", "state_before",
-            "state_after", "steps",
-        ))
-        payload["saved_at"] = datetime.now(timezone.utc).astimezone().isoformat(
-            timespec="seconds"
+        payload = safe_manifest_payload(
+            result,
+            (
+                "transaction_id",
+                "group",
+                "status",
+                "roles",
+                "old_addresses",
+                "new_addresses",
+                "zones",
+                "committed",
+                "rolled_back",
+                "backup",
+                "manifest",
+                "operator",
+                "reason",
+                "risk",
+                "state_before",
+                "state_after",
+                "steps",
+            ),
         )
-        path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+        payload["saved_at"] = (
+            datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds")
+        )
+        path.write_text(
+            json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8"
+        )
 
     @staticmethod
-    def _atomic_write(path: Path, content: bytes, mode: int, uid: int, gid: int) -> None:
+    def _atomic_write(
+        path: Path, content: bytes, mode: int, uid: int, gid: int
+    ) -> None:
         fd, temporary_name = tempfile.mkstemp(prefix=f".{path.name}.", dir=path.parent)
         temporary = Path(temporary_name)
         try:
@@ -321,11 +358,15 @@ class BindSecondaryTransaction:
     @staticmethod
     def _validate_config(root: Path) -> BindSecondaryStep:
         outcome = run(["named-checkconf", str(root)], 30)
-        detail = (outcome.stdout or outcome.stderr).strip() or f"kod {outcome.returncode}"
+        detail = (
+            outcome.stdout or outcome.stderr
+        ).strip() or f"kod {outcome.returncode}"
         return BindSecondaryStep("named-checkconf", outcome.returncode == 0, detail)
 
     @staticmethod
     def _activate() -> BindSecondaryStep:
         outcome = run(["rndc", "reconfig"], 30)
-        detail = (outcome.stdout or outcome.stderr).strip() or f"kod {outcome.returncode}"
+        detail = (
+            outcome.stdout or outcome.stderr
+        ).strip() or f"kod {outcome.returncode}"
         return BindSecondaryStep("rndc-reconfig", outcome.returncode == 0, detail)

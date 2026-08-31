@@ -37,9 +37,7 @@ def status_for(
     }
     monkeypatch.setattr(service, "serial", lambda server, _zone: serials[server])
     monkeypatch.setattr(service, "dnssec_enabled", lambda _zone: True)
-    return service.quick_status(
-        Zone("example.test", zone_file, dns2=True, he=True)
-    )
+    return service.quick_status(Zone("example.test", zone_file, dns2=True, he=True))
 
 
 def test_secondary_lag_is_warning_during_propagation(tmp_path, monkeypatch):

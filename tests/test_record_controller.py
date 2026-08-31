@@ -52,8 +52,7 @@ def test_default_sort_uses_owner_name() -> None:
     controller = make_controller()
 
     owners = [
-        view.record.relative_owner("example.pl")
-        for view in controller.ordered_views()
+        view.record.relative_owner("example.pl") for view in controller.ordered_views()
     ]
 
     assert owners == ["@", "api", "www"]
@@ -81,10 +80,7 @@ def test_sort_by_type() -> None:
     controller = make_controller()
     controller.cycle_sort()
 
-    types = [
-        view.record.rtype
-        for view in controller.ordered_views()
-    ]
+    types = [view.record.rtype for view in controller.ordered_views()]
 
     assert types == ["A", "A", "MX"]
 
@@ -94,10 +90,7 @@ def test_sort_by_ttl() -> None:
     controller.cycle_sort()
     controller.cycle_sort()
 
-    ttls = [
-        view.record.ttl
-        for view in controller.ordered_views()
-    ]
+    ttls = [view.record.ttl for view in controller.ordered_views()]
 
     assert ttls == [300, 3600, 7200]
 
@@ -145,11 +138,7 @@ def test_deleted_records_remain_in_ordered_views() -> None:
     controller.model.delete_by_identifier(identifier)
     views = controller.ordered_views()
 
-    deleted = next(
-        view
-        for view in views
-        if view.identifier == identifier
-    )
+    deleted = next(view for view in views if view.identifier == identifier)
 
     assert deleted.deleted is True
     assert deleted.marker == "-"

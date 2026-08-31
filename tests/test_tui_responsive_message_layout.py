@@ -54,5 +54,8 @@ def test_wide_message_keeps_multiline_transaction_output_in_left_panel(
     detail_writes = [write for write in window.writes if write[1] == 3]
     assert detail_writes
     assert all("\n" not in text for _, _, text, _ in detail_writes)
-    assert all(column + min(len(text), limit) < divider for _, column, text, limit in detail_writes)
+    assert all(
+        column + min(len(text), limit) < divider
+        for _, column, text, limit in detail_writes
+    )
     assert any(text == "type: primary" for _, _, text, _ in detail_writes)

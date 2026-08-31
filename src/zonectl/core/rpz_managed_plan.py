@@ -112,9 +112,13 @@ class RpzManagedPlanner:
                 "Nie można jednoznacznie wskazać jednego bloku options bez response-policy"
             )
 
-        status = "BLOCKED_EXTERNAL" if any(
-            item.startswith("EXTERNAL:") for item in conflicts
-        ) else "BLOCKED_CONFLICT" if conflicts else "READY"
+        status = (
+            "BLOCKED_EXTERNAL"
+            if any(item.startswith("EXTERNAL:") for item in conflicts)
+            else "BLOCKED_CONFLICT"
+            if conflicts
+            else "READY"
+        )
         next_action = (
             "Utwórz osobny plan migracji istniejącej integracji EXTERNAL; "
             "nie przejmuj jej automatycznie."

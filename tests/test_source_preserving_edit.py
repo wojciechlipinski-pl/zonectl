@@ -29,22 +29,28 @@ def test_unchanged_relative_owner_keeps_source_form() -> None:
     original = record(owner="www")
     zone = Zone(name="example.pl", file=None)
 
-    assert RecordEditor._owner_from_form(
-        "www",
-        original,
-        zone,
-    ) == "www"
+    assert (
+        RecordEditor._owner_from_form(
+            "www",
+            original,
+            zone,
+        )
+        == "www"
+    )
 
 
 def test_changed_relative_owner_is_made_absolute() -> None:
     original = record(owner="www")
     zone = Zone(name="example.pl", file=None)
 
-    assert RecordEditor._owner_from_form(
-        "mail",
-        original,
-        zone,
-    ) == "mail.example.pl."
+    assert (
+        RecordEditor._owner_from_form(
+            "mail",
+            original,
+            zone,
+        )
+        == "mail.example.pl."
+    )
 
 
 def test_modified_record_keeps_inline_comment() -> None:
@@ -74,6 +80,4 @@ def test_semicolon_inside_quotes_is_not_inline_comment() -> None:
     )
     document = ZoneDocument(nodes=[node])
 
-    assert ZoneWriter().render_document(document) == (
-        '_note\tIN\tTXT\t"c;d"\n'
-    )
+    assert ZoneWriter().render_document(document) == ('_note\tIN\tTXT\t"c;d"\n')

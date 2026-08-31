@@ -95,7 +95,8 @@ class RpzExternalMigrationDryRun:
                 )
                 result.steps.append(
                     RpzMigrationDryRunStep(
-                        "candidates", True,
+                        "candidates",
+                        True,
                         f"Kandydaci utworzeni wyłącznie w {workspace}",
                     )
                 )
@@ -105,14 +106,19 @@ class RpzExternalMigrationDryRun:
                     "service-unit": self._digest(service),
                     "timer-unit": self._digest(timer),
                 }
-                self._command_step(result, "updater-syntax", ["bash", "-n", str(updater)])
+                self._command_step(
+                    result, "updater-syntax", ["bash", "-n", str(updater)]
+                )
                 self._unit_step(result, service, timer, plan.managed_updater)
                 self._command_step(
-                    result, "named-checkzone",
+                    result,
+                    "named-checkzone",
                     ["named-checkzone", plan.zone, str(paths["zone-file"])],
                 )
                 self._command_step(
-                    result, "named-checkconf", ["named-checkconf", str(self.root_config)]
+                    result,
+                    "named-checkconf",
+                    ["named-checkconf", str(self.root_config)],
                 )
         except OSError as exc:
             result.steps.append(RpzMigrationDryRunStep("workspace", False, str(exc)))
@@ -124,16 +130,19 @@ class RpzExternalMigrationDryRun:
         unchanged = before == after
         result.steps.append(
             RpzMigrationDryRunStep(
-                "source-integrity", unchanged,
+                "source-integrity",
+                unchanged,
                 "Artefakty EXTERNAL pozostały bez zmian"
-                if unchanged else "Wykryto zmianę artefaktów EXTERNAL",
+                if unchanged
+                else "Wykryto zmianę artefaktów EXTERNAL",
             )
         )
         ok = all(step.ok for step in result.steps)
         result.status = "DRY-RUN" if ok else "FAILED"
         result.steps.append(
             RpzMigrationDryRunStep(
-                "no-activation", True,
+                "no-activation",
+                True,
                 "Nie zapisano plików systemowych, nie zatrzymano timera i nie przeładowano BIND",
             )
         )
@@ -143,8 +152,12 @@ class RpzExternalMigrationDryRun:
         self, result: RpzMigrationDryRunResult, name: str, command: list[str]
     ) -> None:
         outcome = self.command_runner(command, 30)
-        message = (outcome.stdout or outcome.stderr).strip() or f"kod {outcome.returncode}"
-        result.steps.append(RpzMigrationDryRunStep(name, outcome.returncode == 0, message))
+        message = (
+            outcome.stdout or outcome.stderr
+        ).strip() or f"kod {outcome.returncode}"
+        result.steps.append(
+            RpzMigrationDryRunStep(name, outcome.returncode == 0, message)
+        )
 
     @staticmethod
     def _unit_step(
@@ -163,9 +176,11 @@ class RpzExternalMigrationDryRun:
         )
         result.steps.append(
             RpzMigrationDryRunStep(
-                "unit-candidates", valid,
+                "unit-candidates",
+                valid,
                 "Sekcje Service/Timer i docelowy ExecStart są poprawne"
-                if valid else "Kandydaci unitów nie zawierają wymaganych dyrektyw",
+                if valid
+                else "Kandydaci unitów nie zawierają wymaganych dyrektyw",
             )
         )
 

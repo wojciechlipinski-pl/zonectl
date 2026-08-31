@@ -28,13 +28,15 @@ class FakeWindow:
 
 
 def test_editor_modifies_the_real_initial_value_with_arrows_and_delete() -> None:
-    win = FakeWindow([
-        curses.KEY_LEFT,
-        curses.KEY_LEFT,
-        curses.KEY_DC,
-        ord("9"),
-        10,
-    ])
+    win = FakeWindow(
+        [
+            curses.KEY_LEFT,
+            curses.KEY_LEFT,
+            curses.KEY_DC,
+            ord("9"),
+            10,
+        ]
+    )
     assert CursesDialogs._edit_line(win, 0, 0, "192.0.2.53", 30) == "192.0.2.93"
 
 

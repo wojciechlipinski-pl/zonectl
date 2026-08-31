@@ -30,7 +30,9 @@ def test_managed_install_cli_is_dry_run_by_design(monkeypatch, capsys) -> None:
     assert "nie zmieniono BIND" in output
 
 
-def test_managed_install_cli_returns_failure_for_blocked_plan(monkeypatch, capsys) -> None:
+def test_managed_install_cli_returns_failure_for_blocked_plan(
+    monkeypatch, capsys
+) -> None:
     monkeypatch.setattr(cli.ToolkitConfig, "load", lambda self: _EmptyConfig())
     monkeypatch.setattr(cli.RpzManagedPlanner, "plan", lambda self: object())
     monkeypatch.setattr(
@@ -53,7 +55,8 @@ def test_managed_apply_rejects_single_write_flag(monkeypatch, capsys) -> None:
         cli.RpzManagedInstallTransaction,
         "apply",
         lambda self, plan, **kwargs: RpzManagedInstallResult(
-            "cert-rpz.local", "REJECTED",
+            "cert-rpz.local",
+            "REJECTED",
             transaction_id="tx",
             steps=[RpzManagedInstallStep("guard", False, "wymagane dwie flagi")],
         ),
@@ -63,22 +66,35 @@ def test_managed_apply_rejects_single_write_flag(monkeypatch, capsys) -> None:
     assert "wymagane dwie flagi" in capsys.readouterr().out
 
 
-def test_managed_apply_reports_commit_and_manifest(monkeypatch, capsys, tmp_path) -> None:
+def test_managed_apply_reports_commit_and_manifest(
+    monkeypatch, capsys, tmp_path
+) -> None:
     monkeypatch.setattr(cli.ToolkitConfig, "load", lambda self: _EmptyConfig())
     monkeypatch.setattr(cli.RpzManagedPlanner, "plan", lambda self: object())
     monkeypatch.setattr(
         cli.RpzManagedInstallTransaction,
         "apply",
         lambda self, plan, **kwargs: RpzManagedInstallResult(
-            "cert-rpz.local", "COMMIT", committed=True, activated=True,
-            transaction_id="tx", manifest="/backup/tx.json",
+            "cert-rpz.local",
+            "COMMIT",
+            committed=True,
+            activated=True,
+            transaction_id="tx",
+            manifest="/backup/tx.json",
         ),
     )
-    code = cli.main([
-        "bind", "rpz-managed-apply", "--commit", "--activate",
-        "--confirm", "cert-rpz.local",
-        "--manifest-directory", str(tmp_path),
-    ])
+    code = cli.main(
+        [
+            "bind",
+            "rpz-managed-apply",
+            "--commit",
+            "--activate",
+            "--confirm",
+            "cert-rpz.local",
+            "--manifest-directory",
+            str(tmp_path),
+        ]
+    )
     output = capsys.readouterr().out
     assert code == 0
     assert "Status:     COMMIT" in output

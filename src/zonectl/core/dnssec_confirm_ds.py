@@ -131,15 +131,17 @@ class DnssecConfirmDsTransaction:
             path = self.manifest_directory / f"{result.transaction_id}.json"
             result.manifest = str(path)
             payload = asdict(result)
-            payload["saved_at"] = datetime.now(timezone.utc).astimezone().isoformat(
-                timespec="seconds"
+            payload["saved_at"] = (
+                datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds")
             )
             self._atomic_json(path, payload)
         return result
 
     @staticmethod
     def _atomic_json(path: Path, payload: dict[str, object]) -> None:
-        descriptor, temporary = tempfile.mkstemp(prefix=f".{path.name}.", dir=path.parent)
+        descriptor, temporary = tempfile.mkstemp(
+            prefix=f".{path.name}.", dir=path.parent
+        )
         try:
             with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
                 json.dump(payload, handle, ensure_ascii=False, indent=2)
@@ -155,13 +157,25 @@ class DnssecConfirmDsTransaction:
     @staticmethod
     def _confirm(zone: str) -> DnssecConfirmStep:
         outcome = run(["rndc", "dnssec", "-checkds", "published", zone], timeout=15)
-        message = (outcome.stdout or outcome.stderr).strip() or f"kod {outcome.returncode}"
-        return DnssecConfirmStep("rndc-checkds-published", outcome.returncode == 0, message)
+        message = (
+            outcome.stdout or outcome.stderr
+        ).strip() or f"kod {outcome.returncode}"
+        return DnssecConfirmStep(
+            "rndc-checkds-published", outcome.returncode == 0, message
+        )
 
     @staticmethod
     def _verify(zone: str) -> DnssecConfirmStep:
         outcome: CommandResult = run(["rndc", "dnssec", "-status", zone], timeout=15)
         text = (outcome.stdout + outcome.stderr).strip()
-        state = re.search(r"^\s*-\s*ds:\s*([a-z-]+)\s*$", text, re.MULTILINE | re.IGNORECASE)
-        ok = outcome.returncode == 0 and state is not None and state.group(1).casefold() != "hidden"
-        return DnssecConfirmStep("kasp-ds-state", ok, text or f"kod {outcome.returncode}")
+        state = re.search(
+            r"^\s*-\s*ds:\s*([a-z-]+)\s*$", text, re.MULTILINE | re.IGNORECASE
+        )
+        ok = (
+            outcome.returncode == 0
+            and state is not None
+            and state.group(1).casefold() != "hidden"
+        )
+        return DnssecConfirmStep(
+            "kasp-ds-state", ok, text or f"kod {outcome.returncode}"
+        )

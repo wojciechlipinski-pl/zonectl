@@ -33,9 +33,7 @@ class ManagedZoneInventoryItem:
     def to_dict(self) -> dict[str, object]:
         payload = asdict(self)
         payload["config_file"] = str(self.config_file)
-        payload["source_file"] = (
-            str(self.source_file) if self.source_file else None
-        )
+        payload["source_file"] = str(self.source_file) if self.source_file else None
         return payload
 
 
@@ -94,9 +92,7 @@ class ManagedZoneMigrationPlanner:
         self.root_config = root_config.expanduser().resolve()
         self.local_config = local_config.expanduser().resolve()
         self.managed_config = managed_config.expanduser().resolve()
-        self.managed_zone_directory = (
-            managed_zone_directory.expanduser().resolve()
-        )
+        self.managed_zone_directory = managed_zone_directory.expanduser().resolve()
 
     def inventory(self) -> tuple[ManagedZoneInventoryItem, ...]:
         result = self._discover()
@@ -131,13 +127,9 @@ class ManagedZoneMigrationPlanner:
             raise ManagedZoneMigrationError(str(exc)) from exc
 
         result = self._discover()
-        matches = [
-            zone for zone in result.zones if self._key(zone.name) == wanted
-        ]
+        matches = [zone for zone in result.zones if self._key(zone.name) == wanted]
         if not matches:
-            raise ManagedZoneMigrationError(
-                f"Nie znaleziono aktywnej strefy: {wanted}"
-            )
+            raise ManagedZoneMigrationError(f"Nie znaleziono aktywnej strefy: {wanted}")
         if len(matches) != 1:
             locations = ", ".join(str(item.config_file) for item in matches)
             raise ManagedZoneMigrationError(

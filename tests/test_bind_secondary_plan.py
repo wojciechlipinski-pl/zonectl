@@ -11,10 +11,10 @@ from zonectl.core.bind_secondary_plan import (
 def _root(tmp_path: Path) -> Path:
     root = tmp_path / "named.conf"
     root.write_text(
-        'primaries dns2-notify { 192.0.2.53; };\n'
+        "primaries dns2-notify { 192.0.2.53; };\n"
         'acl "dns2-transfer" { 192.0.2.54; };\n'
         'zone "a" { type primary; file "/a"; '
-        'also-notify { dns2-notify; }; allow-transfer { dns2-transfer; }; };\n',
+        "also-notify { dns2-notify; }; allow-transfer { dns2-transfer; }; };\n",
         encoding="utf-8",
     )
     return root
@@ -23,7 +23,8 @@ def _root(tmp_path: Path) -> Path:
 def test_plan_reports_impact_and_minimal_diff(tmp_path: Path, monkeypatch) -> None:
     root = _root(tmp_path)
     monkeypatch.setattr(
-        BindSecondaryPlanner, "_validate_candidate",
+        BindSecondaryPlanner,
+        "_validate_candidate",
         lambda self, source, candidate: (True, "kod 0"),
     )
     before = root.read_bytes()

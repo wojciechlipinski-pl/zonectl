@@ -112,10 +112,7 @@ def test_diff_keeps_repeated_bind_lines_as_context() -> None:
     )
     original = repeated + '\nzone "target.example" {\n    notify yes;\n};\n'
     candidate = repeated + (
-        '\nzone "target.example" {\n'
-        "    notify yes;\n"
-        "    dnssec-policy default;\n"
-        "};\n"
+        '\nzone "target.example" {\n    notify yes;\n    dnssec-policy default;\n};\n'
     )
 
     diff = DnssecEnablePlanner._unified_diff(

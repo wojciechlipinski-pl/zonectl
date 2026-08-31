@@ -9,7 +9,6 @@ from collections.abc import Mapping, Sequence
 from .bind_access_inventory import (
     BindAccessInventory,
     BindListDefinition,
-    BindListUsage,
 )
 
 
@@ -52,8 +51,13 @@ class BindAccessImpactReport:
     def to_dict(self) -> dict[str, object]:
         data = asdict(self)
         for field in (
-            "current_entries", "candidate_entries", "added_entries",
-            "removed_entries", "roles", "zones", "dependent_definitions",
+            "current_entries",
+            "candidate_entries",
+            "added_entries",
+            "removed_entries",
+            "roles",
+            "zones",
+            "dependent_definitions",
             "blockers",
         ):
             data[field] = list(data[field])
@@ -79,17 +83,13 @@ class BindAccessImpactReporter:
         name: str,
         candidate_entries: tuple[str, ...] | list[str] | None = None,
     ) -> BindAccessImpactReport:
-        definitions = {
-            item.name.casefold(): item for item in inventory.definitions
-        }
+        definitions = {item.name.casefold(): item for item in inventory.definitions}
         key = name.casefold()
         definition = definitions.get(key)
         if definition is None:
             raise BindAccessImpactError(f"Nie znaleziono definicji: {name}")
         if sum(1 for item in inventory.definitions if item.name.casefold() == key) != 1:
-            raise BindAccessImpactError(
-                f"Definicja {name} nie jest jednoznaczna"
-            )
+            raise BindAccessImpactError(f"Definicja {name} nie jest jednoznaczna")
 
         graph = {
             item.name.casefold(): tuple(
@@ -104,9 +104,7 @@ class BindAccessImpactReporter:
         affected = {key, *dependents}
         usages: list[BindAccessImpactUsage] = []
         for usage in inventory.usages:
-            referenced = {
-                value.lstrip("!").casefold() for value in usage.values
-            }
+            referenced = {value.lstrip("!").casefold() for value in usage.values}
             matches = sorted(referenced & affected)
             if not matches:
                 continue
@@ -122,16 +120,16 @@ class BindAccessImpactReporter:
             )
 
         current = definition.entries
-        candidate = tuple(candidate_entries) if candidate_entries is not None else current
+        candidate = (
+            tuple(candidate_entries) if candidate_entries is not None else current
+        )
         current_keys = {self._normalize(item): item for item in current}
         candidate_keys = {self._normalize(item): item for item in candidate}
         added = tuple(
-            item for item in candidate
-            if self._normalize(item) not in current_keys
+            item for item in candidate if self._normalize(item) not in current_keys
         )
         removed = tuple(
-            item for item in current
-            if self._normalize(item) not in candidate_keys
+            item for item in current if self._normalize(item) not in candidate_keys
         )
         roles = tuple(sorted({usage.role for usage in usages}))
         zones = tuple(sorted({usage.zone for usage in usages if usage.zone}))
@@ -142,11 +140,8 @@ class BindAccessImpactReporter:
         elif removed and (
             "administration" in roles
             or (
-                {"query", "recursion", "transfer", "notify", "primaries"}
-                & set(roles)
-                and not self._has_remote_capable_entry(
-                    candidate, definitions, set()
-                )
+                {"query", "recursion", "transfer", "notify", "primaries"} & set(roles)
+                and not self._has_remote_capable_entry(candidate, definitions, set())
             )
         ):
             risk = "HIGH"
@@ -237,7 +232,7 @@ class BindAccessImpactReporter:
 
         def visit(node: str, path: tuple[str, ...]) -> None:
             if node in path:
-                cycle = path[path.index(node):] + (node,)
+                cycle = path[path.index(node) :] + (node,)
                 label = " -> ".join(definitions[item].name for item in cycle)
                 message = f"Cykliczne odwołanie ACL: {label}"
                 if message not in blockers:

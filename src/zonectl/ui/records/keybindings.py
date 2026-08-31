@@ -38,8 +38,10 @@ def render_footer(
     read_only: bool = False,
 ) -> str:
     blocked = {"Ins", "F4", "Del", "b", "u", "F2"} if read_only else set()
-    return " " + "   ".join(
-        binding.render()
-        for binding in bindings
-        if binding.key not in blocked
-    ) + " "
+    return (
+        " "
+        + "   ".join(
+            binding.render() for binding in bindings if binding.key not in blocked
+        )
+        + " "
+    )

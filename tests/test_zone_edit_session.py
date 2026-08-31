@@ -95,8 +95,7 @@ def test_session_loads_source_document(
 ) -> None:
     source = tmp_path / "example.pl"
     source.write_text(
-        "$TTL 3600\n"
-        "www 300 IN A 192.0.2.10\n",
+        "$TTL 3600\nwww 300 IN A 192.0.2.10\n",
         encoding="utf-8",
     )
 
@@ -116,8 +115,7 @@ def test_render_candidate_contains_model_change(
 ) -> None:
     source = tmp_path / "example.pl"
     source.write_text(
-        "$TTL 3600\n"
-        "www 300 IN A 192.0.2.10\n",
+        "$TTL 3600\nwww 300 IN A 192.0.2.10\n",
         encoding="utf-8",
     )
 
@@ -138,10 +136,7 @@ def test_render_candidate_contains_model_change(
 
     candidate = session.render_candidate()
 
-    assert candidate == (
-        "$TTL 3600\n"
-        "www\t300\tIN\tA\t192.0.2.20\n"
-    )
+    assert candidate == ("$TTL 3600\nwww\t300\tIN\tA\t192.0.2.20\n")
     assert session.dirty is True
 
 
@@ -149,10 +144,7 @@ def test_dry_run_does_not_change_active_file(
     tmp_path: Path,
 ) -> None:
     source = tmp_path / "example.pl"
-    original = (
-        "$TTL 3600\n"
-        "www 300 IN A 192.0.2.10\n"
-    )
+    original = "$TTL 3600\nwww 300 IN A 192.0.2.10\n"
     source.write_text(original, encoding="utf-8")
 
     engine = FakeEngine(source)
@@ -196,18 +188,21 @@ def test_soa_form_change_uses_automatic_serial_bump(
     )
     source.write_text(original, encoding="utf-8")
     session = ZoneEditSession(
-        make_zone(source), FakeEngine(source),
+        make_zone(source),
+        FakeEngine(source),
         today_provider=lambda: date(2026, 8, 21),
     )
     view = next(
-        item for item in session.model.record_views
-        if item.record.rtype == "SOA"
+        item for item in session.model.record_views if item.record.rtype == "SOA"
     )
     updated, error = RecordEditor.build_soa_record(
         view.record,
         primary="ns2.example.pl.",
         administrator="dns.example.pl.",
-        refresh="7200", retry="1200", expire="604800", minimum="600",
+        refresh="7200",
+        retry="1200",
+        expire="604800",
+        minimum="600",
         ttl_text="3600",
     )
     assert error == ""
@@ -232,8 +227,7 @@ def test_commit_changes_active_file_and_reloads_session(
 ) -> None:
     source = tmp_path / "example.pl"
     source.write_text(
-        "$TTL 3600\n"
-        "www 300 IN A 192.0.2.10\n",
+        "$TTL 3600\nwww 300 IN A 192.0.2.10\n",
         encoding="utf-8",
     )
 
@@ -261,8 +255,7 @@ def test_commit_changes_active_file_and_reloads_session(
     assert engine.last_commit is True
 
     assert source.read_text(encoding="utf-8") == (
-        "$TTL 3600\n"
-        "www\t300\tIN\tA\t192.0.2.40\n"
+        "$TTL 3600\nwww\t300\tIN\tA\t192.0.2.40\n"
     )
 
     assert session.model.records[0].rdata == "192.0.2.40"
@@ -272,10 +265,7 @@ def test_discard_restores_original_state(
     tmp_path: Path,
 ) -> None:
     source = tmp_path / "example.pl"
-    original = (
-        "$TTL 3600\n"
-        "www 300 IN A 192.0.2.10\n"
-    )
+    original = "$TTL 3600\nwww 300 IN A 192.0.2.10\n"
     source.write_text(original, encoding="utf-8")
 
     session = ZoneEditSession(
@@ -336,9 +326,7 @@ def test_missing_zone_file_is_rejected(
     except ZoneEditSessionError as exc:
         assert "nie istnieje" in str(exc)
     else:
-        raise AssertionError(
-            "Oczekiwano ZoneEditSessionError"
-        )
+        raise AssertionError("Oczekiwano ZoneEditSessionError")
 
 
 def test_session_automatically_bumps_multiline_soa_serial(
@@ -365,11 +353,7 @@ def test_session_automatically_bumps_multiline_soa_serial(
         today_provider=lambda: date(2026, 7, 29),
     )
 
-    view = next(
-        view
-        for view in session.model.record_views
-        if view.record.rtype == "A"
-    )
+    view = next(view for view in session.model.record_views if view.record.rtype == "A")
 
     session.model.replace_by_identifier(
         view.identifier,
@@ -410,11 +394,7 @@ def test_serial_is_bumped_only_once_per_session(
         today_provider=lambda: date(2026, 7, 29),
     )
 
-    view = next(
-        view
-        for view in session.model.record_views
-        if view.record.rtype == "A"
-    )
+    view = next(view for view in session.model.record_views if view.record.rtype == "A")
 
     session.model.replace_by_identifier(
         view.identifier,

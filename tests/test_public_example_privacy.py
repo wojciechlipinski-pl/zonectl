@@ -12,15 +12,15 @@ PUBLIC_PATHS = (
     ROOT / "tests",
 )
 FORBIDDEN_NAMES = (
-    "elk" "man.pl",
-    ".elk" ".pl",
-    "egosa" ".org",
-    "xn--ek-xqa" ".pl",
+    "elkman.pl",
+    ".elk.pl",
+    "egosa.org",
+    "xn--ek-xqa.pl",
 )
 FORBIDDEN_IPV4 = (
-    "5" ".172.189.198",
-    "216" ".218.133.2",
-    "216" ".218.130.2",
+    "5.172.189.198",
+    "216.218.133.2",
+    "216.218.130.2",
 )
 
 

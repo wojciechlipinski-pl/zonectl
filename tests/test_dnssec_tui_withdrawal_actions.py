@@ -80,12 +80,13 @@ def test_finalize_commit_uses_commit_and_activation(monkeypatch) -> None:
 
 def test_commit_path_requires_ready_stage_and_exact_zone_name() -> None:
     source = inspect.getsource(CursesApp._dnssec_status_view)
+    compact_source = "".join(source.split())
 
     assert 'view.stage == "READY_TO_FINALIZE"' in source
     assert "Wpisz pełną nazwę strefy" in source
     assert "supplied != expected" in source
     assert "CursesDialogs.confirm" in source
-    assert "self._dnssec_finalize_commit(zone)" in source
+    assert "self._dnssec_finalize_commit(zone)" in compact_source
 
 
 def test_f4_routes_non_finalize_stages_to_guidance_only() -> None:
@@ -145,6 +146,7 @@ def test_withdrawal_backup_routes_dry_run_and_commit(monkeypatch) -> None:
 
 def test_withdrawal_backup_ui_requires_exact_confirmation() -> None:
     source = inspect.getsource(CursesApp._dnssec_status_view)
+    source = " ".join(source.split())
 
     assert "Wpisz pełną nazwę strefy, aby utworzyć backup" in source
     assert "Utworzyć backup wycofania DNSSEC" in source
@@ -210,10 +212,11 @@ def test_enable_commit_uses_commit_and_activation(monkeypatch) -> None:
 
 def test_enable_commit_ui_requires_exact_confirmation() -> None:
     source = inspect.getsource(CursesApp._dnssec_status_view)
+    compact_source = "".join(source.split())
 
     assert "Wpisz pełną nazwę strefy, aby włączyć DNSSEC" in source
     assert "Włączyć i aktywować DNSSEC" in source
-    assert "self._dnssec_enable_commit(zone)" in source
+    assert "self._dnssec_enable_commit(zone)" in compact_source
     assert "self.config.read_only" in source
 
 

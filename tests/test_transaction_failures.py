@@ -106,20 +106,12 @@ def test_rndc_reload_failure_restores_original_zone_file(
         nonlocal reload_calls
 
         if command[0] == "named-checkzone":
-            return command_result(
-                stdout=(
-                    "zone example.pl/IN: loaded serial 2\n"
-                    "OK\n"
-                )
-            )
+            return command_result(stdout=("zone example.pl/IN: loaded serial 2\nOK\n"))
         if command[0] == "named-checkconf":
             return command_result()
         if command[0] == "dig":
             return command_result(
-                stdout=(
-                    "ns.example.pl. hostmaster.example.pl. "
-                    "1 3600 600 86400 300\n"
-                )
+                stdout=("ns.example.pl. hostmaster.example.pl. 1 3600 600 86400 300\n")
             )
         if command[:2] == ["rndc", "reload"]:
             reload_calls += 1

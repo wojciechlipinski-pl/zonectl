@@ -31,11 +31,7 @@ class RecordRenderer:
         panel = cls.details_height(height, width)
         return max(
             1,
-            height
-            - cls.LIST_TOP
-            - cls.FOOTER_LINES
-            - panel
-            - (1 if panel else 0),
+            height - cls.LIST_TOP - cls.FOOTER_LINES - panel - (1 if panel else 0),
         )
 
     @staticmethod
@@ -118,9 +114,9 @@ class RecordRenderer:
         read_only: bool,
     ) -> None:
         bindings = tuple(
-            binding for binding in RECORD_VIEW_BINDINGS
-            if not read_only
-            or binding.key not in {"Ins", "F4", "Del", "b", "u", "F2"}
+            binding
+            for binding in RECORD_VIEW_BINDINGS
+            if not read_only or binding.key not in {"Ins", "F4", "Del", "b", "u", "F2"}
         )
         cls._put(win, row, 0, " " * width, curses.A_REVERSE)
         column = 1
@@ -141,8 +137,15 @@ class RecordRenderer:
 
     @classmethod
     def _draw_details_panel(
-        cls, win: curses.window, *, top: int, height: int, width: int,
-        zone_name: str, view: ZoneRecordView | None, change_count: int,
+        cls,
+        win: curses.window,
+        *,
+        top: int,
+        height: int,
+        width: int,
+        zone_name: str,
+        view: ZoneRecordView | None,
+        change_count: int,
     ) -> None:
         try:
             for column in range(width - 1):
@@ -380,14 +383,16 @@ class RecordRenderer:
 
         if cls.panel_enabled(height, width):
             selected_view = (
-                records[selected]
-                if records and 0 <= selected < len(records)
-                else None
+                records[selected] if records and 0 <= selected < len(records) else None
             )
             cls._draw_details_panel(
-                win, top=cls.LIST_TOP + visible + 1,
-                height=cls.details_height(height, width), width=width,
-                zone_name=zone_name, view=selected_view, change_count=change_count,
+                win,
+                top=cls.LIST_TOP + visible + 1,
+                height=cls.details_height(height, width),
+                width=width,
+                zone_name=zone_name,
+                view=selected_view,
+                change_count=change_count,
             )
         cls._draw_footer(win, height - 2, width, read_only=read_only)
         win.refresh()

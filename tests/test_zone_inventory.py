@@ -47,8 +47,10 @@ def test_inventory_lists_disabled_zone_with_manifest_metadata(
 
 def test_inventory_lists_every_quarantine_package(tmp_path: Path) -> None:
     root = tmp_path / "quarantine/example.invalid"
-    for number, timestamp in (("tx-1", "2026-07-31T10:00:00+02:00"),
-                              ("tx-2", "2026-07-31T11:00:00+02:00")):
+    for number, timestamp in (
+        ("tx-1", "2026-07-31T10:00:00+02:00"),
+        ("tx-2", "2026-07-31T11:00:00+02:00"),
+    ):
         write_json(
             root / number / "manifest.json",
             {

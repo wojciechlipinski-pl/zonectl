@@ -47,10 +47,7 @@ def isolated_bind(tmp_path: Path):
     root = bind / "named.conf"
     zone.write_text(ZONE_TEXT, encoding="utf-8")
     declaration.write_text(
-        'zone "example.invalid" IN {\n'
-        '    type primary;\n'
-        f'    file "{zone}";\n'
-        '};\n',
+        f'zone "example.invalid" IN {{\n    type primary;\n    file "{zone}";\n}};\n',
         encoding="utf-8",
     )
     index.write_text(f'include "{declaration}";\n', encoding="utf-8")
@@ -146,9 +143,7 @@ def test_quarantine_restore_uses_real_bind_validators(
         root_config=root,
     )
     transaction = QuarantineRestoreTransaction(
-        activator=lambda name: QuarantineRestoreStep(
-            "rndc-reconfig", True, "isolated"
-        ),
+        activator=lambda name: QuarantineRestoreStep("rndc-reconfig", True, "isolated"),
         loaded_verifier=lambda name: QuarantineRestoreStep(
             "rndc-zonestatus", True, "isolated"
         ),

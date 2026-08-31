@@ -112,9 +112,7 @@ def test_view_allows_ds_when_kasp_is_ready() -> None:
         next_action=ready_delegation.next_action,
         errors=(),
     )
-    view = DnssecStatusView.build(
-        report(zone_rrsig="omnipresent"), ready_delegation
-    )
+    view = DnssecStatusView.build(report(zone_rrsig="omnipresent"), ready_delegation)
 
     assert view.stage == "READY_FOR_DS"
     assert view.operation == "CHECK_DS"
@@ -140,13 +138,11 @@ def test_view_describes_ds_fields_for_registrar_form() -> None:
     assert "Algorytm skrótu    2 — SHA-256" in text
     assert (
         "Skrót klucza       "
-        "6E960215EC4D8316BE3941994DFC665A3866DBBCD5CB288A5D195CEBC9ECE85C"
-        in text
+        "6E960215EC4D8316BE3941994DFC665A3866DBBCD5CB288A5D195CEBC9ECE85C" in text
     )
     assert (
         "Pełny rekord DS    43811 13 2 "
-        "6E960215EC4D8316BE3941994DFC665A3866DBBCD5CB288A5D195CEBC9ECE85C"
-        in text
+        "6E960215EC4D8316BE3941994DFC665A3866DBBCD5CB288A5D195CEBC9ECE85C" in text
     )
 
 

@@ -29,11 +29,7 @@ def _yes(value: str | None, default: bool) -> bool:
 def _unquote(value: str) -> str:
     value = value.strip()
 
-    if (
-        len(value) >= 2
-        and value[0] == value[-1]
-        and value[0] in {'"', "'"}
-    ):
+    if len(value) >= 2 and value[0] == value[-1] and value[0] in {'"', "'"}:
         return value[1:-1]
 
     return value
@@ -68,9 +64,7 @@ def load_groups_yaml(
             continue
 
         if not seen_root:
-            raise RuntimeError(
-                f"{path}:{number}: oczekiwano 'groups:'"
-            )
+            raise RuntimeError(f"{path}:{number}: oczekiwano 'groups:'")
 
         indent = len(line) - len(line.lstrip(" "))
 
@@ -78,37 +72,23 @@ def load_groups_yaml(
             current = _unquote(stripped[:-1].strip())
 
             if not current:
-                raise RuntimeError(
-                    f"{path}:{number}: pusta nazwa grupy"
-                )
+                raise RuntimeError(f"{path}:{number}: pusta nazwa grupy")
 
             if current not in order:
                 order.append(current)
 
             continue
 
-        if (
-            indent >= 4
-            and stripped.startswith("- ")
-            and current
-        ):
-            zone = (
-                _unquote(stripped[2:].strip())
-                .rstrip(".")
-                .casefold()
-            )
+        if indent >= 4 and stripped.startswith("- ") and current:
+            zone = _unquote(stripped[2:].strip()).rstrip(".").casefold()
 
             if not zone:
-                raise RuntimeError(
-                    f"{path}:{number}: pusta domena"
-                )
+                raise RuntimeError(f"{path}:{number}: pusta domena")
 
             mapping[zone] = current
             continue
 
-        raise RuntimeError(
-            f"{path}:{number}: nieobsługiwana składnia"
-        )
+        raise RuntimeError(f"{path}:{number}: nieobsługiwana składnia")
 
     return order, mapping
 
@@ -148,9 +128,7 @@ class ToolkitConfig:
 
     def load(self) -> "ToolkitConfig":
         if not self.config_path.exists():
-            raise RuntimeError(
-                f"Brak pliku konfiguracji: {self.config_path}"
-            )
+            raise RuntimeError(f"Brak pliku konfiguracji: {self.config_path}")
 
         self.general.read(
             self.config_path,
@@ -158,9 +136,7 @@ class ToolkitConfig:
         )
 
         if "toolkit" not in self.general:
-            raise RuntimeError(
-                f"Brak sekcji [toolkit] w {self.config_path}"
-            )
+            raise RuntimeError(f"Brak sekcji [toolkit] w {self.config_path}")
 
         # zones.conf staje się opcjonalny.
         if self.zones_path.exists():
@@ -169,9 +145,7 @@ class ToolkitConfig:
                 encoding="utf-8",
             )
 
-        self.group_order, self.group_mapping = load_groups_yaml(
-            self.groups_path
-        )
+        self.group_order, self.group_mapping = load_groups_yaml(self.groups_path)
 
         if self.auto_discover_zones:
             self._discover_bind_zones()
@@ -209,28 +183,22 @@ class ToolkitConfig:
 
     def _discover_bind_zones(self) -> None:
         try:
-            result = BindConfigDiscovery(
-                self.bind_config_path
-            ).discover()
+            result = BindConfigDiscovery(self.bind_config_path).discover()
         except BindDiscoveryError as exc:
             raise RuntimeError(
-                f"Autodetekcja konfiguracji BIND nie powiodła się: "
-                f"{exc}"
+                f"Autodetekcja konfiguracji BIND nie powiodła się: {exc}"
             ) from exc
 
         self.discovery_config_files = result.config_files
         self.discovered_zone_configs = {
-            self._normalise_zone_name(zone.name): zone
-            for zone in result.zones
+            self._normalise_zone_name(zone.name): zone for zone in result.zones
         }
 
     def discovered_zone(
         self,
         name: str,
     ) -> ZoneConfig | None:
-        return self.discovered_zone_configs.get(
-            self._normalise_zone_name(name)
-        )
+        return self.discovered_zone_configs.get(self._normalise_zone_name(name))
 
     def _zone_override(
         self,
@@ -317,12 +285,10 @@ class ToolkitConfig:
                 override.get("health_profile", "authoritative")
                 if override
                 else "authoritative"
-            ).strip().casefold(),
-            rpz_max_age=int(
-                override.get("rpz_max_age", "600")
-                if override
-                else "600"
-            ),
+            )
+            .strip()
+            .casefold(),
+            rpz_max_age=int(override.get("rpz_max_age", "600") if override else "600"),
             dnssec_policy=discovered.dnssec_policy,
             inline_signing=discovered.inline_signing,
             key_directory=discovered.key_directory,
@@ -372,12 +338,9 @@ class ToolkitConfig:
             raw_file = item.get("file", "").strip()
             explicit_group = item.get("group", "").strip()
 
-            group = (
-                explicit_group
-                or self.group_mapping.get(
-                    self._normalise_zone_name(name),
-                    "Pozostałe",
-                )
+            group = explicit_group or self.group_mapping.get(
+                self._normalise_zone_name(name),
+                "Pozostałe",
             )
 
             result.append(
@@ -405,16 +368,12 @@ class ToolkitConfig:
                     health_profile=item.get(
                         "health_profile",
                         "authoritative",
-                    ).strip().casefold(),
-                    rpz_max_age=int(
-                        item.get("rpz_max_age", "600")
-                    ),
-                    dnssec_policy=(
-                        item.get("dnssec_policy", "").strip() or None
-                    ),
-                    inline_signing=_yes(
-                        item.get("inline_signing"), False
-                    ),
+                    )
+                    .strip()
+                    .casefold(),
+                    rpz_max_age=int(item.get("rpz_max_age", "600")),
+                    dnssec_policy=(item.get("dnssec_policy", "").strip() or None),
+                    inline_signing=_yes(item.get("inline_signing"), False),
                     key_directory=(
                         Path(item.get("key_directory", "").strip())
                         if item.get("key_directory", "").strip()

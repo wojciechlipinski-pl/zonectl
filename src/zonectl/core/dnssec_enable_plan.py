@@ -197,7 +197,9 @@ class DnssecEnablePlanner:
         candidate_body = body
         if migration_required:
             if not self._file.search(candidate_body):
-                raise DnssecEnablePlanError("Deklaracja strefy nie zawiera dyrektywy file")
+                raise DnssecEnablePlanError(
+                    "Deklaracja strefy nie zawiera dyrektywy file"
+                )
             candidate_body = self._file.sub(
                 lambda _match: f'file "{target_zone_file}";',
                 candidate_body,
@@ -210,10 +212,7 @@ class DnssecEnablePlanner:
             f'    key-directory "{key_directory}";\n'
         )
         candidate = (
-            original[: opening + 1]
-            + candidate_body
-            + addition
-            + original[closing:]
+            original[: opening + 1] + candidate_body + addition + original[closing:]
         )
         diff = self._unified_diff(
             original,

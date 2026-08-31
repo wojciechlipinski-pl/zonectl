@@ -68,7 +68,15 @@ class BindService:
 
     def serial(self, server: str, zone: str) -> str | None:
         result = run(
-            ["dig", f"@{server}", zone, "SOA", "+short", f"+time={self.timeout}", "+tries=1"],
+            [
+                "dig",
+                f"@{server}",
+                zone,
+                "SOA",
+                "+short",
+                f"+time={self.timeout}",
+                "+tries=1",
+            ],
             self.timeout + 3,
         )
         if result.returncode != 0 or not result.stdout.strip():
@@ -85,9 +93,7 @@ class BindService:
 
     def rpz_status(self, zone: Zone) -> ZoneStatus:
         status = ZoneStatus(zone=zone)
-        status.file_exists = bool(
-            zone.file and zone.file.exists()
-        )
+        status.file_exists = bool(zone.file and zone.file.exists())
         problems: list[str] = []
 
         if not status.file_exists or zone.file is None:
@@ -119,21 +125,16 @@ class BindService:
             status.file_age_seconds is not None
             and status.file_age_seconds > zone.rpz_max_age
         ):
-            problems.append(
-                f"RPZ nieaktualna ({status.file_age_seconds}s)"
-            )
+            problems.append(f"RPZ nieaktualna ({status.file_age_seconds}s)")
 
         if problems:
             status.health = Health.FAIL
             status.message = "; ".join(problems)
         else:
             status.health = Health.PASS
-            status.message = (
-                f"RPZ aktualna ({status.file_age_seconds}s)"
-            )
+            status.message = f"RPZ aktualna ({status.file_age_seconds}s)"
 
         return status
-
 
     def zone_records(self, zone: Zone) -> tuple[list[str], str | None]:
         """Zwraca kanoniczną listę rekordów z aktywnego pliku strefy."""
@@ -180,7 +181,6 @@ class BindService:
 
         return records, None
 
-
     def parsed_zone_records(
         self,
         zone: Zone,
@@ -221,7 +221,9 @@ class BindService:
                 int(time.time() - zone.file.stat().st_mtime),
             )
         status.local_serial = self.serial(self.local_server, zone.name)
-        status.dns2_serial = self.serial(self.dns2_server, zone.name) if zone.dns2 else None
+        status.dns2_serial = (
+            self.serial(self.dns2_server, zone.name) if zone.dns2 else None
+        )
         status.he_serial = self.serial(self.he_server, zone.name) if zone.he else None
         status.dnssec = self.dnssec_enabled(zone.name)
 
@@ -236,7 +238,9 @@ class BindService:
                 problems.append("brak SOA DNS2")
             elif status.local_serial and status.dns2_serial != status.local_serial:
                 problem, warning = self._secondary_serial_state(
-                    "DNS2", status.local_serial, status.dns2_serial,
+                    "DNS2",
+                    status.local_serial,
+                    status.dns2_serial,
                     status.file_age_seconds,
                 )
                 if problem:
@@ -248,7 +252,9 @@ class BindService:
                 problems.append("brak SOA HE")
             elif status.local_serial and status.he_serial != status.local_serial:
                 problem, warning = self._secondary_serial_state(
-                    "HE", status.local_serial, status.he_serial,
+                    "HE",
+                    status.local_serial,
+                    status.he_serial,
                     status.file_age_seconds,
                 )
                 if problem:

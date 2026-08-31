@@ -56,8 +56,7 @@ def _restore_engine(
         or (lambda _path: ZoneRestoreStep("named-checkconf", True, "OK")),
         activator=activator
         or (lambda _name: ZoneRestoreStep("rndc-reconfig", True, "OK")),
-        loaded_verifier=loaded
-        or (lambda _name: ZoneRestoreStep("loaded", True, "OK")),
+        loaded_verifier=loaded or (lambda _name: ZoneRestoreStep("loaded", True, "OK")),
     )
 
 

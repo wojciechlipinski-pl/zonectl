@@ -8,25 +8,28 @@ def test_collects_definitions_usages_sources_and_lines(tmp_path: Path) -> None:
     included = tmp_path / "access.conf"
     root.write_text(
         f'include "{included}";\n'
-        'options { allow-recursion { trusted; localhost; }; };\n',
+        "options { allow-recursion { trusted; localhost; }; };\n",
         encoding="utf-8",
     )
     included.write_text(
         '# ignored acl "fake" { any; };\n'
         'acl "trusted" {\n  127.0.0.1;\n  192.0.2.0/24;\n  !192.0.2.13;\n};\n'
-        'primaries dns2-notify { 192.0.2.53; 2001:db8::53; };\n'
+        "primaries dns2-notify { 192.0.2.53; 2001:db8::53; };\n"
         'zone "example" { allow-transfer { trusted; }; '
-        'also-notify { dns2-notify; }; };\n',
+        "also-notify { dns2-notify; }; };\n",
         encoding="utf-8",
     )
     report = BindAccessInventoryReader(root).collect()
     definitions = {(item.kind, item.name): item for item in report.definitions}
     assert definitions[("acl", "trusted")].entries == (
-        "127.0.0.1", "192.0.2.0/24", "!192.0.2.13"
+        "127.0.0.1",
+        "192.0.2.0/24",
+        "!192.0.2.13",
     )
     assert definitions[("acl", "trusted")].line == 2
     assert definitions[("primaries", "dns2-notify")].entries == (
-        "192.0.2.53", "2001:db8::53"
+        "192.0.2.53",
+        "2001:db8::53",
     )
     usages = {(item.directive, item.values) for item in report.usages}
     assert ("allow-recursion", ("trusted", "localhost")) in usages

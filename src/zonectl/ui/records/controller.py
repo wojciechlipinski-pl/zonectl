@@ -47,9 +47,7 @@ class RecordController:
         return self.SORT_NAMES[self.sort_mode]
 
     def cycle_sort(self) -> None:
-        self.sort_mode = (
-            self.sort_mode + 1
-        ) % len(self.SORT_NAMES)
+        self.sort_mode = (self.sort_mode + 1) % len(self.SORT_NAMES)
 
         self.selected = 0
         self.offset = 0
@@ -169,11 +167,7 @@ class RecordController:
             self.offset = self.selected
 
         if self.selected >= self.offset + visible_rows:
-            self.offset = (
-                self.selected
-                - visible_rows
-                + 1
-            )
+            self.offset = self.selected - visible_rows + 1
 
         self.offset = max(0, self.offset)
 

@@ -72,7 +72,9 @@ class BindOnboardingReporter:
 
     def collect(self) -> BindOnboardingReport:
         environment = BindEnvironmentReporter(self.root_config).collect()
-        migration = ManagedZoneMigrationPlanner(root_config=self.root_config).inventory()
+        migration = ManagedZoneMigrationPlanner(
+            root_config=self.root_config
+        ).inventory()
         access = BindAccessInventoryReader(self.root_config).collect()
         counts = {state: 0 for state in self._descriptions}
         for item in migration:
@@ -122,7 +124,9 @@ class BindOnboardingReporter:
             zones=environment.zone_count,
             dnssec_zones=environment.dnssec_count,
             classes=classes,
-            acl_definitions=sum(item.kind.casefold() == "acl" for item in access.definitions),
+            acl_definitions=sum(
+                item.kind.casefold() == "acl" for item in access.definitions
+            ),
             secondary_groups=secondary_groups,
             rpz_integrations=len(environment.rpz),
             rpz_modes=tuple(sorted({item.mode for item in environment.rpz})),

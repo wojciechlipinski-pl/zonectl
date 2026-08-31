@@ -60,18 +60,14 @@ def test_tui_planner_uses_configured_paths() -> None:
     assert planner.root_config == Path("/tmp/custom/named.conf")
     assert planner.local_config == Path("/tmp/custom/named.conf.local")
     assert planner.managed_config == Path("/tmp/custom/zonectl-zones.conf")
-    assert planner.managed_zone_directory == Path(
-        "/tmp/custom/zonectl-zones.d"
-    )
+    assert planner.managed_zone_directory == Path("/tmp/custom/zonectl-zones.d")
 
 
 def test_migration_result_lines_show_rollback() -> None:
     result = ManagedZoneMigrationResult(
         "tx", "example.pl", "ROLLED-BACK", rolled_back=True
     )
-    result.steps.append(
-        ManagedZoneMigrationStep("rollback", True, "Przywrócono")
-    )
+    result.steps.append(ManagedZoneMigrationStep("rollback", True, "Przywrócono"))
 
     lines = CursesApp._migration_result_lines(result)
 

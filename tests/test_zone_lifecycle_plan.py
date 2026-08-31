@@ -68,9 +68,7 @@ def test_rpz_zone_rejects_lifecycle_operations(operation: str) -> None:
 def test_authoritative_zone_allows_lifecycle_operation() -> None:
     zones = [Zone(name="example.pl", file=Path("/zones/example.pl"))]
 
-    ZoneLifecyclePlanner.ensure_lifecycle_allowed(
-        "example.pl", zones, "disable"
-    )
+    ZoneLifecyclePlanner.ensure_lifecycle_allowed("example.pl", zones, "disable")
 
 
 @pytest.mark.parametrize(
@@ -90,9 +88,7 @@ def test_authoritative_zone_allows_lifecycle_operation() -> None:
 )
 def test_dnssec_zone_rejects_lifecycle_operations(zone: Zone) -> None:
     with pytest.raises(ZoneLifecycleError, match="strefy DNSSEC"):
-        ZoneLifecyclePlanner.ensure_lifecycle_allowed(
-            zone.name, [zone], "disable"
-        )
+        ZoneLifecyclePlanner.ensure_lifecycle_allowed(zone.name, [zone], "disable")
 
 
 def test_plan_is_deterministic_and_has_no_side_effects(
@@ -120,32 +116,33 @@ def test_plan_is_deterministic_and_has_no_side_effects(
     assert "www IN A 192.0.2.10" in plan.zone_text
     assert "www IN AAAA 2001:db8::10" in plan.zone_text
     assert 'zone "example.pl" IN {' in plan.bind_declaration
-    assert plan.zone_declaration_file == (
-        tmp_path / "zonectl-zones.d" / "example.pl.conf"
-    ).resolve()
+    assert (
+        plan.zone_declaration_file
+        == (tmp_path / "zonectl-zones.d" / "example.pl.conf").resolve()
+    )
     assert not zone_directory.exists()
     assert not managed_config.exists()
 
 
 def test_primary_ns_must_be_listed() -> None:
     with pytest.raises(ZoneLifecycleError, match="primary_ns"):
-        planner().plan_create(
-            request(nameservers=("ns2.example.pl.",))
-        )
+        planner().plan_create(request(nameservers=("ns2.example.pl.",)))
 
 
 def test_custom_soa_timers_and_group_are_in_plan(tmp_path: Path) -> None:
     groups = tmp_path / "groups.yaml"
     groups.write_text("groups:\n  Klienci:\n    - old.example\n")
 
-    plan = planner().plan_create(request(
-        group="Klienci",
-        groups_config=groups,
-        refresh=7200,
-        retry=1200,
-        expire=604800,
-        negative_ttl=600,
-    ))
+    plan = planner().plan_create(
+        request(
+            group="Klienci",
+            groups_config=groups,
+            refresh=7200,
+            retry=1200,
+            expire=604800,
+            negative_ttl=600,
+        )
+    )
 
     assert plan.group == "Klienci"
     assert "    7200 ; refresh" in plan.zone_text

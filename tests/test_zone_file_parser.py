@@ -12,9 +12,7 @@ from zonectl.core.zone_file_parser import ZoneFileParser
 
 def test_preserves_blank_lines_and_comments() -> None:
     document = ZoneFileParser.parse_text(
-        "\n"
-        "; komentarz administratora\n"
-        "   ; komentarz z wcięciem\n"
+        "\n; komentarz administratora\n   ; komentarz z wcięciem\n"
     )
 
     assert isinstance(document.nodes[0], BlankLine)
@@ -30,9 +28,7 @@ def test_preserves_blank_lines_and_comments() -> None:
 
 def test_parses_directives() -> None:
     document = ZoneFileParser.parse_text(
-        "$TTL 3600\n"
-        "$ORIGIN example.pl.\n"
-        '$INCLUDE "/etc/bind/local.inc"\n'
+        '$TTL 3600\n$ORIGIN example.pl.\n$INCLUDE "/etc/bind/local.inc"\n'
     )
 
     ttl = document.nodes[0]
@@ -54,9 +50,7 @@ def test_parses_directives() -> None:
 
 
 def test_parses_basic_record() -> None:
-    document = ZoneFileParser.parse_text(
-        "www 300 IN A 192.0.2.10\n"
-    )
+    document = ZoneFileParser.parse_text("www 300 IN A 192.0.2.10\n")
 
     node = document.nodes[0]
 
@@ -70,9 +64,7 @@ def test_parses_basic_record() -> None:
 
 
 def test_parses_record_without_ttl() -> None:
-    document = ZoneFileParser.parse_text(
-        "@ IN MX 10 mail.example.pl.\n"
-    )
+    document = ZoneFileParser.parse_text("@ IN MX 10 mail.example.pl.\n")
 
     node = document.nodes[0]
 
@@ -86,8 +78,7 @@ def test_parses_record_without_ttl() -> None:
 
 def test_parses_ttl_before_or_after_class() -> None:
     document = ZoneFileParser.parse_text(
-        "one 300 IN A 192.0.2.1\n"
-        "two IN 600 A 192.0.2.2\n"
+        "one 300 IN A 192.0.2.1\ntwo IN 600 A 192.0.2.2\n"
     )
 
     first = document.nodes[0]
@@ -102,8 +93,7 @@ def test_parses_ttl_before_or_after_class() -> None:
 
 def test_uses_previous_owner_when_owner_is_omitted() -> None:
     document = ZoneFileParser.parse_text(
-        "www 300 IN A 192.0.2.10\n"
-        "    300 IN AAAA 2001:db8::10\n"
+        "www 300 IN A 192.0.2.10\n    300 IN AAAA 2001:db8::10\n"
     )
 
     first = document.nodes[0]
@@ -130,9 +120,7 @@ def test_semicolon_inside_txt_is_not_a_comment() -> None:
 
 
 def test_unknown_line_becomes_raw_line() -> None:
-    document = ZoneFileParser.parse_text(
-        "to nie jest rekord DNS\n"
-    )
+    document = ZoneFileParser.parse_text("to nie jest rekord DNS\n")
 
     assert isinstance(document.nodes[0], RawLine)
     assert document.nodes[0].raw == "to nie jest rekord DNS"
@@ -156,19 +144,14 @@ def test_multiline_soa_is_parsed_and_preserved_as_one_record() -> None:
     assert node.record.owner == "@"
     assert node.record.rtype == "SOA"
     assert node.record.rdata == (
-        "ns1.example.pl. hostmaster.example.pl. "
-        "2026072901 3600 900 1209600 3600"
+        "ns1.example.pl. hostmaster.example.pl. 2026072901 3600 900 1209600 3600"
     )
     assert node.raw == text.rstrip("\n")
 
 
 def test_preserves_trailing_newline_information() -> None:
-    with_newline = ZoneFileParser.parse_text(
-        "www IN A 192.0.2.1\n"
-    )
-    without_newline = ZoneFileParser.parse_text(
-        "www IN A 192.0.2.1"
-    )
+    with_newline = ZoneFileParser.parse_text("www IN A 192.0.2.1\n")
+    without_newline = ZoneFileParser.parse_text("www IN A 192.0.2.1")
 
     assert with_newline.trailing_newline is True
     assert without_newline.trailing_newline is False
@@ -179,8 +162,7 @@ def test_parse_file_sets_source_path(
 ) -> None:
     path = tmp_path / "example.pl"
     path.write_text(
-        "$TTL 3600\n"
-        "www IN A 192.0.2.1\n",
+        "$TTL 3600\nwww IN A 192.0.2.1\n",
         encoding="utf-8",
     )
 
@@ -191,9 +173,7 @@ def test_parse_file_sets_source_path(
 
 
 def test_rfc3597_unknown_type_is_supported() -> None:
-    document = ZoneFileParser.parse_text(
-        "test 300 IN TYPE65280 \\# 4 DEADBEEF\n"
-    )
+    document = ZoneFileParser.parse_text("test 300 IN TYPE65280 \\# 4 DEADBEEF\n")
 
     node = document.nodes[0]
 

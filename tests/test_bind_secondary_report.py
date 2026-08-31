@@ -14,12 +14,12 @@ def _report(tmp_path: Path, text: str):
 def test_pairs_notify_and_transfer_and_lists_impacted_zones(tmp_path: Path) -> None:
     report = _report(
         tmp_path,
-        'primaries dns2-notify { 192.0.2.53; };\n'
+        "primaries dns2-notify { 192.0.2.53; };\n"
         'acl "dns2-transfer" { 192.0.2.54; };\n'
         'zone "a.example" { type primary; file "/a"; '
-        'also-notify { dns2-notify; }; allow-transfer { dns2-transfer; }; };\n'
+        "also-notify { dns2-notify; }; allow-transfer { dns2-transfer; }; };\n"
         'zone "b.example" { type primary; file "/b"; '
-        'also-notify { dns2-notify; }; allow-transfer { dns2-transfer; }; };\n',
+        "also-notify { dns2-notify; }; allow-transfer { dns2-transfer; }; };\n",
     )
     pair = report.pairs[0]
     assert pair.name == "dns2"
@@ -35,9 +35,9 @@ def test_pairs_notify_and_transfer_and_lists_impacted_zones(tmp_path: Path) -> N
 def test_missing_pair_role_is_warning(tmp_path: Path) -> None:
     report = _report(
         tmp_path,
-        'primaries he-notify { 192.0.2.53; };\n'
+        "primaries he-notify { 192.0.2.53; };\n"
         'zone "a.example" { type primary; file "/a"; '
-        'also-notify { he-notify; }; };\n',
+        "also-notify { he-notify; }; };\n",
     )
     assert report.pairs[0].status == "WARN"
     assert report.pairs[0].transfer_groups == ()
@@ -48,7 +48,7 @@ def test_json_payload_is_serializable_shape(tmp_path: Path) -> None:
         tmp_path,
         'acl "dns2-transfer" { 192.0.2.54; };\n'
         'zone "a" { type primary; file "/a"; '
-        'allow-transfer { dns2-transfer; }; };\n',
+        "allow-transfer { dns2-transfer; }; };\n",
     )
     payload = report.to_dict()
     assert payload["groups"][0]["entries"] == ["192.0.2.54"]

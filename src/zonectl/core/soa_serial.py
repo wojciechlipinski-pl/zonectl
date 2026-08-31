@@ -18,9 +18,7 @@ class SoaSerialChange:
     current: int
 
 
-_MULTILINE_SERIAL_RE = re.compile(
-    r"^(?P<prefix>\s*)(?P<serial>\d+)(?P<suffix>\b.*)$"
-)
+_MULTILINE_SERIAL_RE = re.compile(r"^(?P<prefix>\s*)(?P<serial>\d+)(?P<suffix>\b.*)$")
 
 _SINGLE_LINE_SOA_RE = re.compile(
     r"(?P<prefix>\bSOA\b\s+\S+\s+\S+\s+)"
@@ -48,23 +46,15 @@ def next_soa_serial(
     znajduje się serial z przyszłą datą lub niestandardowy wysoki serial.
     """
     if current < 0:
-        raise SoaSerialError(
-            f"Serial SOA nie może być ujemny: {current}"
-        )
+        raise SoaSerialError(f"Serial SOA nie może być ujemny: {current}")
 
     current_date = today or date.today()
     daily_base = int(current_date.strftime("%Y%m%d") + "01")
 
-    result = (
-        current + 1
-        if current >= daily_base
-        else daily_base
-    )
+    result = current + 1 if current >= daily_base else daily_base
 
     if result > 4_294_967_295:
-        raise SoaSerialError(
-            "Serial SOA przekroczył maksymalną wartość uint32"
-        )
+        raise SoaSerialError("Serial SOA przekroczył maksymalną wartość uint32")
 
     return result
 
@@ -78,16 +68,12 @@ def _replace_record_serial(
     # SOA RDATA:
     # MNAME RNAME SERIAL REFRESH RETRY EXPIRE MINIMUM
     if len(fields) < 7:
-        raise SoaSerialError(
-            "Rekord SOA nie zawiera pełnego RDATA"
-        )
+        raise SoaSerialError("Rekord SOA nie zawiera pełnego RDATA")
 
     try:
         int(fields[2])
     except ValueError as exc:
-        raise SoaSerialError(
-            f"Nieprawidłowy serial SOA: {fields[2]}"
-        ) from exc
+        raise SoaSerialError(f"Nieprawidłowy serial SOA: {fields[2]}") from exc
 
     fields[2] = str(new_serial)
 
@@ -123,16 +109,12 @@ def bump_document_soa_serial(
             fields = node.record.rdata.split()
 
             if len(fields) < 7:
-                raise SoaSerialError(
-                    "Rekord SOA nie zawiera pełnego RDATA"
-                )
+                raise SoaSerialError("Rekord SOA nie zawiera pełnego RDATA")
 
             try:
                 previous = int(fields[2])
             except ValueError as exc:
-                raise SoaSerialError(
-                    f"Nieprawidłowy serial SOA: {fields[2]}"
-                ) from exc
+                raise SoaSerialError(f"Nieprawidłowy serial SOA: {fields[2]}") from exc
 
             current = next_soa_serial(
                 max(previous, minimum_current or previous),
@@ -153,9 +135,9 @@ def bump_document_soa_serial(
 
             if match is not None:
                 node.raw = (
-                    node.raw[:match.start("serial")]
+                    node.raw[: match.start("serial")]
                     + str(current)
-                    + node.raw[match.end("serial"):]
+                    + node.raw[match.end("serial") :]
                 )
                 return SoaSerialChange(previous, current)
 
@@ -179,9 +161,9 @@ def bump_document_soa_serial(
             )
 
             node.raw = (
-                node.raw[:single_match.start("serial")]
+                node.raw[: single_match.start("serial")]
                 + str(current)
-                + node.raw[single_match.end("serial"):]
+                + node.raw[single_match.end("serial") :]
             )
 
             return SoaSerialChange(previous, current)
@@ -190,13 +172,11 @@ def bump_document_soa_serial(
         if "(" not in node.raw:
             continue
 
-        for serial_node in nodes[index + 1:]:
+        for serial_node in nodes[index + 1 :]:
             if not isinstance(serial_node, RawLine):
                 continue
 
-            match = _MULTILINE_SERIAL_RE.match(
-                serial_node.raw
-            )
+            match = _MULTILINE_SERIAL_RE.match(serial_node.raw)
 
             if match is None:
                 continue
@@ -208,13 +188,9 @@ def bump_document_soa_serial(
             )
 
             serial_node.raw = (
-                match.group("prefix")
-                + str(current)
-                + match.group("suffix")
+                match.group("prefix") + str(current) + match.group("suffix")
             )
 
             return SoaSerialChange(previous, current)
 
-    raise SoaSerialError(
-        "Nie znaleziono rekordu SOA ani serialu strefy"
-    )
+    raise SoaSerialError("Nie znaleziono rekordu SOA ani serialu strefy")

@@ -45,12 +45,12 @@ def discovered_zone(tmp_path: Path) -> ZoneConfig:
     declaration = tmp_path / "zones.conf"
     declaration.write_text(
         'zone "example.pl" {\n'
-        '    type primary;\n'
+        "    type primary;\n"
         f'    file "{zone_file}";\n'
-        '    dnssec-policy default;\n'
-        '    inline-signing yes;\n'
+        "    dnssec-policy default;\n"
+        "    inline-signing yes;\n"
         f'    key-directory "{keys}";\n'
-        '};\n',
+        "};\n",
         encoding="utf-8",
     )
     return ZoneConfig(
@@ -68,9 +68,7 @@ def discovered_zone(tmp_path: Path) -> ZoneConfig:
 def add_test_keys(zone: ZoneConfig) -> None:
     assert zone.key_directory is not None
     for suffix in ("key", "private", "state"):
-        (zone.key_directory / f"Kexample.pl.+013+1.{suffix}").write_text(
-            suffix
-        )
+        (zone.key_directory / f"Kexample.pl.+013+1.{suffix}").write_text(suffix)
 
 
 def test_disable_plan_cli_prints_ordered_safety_gates(
@@ -105,9 +103,7 @@ def test_disable_plan_cli_outputs_json(tmp_path: Path, monkeypatch, capsys) -> N
     assert "dnssec-policy" not in payload["candidate_text"]
 
 
-def test_disable_plan_cli_rejects_missing_discovery(
-    monkeypatch, capsys
-) -> None:
+def test_disable_plan_cli_rejects_missing_discovery(monkeypatch, capsys) -> None:
     monkeypatch.setattr(
         cli.ToolkitConfig,
         "load",

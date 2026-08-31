@@ -3,7 +3,6 @@ from pathlib import Path
 import pytest
 
 from zonectl.core.zone_document import (
-    RawLine,
     RecordNode,
     ZoneDocument,
 )
@@ -32,10 +31,7 @@ def test_unmodified_document_is_preserved() -> None:
 
 
 def test_document_without_final_newline_is_preserved() -> None:
-    original = (
-        "$TTL 3600\n"
-        "www IN A 192.0.2.10"
-    )
+    original = "$TTL 3600\nwww IN A 192.0.2.10"
 
     document = ZoneFileParser.parse_text(original)
 
@@ -78,9 +74,7 @@ def test_modified_record_is_rendered_again() -> None:
 
 
 def test_unmodified_record_keeps_inline_comment() -> None:
-    original = (
-        "www 300 IN A 192.0.2.10 ; ważny komentarz\n"
-    )
+    original = "www 300 IN A 192.0.2.10 ; ważny komentarz\n"
 
     document = ZoneFileParser.parse_text(original)
 
@@ -91,10 +85,7 @@ def test_unmodified_record_keeps_inline_comment() -> None:
 
 def test_deleted_record_is_omitted() -> None:
     original = (
-        "$TTL 3600\n"
-        "www IN A 192.0.2.10\n"
-        "old IN A 192.0.2.20\n"
-        "mail IN A 192.0.2.30\n"
+        "$TTL 3600\nwww IN A 192.0.2.10\nold IN A 192.0.2.20\nmail IN A 192.0.2.30\n"
     )
 
     document = ZoneFileParser.parse_text(original)
@@ -104,11 +95,7 @@ def test_deleted_record_is_omitted() -> None:
 
     result = ZoneWriter().render_document(document)
 
-    assert result == (
-        "$TTL 3600\n"
-        "www IN A 192.0.2.10\n"
-        "mail IN A 192.0.2.30\n"
-    )
+    assert result == ("$TTL 3600\nwww IN A 192.0.2.10\nmail IN A 192.0.2.30\n")
 
 
 def test_multiline_soa_record_is_preserved_when_unmodified() -> None:
@@ -145,10 +132,7 @@ def test_modified_multiline_soa_preserves_layout_and_comments() -> None:
         ttl=None,
         rrclass=node.record.rrclass,
         rtype="SOA",
-        rdata=(
-            "ns2.example.pl. dns.example.pl. "
-            "2026082101 7200 1200 604800 600"
-        ),
+        rdata=("ns2.example.pl. dns.example.pl. 2026082101 7200 1200 604800 600"),
         raw=node.record.raw,
     )
     node.modified = True
@@ -175,10 +159,7 @@ def test_render_record_with_ttl() -> None:
         raw="",
     )
 
-    assert (
-        ZoneWriter().render_record(record)
-        == "www\t300\tIN\tA\t192.0.2.10"
-    )
+    assert ZoneWriter().render_record(record) == "www\t300\tIN\tA\t192.0.2.10"
 
 
 def test_render_record_without_ttl() -> None:
@@ -191,10 +172,7 @@ def test_render_record_without_ttl() -> None:
         raw="",
     )
 
-    assert (
-        ZoneWriter().render_record(record)
-        == "@\tIN\tMX\t10 mail.example.pl."
-    )
+    assert ZoneWriter().render_record(record) == "@\tIN\tMX\t10 mail.example.pl."
 
 
 def test_empty_owner_becomes_apex() -> None:
@@ -207,10 +185,7 @@ def test_empty_owner_becomes_apex() -> None:
         raw="",
     )
 
-    assert (
-        ZoneWriter().render_record(record)
-        == '@\tIN\tTXT\t"test"'
-    )
+    assert ZoneWriter().render_record(record) == '@\tIN\tTXT\t"test"'
 
 
 def test_negative_ttl_is_rejected() -> None:
@@ -250,10 +225,7 @@ def test_empty_rdata_is_rejected() -> None:
 def test_write_candidate_creates_secure_file(
     tmp_path: Path,
 ) -> None:
-    document = ZoneFileParser.parse_text(
-        "$TTL 3600\n"
-        "www IN A 192.0.2.10\n"
-    )
+    document = ZoneFileParser.parse_text("$TTL 3600\nwww IN A 192.0.2.10\n")
 
     path = ZoneWriter().write_candidate(
         document,
@@ -261,12 +233,7 @@ def test_write_candidate_creates_secure_file(
     )
 
     assert path.is_file()
-    assert path.read_text(
-        encoding="utf-8"
-    ) == (
-        "$TTL 3600\n"
-        "www IN A 192.0.2.10\n"
-    )
+    assert path.read_text(encoding="utf-8") == ("$TTL 3600\nwww IN A 192.0.2.10\n")
 
     assert path.stat().st_mode & 0o777 == 0o600
 

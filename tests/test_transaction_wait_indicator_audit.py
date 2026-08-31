@@ -51,6 +51,7 @@ def test_every_tui_commit_is_wait_wrapped_or_an_internal_dnssec_helper() -> None
 
 def test_internal_dnssec_commit_helpers_are_invoked_inside_wait_dialogs() -> None:
     source = inspect.getsource(CursesApp._dnssec_status_view)
+    source = "".join(source.split())
 
     for helper in ("_dnssec_enable_commit", "_dnssec_finalize_commit"):
         helper_at = source.index(f"self.{helper}(zone)")

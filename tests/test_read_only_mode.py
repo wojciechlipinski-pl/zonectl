@@ -26,9 +26,7 @@ def config_with_read_only(tmp_path: Path, value: str | None) -> ToolkitConfig:
     toolkit = tmp_path / "toolkit.conf"
     setting = "" if value is None else f"read_only = {value}\n"
     toolkit.write_text(
-        "[toolkit]\n"
-        "auto_discover_zones = no\n"
-        f"{setting}",
+        f"[toolkit]\nauto_discover_zones = no\n{setting}",
         encoding="utf-8",
     )
     zones = tmp_path / "zones.conf"
