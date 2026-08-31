@@ -277,7 +277,9 @@ zrealizowane, a `[ ]` pozostają do wykonania.
 
 ## Dokumentacja
 
-- [ ] Dodać przykłady obsługi każdego wspieranego typu rekordu.
+- [x] Dodać polskie i angielskie przykłady wszystkich 17 wspieranych typów
+  rekordów. Test dokumentacji porównuje katalog ze źródłową listą typów i
+  przepuszcza każde przykładowe RDATA przez produkcyjny walidator formularza.
 - [x] Dodać bezpieczne, syntetyczne zrzuty ekranów TUI generowane bez dostępu
   do konfiguracji produkcyjnej.
 - [x] Przygotować polską i angielską instrukcję odtwarzania po awarii,

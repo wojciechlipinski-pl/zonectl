@@ -40,7 +40,8 @@ All names, addresses, keys and environment values shown below are synthetic.
 [View the complete screenshot gallery](docs/SCREENSHOTS.md).
 
 Operations: [operator guide](docs/en/OPERATIONS.md) ·
-[disaster recovery](docs/en/DISASTER_RECOVERY.md)
+[disaster recovery](docs/en/DISASTER_RECOVERY.md) ·
+[DNS record examples](docs/en/RECORD_EXAMPLES.md)
 
 ## Requirements
 

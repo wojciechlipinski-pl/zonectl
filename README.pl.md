@@ -36,7 +36,8 @@ syntetyczne.
 [Zobacz kompletną galerię zrzutów](docs/SCREENSHOTS.md).
 
 Eksploatacja: [instrukcja operatorska](docs/OPERATIONS.md) ·
-[odtwarzanie po awarii](docs/DISASTER_RECOVERY.md)
+[odtwarzanie po awarii](docs/DISASTER_RECOVERY.md) ·
+[przykłady rekordów DNS](docs/RECORD_EXAMPLES.md)
 
 ## Cykl życia stref
 
