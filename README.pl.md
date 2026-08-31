@@ -1,5 +1,6 @@
 # ZoneCTL
-\n[English](README.md) | [Polski](README.pl.md)
+
+[English](README.md) | [Polski](README.pl.md)
 
 > **Transactional DNS Management Toolkit**
 
@@ -7,7 +8,7 @@ ZoneCTL jest terminalowym narzędziem do bezpiecznego zarządzania strefami DNS 
 
 ## Wersja
 
-**4.7.0 — managed BIND declarations, ACL and secondary administration**
+**4.10.1 — izolowana galeria syntetycznych ekranów TUI**
 
 ## Uruchomienie
 
@@ -20,6 +21,19 @@ zctl domains --grouped
 
 Pakiet systemowy instaluje wyłącznie polecenie `zctl`. Historyczna nazwa
 `elkman-dns` nie jest już udostępniana jako systemowy entry point.
+
+## Zrzuty ekranowe
+
+TUI ZoneCTL pokazuje stan operacyjny bezpośrednio w terminalu, a długie
+operacje prezentuje w wyśrodkowanych, nieanulowalnych oknach oczekiwania.
+Wszystkie widoczne poniżej nazwy, adresy, klucze i wartości środowiska są
+syntetyczne.
+
+![Główny ekran ZoneCTL z ramką oczekiwania](docs/images/tui-main-wait.png)
+
+![Stan operacyjny DNSSEC w ZoneCTL](docs/images/tui-dnssec-status.png)
+
+[Zobacz kompletną galerię zrzutów](docs/SCREENSHOTS.md).
 
 ## Cykl życia stref
 

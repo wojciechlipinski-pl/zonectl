@@ -2,6 +2,22 @@
 
 ## Unreleased
 
+## 4.10.1 - 2026-08-31
+
+### Added
+
+- an isolated, deterministic TUI demonstrator renders documentation views
+  without reading host, network or production BIND state
+- six synthetic screenshots document the main wait dialog, BIND summary,
+  DNSSEC status, record list and guarded record and zone forms
+- screenshot privacy tests reject host or network access, non-reserved demo
+  data and textual PNG metadata
+
+### Documentation
+
+- synchronize the Polish project overview, screenshot gallery and roadmap
+  with the completed 4.10 release and the remaining 4.11 quality scope
+
 ## 4.10.0 - 2026-08-27
 
 ### Added

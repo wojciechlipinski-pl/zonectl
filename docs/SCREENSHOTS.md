@@ -1,7 +1,7 @@
 # Safe screenshot specification
 
 This document defines how public ZoneCTL screenshots must be produced. An
-isolated main-screen renderer was introduced after release 4.10.
+isolated main-screen renderer and the first gallery were released in 4.10.1.
 
 ## Mandatory isolation
 
