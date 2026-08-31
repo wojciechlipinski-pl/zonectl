@@ -215,7 +215,10 @@ zrealizowane, a `[ ]` pozostają do wykonania.
   składniowe, nieużywane importy oraz niezdefiniowane nazwy.
 - [x] Dodać testy integracyjne z odseparowaną konfiguracją i prawdziwymi
   narzędziami walidacyjnymi BIND, bez kontaktu z produkcyjnym `rndc`.
-- [ ] Dodać testy stref `inline-signing`.
+- [x] Dodać testy stref `inline-signing`. Izolowana macierz korzysta z
+  prawdziwych `named-checkzone` i `named-checkconf`, sprawdza akceptację `yes`,
+  odrzucenie `no` przy aktywnej polityce oraz błędnej wartości, poprawność
+  discovery i blokady zwykłego cyklu życia oraz ponownego włączania DNSSEC.
 - [ ] Zweryfikować skróty klawiszowe w kolejnych typach terminali.
 - [x] Dodać obsługę klawiszy `Home` i `End` we wszystkich polach tekstowych
   formularzy TUI, szczególnie podczas edycji długich rekordów TXT.

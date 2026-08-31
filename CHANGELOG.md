@@ -7,6 +7,13 @@
 - normalize Python sources and tests with Ruff, and enforce formatting plus
   lint checks in the quality-gate workflow
 
+### Tests
+
+- validate accepted `inline-signing yes`, rejected policy combinations using
+  `inline-signing no`, and invalid values with real BIND tools in an isolated
+  configuration, including discovery, lifecycle protection and
+  duplicate-enablement guards
+
 ## 4.10.1 - 2026-08-31
 
 ### Added
