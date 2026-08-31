@@ -12,6 +12,9 @@
 
 ### Tests
 
+- validate that the Polish and English record-example catalogs cover every
+  type exposed by ZoneCTL and that every documented RDATA value remains
+  accepted by the production form validator
 - exercise framed wait dialogs and message views against strict bounds for
   compact, VT100-sized, xterm-sized and wide terminals; verify UTF-8 and ASCII
   animation frames plus Home/End sequences used by common terminal profiles
