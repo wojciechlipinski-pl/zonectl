@@ -219,7 +219,10 @@ zrealizowane, a `[ ]` pozostają do wykonania.
   prawdziwych `named-checkzone` i `named-checkconf`, sprawdza akceptację `yes`,
   odrzucenie `no` przy aktywnej polityce oraz błędnej wartości, poprawność
   discovery i blokady zwykłego cyklu życia oraz ponownego włączania DNSSEC.
-- [ ] Zweryfikować skróty klawiszowe w kolejnych typach terminali.
+- [x] Zweryfikować TUI dla kolejnych rozmiarów i typów terminali. Rygorystyczna
+  macierz odrzuca rysowanie poza ekranem dla widoków kompaktowych, VT100,
+  xterm i szerokich terminali, sprawdza animację UTF-8/ASCII oraz sekwencje
+  `Home` i `End` używane przez xterm, VT100, konsolę Linux i rxvt.
 - [x] Dodać obsługę klawiszy `Home` i `End` we wszystkich polach tekstowych
   formularzy TUI, szczególnie podczas edycji długich rekordów TXT.
 - [x] Dodać naturalne sortowanie nazw rekordów, aby etykiety numeryczne
