@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Changed
+
+- normalize Python sources and tests with Ruff, and enforce formatting plus
+  lint checks in the quality-gate workflow
+
 ## 4.10.1 - 2026-08-31
 
 ### Added
