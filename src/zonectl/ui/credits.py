@@ -65,12 +65,7 @@ def draw_project_credits(window: curses.window) -> None:
     start_column = width - block_width - 3
 
     # Nie pokazujemy podpisu, jeśli zabrakłoby bezpiecznej przestrzeni.
-    if (
-        height < 16
-        or width < block_width + 8
-        or start_row < 8
-        or start_column < 2
-    ):
+    if height < 16 or width < block_width + 8 or start_row < 8 or start_column < 2:
         return
 
     heading_attr = curses.A_BOLD | curses.A_DIM

@@ -45,8 +45,7 @@ def make_session(
 ) -> tuple[ZoneEditSession, Path]:
     source = tmp_path / "example.pl"
     source.write_text(
-        "$TTL 3600\n"
-        "www 300 IN A 192.0.2.10\n",
+        "$TTL 3600\nwww 300 IN A 192.0.2.10\n",
         encoding="utf-8",
     )
     return (
@@ -75,19 +74,11 @@ def test_export_diff_writes_protected_file_without_commit(
     )
 
     assert destination.parent == (tmp_path / "exports").resolve()
-    assert destination.name.startswith(
-        "20260730-170506-example.pl-"
-    )
+    assert destination.name.startswith("20260730-170506-example.pl-")
     assert destination.suffix == ".diff"
-    assert destination.read_text(encoding="utf-8") == (
-        session.unified_diff()
-    )
-    assert "-www 300 IN A 192.0.2.10" in destination.read_text(
-        encoding="utf-8"
-    )
-    assert "+www\t300\tIN\tA\t192.0.2.40" in destination.read_text(
-        encoding="utf-8"
-    )
+    assert destination.read_text(encoding="utf-8") == (session.unified_diff())
+    assert "-www 300 IN A 192.0.2.10" in destination.read_text(encoding="utf-8")
+    assert "+www\t300\tIN\tA\t192.0.2.40" in destination.read_text(encoding="utf-8")
     assert stat.S_IMODE(destination.stat().st_mode) == 0o640
     assert source.read_bytes() == original
     assert session.model.dirty is True

@@ -57,14 +57,20 @@ from ..core.bind_onboarding_report import (
 from ..core.bind_secondary_plan import BindSecondaryPlanError, BindSecondaryPlanner
 from ..core.bind_secondary_health import BindSecondaryHealthGate
 from ..core.bind_secondary_report import BindSecondaryReport, BindSecondaryReporter
-from ..core.bind_secondary_transaction import BindSecondaryResult, BindSecondaryTransaction
+from ..core.bind_secondary_transaction import (
+    BindSecondaryResult,
+    BindSecondaryTransaction,
+)
 from ..core.bind_zone_secondary import BindZoneSecondaryError, BindZoneSecondaryPlanner
 from ..core.bulk_operations import BulkOperation, BulkOperationError
 from ..core.config import ToolkitConfig
 from ..core.dnssec_ds_check import DnssecDsChecker
 from ..core.dnssec_confirm_ds import DnssecConfirmDsTransaction, DnssecConfirmResult
 from ..core.dnssec_disable_plan import DnssecDisablePlan, DnssecDisablePlanner
-from ..core.dnssec_disable_transaction import DnssecDisableResult, DnssecDisableTransaction
+from ..core.dnssec_disable_transaction import (
+    DnssecDisableResult,
+    DnssecDisableTransaction,
+)
 from ..core.dnssec_enable_plan import DnssecEnablePlan, DnssecEnablePlanner
 from ..core.dnssec_enable_transaction import DnssecEnableResult, DnssecEnableTransaction
 from ..core.dnssec_report import DnssecReporter
@@ -146,16 +152,10 @@ class CursesApp:
         self.bind = bind
         self.group_order = group_order or []
         self.transaction_engine = (
-            TransactionEngine(config)
-            if config is not None
-            else None
+            TransactionEngine(config) if config is not None else None
         )
         self.config = config
-        self.read_only = bool(
-            config.read_only
-            if config is not None
-            else False
-        )
+        self.read_only = bool(config.read_only if config is not None else False)
         self.edit_lock_directory = (
             Path(
                 config.toolkit.get(
@@ -288,7 +288,12 @@ class CursesApp:
 
     @staticmethod
     def _symbol(health: Health) -> str:
-        return {Health.PASS: "●", Health.WARN: "●", Health.FAIL: "●", Health.UNKNOWN: "○"}[health]
+        return {
+            Health.PASS: "●",
+            Health.WARN: "●",
+            Health.FAIL: "●",
+            Health.UNKNOWN: "○",
+        }[health]
 
     def _start_refresh(self, force: bool = False) -> None:
         worker = self.worker
@@ -361,14 +366,21 @@ class CursesApp:
         try:
             for row in range(top, top + box_height):
                 win.addnstr(
-                    row, left, " " * box_width, box_width, curses.A_NORMAL,
+                    row,
+                    left,
+                    " " * box_width,
+                    box_width,
+                    curses.A_NORMAL,
                 )
             win.addch(top, left, curses.ACS_ULCORNER)
             win.hline(top, left + 1, curses.ACS_HLINE, inner_width)
             win.addch(top, left + box_width - 1, curses.ACS_URCORNER)
             win.vline(top + 1, left, curses.ACS_VLINE, box_height - 2)
             win.vline(
-                top + 1, left + box_width - 1, curses.ACS_VLINE, box_height - 2,
+                top + 1,
+                left + box_width - 1,
+                curses.ACS_VLINE,
+                box_height - 2,
             )
             win.addch(top + box_height - 1, left, curses.ACS_LLCORNER)
             win.hline(
@@ -424,8 +436,13 @@ class CursesApp:
             return
 
     def _refresh_worker(self) -> None:
-        with ThreadPoolExecutor(max_workers=min(8, max(1, len(self.all_zones)))) as pool:
-            futures = {pool.submit(self.bind.quick_status, zone): zone.name for zone in self.all_zones}
+        with ThreadPoolExecutor(
+            max_workers=min(8, max(1, len(self.all_zones)))
+        ) as pool:
+            futures = {
+                pool.submit(self.bind.quick_status, zone): zone.name
+                for zone in self.all_zones
+            }
             for future in as_completed(futures):
                 if self.stop_event.is_set():
                     return
@@ -465,7 +482,9 @@ class CursesApp:
         status = self.statuses.get(zone.name, ZoneStatus(zone=zone))
         mode = self.SORTS[self.sort_index]
         if mode == "Health":
-            rank = {Health.FAIL: 0, Health.WARN: 1, Health.UNKNOWN: 2, Health.PASS: 3}[status.health]
+            rank = {Health.FAIL: 0, Health.WARN: 1, Health.UNKNOWN: 2, Health.PASS: 3}[
+                status.health
+            ]
             return rank, zone.name.casefold()
         if mode == "DNSSEC":
             rank = {False: 0, None: 1, True: 2}[status.dnssec]
@@ -476,18 +495,25 @@ class CursesApp:
                 or (zone.he and status.he_serial != status.local_serial)
             )
             return (0 if mismatch else 1), zone.name.casefold()
-        return zone.name.casefold(),
+        return (zone.name.casefold(),)
 
     def _ordered_groups(self, groups: dict[str, list[Zone]]) -> list[str]:
         configured = [name for name in self.group_order if name in groups]
-        remaining = sorted((name for name in groups if name not in configured and name != "Pozostałe"), key=str.casefold)
+        remaining = sorted(
+            (name for name in groups if name not in configured and name != "Pozostałe"),
+            key=str.casefold,
+        )
         if "Pozostałe" in groups:
             remaining.append("Pozostałe")
         return configured + remaining
 
     def _rebuild_rows(self, keep_zone: str | None = None) -> None:
         q = self.query.casefold()
-        zones = [z for z in self.all_zones if q in z.name.casefold() or q in z.group.casefold()]
+        zones = [
+            z
+            for z in self.all_zones
+            if q in z.name.casefold() or q in z.group.casefold()
+        ]
         rows: list[Row] = []
         if self.grouped:
             groups: dict[str, list[Zone]] = {}
@@ -499,7 +525,9 @@ class CursesApp:
                 if group not in self.collapsed:
                     rows.extend(Row("zone", z.name, zone=z) for z in members)
         else:
-            rows = [Row("zone", z.name, zone=z) for z in sorted(zones, key=self._zone_key)]
+            rows = [
+                Row("zone", z.name, zone=z) for z in sorted(zones, key=self._zone_key)
+            ]
         self.rows = rows
         self.selected = min(self.selected, max(0, len(rows) - 1))
         if keep_zone:
@@ -521,7 +549,9 @@ class CursesApp:
         title = f" ZoneCTL {__version__} "
         heading = "Zarządzanie strefami DNS"
         title_line = title + heading.center(max(0, width - len(title)))
-        win.addnstr(0, 0, title_line.ljust(width), width, curses.A_REVERSE | curses.A_BOLD)
+        win.addnstr(
+            0, 0, title_line.ljust(width), width, curses.A_REVERSE | curses.A_BOLD
+        )
         checked = len(self.statuses)
         subtitle = (
             f" Domeny: {len(self.all_zones)}  Sprawdzone: {checked}/{len(self.all_zones)}  "
@@ -537,15 +567,14 @@ class CursesApp:
         footer_lines = 3
         content_height = max(1, height - list_top - footer_lines)
         details_height = max(10, content_height // 3) if panel_enabled else 0
-        visible = content_height - details_height - 1 if panel_enabled else content_height
+        visible = (
+            content_height - details_height - 1 if panel_enabled else content_height
+        )
         if panel_enabled:
             header_attr = curses.A_BOLD | (
                 curses.color_pair(4) if curses.has_colors() else curses.A_NORMAL
             )
-            columns = (
-                f" {'Strefa':<45} {'Status':<7} "
-                f"{'Profil':<10} {'SOA / wiek'}"
-            )
+            columns = f" {'Strefa':<45} {'Status':<7} {'Profil':<10} {'SOA / wiek'}"
             win.addnstr(list_header, 0, columns, max(0, width - 1), header_attr)
             try:
                 for column in range(0, width - 1):
@@ -557,21 +586,23 @@ class CursesApp:
         if self.selected >= self.offset + visible:
             self.offset = self.selected - visible + 1
 
-        for screen_row, row in enumerate(self.rows[self.offset:self.offset + visible], start=list_top):
+        for screen_row, row in enumerate(
+            self.rows[self.offset : self.offset + visible], start=list_top
+        ):
             idx = self.offset + screen_row - list_top
             attr = curses.A_NORMAL
             if row.kind == "group":
                 arrow = "▸" if row.label in self.collapsed else "▾"
                 line = f" {arrow} {row.label} ({row.count})"
-                attr = curses.A_BOLD | (curses.color_pair(4) if curses.has_colors() else 0)
+                attr = curses.A_BOLD | (
+                    curses.color_pair(4) if curses.has_colors() else 0
+                )
             else:
                 assert row.zone is not None
                 status = self.statuses.get(row.zone.name, ZoneStatus(zone=row.zone))
                 marker = self._symbol(status.health)
                 selected_marker = (
-                    "[x]"
-                    if row.zone.name in self.multi_selected
-                    else "[ ]"
+                    "[x]" if row.zone.name in self.multi_selected else "[ ]"
                 )
                 if row.zone.health_profile == "rpz":
                     age = (
@@ -584,7 +615,13 @@ class CursesApp:
                         f"{status.health.value:<7} RPZ  AGE {age}"
                     )
                 else:
-                    dnssec = "✔" if status.dnssec is True else "✘" if status.dnssec is False else "?"
+                    dnssec = (
+                        "✔"
+                        if status.dnssec is True
+                        else "✘"
+                        if status.dnssec is False
+                        else "?"
+                    )
                     serial = status.local_serial or "-"
                     line = f" {selected_marker} {marker} {row.zone.name:<38} {status.health.value:<7} DNSSEC {dnssec}  SOA {serial}"
                 attr = self._color(status.health)
@@ -710,9 +747,7 @@ class CursesApp:
             available = max(0, height - 2)
             row = top + 2
             for line in lines:
-                wrapped = self._wrap_message_lines(
-                    [line], max(1, divider - left - 4)
-                )
+                wrapped = self._wrap_message_lines([line], max(1, divider - left - 4))
                 for part in wrapped:
                     if row >= top + 2 + available:
                         break
@@ -874,8 +909,11 @@ class CursesApp:
                 win.erase()
                 height, width = win.getmaxyx()
                 win.addnstr(
-                    0, 0, f" {view.title} ".ljust(width),
-                    max(0, width - 1), curses.A_REVERSE | curses.A_BOLD,
+                    0,
+                    0,
+                    f" {view.title} ".ljust(width),
+                    max(0, width - 1),
+                    curses.A_REVERSE | curses.A_BOLD,
                 )
                 subtitle = " Autorstwo • historia • informacje o projekcie "
                 win.addnstr(2, 2, subtitle, max(0, width - 4), heading_attr)
@@ -895,19 +933,26 @@ class CursesApp:
                         win, 5, split + 3, width - split - 6, heading_attr
                     )
                 else:
-                    self._draw_about_compact(
-                        win, 5, 3, max(1, width - 6), heading_attr
-                    )
+                    self._draw_about_compact(win, 5, 3, max(1, width - 6), heading_attr)
                 footer = " F1 O programie   q/Esc/F10 Powrót "
                 win.addnstr(
-                    height - 1, 0, footer.ljust(width),
-                    max(0, width - 1), curses.A_REVERSE,
+                    height - 1,
+                    0,
+                    footer.ljust(width),
+                    max(0, width - 1),
+                    curses.A_REVERSE,
                 )
                 win.refresh()
                 key = self._get_key(win)
                 if key in (
-                    curses.KEY_F1, curses.KEY_F10, ord("q"), ord("Q"), 27,
-                    curses.KEY_BACKSPACE, 127, 8,
+                    curses.KEY_F1,
+                    curses.KEY_F10,
+                    ord("q"),
+                    ord("Q"),
+                    27,
+                    curses.KEY_BACKSPACE,
+                    127,
+                    8,
                 ):
                     return
         except curses.error:
@@ -916,14 +961,27 @@ class CursesApp:
             win.timeout(150)
 
     def _draw_about_identity(
-        self, win: curses.window, top: int, left: int, width: int,
+        self,
+        win: curses.window,
+        top: int,
+        left: int,
+        width: int,
         heading_attr: int,
     ) -> None:
         """Lewa kolumna ekranu F1: człowiek, AI i charakter projektu."""
         sections = (
-            ("AUTOR I WŁAŚCICIEL PROJEKTU", ("Wojciech Lipiński", "Domain Expert • QA • Product Design")),
-            ("ROZWÓJ WSPOMAGANY PRZEZ AI", ("OpenAI ChatGPT", "Architecture • Development • Documentation")),
-            ("PROJEKT", ("ZoneCTL", "Transactional DNS Management Toolkit", "for BIND 9")),
+            (
+                "AUTOR I WŁAŚCICIEL PROJEKTU",
+                ("Wojciech Lipiński", "Domain Expert • QA • Product Design"),
+            ),
+            (
+                "ROZWÓJ WSPOMAGANY PRZEZ AI",
+                ("OpenAI ChatGPT", "Architecture • Development • Documentation"),
+            ),
+            (
+                "PROJEKT",
+                ("ZoneCTL", "Transactional DNS Management Toolkit", "for BIND 9"),
+            ),
         )
         row = top
         for title, lines in sections:
@@ -935,7 +993,11 @@ class CursesApp:
             row += 2
 
     def _draw_about_history(
-        self, win: curses.window, top: int, left: int, width: int,
+        self,
+        win: curses.window,
+        top: int,
+        left: int,
+        width: int,
         heading_attr: int,
     ) -> None:
         """Prawa kolumna ekranu F1: historia i repozytorium."""
@@ -954,12 +1016,14 @@ class CursesApp:
         row += 1
         win.addnstr(row, left, "REPOZYTORIUM", width, heading_attr)
         row += 2
-        win.addnstr(
-            row, left, "github.com/wojciechlipinski-pl/zonectl", width
-        )
+        win.addnstr(row, left, "github.com/wojciechlipinski-pl/zonectl", width)
 
     def _draw_about_compact(
-        self, win: curses.window, top: int, left: int, width: int,
+        self,
+        win: curses.window,
+        top: int,
+        left: int,
+        width: int,
         heading_attr: int,
     ) -> None:
         """Jednokolumnowy wariant F1 dla węższych terminali."""
@@ -971,7 +1035,10 @@ class CursesApp:
             ("OpenAI ChatGPT — Architecture • Development • Documentation", 0),
             ("", 0),
             ("HISTORIA", heading_attr),
-            ("Od skryptu Python porządkującego konfigurację domen do transakcyjnego CLI i TUI dla BIND 9.", 0),
+            (
+                "Od skryptu Python porządkującego konfigurację domen do transakcyjnego CLI i TUI dla BIND 9.",
+                0,
+            ),
             ("", 0),
             ("REPOZYTORIUM", heading_attr),
             ("github.com/wojciechlipinski-pl/zonectl", 0),
@@ -983,7 +1050,9 @@ class CursesApp:
                 row += 1
 
     def _onboarding_summary_view(
-        self, win: curses.window, view: BindOnboardingView,
+        self,
+        win: curses.window,
+        view: BindOnboardingView,
         report: BindOnboardingReport,
     ) -> None:
         """Raport F2 z przejściem do listy kandydatów klawiszem Enter."""
@@ -994,9 +1063,7 @@ class CursesApp:
                 win.erase()
                 height, width = win.getmaxyx()
                 wide = width >= 100 and height >= 24
-                wrapped = self._wrap_message_lines(
-                    list(view.lines), max(1, width - 4)
-                )
+                wrapped = self._wrap_message_lines(list(view.lines), max(1, width - 4))
                 # The 4.8 renderer starts content at row 5 and reserves the
                 # final two rows for spacing and the footer.  Scroll offsets
                 # must therefore be calculated from visual, not source, rows.
@@ -1004,19 +1071,23 @@ class CursesApp:
                 maximum = max(0, len(wrapped) - visible)
                 offset = min(offset, maximum)
                 win.addnstr(
-                    0, 0, f" {view.title} ".ljust(width),
-                    max(0, width - 1), curses.A_REVERSE | curses.A_BOLD,
+                    0,
+                    0,
+                    f" {view.title} ".ljust(width),
+                    max(0, width - 1),
+                    curses.A_REVERSE | curses.A_BOLD,
                 )
-                for row, line in enumerate(
-                    wrapped[offset : offset + visible], start=2
-                ):
+                for row, line in enumerate(wrapped[offset : offset + visible], start=2):
                     win.addnstr(row, 2, line, max(0, width - 4))
                 if wide:
                     self._draw_onboarding_summary_48(win, report)
                 footer = self._onboarding_footer(report)
                 win.addnstr(
-                    height - 1, 0, footer.ljust(width),
-                    max(0, width - 1), curses.A_REVERSE,
+                    height - 1,
+                    0,
+                    footer.ljust(width),
+                    max(0, width - 1),
+                    curses.A_REVERSE,
                 )
                 win.refresh()
                 key = self._get_key(win)
@@ -1032,8 +1103,7 @@ class CursesApp:
                     )
                 elif key == curses.KEY_F5:
                     dnssec = tuple(
-                        item for item in report.blockers
-                        if item.category == "DNSSEC"
+                        item for item in report.blockers if item.category == "DNSSEC"
                     )
                     if dnssec:
                         self._onboarding_dnssec_view(win, dnssec)
@@ -1070,7 +1140,9 @@ class CursesApp:
         return " " + "   ".join(actions) + " "
 
     def _draw_onboarding_summary_48(
-        self, win: curses.window, report: BindOnboardingReport,
+        self,
+        win: curses.window,
+        report: BindOnboardingReport,
     ) -> None:
         """Rysuje raport środowiska w dwukolumnowym układzie ZoneCTL 4.8."""
         height, width = win.getmaxyx()
@@ -1079,12 +1151,18 @@ class CursesApp:
         )
         win.erase()
         win.addnstr(
-            0, 0, " Środowisko BIND ".ljust(width), max(0, width - 1),
+            0,
+            0,
+            " Środowisko BIND ".ljust(width),
+            max(0, width - 1),
             curses.A_REVERSE | curses.A_BOLD,
         )
         win.addnstr(
-            2, 2, "Odkrywanie konfiguracji • gotowość importu • tylko odczyt",
-            max(0, width - 4), heading_attr,
+            2,
+            2,
+            "Odkrywanie konfiguracji • gotowość importu • tylko odczyt",
+            max(0, width - 4),
+            heading_attr,
         )
         try:
             for column in range(2, width - 2):
@@ -1125,8 +1203,11 @@ class CursesApp:
             win.addnstr(row, left, f"{item.state:<10}", 10, state_attr)
             win.addnstr(row, left + 12, f"{item.count:>3}", 3)
             win.addnstr(
-                row, left + 18, item.description,
-                max(1, split - left - 20), curses.A_DIM,
+                row,
+                left + 18,
+                item.description,
+                max(1, split - left - 20),
+                curses.A_DIM,
             )
             row += 1
 
@@ -1150,9 +1231,7 @@ class CursesApp:
             row += 1
 
         row += 1
-        win.addnstr(
-            row, right, "KONFIGURACJA WSPÓŁDZIELONA", right_width, heading_attr
-        )
+        win.addnstr(row, right, "KONFIGURACJA WSPÓŁDZIELONA", right_width, heading_attr)
         row += 2
         shared_rows = (
             ("ACL", str(report.acl_definitions)),
@@ -1184,7 +1263,9 @@ class CursesApp:
         return report, BindOnboardingView.build(report)
 
     def _onboarding_candidates_view(
-        self, win: curses.window, candidates: Sequence[OnboardingCandidate],
+        self,
+        win: curses.window,
+        candidates: Sequence[OnboardingCandidate],
     ) -> None:
         """Lista legacy: plan, dry-run i jawnie potwierdzony import."""
         selected = 0
@@ -1193,12 +1274,18 @@ class CursesApp:
             win.erase()
             height, width = win.getmaxyx()
             win.addnstr(
-                0, 0, " Kandydaci do importu ZoneCTL ".ljust(width),
-                max(0, width - 1), curses.A_REVERSE | curses.A_BOLD,
+                0,
+                0,
+                " Kandydaci do importu ZoneCTL ".ljust(width),
+                max(0, width - 1),
+                curses.A_REVERSE | curses.A_BOLD,
             )
             win.addnstr(
-                2, 2, f"{'Strefa':<38} {'Typ':<10} Deklaracja",
-                max(0, width - 4), curses.A_BOLD,
+                2,
+                2,
+                f"{'Strefa':<38} {'Typ':<10} Deklaracja",
+                max(0, width - 4),
+                curses.A_BOLD,
             )
             visible = max(1, height - 7)
             offset = max(0, min(selected, len(candidates) - visible))
@@ -1211,7 +1298,8 @@ class CursesApp:
                 win.addnstr(screen_row, 2, line, max(0, width - 4), attr)
             current = candidates[selected]
             self._draw_context_panel_48(
-                win, "SZCZEGÓŁY KANDYDATA",
+                win,
+                "SZCZEGÓŁY KANDYDATA",
                 (
                     ("Strefa", current.name),
                     ("Typ", current.zone_type),
@@ -1220,13 +1308,13 @@ class CursesApp:
                     ("Tryb", "PLANOWANY IMPORT"),
                 ),
             )
-            footer = (
-                " F3 plan   F4 dry-run   F6 importuj   "
-                "↑/↓ wybór   q/Esc powrót "
-            )
+            footer = " F3 plan   F4 dry-run   F6 importuj   ↑/↓ wybór   q/Esc powrót "
             win.addnstr(
-                height - 1, 0, footer.ljust(width),
-                max(0, width - 1), curses.A_REVERSE,
+                height - 1,
+                0,
+                footer.ljust(width),
+                max(0, width - 1),
+                curses.A_REVERSE,
             )
             win.refresh()
             key = self._get_key(win)
@@ -1237,9 +1325,7 @@ class CursesApp:
             elif key in (curses.KEY_UP, ord("k")):
                 selected = max(0, selected - 1)
             elif key in (curses.KEY_F3, 10, 13, curses.KEY_ENTER):
-                self._show_bind_onboarding_plan(
-                    win, candidates[selected].name, planner
-                )
+                self._show_bind_onboarding_plan(win, candidates[selected].name, planner)
             elif key == curses.KEY_F4:
                 self._dry_run_bind_onboarding_import(
                     win, candidates[selected].name, planner
@@ -1251,7 +1337,9 @@ class CursesApp:
                     return
 
     def _show_bind_onboarding_plan(
-        self, win: curses.window, zone_name: str,
+        self,
+        win: curses.window,
+        zone_name: str,
         planner: ManagedZoneMigrationPlanner,
     ) -> None:
         """Wyświetla diff kandydata; ten przepływ nie ma ścieżki zapisu."""
@@ -1263,20 +1351,22 @@ class CursesApp:
                 f"Indeks:     {plan.managed_config}",
                 "",
                 "PLANOWANE DIFFY",
-                *(plan.source_diff + plan.declaration_diff + plan.managed_diff).splitlines(),
+                *(
+                    plan.source_diff + plan.declaration_diff + plan.managed_diff
+                ).splitlines(),
                 "",
                 "Plan tylko do odczytu — nie zmieniono konfiguracji BIND.",
             ]
-            self._message_view(
-                win, title=f"Plan importu: {zone_name}", lines=lines
-            )
+            self._message_view(win, title=f"Plan importu: {zone_name}", lines=lines)
         except (ManagedZoneMigrationError, OSError) as exc:
             self._message_view(
                 win, title="Plan importu zablokowany", lines=[str(exc)], error=True
             )
 
     def _onboarding_dnssec_view(
-        self, win: curses.window, blockers: Sequence[OnboardingBlocker],
+        self,
+        win: curses.window,
+        blockers: Sequence[OnboardingBlocker],
     ) -> None:
         """Koncepcyjny ekran stref DNSSEC: wyłącznie plan i dry-run."""
         selected = 0
@@ -1285,15 +1375,19 @@ class CursesApp:
             win.erase()
             height, width = win.getmaxyx()
             win.addnstr(
-                0, 0, " Import deklaracji DNSSEC — tryb ostrożny ".ljust(width),
-                max(0, width - 1), curses.A_REVERSE | curses.A_BOLD,
+                0,
+                0,
+                " Import deklaracji DNSSEC — tryb ostrożny ".ljust(width),
+                max(0, width - 1),
+                curses.A_REVERSE | curses.A_BOLD,
             )
             heading_attr = curses.A_BOLD | (
                 curses.color_pair(4) if curses.has_colors() else curses.A_NORMAL
             )
             win.addnstr(2, 2, "STREFY DNSSEC", max(0, width - 4), heading_attr)
             win.addnstr(
-                3, 2,
+                3,
+                2,
                 "Przenoszona jest tylko deklaracja BIND; klucze, KASP i DS pozostają bez zmian.",
                 max(0, width - 4),
             )
@@ -1317,8 +1411,11 @@ class CursesApp:
                 )
             footer = " F3 plan   F4 dry-run   F6 importuj   F7 audyt   ↑/↓ wybór   q/Esc/F10 powrót "
             win.addnstr(
-                height - 1, 0, footer.ljust(width),
-                max(0, width - 1), curses.A_REVERSE,
+                height - 1,
+                0,
+                footer.ljust(width),
+                max(0, width - 1),
+                curses.A_REVERSE,
             )
             win.refresh()
             key = self._get_key(win)
@@ -1329,9 +1426,7 @@ class CursesApp:
             elif key in (curses.KEY_UP, ord("k")):
                 selected = max(0, selected - 1)
             elif key in (curses.KEY_F3, 10, 13, curses.KEY_ENTER):
-                self._show_dnssec_onboarding_plan(
-                    win, blockers[selected].name, planner
-                )
+                self._show_dnssec_onboarding_plan(win, blockers[selected].name, planner)
             elif key == curses.KEY_F4:
                 self._dry_run_dnssec_onboarding_import(
                     win, blockers[selected].name, planner
@@ -1345,8 +1440,12 @@ class CursesApp:
                 self._dnssec_onboarding_audit_view(win, blockers)
 
     def _draw_dnssec_onboarding_48(
-        self, win: curses.window, blockers: Sequence[OnboardingBlocker],
-        selected: int, offset: int, visible: int,
+        self,
+        win: curses.window,
+        blockers: Sequence[OnboardingBlocker],
+        selected: int,
+        offset: int,
+        visible: int,
     ) -> None:
         """Rysuje listę importu DNSSEC zgodnie z wizualnym kontraktem 4.8."""
         height, width = win.getmaxyx()
@@ -1355,12 +1454,18 @@ class CursesApp:
         )
         win.erase()
         win.addnstr(
-            0, 0, " Import deklaracji DNSSEC ".ljust(width),
-            max(0, width - 1), curses.A_REVERSE | curses.A_BOLD,
+            0,
+            0,
+            " Import deklaracji DNSSEC ".ljust(width),
+            max(0, width - 1),
+            curses.A_REVERSE | curses.A_BOLD,
         )
         win.addnstr(
-            2, 2, "Bezpieczny onboarding • deklaracja BIND • KASP i DS bez zmian",
-            max(0, width - 4), heading_attr,
+            2,
+            2,
+            "Bezpieczny onboarding • deklaracja BIND • KASP i DS bez zmian",
+            max(0, width - 4),
+            heading_attr,
         )
         try:
             for column in range(2, width - 2):
@@ -1413,7 +1518,9 @@ class CursesApp:
             row += 1
 
     def _show_dnssec_onboarding_plan(
-        self, win: curses.window, zone_name: str,
+        self,
+        win: curses.window,
+        zone_name: str,
         planner: ManagedZoneMigrationPlanner,
     ) -> None:
         """Pokazuje deklaracyjny plan DNSSEC bez operacji na kluczach."""
@@ -1425,7 +1532,9 @@ class CursesApp:
                 f"Deklaracja: {plan.declaration_file}",
                 f"Indeks:     {plan.managed_config}",
                 "",
-                *(plan.source_diff + plan.declaration_diff + plan.managed_diff).splitlines(),
+                *(
+                    plan.source_diff + plan.declaration_diff + plan.managed_diff
+                ).splitlines(),
                 "",
                 "Klucze, dnssec-policy, KASP i DS nie zostaną zmienione.",
             ]
@@ -1438,19 +1547,24 @@ class CursesApp:
             )
 
     def _dnssec_onboarding_audit_view(
-        self, win: curses.window, blockers: Sequence[OnboardingBlocker],
+        self,
+        win: curses.window,
+        blockers: Sequence[OnboardingBlocker],
     ) -> None:
         """Pokazuje zbiorczą gotowość DNSSEC w koncepcyjnym układzie 4.8."""
         toolkit = self.config.toolkit if self.config is not None else {}
         wanted = {item.name.rstrip(".").casefold() for item in blockers}
         zones = tuple(
-            zone for zone in self.all_zones
+            zone
+            for zone in self.all_zones
             if zone.name.rstrip(".").casefold() in wanted
         )
         resolvers = tuple(
-            item.strip() for item in toolkit.get(
+            item.strip()
+            for item in toolkit.get(
                 "dnssec_resolvers", "1.1.1.1,8.8.8.8,9.9.9.9"
-            ).split(",") if item.strip()
+            ).split(",")
+            if item.strip()
         )
         try:
             results = self._run_with_wait_indicator(
@@ -1458,18 +1572,12 @@ class CursesApp:
                 title="Zbiorczy audyt DNSSEC",
                 label="Kontrola KASP, delegacji i serwerów autorytatywnych",
                 operation=lambda: DnssecOnboardingAuditor(
-                    local_server=toolkit.get(
-                        "dnssec_local_server", "127.0.0.1"
-                    ),
+                    local_server=toolkit.get("dnssec_local_server", "127.0.0.1"),
                     resolvers=resolvers,
                     timeout=int(toolkit.get("dnssec_timeout", "3")),
                 ).audit(
                     zones,
-                    Path(
-                        toolkit.get(
-                            "dnssec_key_directory", "/var/lib/bind/keys"
-                        )
-                    ),
+                    Path(toolkit.get("dnssec_key_directory", "/var/lib/bind/keys")),
                 ),
             )
         except (OSError, RuntimeError, ValueError) as exc:
@@ -1493,8 +1601,10 @@ class CursesApp:
         self._dnssec_onboarding_audit_result_view(win, results, ready)
 
     def _dnssec_onboarding_audit_result_view(
-        self, win: curses.window,
-        results: tuple[DnssecOnboardingAuditItem, ...], ready: int,
+        self,
+        win: curses.window,
+        results: tuple[DnssecOnboardingAuditItem, ...],
+        ready: int,
     ) -> None:
         """Pokazuje zbiorczy audyt DNSSEC w układzie ZoneCTL 4.8."""
         selected = 0
@@ -1504,18 +1614,22 @@ class CursesApp:
                 win.erase()
                 height, width = win.getmaxyx()
                 heading_attr = curses.A_BOLD | (
-                    curses.color_pair(4)
-                    if curses.has_colors() else curses.A_NORMAL
+                    curses.color_pair(4) if curses.has_colors() else curses.A_NORMAL
                 )
                 win.addnstr(
-                    0, 0, " Audyt gotowości importu DNSSEC ".ljust(width),
-                    max(0, width - 1), curses.A_REVERSE | curses.A_BOLD,
+                    0,
+                    0,
+                    " Audyt gotowości importu DNSSEC ".ljust(width),
+                    max(0, width - 1),
+                    curses.A_REVERSE | curses.A_BOLD,
                 )
                 blocked = len(results) - ready
                 win.addnstr(
-                    2, 2,
+                    2,
+                    2,
                     f"Strefy {len(results)}   Gotowe {ready}   Zablokowane {blocked}",
-                    max(0, width - 4), heading_attr,
+                    max(0, width - 4),
+                    heading_attr,
                 )
                 try:
                     for column in range(2, width - 2):
@@ -1524,10 +1638,7 @@ class CursesApp:
                     pass
 
                 wide = width >= 100 and height >= 20
-                split = (
-                    max(66, min(width - 38, int(width * 0.70)))
-                    if wide else width
-                )
+                split = max(66, min(width - 38, int(width * 0.70))) if wide else width
                 if wide:
                     try:
                         for row in range(5, height - 2):
@@ -1544,10 +1655,7 @@ class CursesApp:
                     results[offset : offset + visible], start=7
                 ):
                     index = offset + screen_row - 7
-                    attr = (
-                        curses.A_REVERSE if index == selected
-                        else curses.A_NORMAL
-                    )
+                    attr = curses.A_REVERSE if index == selected else curses.A_NORMAL
                     line = (
                         f"{item.zone:<36} {item.status:<9} "
                         f"{item.report_status:<8} {item.delegation_status}"
@@ -1558,9 +1666,7 @@ class CursesApp:
                     current = results[selected]
                     right = split + 3
                     right_width = max(1, width - right - 3)
-                    win.addnstr(
-                        5, right, "STAN OPERACYJNY", right_width, heading_attr
-                    )
+                    win.addnstr(5, right, "STAN OPERACYJNY", right_width, heading_attr)
                     details = (
                         ("Strefa", current.zone),
                         ("Gotowość", current.status),
@@ -1571,25 +1677,30 @@ class CursesApp:
                     for label, content in details:
                         win.addnstr(row, right, label, 12)
                         win.addnstr(
-                            row, right + 13, content,
+                            row,
+                            right + 13,
+                            content,
                             max(1, right_width - 13),
                         )
                         row += 1
                     row += 1
-                    win.addnstr(
-                        row, right, "BEZPIECZEŃSTWO", right_width, heading_attr
-                    )
+                    win.addnstr(row, right, "BEZPIECZEŃSTWO", right_width, heading_attr)
                     row += 2
                     for text in (
-                        "BIND bez zmian", "Klucze bez zmian",
-                        "KASP bez zmian", "DS bez zmian",
+                        "BIND bez zmian",
+                        "Klucze bez zmian",
+                        "KASP bez zmian",
+                        "DS bez zmian",
                     ):
                         win.addnstr(row, right, text, right_width)
                         row += 1
 
                 footer = " ↑/↓ wybór   F10 Powrót "
                 win.addnstr(
-                    height - 1, 0, footer.ljust(width), max(0, width - 1),
+                    height - 1,
+                    0,
+                    footer.ljust(width),
+                    max(0, width - 1),
                     curses.A_REVERSE,
                 )
                 win.refresh()
@@ -1604,7 +1715,9 @@ class CursesApp:
             win.timeout(150)
 
     def _dry_run_dnssec_onboarding_import(
-        self, win: curses.window, zone_name: str,
+        self,
+        win: curses.window,
+        zone_name: str,
         planner: ManagedZoneMigrationPlanner,
     ) -> None:
         """Uruchamia transakcyjny dry-run profilu DNSSEC bez aktywacji."""
@@ -1612,8 +1725,18 @@ class CursesApp:
             plan = planner.plan(zone_name, allow_dnssec=True)
             toolkit = self.config.toolkit if self.config is not None else {}
             transaction = ManagedZoneMigrationTransaction(
-                Path(toolkit.get("zone_migration_backup_root", "/var/backups/zonectl-zone-migration/backups")),
-                Path(toolkit.get("zone_migration_manifest_dir", "/var/backups/zonectl-zone-migration/manifests")),
+                Path(
+                    toolkit.get(
+                        "zone_migration_backup_root",
+                        "/var/backups/zonectl-zone-migration/backups",
+                    )
+                ),
+                Path(
+                    toolkit.get(
+                        "zone_migration_manifest_dir",
+                        "/var/backups/zonectl-zone-migration/manifests",
+                    )
+                ),
                 root_config=planner.root_config,
             )
             result = self._run_with_wait_indicator(
@@ -1623,11 +1746,15 @@ class CursesApp:
                 operation=lambda: transaction.apply(plan),
             )
             lines = self._migration_result_lines(result) + [
-                "", "Dry-run DNSSEC — nie zapisano konfiguracji, kluczy ani stanu KASP."
+                "",
+                "Dry-run DNSSEC — nie zapisano konfiguracji, kluczy ani stanu KASP.",
             ]
             self._onboarding_result_view(
-                win, title=f"Dry-run importu DNSSEC: {zone_name}",
-                result=result, profile="DNSSEC", note=lines[-1],
+                win,
+                title=f"Dry-run importu DNSSEC: {zone_name}",
+                result=result,
+                profile="DNSSEC",
+                note=lines[-1],
             )
         except (ManagedZoneMigrationError, OSError) as exc:
             self._message_view(
@@ -1635,11 +1762,13 @@ class CursesApp:
             )
 
     def _dnssec_import_gate(
-        self, zone_name: str,
+        self,
+        zone_name: str,
     ) -> tuple[Zone, tuple[str, ...], Path, tuple[object, ...]]:
         """Wymaga aktywnego, w pełni zgodnego łańcucha DNSSEC."""
         zone = next(
-            item for item in self.all_zones
+            item
+            for item in self.all_zones
             if item.name.rstrip(".").casefold() == zone_name.rstrip(".").casefold()
         )
         toolkit = self.config.toolkit if self.config is not None else {}
@@ -1680,14 +1809,18 @@ class CursesApp:
         return zone, resolvers, key_directory, fingerprint
 
     def _commit_dnssec_onboarding_import(
-        self, win: curses.window, zone_name: str,
+        self,
+        win: curses.window,
+        zone_name: str,
         planner: ManagedZoneMigrationPlanner,
     ) -> bool:
         """Importuje deklarację DNSSEC z bramką przed i po rndc reconfig."""
         if self.read_only:
             self._message_view(
-                win, title="Tryb tylko do odczytu",
-                lines=["Import DNSSEC jest zablokowany."], error=True,
+                win,
+                title="Tryb tylko do odczytu",
+                lines=["Import DNSSEC jest zablokowany."],
+                error=True,
             )
             return False
         try:
@@ -1717,17 +1850,31 @@ class CursesApp:
                     report.calculated_ds,
                     report.parent_ds_records,
                 )
-                ok = report.status == "PASS" and delegation.status == "PASS" and after == before
+                ok = (
+                    report.status == "PASS"
+                    and delegation.status == "PASS"
+                    and after == before
+                )
                 detail = (
                     "Raport PASS, delegacja PASS, DNSKEY/DS/polityka bez zmian"
-                    if ok else
-                    f"Niezgodność po reconfig: raport={report.status}, delegacja={delegation.status}"
+                    if ok
+                    else f"Niezgodność po reconfig: raport={report.status}, delegacja={delegation.status}"
                 )
                 return ManagedZoneMigrationStep("dnssec-post-gate", ok, detail)
 
             transaction = ManagedZoneMigrationTransaction(
-                Path(toolkit.get("zone_migration_backup_root", "/var/backups/zonectl-zone-migration/backups")),
-                Path(toolkit.get("zone_migration_manifest_dir", "/var/backups/zonectl-zone-migration/manifests")),
+                Path(
+                    toolkit.get(
+                        "zone_migration_backup_root",
+                        "/var/backups/zonectl-zone-migration/backups",
+                    )
+                ),
+                Path(
+                    toolkit.get(
+                        "zone_migration_manifest_dir",
+                        "/var/backups/zonectl-zone-migration/manifests",
+                    )
+                ),
                 root_config=planner.root_config,
                 loaded_verifier=verify_dnssec,
             )
@@ -1738,8 +1885,10 @@ class CursesApp:
                 operation=lambda: transaction.apply(plan),
             )
             self._onboarding_result_view(
-                win, title=f"Kontrola DNSSEC przed importem: {zone_name}",
-                result=dry_run, profile="DNSSEC",
+                win,
+                title=f"Kontrola DNSSEC przed importem: {zone_name}",
+                result=dry_run,
+                profile="DNSSEC",
                 note="Dry-run wykonany przed potwierdzeniem; BIND i KASP bez zmian.",
             )
             if dry_run.status not in {"DRY-RUN", "DRY_RUN"}:
@@ -1747,9 +1896,12 @@ class CursesApp:
             confirmation = CursesDialogs.text_input(
                 win, " Wpisz pełną nazwę strefy DNSSEC: ", initial=""
             )
-            if (confirmation or "").strip().rstrip(".").casefold() != zone_name.rstrip(".").casefold():
+            if (confirmation or "").strip().rstrip(".").casefold() != zone_name.rstrip(
+                "."
+            ).casefold():
                 self._message_view(
-                    win, title="Import DNSSEC anulowany",
+                    win,
+                    title="Import DNSSEC anulowany",
                     lines=["Potwierdzenie nie odpowiada nazwie strefy."],
                 )
                 return False
@@ -1761,13 +1913,13 @@ class CursesApp:
                 win,
                 title=f"Import DNSSEC: {zone_name}",
                 label="Walidacja, aktywacja i kontrola DNSSEC",
-                operation=lambda: transaction.apply(
-                    plan, commit=True, activate=True
-                ),
+                operation=lambda: transaction.apply(plan, commit=True, activate=True),
             )
             self._onboarding_result_view(
-                win, title=f"Wynik importu DNSSEC: {zone_name}",
-                result=result, profile="DNSSEC",
+                win,
+                title=f"Wynik importu DNSSEC: {zone_name}",
+                result=result,
+                profile="DNSSEC",
                 note="Klucze, DS i stan KASP pozostały niezmienione.",
             )
             return result.status == "COMMIT"
@@ -1778,7 +1930,9 @@ class CursesApp:
             return False
 
     def _dry_run_bind_onboarding_import(
-        self, win: curses.window, zone_name: str,
+        self,
+        win: curses.window,
+        zone_name: str,
         planner: ManagedZoneMigrationPlanner,
     ) -> None:
         """Waliduje transakcję importu bez zapisu plików i aktywacji BIND."""
@@ -1814,8 +1968,11 @@ class CursesApp:
                 )
             )
             self._onboarding_result_view(
-                win, title=f"Dry-run importu: {zone_name}",
-                result=result, profile="PRIMARY", note=lines[-1],
+                win,
+                title=f"Dry-run importu: {zone_name}",
+                result=result,
+                profile="PRIMARY",
+                note=lines[-1],
             )
         except (ManagedZoneMigrationError, OSError) as exc:
             self._message_view(
@@ -1826,7 +1983,9 @@ class CursesApp:
             )
 
     def _commit_bind_onboarding_import(
-        self, win: curses.window, zone_name: str,
+        self,
+        win: curses.window,
+        zone_name: str,
         planner: ManagedZoneMigrationPlanner,
     ) -> bool:
         """Importuje jedną deklarację po dwóch niezależnych potwierdzeniach."""
@@ -1863,8 +2022,10 @@ class CursesApp:
                 operation=lambda: transaction.apply(plan),
             )
             self._onboarding_result_view(
-                win, title=f"Kontrola przed importem: {zone_name}",
-                result=dry_run, profile="PRIMARY",
+                win,
+                title=f"Kontrola przed importem: {zone_name}",
+                result=dry_run,
+                profile="PRIMARY",
                 note="Dry-run wykonany przed potwierdzeniem; konfiguracja bez zmian.",
             )
             if dry_run.status not in {"DRY-RUN", "DRY_RUN"}:
@@ -1892,13 +2053,13 @@ class CursesApp:
                 win,
                 title=f"Import strefy: {zone_name}",
                 label="Walidacja, aktywacja i kontrola BIND",
-                operation=lambda: transaction.apply(
-                    plan, commit=True, activate=True
-                ),
+                operation=lambda: transaction.apply(plan, commit=True, activate=True),
             )
             self._onboarding_result_view(
-                win, title=f"Wynik importu: {zone_name}",
-                result=result, profile="PRIMARY",
+                win,
+                title=f"Wynik importu: {zone_name}",
+                result=result,
+                profile="PRIMARY",
                 note="Deklaracja jest teraz zarządzana przez ZoneCTL.",
             )
             return result.status == "COMMIT"
@@ -1985,9 +2146,7 @@ class CursesApp:
                 admin=defaults["admin"],
                 nameservers=defaults["nameservers"],
                 groups=tuple(
-                    self.config.group_order
-                    if self.config is not None
-                    else ()
+                    self.config.group_order if self.config is not None else ()
                 ),
                 initial=form,
             )
@@ -1995,30 +2154,28 @@ class CursesApp:
                 return
 
             nameservers = tuple(
-                value.strip()
-                for value in form.nameservers.split(",")
-                if value.strip()
+                value.strip() for value in form.nameservers.split(",") if value.strip()
             )
             try:
                 plan = ZoneLifecyclePlanner(self.all_zones).plan_create(
                     ZoneCreateRequest(
-                    name=form.name,
-                    primary_ns=form.primary_ns,
-                    admin=form.admin,
-                    nameservers=nameservers,
-                    apex_ipv4=form.ipv4 or None,
-                    apex_ipv6=form.ipv6 or None,
-                    add_www=form.add_www,
-                    group=form.group,
-                    groups_config=(
-                        self.config.groups_path
-                        if self.config is not None
-                        else Path("/etc/zonectl/groups.yaml")
-                    ),
-                    refresh=form.refresh,
-                    retry=form.retry,
-                    expire=form.expire,
-                    negative_ttl=form.negative_ttl,
+                        name=form.name,
+                        primary_ns=form.primary_ns,
+                        admin=form.admin,
+                        nameservers=nameservers,
+                        apex_ipv4=form.ipv4 or None,
+                        apex_ipv6=form.ipv6 or None,
+                        add_www=form.add_www,
+                        group=form.group,
+                        groups_config=(
+                            self.config.groups_path
+                            if self.config is not None
+                            else Path("/etc/zonectl/groups.yaml")
+                        ),
+                        refresh=form.refresh,
+                        retry=form.retry,
+                        expire=form.expire,
+                        negative_ttl=form.negative_ttl,
                     )
                 )
             except ZoneLifecycleError as exc:
@@ -2057,9 +2214,7 @@ class CursesApp:
             win,
             title=f"Tworzenie strefy: {plan.zone_name}",
             label="Zapis, walidacja i aktywacja strefy",
-            operation=lambda: transaction.apply(
-                plan, commit=True, activate=True
-            ),
+            operation=lambda: transaction.apply(plan, commit=True, activate=True),
         )
         lines = [
             f"Status: {result.status}",
@@ -2067,8 +2222,7 @@ class CursesApp:
             f"Rollback: {'TAK' if result.rolled_back else 'NIE'}",
             "",
             *(
-                f"[{'OK' if step.ok else 'BŁĄD'}] "
-                f"{step.name}: {step.message}"
+                f"[{'OK' if step.ok else 'BŁĄD'}] {step.name}: {step.message}"
                 for step in result.steps
             ),
         ]
@@ -2352,10 +2506,7 @@ class CursesApp:
 
                 confirmed = CursesDialogs.confirm(
                     win,
-                    (
-                        f"Zapisać {model.change_count} "
-                        f"zmian w strefie {zone.name}?"
-                    ),
+                    (f"Zapisać {model.change_count} zmian w strefie {zone.name}?"),
                 )
 
                 if not confirmed:
@@ -2386,8 +2537,7 @@ class CursesApp:
 
                 if (
                     save_result.transaction.committed
-                    or save_result.transaction.status
-                    == "NO-CHANGE"
+                    or save_result.transaction.status == "NO-CHANGE"
                 ):
                     # TransactionEngine może podmienić plik i przeładować
                     # BIND poza bieżącym modelem TUI. Zawsze czytamy ponownie
@@ -2511,8 +2661,7 @@ class CursesApp:
                         continue
 
                     identifiers_before = {
-                        view.identifier
-                        for view in model.record_views
+                        view.identifier for view in model.record_views
                     }
 
                     model.add(new_record)
@@ -2533,11 +2682,8 @@ class CursesApp:
                         try:
                             selected = next(
                                 index
-                                for index, view in enumerate(
-                                    visible_records
-                                )
-                                if view.identifier
-                                == added_view.identifier
+                                for index, view in enumerate(visible_records)
+                                if view.identifier == added_view.identifier
                             )
                         except StopIteration:
                             selected = max(
@@ -2583,8 +2729,7 @@ class CursesApp:
                     proposed_records = [
                         (
                             edited_record
-                            if view.identifier
-                            == current_view.identifier
+                            if view.identifier == current_view.identifier
                             else view.record
                         )
                         for view in model.record_views
@@ -2608,11 +2753,8 @@ class CursesApp:
                     try:
                         selected = next(
                             index
-                            for index, view in enumerate(
-                                visible_records
-                            )
-                            if view.identifier
-                            == current_view.identifier
+                            for index, view in enumerate(visible_records)
+                            if view.identifier == current_view.identifier
                         )
                     except StopIteration:
                         selected = 0
@@ -2633,20 +2775,15 @@ class CursesApp:
                 if current_view.deleted:
                     continue
 
-                model.delete_by_identifier(
-                    current_view.identifier
-                )
+                model.delete_by_identifier(current_view.identifier)
 
                 visible_records = ordered_records()
 
                 try:
                     selected = next(
                         index
-                        for index, view in enumerate(
-                            visible_records
-                        )
-                        if view.identifier
-                        == current_view.identifier
+                        for index, view in enumerate(visible_records)
+                        if view.identifier == current_view.identifier
                     )
                 except StopIteration:
                     selected = min(
@@ -2708,9 +2845,6 @@ class CursesApp:
             elif key == curses.KEY_END:
                 selected = len(visible_records) - 1
 
-
-
-
     def _message_view(
         self,
         win: curses.window,
@@ -2722,11 +2856,7 @@ class CursesApp:
     ) -> bool:
         """Wyświetla zawijany i przewijany modalny komunikat."""
         title_attr = curses.A_REVERSE | curses.A_BOLD
-        body_attr = (
-            self._color(Health.FAIL)
-            if error
-            else curses.A_NORMAL
-        )
+        body_attr = self._color(Health.FAIL) if error else curses.A_NORMAL
         offset = 0
         try:
             win.timeout(-1)
@@ -2747,9 +2877,7 @@ class CursesApp:
                     max(0, width - 1),
                     title_attr,
                 )
-                for row, line in enumerate(
-                    wrapped[offset : offset + visible], start=2
-                ):
+                for row, line in enumerate(wrapped[offset : offset + visible], start=2):
                     win.addnstr(
                         row,
                         2,
@@ -2801,8 +2929,14 @@ class CursesApp:
                 pass
 
     def _draw_message_view_48(
-        self, win: curses.window, title: str, wrapped: Sequence[str],
-        offset: int, visible: int, error: bool, divider: int,
+        self,
+        win: curses.window,
+        title: str,
+        wrapped: Sequence[str],
+        offset: int,
+        visible: int,
+        error: bool,
+        divider: int,
     ) -> None:
         """Wspólny renderer komunikatów, planów i wyników w układzie 4.8."""
         height, width = win.getmaxyx()
@@ -2815,11 +2949,15 @@ class CursesApp:
         )
         status_attr = (
             self._color(Health.FAIL if error else Health.PASS)
-            if has_colors else curses.A_NORMAL
+            if has_colors
+            else curses.A_NORMAL
         ) | curses.A_BOLD
         win.erase()
         win.addnstr(
-            0, 0, f" {title} ".ljust(width), max(0, width - 1),
+            0,
+            0,
+            f" {title} ".ljust(width),
+            max(0, width - 1),
             curses.A_REVERSE | curses.A_BOLD,
         )
         win.addnstr(2, 3, "SZCZEGÓŁY", max(1, divider - 6), heading_attr)
@@ -2830,9 +2968,7 @@ class CursesApp:
                 win.addch(row, divider, curses.ACS_VLINE, curses.A_DIM)
         except (curses.error, AttributeError):
             pass
-        for row, line in enumerate(
-            wrapped[offset : offset + visible], start=5
-        ):
+        for row, line in enumerate(wrapped[offset : offset + visible], start=5):
             if row >= height - 2:
                 break
             attr = curses.A_NORMAL
@@ -2847,21 +2983,28 @@ class CursesApp:
         right_width = max(1, width - right - 3)
         win.addnstr(2, right, "STAN OPERACYJNY", right_width, heading_attr)
         win.addnstr(
-            5, right, "BŁĄD" if error else "INFORMACJA", right_width,
+            5,
+            right,
+            "BŁĄD" if error else "INFORMACJA",
+            right_width,
             status_attr,
         )
         win.addnstr(7, right, "Tryb", 14)
         win.addnstr(7, right + 15, "TYLKO PODGLĄD", max(1, right_width - 15))
         win.addnstr(9, right, "STEROWANIE", right_width, heading_attr)
         hints = (
-            "↑/↓ przewijanie", "PgUp/PgDn strona",
-            "Home/End początek/koniec", "F10 powrót",
+            "↑/↓ przewijanie",
+            "PgUp/PgDn strona",
+            "Home/End początek/koniec",
+            "F10 powrót",
         )
         for row, text in enumerate(hints, start=11):
             win.addnstr(row, right, text, right_width)
 
     def _draw_context_panel_48(
-        self, win: curses.window, heading: str,
+        self,
+        win: curses.window,
+        heading: str,
         details: Sequence[tuple[object, object]],
     ) -> None:
         """Dodaje panel kontekstowy 4.8 do starszych ekranów listowych."""
@@ -2878,7 +3021,9 @@ class CursesApp:
         )
         try:
             for row in range(2, height - 2):
-                win.addnstr(row, split + 1, " " * (width - split - 2), width - split - 2)
+                win.addnstr(
+                    row, split + 1, " " * (width - split - 2), width - split - 2
+                )
                 win.addch(row, split, curses.ACS_VLINE, curses.A_DIM)
         except (curses.error, AttributeError):
             pass
@@ -2897,7 +3042,10 @@ class CursesApp:
                 column = right + 15 if index == 0 else right
                 limit = max(1, right_width - 15) if index == 0 else right_width
                 win.addnstr(
-                    row, column, part, limit,
+                    row,
+                    column,
+                    part,
+                    limit,
                     self._semantic_attr(content, bold_failure=True),
                 )
                 row += 1
@@ -2926,7 +3074,10 @@ class CursesApp:
                 win.erase()
                 height, width = win.getmaxyx()
                 win.addnstr(
-                    0, 0, f" {title} ".ljust(width), max(0, width - 1),
+                    0,
+                    0,
+                    f" {title} ".ljust(width),
+                    max(0, width - 1),
                     curses.A_REVERSE | curses.A_BOLD,
                 )
                 wide = width >= 100 and height >= 20
@@ -2967,8 +3118,10 @@ class CursesApp:
                     win.addnstr(2, right, "STAN OPERACYJNY", right_width, heading_attr)
                     win.addnstr(5, right, status, right_width, status_attr)
                     summary = (
-                        "OPERACJA ZAKOŃCZONA" if status == "COMMIT"
-                        else "KONTROLA BEZ ZMIAN" if status == "DRY-RUN"
+                        "OPERACJA ZAKOŃCZONA"
+                        if status == "COMMIT"
+                        else "KONTROLA BEZ ZMIAN"
+                        if status == "DRY-RUN"
                         else "OPERACJA ZABLOKOWANA"
                     )
                     win.addnstr(7, right, summary, right_width, status_attr)
@@ -2988,7 +3141,10 @@ class CursesApp:
                         row += 1
                 footer = " q/Esc/F10 Powrót "
                 win.addnstr(
-                    height - 1, 0, footer.ljust(width), max(0, width - 1),
+                    height - 1,
+                    0,
+                    footer.ljust(width),
+                    max(0, width - 1),
                     curses.A_REVERSE,
                 )
                 win.refresh()
@@ -3190,17 +3346,13 @@ class CursesApp:
                 )
 
                 for screen_row, change in enumerate(
-                    changes[offset:offset + visible],
+                    changes[offset : offset + visible],
                     start=list_top,
                 ):
                     index = offset + screen_row - list_top
                     symbol, label = labels[change.kind]
 
-                    attr = (
-                        curses.A_REVERSE
-                        if index == selected
-                        else curses.A_NORMAL
-                    )
+                    attr = curses.A_REVERSE if index == selected else curses.A_NORMAL
 
                     line = f"{symbol} {label:<11} {record_text(change)}"
                     put(screen_row, 1, line, attr)
@@ -3236,7 +3388,8 @@ class CursesApp:
                 current = changes[selected]
                 record = current.record
                 self._draw_context_panel_48(
-                    win, "SZCZEGÓŁY ZMIANY",
+                    win,
+                    "SZCZEGÓŁY ZMIANY",
                     (
                         ("Operacja", labels[current.kind][1]),
                         ("Nazwa", record.relative_owner(zone.name)),
@@ -3359,11 +3512,7 @@ class CursesApp:
     ) -> None:
         """Wyświetl przewijany unified diff bez zapisywania strefy."""
         text = session.unified_diff()
-        lines = (
-            text.splitlines()
-            if text
-            else ["Brak różnic względem aktywnego pliku."]
-        )
+        lines = text.splitlines() if text else ["Brak różnic względem aktywnego pliku."]
         offset = 0
 
         while True:
@@ -3385,7 +3534,7 @@ class CursesApp:
                 )
 
                 for row, line in enumerate(
-                    lines[offset:offset + visible],
+                    lines[offset : offset + visible],
                     start=2,
                 ):
                     attr = curses.A_NORMAL
@@ -3406,7 +3555,8 @@ class CursesApp:
                     )
 
                 self._draw_context_panel_48(
-                    win, "STAN OPERACYJNY",
+                    win,
+                    "STAN OPERACYJNY",
                     (
                         ("Strefa", session.zone.name),
                         ("Tryb", "UNIFIED DIFF"),
@@ -3554,9 +3704,7 @@ class CursesApp:
             for match in matches[:10]
         ]
         if len(matches) > len(preview):
-            preview.append(
-                f"... oraz {len(matches) - len(preview)} kolejnych"
-            )
+            preview.append(f"... oraz {len(matches) - len(preview)} kolejnych")
 
         if not self._bulk_preview_view(
             win,
@@ -3642,7 +3790,8 @@ class CursesApp:
                 row += 1
 
             self._draw_context_panel_48(
-                win, "STAN OPERACYJNY",
+                win,
+                "STAN OPERACYJNY",
                 (
                     ("Tryb", "PODGLĄD"),
                     ("Zapis", "NIE"),
@@ -3702,24 +3851,17 @@ class CursesApp:
             if issue.key not in existing
         ]
         errors = [
-            issue
-            for issue in introduced
-            if issue.severity is ValidationSeverity.ERROR
+            issue for issue in introduced if issue.severity is ValidationSeverity.ERROR
         ]
         warnings = [
-            issue
-            for issue in introduced
-            if issue.severity is ValidationSeverity.WARN
+            issue for issue in introduced if issue.severity is ValidationSeverity.WARN
         ]
 
         if errors:
             self._message_view(
                 win,
                 title=f"Błąd spójności: {zone.name}",
-                lines=[
-                    f"[{issue.code}] {issue.message}"
-                    for issue in errors[:8]
-                ],
+                lines=[f"[{issue.code}] {issue.message}" for issue in errors[:8]],
                 error=True,
             )
             return False
@@ -3728,10 +3870,7 @@ class CursesApp:
             self._message_view(
                 win,
                 title=f"Ostrzeżenie: {zone.name}",
-                lines=[
-                    f"[{issue.code}] {issue.message}"
-                    for issue in warnings[:8]
-                ],
+                lines=[f"[{issue.code}] {issue.message}" for issue in warnings[:8]],
             )
             return CursesDialogs.confirm(
                 win,
@@ -3743,9 +3882,7 @@ class CursesApp:
     def _multi_zone_view(self, win: curses.window) -> None:
         """Edytuj kilka zaznaczonych stref w jednej sesji TUI."""
         selected_zones = [
-            zone
-            for zone in self.all_zones
-            if zone.name in self.multi_selected
+            zone for zone in self.all_zones if zone.name in self.multi_selected
         ]
         if len(selected_zones) < 2:
             self._message_view(
@@ -3801,10 +3938,7 @@ class CursesApp:
                     curses.A_REVERSE | curses.A_BOLD,
                 )
                 dirty = set(multi.dirty_zone_names)
-                summary = (
-                    f" Strefy: {len(selected_zones)}  "
-                    f"Ze zmianami: {len(dirty)}"
-                )
+                summary = f" Strefy: {len(selected_zones)}  Ze zmianami: {len(dirty)}"
                 win.addnstr(
                     2,
                     0,
@@ -3832,11 +3966,7 @@ class CursesApp:
                         else "bez zmian"
                     )
                     line = f" {zone.name:<42} {state}"
-                    attr = (
-                        curses.A_REVERSE
-                        if index == selected
-                        else curses.A_NORMAL
-                    )
+                    attr = curses.A_REVERSE if index == selected else curses.A_NORMAL
                     win.addnstr(
                         row_number,
                         0,
@@ -3847,7 +3977,8 @@ class CursesApp:
                 current_zone = selected_zones[selected]
                 current_session = multi.open(current_zone.name)
                 self._draw_context_panel_48(
-                    win, "STAN WYBRANEJ STREFY",
+                    win,
+                    "STAN WYBRANEJ STREFY",
                     (
                         ("Strefa", current_zone.name),
                         ("Zmiany", current_session.change_count),
@@ -3855,10 +3986,7 @@ class CursesApp:
                         ("Sesja", "WIELE STREF"),
                     ),
                 )
-                footer = (
-                    " Enter edytuj  F2 waliduj i zapisz wszystkie  "
-                    "q/Esc zakończ "
-                )
+                footer = " Enter edytuj  F2 waliduj i zapisz wszystkie  q/Esc zakończ "
                 win.addnstr(
                     height - 2,
                     0,
@@ -3903,10 +4031,7 @@ class CursesApp:
                         continue
                     if not CursesDialogs.confirm(
                         win,
-                        (
-                            f"Zweryfikować i zapisać "
-                            f"{len(dirty)} stref?"
-                        ),
+                        (f"Zweryfikować i zapisać {len(dirty)} stref?"),
                         key_reader=self._get_key,
                     ):
                         continue
@@ -3941,10 +4066,7 @@ class CursesApp:
                 if key in (ord("q"), ord("Q"), 27, curses.KEY_F10):
                     if dirty and not CursesDialogs.confirm(
                         win,
-                        (
-                            f"Porzucić zmiany w "
-                            f"{len(dirty)} strefach?"
-                        ),
+                        (f"Porzucić zmiany w {len(dirty)} strefach?"),
                         key_reader=self._get_key,
                     ):
                         continue
@@ -3967,9 +4089,7 @@ class CursesApp:
         # Operacje DNSSEC zmieniają deklarację BIND w czasie działania TUI.
         # Odśwież autodetekcję, aby raport nie korzystał ze starego obiektu
         # Zone i nie pokazywał UNSIGNED po poprawnym włączeniu polityki.
-        if self.config is not None and hasattr(
-            self.config, "_discover_bind_zones"
-        ):
+        if self.config is not None and hasattr(self.config, "_discover_bind_zones"):
             self.config._discover_bind_zones()
             current = next(
                 (
@@ -4025,9 +4145,7 @@ class CursesApp:
             raise RuntimeError("Brak konfiguracji ZoneCTL")
         discovered = self.config.discovered_zone(zone.name)
         if discovered is None:
-            raise RuntimeError(
-                "Autodetekcja nie znalazła deklaracji BIND dla strefy"
-            )
+            raise RuntimeError("Autodetekcja nie znalazła deklaracji BIND dla strefy")
         return DnssecDisablePlanner().plan(discovered)
 
     def _dnssec_enable_plan(self, zone: Zone) -> DnssecEnablePlan:
@@ -4036,9 +4154,7 @@ class CursesApp:
             raise RuntimeError("Brak konfiguracji ZoneCTL")
         discovered = self.config.discovered_zone(zone.name)
         if discovered is None:
-            raise RuntimeError(
-                "Autodetekcja nie znalazła deklaracji BIND dla strefy"
-            )
+            raise RuntimeError("Autodetekcja nie znalazła deklaracji BIND dla strefy")
         return DnssecEnablePlanner().plan(discovered)
 
     def _dnssec_enable_dry_run(self, zone: Zone) -> DnssecEnableResult:
@@ -4056,7 +4172,10 @@ class CursesApp:
         ).apply(plan, commit=True, activate=True)
 
     def _dnssec_confirm_ds(
-        self, zone: Zone, *, commit: bool = False,
+        self,
+        zone: Zone,
+        *,
+        commit: bool = False,
     ) -> DnssecConfirmResult:
         self._ensure_dnssec_tui_allowed(zone)
         toolkit = self.config.toolkit if self.config is not None else {}
@@ -4096,7 +4215,10 @@ class CursesApp:
         ).apply(plan, stage="finalize", commit=True, activate=True)
 
     def _dnssec_withdrawal_backup(
-        self, zone: Zone, *, commit: bool = False,
+        self,
+        zone: Zone,
+        *,
+        commit: bool = False,
     ) -> DnssecWithdrawalBackupResult:
         plan = self._dnssec_disable_plan(zone)
         toolkit = self.config.toolkit if self.config is not None else {}
@@ -4273,9 +4395,7 @@ class CursesApp:
                     win.addnstr(row, 2, line, max(0, width - 4), attr)
 
                 if width >= 100 and height >= 28:
-                    self._draw_dnssec_status_48(
-                        win, zone, view, error, stage
-                    )
+                    self._draw_dnssec_status_48(win, zone, view, error, stage)
                 footer = (
                     f" Enter {view.operation_label if view else 'odśwież'}  "
                     "↑/↓ przewiń  PgUp/PgDn strona  F3 plan  "
@@ -4329,12 +4449,19 @@ class CursesApp:
                                         f"Plik źródłowy: {enable_plan.source_zone_file}",
                                         f"Plik docelowy: {enable_plan.target_zone_file}",
                                         "Migracja pliku: "
-                                        + ("TAK" if enable_plan.migration_required else "NIE"),
+                                        + (
+                                            "TAK"
+                                            if enable_plan.migration_required
+                                            else "NIE"
+                                        ),
                                         f"Polityka: {enable_plan.policy}",
                                         "",
                                         "Planowany diff:",
                                     ]
-                                    + (enable_plan.unified_diff.splitlines() or ["Brak zmian"])
+                                    + (
+                                        enable_plan.unified_diff.splitlines()
+                                        or ["Brak zmian"]
+                                    )
                                     + ["", "Planowane etapy:"]
                                     + [f"- {action}" for action in enable_plan.actions]
                                 ),
@@ -4395,7 +4522,9 @@ class CursesApp:
                                         " Wpisz pełną nazwę strefy, aby utworzyć backup: ",
                                     )
                                     expected = zone.name.rstrip(".").casefold()
-                                    supplied = (confirmation or "").rstrip(".").casefold()
+                                    supplied = (
+                                        (confirmation or "").rstrip(".").casefold()
+                                    )
                                     if supplied != expected:
                                         self._message_view(
                                             win,
@@ -4423,7 +4552,8 @@ class CursesApp:
                                             lines=self._dnssec_backup_result_lines(
                                                 committed_backup
                                             ),
-                                            error=committed_backup.status != "BACKUP-CREATED",
+                                            error=committed_backup.status
+                                            != "BACKUP-CREATED",
                                         )
                         except Exception as exc:
                             self._message_view(
@@ -4457,7 +4587,9 @@ class CursesApp:
                                         " Wpisz pełną nazwę strefy, aby potwierdzić DS: ",
                                     )
                                     expected = zone.name.rstrip(".").casefold()
-                                    supplied = (confirmation or "").rstrip(".").casefold()
+                                    supplied = (
+                                        (confirmation or "").rstrip(".").casefold()
+                                    )
                                     if supplied != expected:
                                         self._message_view(
                                             win,
@@ -4483,7 +4615,8 @@ class CursesApp:
                                             lines=self._dnssec_confirm_result_lines(
                                                 committed_confirmation
                                             ),
-                                            error=committed_confirmation.status != "CONFIRMED",
+                                            error=committed_confirmation.status
+                                            != "CONFIRMED",
                                         )
                         except Exception as exc:
                             self._message_view(
@@ -4506,11 +4639,16 @@ class CursesApp:
                                 self._message_view(
                                     win,
                                     title=f"Dry-run włączenia DNSSEC: {zone.name}",
-                                    lines=self._dnssec_enable_result_lines(enable_result),
+                                    lines=self._dnssec_enable_result_lines(
+                                        enable_result
+                                    ),
                                     error=enable_result.status != "DRY-RUN",
                                 )
                                 if enable_result.status == "DRY-RUN":
-                                    if self.config is not None and self.config.read_only:
+                                    if (
+                                        self.config is not None
+                                        and self.config.read_only
+                                    ):
                                         self._read_only_message(win, zone)
                                     else:
                                         confirmation = CursesDialogs.text_input(
@@ -4519,9 +4657,7 @@ class CursesApp:
                                         )
                                         expected = zone.name.rstrip(".").casefold()
                                         supplied = (
-                                            (confirmation or "")
-                                            .rstrip(".")
-                                            .casefold()
+                                            (confirmation or "").rstrip(".").casefold()
                                         )
                                         if supplied != expected:
                                             self._message_view(
@@ -4538,7 +4674,9 @@ class CursesApp:
                                                 win,
                                                 title=f"Włączanie DNSSEC: {zone.name}",
                                                 label="Walidacja, aktywacja i kontrola BIND",
-                                                operation=lambda: self._dnssec_enable_commit(zone),
+                                                operation=lambda: self._dnssec_enable_commit(
+                                                    zone
+                                                ),
                                             )
                                             self._message_view(
                                                 win,
@@ -4623,13 +4761,14 @@ class CursesApp:
                                         win,
                                         title=f"Finalizacja DNSSEC: {zone.name}",
                                         label="Walidacja, aktywacja i kontrola BIND",
-                                        operation=lambda: self._dnssec_finalize_commit(zone),
+                                        operation=lambda: self._dnssec_finalize_commit(
+                                            zone
+                                        ),
                                     )
                                     self._message_view(
                                         win,
                                         title=(
-                                            "Wynik finalizacji DNSSEC: "
-                                            f"{zone.name}"
+                                            f"Wynik finalizacji DNSSEC: {zone.name}"
                                         ),
                                         lines=self._dnssec_disable_result_lines(
                                             committed_finalize
@@ -4680,7 +4819,9 @@ class CursesApp:
                 try:
                     available = max(0, width - column - 1)
                     win.addnstr(
-                        row, column, str(text),
+                        row,
+                        column,
+                        str(text),
                         min(available, limit) if limit is not None else available,
                         attr,
                     )
@@ -4699,7 +4840,9 @@ class CursesApp:
         ) | curses.A_BOLD
         win.erase()
         put(
-            0, 0, f" DNSSEC: {zone.name} ".ljust(width),
+            0,
+            0,
+            f" DNSSEC: {zone.name} ".ljust(width),
             curses.A_REVERSE | curses.A_BOLD,
         )
         subtitle = view.title if view is not None else (error or "Brak danych")
@@ -4723,10 +4866,13 @@ class CursesApp:
         put(5, left, "POLITYKA, KASP I DS", heading_attr, left_width)
         put(5, right, "DELEGACJA I STAN OPERACYJNY", heading_attr, right_width)
 
-        raw_lines = list(view.lines) if view is not None else ["BŁĄD ODCZYTU", error or "-"]
+        raw_lines = (
+            list(view.lines) if view is not None else ["BŁĄD ODCZYTU", error or "-"]
+        )
         delegation_at = next(
             (
-                index for index, line in enumerate(raw_lines)
+                index
+                for index, line in enumerate(raw_lines)
                 if line.startswith("KONTROLA DELEGACJI")
             ),
             len(raw_lines),
@@ -4747,9 +4893,11 @@ class CursesApp:
                 stripped = text.strip()
                 attr = curses.A_NORMAL
                 if stripped in {
-                    "STAN KASP", "DS DO PUBLIKACJI U REJESTRATORA",
+                    "STAN KASP",
+                    "DS DO PUBLIKACJI U REJESTRATORA",
                     "DS PUBLICZNY",
-                    "Resolvery:", "Serwery autorytatywne:",
+                    "Resolvery:",
+                    "Serwery autorytatywne:",
                 } or stripped.startswith("KONTROLA DELEGACJI"):
                     attr = heading_attr
                 else:
@@ -4818,7 +4966,9 @@ class CursesApp:
                     pass
 
         put(
-            0, 0, f" Strefa DNS: {zone.name} ".ljust(width),
+            0,
+            0,
+            f" Strefa DNS: {zone.name} ".ljust(width),
             curses.A_REVERSE | curses.A_BOLD,
         )
         heading = curses.A_BOLD | (
@@ -4847,8 +4997,10 @@ class CursesApp:
         if zone.he:
             transfers.append("HE")
         dnssec = (
-            "WŁĄCZONY" if status.dnssec is True
-            else "WYŁĄCZONY" if status.dnssec is False
+            "WŁĄCZONY"
+            if status.dnssec is True
+            else "WYŁĄCZONY"
+            if status.dnssec is False
             else "NIEZNANY"
         )
         details = (
@@ -4882,8 +5034,10 @@ class CursesApp:
         status_column = divider + 2 if wide else 2
         status_row = 5 if wide else min(row + 3, height - 7)
         put(
-            status_row, status_column,
-            f"{self._symbol(status.health)} {status.health.value}", health_attr,
+            status_row,
+            status_column,
+            f"{self._symbol(status.health)} {status.health.value}",
+            health_attr,
         )
         put(status_row + 2, status_column, "KOMUNIKAT", heading)
         message_width = max(1, width - status_column - 3)
@@ -4898,15 +5052,19 @@ class CursesApp:
             put(height - 4, status_column, notice, curses.A_BOLD)
 
         actions = (
-            ("F3", "Rekordy"), ("F5", "Secondary"),
-            ("F6", "Migracja"), ("d", "DNSSEC"),
-            ("r", "Odśwież"), ("F10", "Powrót"),
+            ("F3", "Rekordy"),
+            ("F5", "Secondary"),
+            ("F6", "Migracja"),
+            ("d", "DNSSEC"),
+            ("r", "Odśwież"),
+            ("F10", "Powrót"),
         )
         put(height - 2, 0, " " * width, curses.A_REVERSE)
         column = 1
         key_attr = (
             curses.color_pair(6) | curses.A_DIM
-            if curses.has_colors() else curses.A_REVERSE | curses.A_BOLD
+            if curses.has_colors()
+            else curses.A_REVERSE | curses.A_BOLD
         )
         for key, label in actions:
             if column + len(key) + len(label) + 3 >= width:
@@ -5029,16 +5187,8 @@ class CursesApp:
             transfer_text = ", ".join(transfer_targets) or "brak"
 
             serial_local = status.local_serial or "-"
-            serial_dns2 = (
-                status.dns2_serial or "-"
-                if zone.dns2
-                else "nieużywany"
-            )
-            serial_he = (
-                status.he_serial or "-"
-                if zone.he
-                else "nieużywany"
-            )
+            serial_dns2 = status.dns2_serial or "-" if zone.dns2 else "nieużywany"
+            serial_he = status.he_serial or "-" if zone.he else "nieużywany"
 
             put(2, 2, "STATUS", curses.A_BOLD)
             put(
@@ -5100,10 +5250,7 @@ class CursesApp:
             if zone.he:
                 he_attr = (
                     self._color(Health.PASS)
-                    if (
-                        status.local_serial
-                        and status.he_serial == status.local_serial
-                    )
+                    if (status.local_serial and status.he_serial == status.local_serial)
                     else self._color(Health.FAIL)
                 )
             put(16, 21, serial_he, he_attr)
@@ -5227,20 +5374,29 @@ class CursesApp:
                     )
                     self.statuses[zone.name] = status
                     notice = f"Błąd odświeżania: {exc}"
+
     def _zone_secondary_view(self, win: curses.window, zone: Zone) -> None:
         planner = BindZoneSecondaryPlanner(self._bind_root_config())
         try:
             pairs = planner.available_pairs()
             current = set(planner.plan(zone.name, []).old_pairs)
         except (BindZoneSecondaryError, OSError) as exc:
-            self._message_view(win, title="Secondary strefy", lines=[str(exc)], error=True)
+            self._message_view(
+                win, title="Secondary strefy", lines=[str(exc)], error=True
+            )
             return
         selected = 0
         chosen = set(current)
         while True:
             height, width = win.getmaxyx()
             win.erase()
-            win.addnstr(0, 0, f" Secondary strefy: {zone.name} ".ljust(width), max(0, width - 1), curses.A_REVERSE | curses.A_BOLD)
+            win.addnstr(
+                0,
+                0,
+                f" Secondary strefy: {zone.name} ".ljust(width),
+                max(0, width - 1),
+                curses.A_REVERSE | curses.A_BOLD,
+            )
             for row, pair in enumerate(pairs, 3):
                 marker = "[x]" if pair.name.casefold() in chosen else "[ ]"
                 line = f"{marker} {pair.name:<18} notify={','.join(pair.notify_addresses)} transfer={','.join(pair.transfer_addresses)}"
@@ -5249,17 +5405,23 @@ class CursesApp:
             if pairs:
                 current_pair = pairs[selected]
                 self._draw_context_panel_48(
-                    win, "SZCZEGÓŁY SECONDARY",
+                    win,
+                    "SZCZEGÓŁY SECONDARY",
                     (
                         ("Strefa", zone.name),
                         ("Grupa", current_pair.name),
-                        ("Wybrana", "TAK" if current_pair.name.casefold() in chosen else "NIE"),
+                        (
+                            "Wybrana",
+                            "TAK" if current_pair.name.casefold() in chosen else "NIE",
+                        ),
                         ("Notify", ", ".join(current_pair.notify_addresses)),
                         ("Transfer", ", ".join(current_pair.transfer_addresses)),
                     ),
                 )
             footer = " Spacja wybierz   F3 plan   F4 dry-run/zastosuj   Esc/F10 powrót "
-            win.addnstr(height - 1, 0, footer.ljust(width), max(0, width - 1), curses.A_REVERSE)
+            win.addnstr(
+                height - 1, 0, footer.ljust(width), max(0, width - 1), curses.A_REVERSE
+            )
             win.refresh()
             key = self._get_key(win)
             if key in (27, curses.KEY_F10, ord("q"), ord("Q")):
@@ -5275,9 +5437,15 @@ class CursesApp:
                 try:
                     plan = planner.plan(zone.name, sorted(chosen))
                 except (BindZoneSecondaryError, OSError) as exc:
-                    self._message_view(win, title="Plan zablokowany", lines=[str(exc)], error=True)
+                    self._message_view(
+                        win, title="Plan zablokowany", lines=[str(exc)], error=True
+                    )
                     continue
-                self._message_view(win, title=f"Plan secondary: {zone.name}", lines=(plan.diff or "Brak zmian.").splitlines())
+                self._message_view(
+                    win,
+                    title=f"Plan secondary: {zone.name}",
+                    lines=(plan.diff or "Brak zmian.").splitlines(),
+                )
                 if key == curses.KEY_F3 or not plan.diff:
                     continue
                 if self.read_only:
@@ -5292,30 +5460,43 @@ class CursesApp:
                     win,
                     title=f"Dry-run secondary: {zone.name}",
                     label="Walidacja przypisania bez zmian w BIND",
-                    operation=lambda: transaction.apply(
-                        plan.transaction_plan()
-                    ),
+                    operation=lambda: transaction.apply(plan.transaction_plan()),
                 )
-                self._message_view(win, title="Dry-run przypisania", lines=self._secondary_result_lines(dry_run))
-                confirmation = CursesDialogs.text_input(win, " Wpisz pełną nazwę strefy: ")
-                if (confirmation or "").rstrip(".").casefold() != zone.name.rstrip(".").casefold():
-                    self._message_view(win, title="Anulowano", lines=["Nazwa strefy nie jest zgodna."])
+                self._message_view(
+                    win,
+                    title="Dry-run przypisania",
+                    lines=self._secondary_result_lines(dry_run),
+                )
+                confirmation = CursesDialogs.text_input(
+                    win, " Wpisz pełną nazwę strefy: "
+                )
+                if (confirmation or "").rstrip(".").casefold() != zone.name.rstrip(
+                    "."
+                ).casefold():
+                    self._message_view(
+                        win, title="Anulowano", lines=["Nazwa strefy nie jest zgodna."]
+                    )
                     continue
-                if CursesDialogs.confirm(win, f"Zastosować przypisania dla {zone.name}"):
+                if CursesDialogs.confirm(
+                    win, f"Zastosować przypisania dla {zone.name}"
+                ):
                     result = self._run_with_wait_indicator(
                         win,
                         title=f"Przypisanie secondary: {zone.name}",
                         label="Walidacja, aktywacja i kontrola BIND",
                         operation=lambda: transaction.apply(
                             plan.transaction_plan(),
-                            commit=True, activate=True,
-                            reason=(
-                                "Zmiana przypisania secondary "
-                                "zatwierdzona w TUI"
-                            ),
+                            commit=True,
+                            activate=True,
+                            reason=("Zmiana przypisania secondary zatwierdzona w TUI"),
                         ),
                     )
-                    self._message_view(win, title="Transakcja przypisania", lines=self._secondary_result_lines(result), error=result.status != "COMMIT")
+                    self._message_view(
+                        win,
+                        title="Transakcja przypisania",
+                        lines=self._secondary_result_lines(result),
+                        error=result.status != "COMMIT",
+                    )
                     if result.status == "COMMIT":
                         return
 
@@ -5339,7 +5520,10 @@ class CursesApp:
                 return
             secondary_names = {item.name.casefold() for item in report.groups}
             items = [
-                ("secondary" if item.name.casefold() in secondary_names else "acl", item)
+                (
+                    "secondary" if item.name.casefold() in secondary_names else "acl",
+                    item,
+                )
                 for item in inventory.definitions
             ]
             if not items:
@@ -5353,18 +5537,28 @@ class CursesApp:
             offset = max(0, min(selected, len(items) - visible))
             win.erase()
             win.addnstr(
-                0, 0, " ACL i grupy secondary ".ljust(width), max(0, width - 1),
+                0,
+                0,
+                " ACL i grupy secondary ".ljust(width),
+                max(0, width - 1),
                 curses.A_REVERSE | curses.A_BOLD,
             )
-            win.addnstr(2, 1, "Typ        Nazwa                    Adresy", max(0, width - 2), curses.A_BOLD)
-            for row, (kind, item) in enumerate(items[offset:offset + visible], 3):
+            win.addnstr(
+                2,
+                1,
+                "Typ        Nazwa                    Adresy",
+                max(0, width - 2),
+                curses.A_BOLD,
+            )
+            for row, (kind, item) in enumerate(items[offset : offset + visible], 3):
                 index = offset + row - 3
                 line = f"{kind:<10} {item.name:<24} {', '.join(item.entries)}"
                 attr = curses.A_REVERSE if index == selected else curses.A_NORMAL
                 win.addnstr(row, 1, line, max(0, width - 2), attr)
             current_kind, current_item = items[selected]
             self._draw_context_panel_48(
-                win, "SZCZEGÓŁY DEFINICJI",
+                win,
+                "SZCZEGÓŁY DEFINICJI",
                 (
                     ("Typ", current_kind.upper()),
                     ("Nazwa", current_item.name),
@@ -5377,7 +5571,9 @@ class CursesApp:
                 if current_kind == "secondary"
                 else " F3 wpływ   F4 edycja   q/Esc/F10 powrót "
             )
-            win.addnstr(height - 1, 0, footer.ljust(width), max(0, width - 1), curses.A_REVERSE)
+            win.addnstr(
+                height - 1, 0, footer.ljust(width), max(0, width - 1), curses.A_REVERSE
+            )
             win.refresh()
             key = self._get_key(win)
             if key in (ord("q"), ord("Q"), 27, curses.KEY_F10):
@@ -5392,8 +5588,10 @@ class CursesApp:
                 kind, item = items[selected]
                 if self.read_only:
                     self._message_view(
-                        win, title="Tryb tylko do odczytu",
-                        lines=["Zmiana konfiguracji BIND jest zablokowana."], error=True,
+                        win,
+                        title="Tryb tylko do odczytu",
+                        lines=["Zmiana konfiguracji BIND jest zablokowana."],
+                        error=True,
                     )
                 elif kind == "acl":
                     self._edit_acl(win, item.name, item.entries)
@@ -5403,7 +5601,8 @@ class CursesApp:
                 self._show_secondary_health(win, items[selected][1].name, report)
 
     def _show_bind_access_item(
-        self, win: curses.window,
+        self,
+        win: curses.window,
         selected_item: tuple[str, BindListDefinition],
         report: BindSecondaryReport,
     ) -> None:
@@ -5418,7 +5617,11 @@ class CursesApp:
             return
         lines = self._impact_lines(impact)
         group = next(
-            (entry for entry in report.groups if entry.name.casefold() == item.name.casefold()),
+            (
+                entry
+                for entry in report.groups
+                if entry.name.casefold() == item.name.casefold()
+            ),
             None,
         )
         if group is not None:
@@ -5450,20 +5653,25 @@ class CursesApp:
         return lines
 
     def _show_secondary_health(
-        self, win: curses.window, group_name: str,
+        self,
+        win: curses.window,
+        group_name: str,
         report: BindSecondaryReport,
     ) -> None:
         pair = next(
             (
-                item for item in report.pairs
+                item
+                for item in report.pairs
                 if group_name in (*item.notify_groups, *item.transfer_groups)
             ),
             None,
         )
         if pair is None or not pair.notify_addresses:
             self._message_view(
-                win, title=f"Audyt secondary: {group_name}",
-                lines=["Brak kompletnej pary lub adresu notify."], error=True,
+                win,
+                title=f"Audyt secondary: {group_name}",
+                lines=["Brak kompletnej pary lub adresu notify."],
+                error=True,
             )
             return
         zones = tuple(zone for zone in pair.zones if "rpz" not in zone.casefold())
@@ -5472,17 +5680,18 @@ class CursesApp:
             title=f"Audyt secondary: {pair.name}",
             label="Sprawdzanie propagacji secondary",
             operation=lambda: BindSecondaryHealthGate().check(
-                zones, pair.notify_addresses,
+                zones,
+                pair.notify_addresses,
             ),
         )
         lines = [
             f"Para: {pair.name}",
             f"Serwery: {', '.join(pair.notify_addresses)}",
-            "Tryb: TYLKO ODCZYT", "",
+            "Tryb: TYLKO ODCZYT",
+            "",
         ]
         lines.extend(
-            f"[{item.status}] {item.zone} — {item.message}"
-            for item in results
+            f"[{item.status}] {item.zone} — {item.message}" for item in results
         )
         failed = any(item.status == "FAIL" for item in results)
         self._message_view(
@@ -5494,9 +5703,11 @@ class CursesApp:
         result: BindAclResult | BindSecondaryResult,
     ) -> list[str]:
         lines = [
-            f"Transakcja: {result.transaction_id}", f"Status: {result.status}",
+            f"Transakcja: {result.transaction_id}",
+            f"Status: {result.status}",
             f"Commit: {'TAK' if result.committed else 'NIE'}",
-            f"Rollback: {'TAK' if result.rolled_back else 'NIE'}", "",
+            f"Rollback: {'TAK' if result.rolled_back else 'NIE'}",
+            "",
         ]
         lines.extend(
             f"[{'OK' if step.ok else 'BŁĄD'}] {step.name}: {step.message}"
@@ -5505,7 +5716,10 @@ class CursesApp:
         return lines
 
     def _edit_acl(
-        self, win: curses.window, name: str, current: tuple[str, ...],
+        self,
+        win: curses.window,
+        name: str,
+        current: tuple[str, ...],
     ) -> None:
         entries = self._acl_entry_editor(win, name, current)
         if entries is None:
@@ -5513,10 +5727,13 @@ class CursesApp:
         try:
             plan = BindAclPlanner(self._bind_root_config()).plan(name, entries=entries)
         except (BindAclPlanError, OSError) as exc:
-            self._message_view(win, title="Zmiana ACL zablokowana", lines=[str(exc)], error=True)
+            self._message_view(
+                win, title="Zmiana ACL zablokowana", lines=[str(exc)], error=True
+            )
             return
         self._message_view(
-            win, title=f"Plan ACL: {name}",
+            win,
+            title=f"Plan ACL: {name}",
             lines=self._impact_lines(plan.impact)
             + ["", "PLANOWANY DIFF:"]
             + (plan.diff or "Brak zmian.").splitlines(),
@@ -5533,7 +5750,8 @@ class CursesApp:
             operation=lambda: transaction.apply(plan),
         )
         self._message_view(
-            win, title=f"Dry-run ACL: {name}",
+            win,
+            title=f"Dry-run ACL: {name}",
             lines=self._secondary_result_lines(dry_run),
             error=dry_run.status != "DRY-RUN",
         )
@@ -5541,15 +5759,19 @@ class CursesApp:
             return
         confirmation = CursesDialogs.text_input(win, " Wpisz pełną nazwę ACL: ")
         if (confirmation or "").casefold() != name.casefold():
-            self._message_view(win, title="Anulowano", lines=["Nazwa ACL nie jest zgodna."])
+            self._message_view(
+                win, title="Anulowano", lines=["Nazwa ACL nie jest zgodna."]
+            )
             return
         if not CursesDialogs.confirm(win, f"Zastosować zmianę ACL {name}"):
             return
         reason = (CursesDialogs.text_input(win, " Powód zmiany ACL: ") or "").strip()
         if not reason:
             self._message_view(
-                win, title="Anulowano",
-                lines=["Commit wymaga niepustego uzasadnienia."], error=True,
+                win,
+                title="Anulowano",
+                lines=["Commit wymaga niepustego uzasadnienia."],
+                error=True,
             )
             return
         result = self._run_with_wait_indicator(
@@ -5558,12 +5780,14 @@ class CursesApp:
             label="Walidacja, aktywacja i kontrola BIND",
             operation=lambda: transaction.apply(
                 plan,
-                commit=True, activate=True,
+                commit=True,
+                activate=True,
                 reason=reason,
             ),
         )
         self._message_view(
-            win, title=f"Transakcja ACL: {name}",
+            win,
+            title=f"Transakcja ACL: {name}",
             lines=self._secondary_result_lines(result),
             error=result.status != "COMMIT",
         )
@@ -5581,16 +5805,26 @@ class CursesApp:
             offset = max(0, min(selected, len(entries) - visible))
             win.erase()
             win.addnstr(
-                0, 0, f" Edycja ACL: {name} ".ljust(width), max(0, width - 1),
+                0,
+                0,
+                f" Edycja ACL: {name} ".ljust(width),
+                max(0, width - 1),
                 curses.A_REVERSE | curses.A_BOLD,
             )
-            win.addnstr(2, 2, "Host, sieć CIDR, negacja lub nazwana ACL", max(0, width - 4), curses.A_BOLD)
-            for row, value in enumerate(entries[offset:offset + visible], 4):
+            win.addnstr(
+                2,
+                2,
+                "Host, sieć CIDR, negacja lub nazwana ACL",
+                max(0, width - 4),
+                curses.A_BOLD,
+            )
+            for row, value in enumerate(entries[offset : offset + visible], 4):
                 index = offset + row - 4
                 attr = curses.A_REVERSE if index == selected else curses.A_NORMAL
                 win.addnstr(row, 2, f"{index + 1:>3}. {value}", max(0, width - 4), attr)
             self._draw_context_panel_48(
-                win, "EDYCJA ACL",
+                win,
+                "EDYCJA ACL",
                 (
                     ("Nazwa", name),
                     ("Elementy", len(entries)),
@@ -5600,11 +5834,15 @@ class CursesApp:
                 ),
             )
             footer = " Ins dodaj   F4 edytuj   F8/Del usuń   F2 plan/dry-run   Esc/F10 anuluj "
-            win.addnstr(height - 1, 0, footer.ljust(width), max(0, width - 1), curses.A_REVERSE)
+            win.addnstr(
+                height - 1, 0, footer.ljust(width), max(0, width - 1), curses.A_REVERSE
+            )
             win.refresh()
             key = self._get_key(win)
             if key in (27, curses.KEY_F10, ord("q"), ord("Q")):
-                if entries != list(current) and not CursesDialogs.confirm(win, "Porzucić zmiany ACL"):
+                if entries != list(current) and not CursesDialogs.confirm(
+                    win, "Porzucić zmiany ACL"
+                ):
                     continue
                 return None
             if key in (curses.KEY_DOWN, ord("j")) and entries:
@@ -5628,12 +5866,17 @@ class CursesApp:
                     selected = min(selected, max(0, len(entries) - 1))
             elif key in (curses.KEY_F2, 19):
                 if entries == list(current):
-                    self._message_view(win, title=f"ACL: {name}", lines=["Brak zmian do zaplanowania."])
+                    self._message_view(
+                        win, title=f"ACL: {name}", lines=["Brak zmian do zaplanowania."]
+                    )
                     continue
                 return entries
 
     def _edit_secondary_group(
-        self, win: curses.window, name: str, current: tuple[str, ...],
+        self,
+        win: curses.window,
+        name: str,
+        current: tuple[str, ...],
     ) -> None:
         addresses = self._secondary_address_editor(win, name, current)
         if addresses is None:
@@ -5642,10 +5885,13 @@ class CursesApp:
             planner = BindSecondaryPlanner(self._bind_root_config())
             plan = planner.plan(name, addresses)
         except (BindSecondaryPlanError, OSError) as exc:
-            self._message_view(win, title="Zmiana zablokowana", lines=[str(exc)], error=True)
+            self._message_view(
+                win, title="Zmiana zablokowana", lines=[str(exc)], error=True
+            )
             return
         self._message_view(
-            win, title=f"Plan secondary: {name}",
+            win,
+            title=f"Plan secondary: {name}",
             lines=self._impact_lines(plan.impact)
             + ["", "PLANOWANY DIFF:"]
             + (plan.diff or "Brak zmian.").splitlines(),
@@ -5662,15 +5908,14 @@ class CursesApp:
             operation=lambda: transaction.apply(plan),
         )
         self._message_view(
-            win, title=f"Dry-run secondary: {name}",
+            win,
+            title=f"Dry-run secondary: {name}",
             lines=self._secondary_result_lines(dry_run),
             error=dry_run.status != "DRY-RUN",
         )
         if dry_run.status != "DRY-RUN" or not plan.diff:
             return
-        confirmation = CursesDialogs.text_input(
-            win, " Wpisz pełną nazwę grupy: "
-        )
+        confirmation = CursesDialogs.text_input(win, " Wpisz pełną nazwę grupy: ")
         if (confirmation or "").casefold() != name.casefold():
             self._message_view(
                 win, title="Anulowano", lines=["Nazwa grupy nie jest zgodna."]
@@ -5683,8 +5928,10 @@ class CursesApp:
         ).strip()
         if not reason:
             self._message_view(
-                win, title="Anulowano",
-                lines=["Commit wymaga niepustego uzasadnienia."], error=True,
+                win,
+                title="Anulowano",
+                lines=["Commit wymaga niepustego uzasadnienia."],
+                error=True,
             )
             return
         result = self._run_with_wait_indicator(
@@ -5693,12 +5940,14 @@ class CursesApp:
             label="Walidacja, aktywacja i kontrola BIND",
             operation=lambda: transaction.apply(
                 plan,
-                commit=True, activate=True,
+                commit=True,
+                activate=True,
                 reason=reason,
             ),
         )
         self._message_view(
-            win, title=f"Transakcja secondary: {name}",
+            win,
+            title=f"Transakcja secondary: {name}",
             lines=self._secondary_result_lines(result),
             error=result.status != "COMMIT",
         )
@@ -5719,18 +5968,30 @@ class CursesApp:
             offset = max(0, min(selected, len(addresses) - visible))
             win.erase()
             win.addnstr(
-                0, 0, f" Edycja secondary: {name} ".ljust(width),
-                max(0, width - 1), curses.A_REVERSE | curses.A_BOLD,
+                0,
+                0,
+                f" Edycja secondary: {name} ".ljust(width),
+                max(0, width - 1),
+                curses.A_REVERSE | curses.A_BOLD,
             )
             win.addnstr(2, 2, "Adres IP serwera", max(0, width - 4), curses.A_BOLD)
-            for row, address in enumerate(addresses[offset:offset + visible], 4):
+            for row, address in enumerate(addresses[offset : offset + visible], 4):
                 index = offset + row - 4
                 attr = curses.A_REVERSE if index == selected else curses.A_NORMAL
-                win.addnstr(row, 2, f"{index + 1:>3}. {address}", max(0, width - 4), attr)
+                win.addnstr(
+                    row, 2, f"{index + 1:>3}. {address}", max(0, width - 4), attr
+                )
             if not addresses:
-                win.addnstr(4, 2, "(lista pusta — Insert dodaje adres)", max(0, width - 4), curses.A_DIM)
+                win.addnstr(
+                    4,
+                    2,
+                    "(lista pusta — Insert dodaje adres)",
+                    max(0, width - 4),
+                    curses.A_DIM,
+                )
             self._draw_context_panel_48(
-                win, "EDYCJA SECONDARY",
+                win,
+                "EDYCJA SECONDARY",
                 (
                     ("Grupa", name),
                     ("Adresy", len(addresses)),
@@ -5740,7 +6001,9 @@ class CursesApp:
                 ),
             )
             footer = " Ins dodaj   F4 edytuj   F8/Del usuń   F2 plan/dry-run   Esc/F10 anuluj "
-            win.addnstr(height - 1, 0, footer.ljust(width), max(0, width - 1), curses.A_REVERSE)
+            win.addnstr(
+                height - 1, 0, footer.ljust(width), max(0, width - 1), curses.A_REVERSE
+            )
             win.refresh()
             key = self._get_key(win)
             if key in (27, curses.KEY_F10, ord("q"), ord("Q")):
@@ -5754,9 +6017,7 @@ class CursesApp:
             elif key in (curses.KEY_UP, ord("k")) and addresses:
                 selected = max(0, selected - 1)
             elif key == curses.KEY_IC:
-                new_address = CursesDialogs.text_input(
-                    win, " Nowy adres: ", row=2
-                )
+                new_address = CursesDialogs.text_input(win, " Nowy adres: ", row=2)
                 if new_address is not None and new_address.strip():
                     addresses.append(new_address.strip())
                     selected = len(addresses) - 1
@@ -5773,7 +6034,8 @@ class CursesApp:
             elif key in (curses.KEY_F2, 19):
                 if addresses == list(current):
                     self._message_view(
-                        win, title=f"Secondary: {name}",
+                        win,
+                        title=f"Secondary: {name}",
                         lines=["Brak zmian do zaplanowania."],
                     )
                     continue
@@ -5782,9 +6044,7 @@ class CursesApp:
     def _zone_migration_planner(self) -> ManagedZoneMigrationPlanner:
         toolkit = self.config.toolkit if self.config is not None else {}
         return ManagedZoneMigrationPlanner(
-            root_config=Path(
-                toolkit.get("bind_root_config", "/etc/bind/named.conf")
-            ),
+            root_config=Path(toolkit.get("bind_root_config", "/etc/bind/named.conf")),
             local_config=Path(
                 toolkit.get("bind_local_config", "/etc/bind/named.conf.local")
             ),
@@ -5799,9 +6059,7 @@ class CursesApp:
     def _zone_relocation_planner(self) -> ManagedZoneRelocationPlanner:
         toolkit = self.config.toolkit if self.config is not None else {}
         return ManagedZoneRelocationPlanner(
-            root_config=Path(
-                toolkit.get("bind_root_config", "/etc/bind/named.conf")
-            ),
+            root_config=Path(toolkit.get("bind_root_config", "/etc/bind/named.conf")),
             managed_zone_directory=Path(
                 toolkit.get("managed_zone_dir", "/etc/bind/zonectl-zones.d")
             ),
@@ -5838,8 +6096,7 @@ class CursesApp:
             item = next(
                 entry
                 for entry in planner.inventory()
-                if entry.name.rstrip(".").casefold()
-                == zone.name.rstrip(".").casefold()
+                if entry.name.rstrip(".").casefold() == zone.name.rstrip(".").casefold()
             )
         except (ManagedZoneMigrationError, OSError, StopIteration) as exc:
             self._message_view(
@@ -5891,12 +6148,16 @@ class CursesApp:
                 if row < height - 2:
                     win.addnstr(row, 2, line, max(0, width - 4))
             self._draw_context_panel_48(
-                win, "STAN OPERACYJNY",
+                win,
+                "STAN OPERACYJNY",
                 (
                     ("Strefa", zone.name),
                     ("Stan", state),
                     ("Typ", item.zone_type),
-                    ("Zakres", "RELOKACJA PLIKU" if relocation_plan else "DEKLARACJA BIND"),
+                    (
+                        "Zakres",
+                        "RELOKACJA PLIKU" if relocation_plan else "DEKLARACJA BIND",
+                    ),
                     ("Plik strefy", "PRZENOSZONY" if relocation_plan else "BEZ ZMIAN"),
                     ("Serial SOA", "BEZ ZMIAN"),
                 ),
@@ -5937,7 +6198,9 @@ class CursesApp:
                     return True
 
     def _show_zone_relocation_plan(
-        self, win: curses.window, zone: Zone,
+        self,
+        win: curses.window,
+        zone: Zone,
         planner: ManagedZoneRelocationPlanner,
     ) -> None:
         try:
@@ -5954,18 +6217,32 @@ class CursesApp:
             ]
             self._message_view(win, title=f"Plan relokacji: {zone.name}", lines=lines)
         except (ManagedZoneRelocationError, OSError) as exc:
-            self._message_view(win, title="Relokacja zablokowana", lines=[str(exc)], error=True)
+            self._message_view(
+                win, title="Relokacja zablokowana", lines=[str(exc)], error=True
+            )
 
     def _apply_zone_relocation(
-        self, win: curses.window, zone: Zone,
+        self,
+        win: curses.window,
+        zone: Zone,
         planner: ManagedZoneRelocationPlanner,
     ) -> bool:
         try:
             plan = planner.plan(zone.name)
             toolkit = self.config.toolkit if self.config is not None else {}
             transaction = ManagedZoneRelocationTransaction(
-                Path(toolkit.get("zone_migration_backup_root", "/var/backups/zonectl-zone-migration/backups")),
-                Path(toolkit.get("zone_migration_manifest_dir", "/var/backups/zonectl-zone-migration/manifests")),
+                Path(
+                    toolkit.get(
+                        "zone_migration_backup_root",
+                        "/var/backups/zonectl-zone-migration/backups",
+                    )
+                ),
+                Path(
+                    toolkit.get(
+                        "zone_migration_manifest_dir",
+                        "/var/backups/zonectl-zone-migration/manifests",
+                    )
+                ),
                 root_config=planner.root_config,
             )
             dry_run = self._run_with_wait_indicator(
@@ -5975,7 +6252,8 @@ class CursesApp:
                 operation=lambda: transaction.apply(plan),
             )
             self._message_view(
-                win, title=f"Dry-run relokacji: {zone.name}",
+                win,
+                title=f"Dry-run relokacji: {zone.name}",
                 lines=self._migration_result_lines(dry_run),
                 error=dry_run.status != "DRY-RUN",
             )
@@ -5987,30 +6265,39 @@ class CursesApp:
             expected = zone.name.rstrip(".").casefold()
             received = (confirmation or "").strip().rstrip(".").casefold()
             if received != expected:
-                self._message_view(win, title="Relokacja anulowana", lines=["Potwierdzenie nie odpowiada nazwie strefy."])
+                self._message_view(
+                    win,
+                    title="Relokacja anulowana",
+                    lines=["Potwierdzenie nie odpowiada nazwie strefy."],
+                )
                 return False
-            if not CursesDialogs.confirm(win, f"Relokować plik i przeładować BIND dla {zone.name}?"):
+            if not CursesDialogs.confirm(
+                win, f"Relokować plik i przeładować BIND dla {zone.name}?"
+            ):
                 return False
             result = self._run_with_wait_indicator(
                 win,
                 title=f"Relokacja strefy: {zone.name}",
                 label="Przenoszenie pliku, walidacja i aktywacja BIND",
-                operation=lambda: transaction.apply(
-                    plan, commit=True, activate=True
-                ),
+                operation=lambda: transaction.apply(plan, commit=True, activate=True),
             )
             self._message_view(
-                win, title=f"Wynik relokacji: {zone.name}",
+                win,
+                title=f"Wynik relokacji: {zone.name}",
                 lines=self._migration_result_lines(result),
                 error=result.status != "COMMIT",
             )
             return result.status == "COMMIT"
         except (ManagedZoneRelocationError, OSError) as exc:
-            self._message_view(win, title="Błąd relokacji", lines=[str(exc)], error=True)
+            self._message_view(
+                win, title="Błąd relokacji", lines=[str(exc)], error=True
+            )
             return False
 
     def _show_zone_migration_plan(
-        self, win: curses.window, zone: Zone,
+        self,
+        win: curses.window,
+        zone: Zone,
         planner: ManagedZoneMigrationPlanner,
     ) -> None:
         try:
@@ -6026,9 +6313,7 @@ class CursesApp:
             ).splitlines()
             lines += ["", "Planowane etapy:"]
             lines += [f"- {action}" for action in plan.actions]
-            self._message_view(
-                win, title=f"Plan migracji: {zone.name}", lines=lines
-            )
+            self._message_view(win, title=f"Plan migracji: {zone.name}", lines=lines)
         except (ManagedZoneMigrationError, OSError) as exc:
             self._message_view(
                 win,
@@ -6038,7 +6323,9 @@ class CursesApp:
             )
 
     def _apply_zone_migration(
-        self, win: curses.window, zone: Zone,
+        self,
+        win: curses.window,
+        zone: Zone,
         planner: ManagedZoneMigrationPlanner,
     ) -> bool:
         try:
@@ -6092,9 +6379,7 @@ class CursesApp:
                 win,
                 title=f"Migracja strefy: {zone.name}",
                 label="Migracja deklaracji, walidacja i aktywacja BIND",
-                operation=lambda: transaction.apply(
-                    plan, commit=True, activate=True
-                ),
+                operation=lambda: transaction.apply(plan, commit=True, activate=True),
             )
             self._message_view(
                 win,
@@ -6104,9 +6389,7 @@ class CursesApp:
             )
             return result.status == "COMMIT"
         except (ManagedZoneMigrationError, OSError) as exc:
-            self._message_view(
-                win, title="Błąd migracji", lines=[str(exc)], error=True
-            )
+            self._message_view(win, title="Błąd migracji", lines=[str(exc)], error=True)
             return False
 
     @staticmethod

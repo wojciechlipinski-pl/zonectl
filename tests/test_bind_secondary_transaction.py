@@ -12,9 +12,10 @@ from zonectl.core.bind_secondary_transaction import (
 def _plan(tmp_path: Path):
     root = tmp_path / "named.conf"
     root.write_text(
-        'primaries dns2-notify { 192.0.2.53; };\n'
+        "primaries dns2-notify { 192.0.2.53; };\n"
         'zone "a" { type primary; file "/a"; '
-        'also-notify { dns2-notify; }; };\n', encoding="utf-8"
+        "also-notify { dns2-notify; }; };\n",
+        encoding="utf-8",
     )
     planner = BindSecondaryPlanner(root)
     planner._validate_candidate = lambda source, candidate: (True, "kod 0")
@@ -41,11 +42,16 @@ def test_commit_writes_backup_manifest_and_audit_context(tmp_path: Path) -> None
     root.chmod(0o640)
     metadata_before = root.stat()
     result = BindSecondaryTransaction(
-        tmp_path / "backups", tmp_path / "manifests", root_config=root,
-        config_validator=_ok("named-checkconf"), activator=_ok("rndc-reconfig"),
+        tmp_path / "backups",
+        tmp_path / "manifests",
+        root_config=root,
+        config_validator=_ok("named-checkconf"),
+        activator=_ok("rndc-reconfig"),
         operational_validator=_ok("secondary-operational"),
     ).apply(
-        plan, commit=True, activate=True,
+        plan,
+        commit=True,
+        activate=True,
         reason="planowana zmiana adresu secondary",
     )
     assert result.status == "COMMIT"
@@ -77,8 +83,12 @@ def test_commit_writes_backup_manifest_and_audit_context(tmp_path: Path) -> None
 def test_validation_failure_rolls_back(tmp_path: Path) -> None:
     plan, root = _plan(tmp_path)
     result = BindSecondaryTransaction(
-        tmp_path / "backups", tmp_path / "manifests", root_config=root,
-        config_validator=lambda *_: BindSecondaryStep("named-checkconf", False, "invalid"),
+        tmp_path / "backups",
+        tmp_path / "manifests",
+        root_config=root,
+        config_validator=lambda *_: BindSecondaryStep(
+            "named-checkconf", False, "invalid"
+        ),
     ).apply(plan, commit=True)
     assert result.status == "ROLLED-BACK"
     assert result.rolled_back is True
@@ -157,8 +167,10 @@ def test_post_config_gate_failure_rolls_back_secondary_and_rechecks_state(
         return BindSecondaryStep("rndc-reconfig", True, "OK")
 
     result = BindSecondaryTransaction(
-        tmp_path / "backups", tmp_path / "manifests",
-        root_config=root, config_validator=_ok("named-checkconf"),
+        tmp_path / "backups",
+        tmp_path / "manifests",
+        root_config=root,
+        config_validator=_ok("named-checkconf"),
         activator=activate,
         post_validator=lambda _plan: BindSecondaryStep(
             "post-config-state", False, "stan secondary niezgodny"
@@ -188,14 +200,19 @@ def test_operational_gate_failure_rolls_back_and_records_final_manifest(
         return BindSecondaryStep("rndc-reconfig", True, "OK")
 
     result = BindSecondaryTransaction(
-        tmp_path / "backups", tmp_path / "manifests",
-        root_config=root, config_validator=_ok("named-checkconf"),
-        activator=activate, post_validator=_ok("post-config-state"),
+        tmp_path / "backups",
+        tmp_path / "manifests",
+        root_config=root,
+        config_validator=_ok("named-checkconf"),
+        activator=activate,
+        post_validator=_ok("post-config-state"),
         operational_validator=lambda _plan: BindSecondaryStep(
             "secondary-operational", False, "brak AA"
         ),
     ).apply(
-        plan, commit=True, activate=True,
+        plan,
+        commit=True,
+        activate=True,
         reason="test awarii bramki operacyjnej",
     )
 
@@ -218,11 +235,15 @@ def test_failed_secondary_rollback_activation_is_reported(
     plan, root = _plan(tmp_path)
 
     result = BindSecondaryTransaction(
-        tmp_path / "backups", tmp_path / "manifests",
-        root_config=root, config_validator=_ok("named-checkconf"),
+        tmp_path / "backups",
+        tmp_path / "manifests",
+        root_config=root,
+        config_validator=_ok("named-checkconf"),
         activator=lambda: BindSecondaryStep("rndc-reconfig", False, "failure"),
     ).apply(
-        plan, commit=True, activate=True,
+        plan,
+        commit=True,
+        activate=True,
         reason="test nieudanego rollbacku",
     )
 
@@ -230,6 +251,5 @@ def test_failed_secondary_rollback_activation_is_reported(
     assert result.rolled_back is False
     assert root.read_text() == plan.original_text
     assert any(
-        step.name == "rndc-reconfig-rollback" and not step.ok
-        for step in result.steps
+        step.name == "rndc-reconfig-rollback" and not step.ok for step in result.steps
     )

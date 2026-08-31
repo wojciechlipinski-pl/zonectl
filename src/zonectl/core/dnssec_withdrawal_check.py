@@ -118,9 +118,7 @@ class DnssecWithdrawalChecker:
             return result
 
         still_present = [
-            check
-            for check in result.resolver_checks
-            if check.status == "DS_PRESENT"
+            check for check in result.resolver_checks if check.status == "DS_PRESENT"
         ]
         if still_present:
             resolvers_listed = ", ".join(check.resolver for check in still_present)

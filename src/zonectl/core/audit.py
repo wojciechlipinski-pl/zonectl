@@ -41,10 +41,14 @@ class AuditLog:
         sudo_user = os.environ.get("SUDO_USER")
         return (sudo_user or user, uid)
 
-    def append(self, transaction_id: str, zone: str, action: str, outcome: str, **details: Any) -> None:
+    def append(
+        self, transaction_id: str, zone: str, action: str, outcome: str, **details: Any
+    ) -> None:
         user, uid = self.identity()
         event = AuditEvent(
-            timestamp=datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds"),
+            timestamp=datetime.now(timezone.utc)
+            .astimezone()
+            .isoformat(timespec="seconds"),
             transaction_id=transaction_id,
             zone=zone,
             action=action,
@@ -58,7 +62,9 @@ class AuditLog:
         fd = os.open(self.path, os.O_WRONLY | os.O_CREAT | os.O_APPEND, 0o640)
         try:
             with os.fdopen(fd, "a", encoding="utf-8") as handle:
-                handle.write(json.dumps(asdict(event), ensure_ascii=False, sort_keys=True) + "\n")
+                handle.write(
+                    json.dumps(asdict(event), ensure_ascii=False, sort_keys=True) + "\n"
+                )
                 handle.flush()
                 os.fsync(handle.fileno())
         finally:

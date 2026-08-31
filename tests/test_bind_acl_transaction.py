@@ -12,7 +12,7 @@ def _plan(tmp_path: Path):
     root = tmp_path / "named.conf"
     root.write_text(
         'acl "trusted" {\n  198.51.100/24;\n  203.0.113.0/24;\n'
-        '  203.0.113.0/24;\n};\noptions { allow-query { trusted; }; };\n',
+        "  203.0.113.0/24;\n};\noptions { allow-query { trusted; }; };\n",
         encoding="utf-8",
     )
     planner = BindAclPlanner(root)
@@ -42,8 +42,10 @@ def test_commit_preserves_metadata_and_writes_manifest(tmp_path: Path) -> None:
     root.chmod(0o640)
     metadata_before = root.stat()
     result = BindAclTransaction(
-        tmp_path / "backups", tmp_path / "manifests",
-        root_config=root, config_validator=_ok("named-checkconf"),
+        tmp_path / "backups",
+        tmp_path / "manifests",
+        root_config=root,
+        config_validator=_ok("named-checkconf"),
         activator=_ok("rndc-reconfig"),
     ).apply(plan, commit=True, activate=True, reason="kontrolowana zmiana ACL")
     assert result.status == "COMMIT"
@@ -71,7 +73,8 @@ def test_commit_preserves_metadata_and_writes_manifest(tmp_path: Path) -> None:
 def test_validation_failure_rolls_back(tmp_path: Path) -> None:
     plan, root = _plan(tmp_path)
     result = BindAclTransaction(
-        tmp_path / "backups", tmp_path / "manifests",
+        tmp_path / "backups",
+        tmp_path / "manifests",
         root_config=root,
         config_validator=lambda *_: BindAclStep("named-checkconf", False, "invalid"),
     ).apply(plan, commit=True)
@@ -89,13 +92,13 @@ def test_activation_failure_rolls_back_and_records_final_manifest(
     def activate() -> BindAclStep:
         nonlocal calls
         calls += 1
-        return BindAclStep(
-            "rndc-reconfig", calls > 1, "OK" if calls > 1 else "failure"
-        )
+        return BindAclStep("rndc-reconfig", calls > 1, "OK" if calls > 1 else "failure")
 
     result = BindAclTransaction(
-        tmp_path / "backups", tmp_path / "manifests",
-        root_config=root, config_validator=_ok("named-checkconf"),
+        tmp_path / "backups",
+        tmp_path / "manifests",
+        root_config=root,
+        config_validator=_ok("named-checkconf"),
         activator=activate,
     ).apply(plan, commit=True, activate=True, reason="test awarii aktywacji")
 
@@ -121,7 +124,7 @@ def test_high_risk_commit_is_blocked_before_backup(tmp_path: Path) -> None:
     root = tmp_path / "named.conf"
     root.write_text(
         'acl "trusted" {\n  localhost;\n  192.0.2.0/24;\n};\n'
-        'options { allow-recursion { trusted; }; };\n',
+        "options { allow-recursion { trusted; }; };\n",
         encoding="utf-8",
     )
     planner = BindAclPlanner(root)
@@ -151,7 +154,7 @@ def test_active_transfer_acl_cannot_be_replaced_with_none(tmp_path: Path) -> Non
     root.write_text(
         'acl "zone-transfer" { 192.0.2.53; };\n'
         'zone "example.invalid" { type primary; file "/zone"; '
-        'allow-transfer { zone-transfer; }; };\n',
+        "allow-transfer { zone-transfer; }; };\n",
         encoding="utf-8",
     )
     planner = BindAclPlanner(root)
@@ -162,7 +165,9 @@ def test_active_transfer_acl_cannot_be_replaced_with_none(tmp_path: Path) -> Non
     result = BindAclTransaction(
         tmp_path / "backups", tmp_path / "manifests", root_config=root
     ).apply(
-        plan, commit=True, activate=True,
+        plan,
+        commit=True,
+        activate=True,
         reason="próba opróżnienia aktywnego transferu",
     )
 
@@ -187,8 +192,10 @@ def test_post_config_gate_failure_rolls_back_and_verifies_restored_state(
         return BindAclStep("rndc-reconfig", True, "OK")
 
     result = BindAclTransaction(
-        tmp_path / "backups", tmp_path / "manifests",
-        root_config=root, config_validator=_ok("named-checkconf"),
+        tmp_path / "backups",
+        tmp_path / "manifests",
+        root_config=root,
+        config_validator=_ok("named-checkconf"),
         activator=activate,
         post_validator=lambda _plan: BindAclStep(
             "post-config-state", False, "stan ACL niezgodny"
@@ -212,8 +219,10 @@ def test_failed_rollback_activation_is_reported_as_rollback_failed(
     plan, root = _plan(tmp_path)
 
     result = BindAclTransaction(
-        tmp_path / "backups", tmp_path / "manifests",
-        root_config=root, config_validator=_ok("named-checkconf"),
+        tmp_path / "backups",
+        tmp_path / "manifests",
+        root_config=root,
+        config_validator=_ok("named-checkconf"),
         activator=lambda: BindAclStep("rndc-reconfig", False, "failure"),
     ).apply(plan, commit=True, activate=True, reason="test rollbacku")
 
@@ -221,6 +230,5 @@ def test_failed_rollback_activation_is_reported_as_rollback_failed(
     assert result.rolled_back is False
     assert root.read_text() == plan.original_text
     assert any(
-        step.name == "rndc-reconfig-rollback" and not step.ok
-        for step in result.steps
+        step.name == "rndc-reconfig-rollback" and not step.ok for step in result.steps
     )

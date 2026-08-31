@@ -20,6 +20,7 @@ from .zone_quarantine_retention import QuarantineRetentionAuditor
 @dataclass(frozen=True, slots=True)
 class QuarantinePurgePlan:
     """Immutable, verified plan for one package purge."""
+
     zone: str
     package: Path
     package_id: str
@@ -37,6 +38,7 @@ class QuarantinePurgePlan:
 @dataclass(slots=True)
 class QuarantinePurgeStep:
     """One observable step of a purge transaction."""
+
     name: str
     ok: bool
     message: str
@@ -45,6 +47,7 @@ class QuarantinePurgeStep:
 @dataclass(slots=True)
 class QuarantinePurgeResult:
     """Final state and audit details of a purge attempt."""
+
     transaction_id: str
     zone: str
     package: str
@@ -88,10 +91,14 @@ class QuarantinePurgeTransaction:
         except OSError as exc:
             raise QuarantinePurgeError(f"nie można odczytać pakietu: {exc}") from exc
         if resolved.parent.parent != root or resolved.parent.name != name:
-            raise QuarantinePurgeError("pakiet nie jest bezpośrednim pakietem wskazanej strefy")
+            raise QuarantinePurgeError(
+                "pakiet nie jest bezpośrednim pakietem wskazanej strefy"
+            )
         entries = {item.name for item in resolved.iterdir()}
         if entries != {"manifest.json", "zone.db", "zone.conf"}:
-            raise QuarantinePurgeError("pakiet ma nieoczekiwaną lub niekompletną zawartość")
+            raise QuarantinePurgeError(
+                "pakiet ma nieoczekiwaną lub niekompletną zawartość"
+            )
         record = QuarantineRetentionAuditor(
             root, self.retention_days, now=self._now
         ).inspect_package(resolved)
@@ -102,8 +109,12 @@ class QuarantinePurgeTransaction:
         if record.zone != name:
             raise QuarantinePurgeError("manifest nie opisuje wskazanej strefy")
         return QuarantinePurgePlan(
-            name, resolved, resolved.name, self.retention_days,
-            record.age_days, reason.strip()
+            name,
+            resolved,
+            resolved.name,
+            self.retention_days,
+            record.age_days,
+            reason.strip(),
         )
 
     def apply(
@@ -121,15 +132,27 @@ class QuarantinePurgeTransaction:
         )
         result = QuarantinePurgeResult(txid, plan.zone, str(plan.package), "DRY-RUN")
         if not commit:
-            result.steps.append(QuarantinePurgeStep("dry-run", True, "Nie usunięto pakietu"))
+            result.steps.append(
+                QuarantinePurgeStep("dry-run", True, "Nie usunięto pakietu")
+            )
             return result
         if (confirmation or "").strip().rstrip(".").casefold() != plan.zone:
             result.status = "CONFIRMATION-REQUIRED"
-            result.steps.append(QuarantinePurgeStep("zone-confirmation", False, "potwierdzenie strefy jest niezgodne"))
+            result.steps.append(
+                QuarantinePurgeStep(
+                    "zone-confirmation", False, "potwierdzenie strefy jest niezgodne"
+                )
+            )
             return result
         if (package_confirmation or "").strip() != plan.package_id:
             result.status = "CONFIRMATION-REQUIRED"
-            result.steps.append(QuarantinePurgeStep("package-confirmation", False, "potwierdzenie identyfikatora pakietu jest niezgodne"))
+            result.steps.append(
+                QuarantinePurgeStep(
+                    "package-confirmation",
+                    False,
+                    "potwierdzenie identyfikatora pakietu jest niezgodne",
+                )
+            )
             return result
 
         # Rebuild the plan immediately before the irreversible operation.
@@ -165,7 +188,9 @@ class QuarantinePurgeTransaction:
             result.steps.append(QuarantinePurgeStep("audit-manifest", True, str(audit)))
             self.staging_root.mkdir(parents=True, exist_ok=True, mode=0o750)
             if self.staging_root.stat().st_dev != fresh.package.parent.stat().st_dev:
-                raise RuntimeError("katalog staging nie znajduje się na tym samym systemie plików")
+                raise RuntimeError(
+                    "katalog staging nie znajduje się na tym samym systemie plików"
+                )
             if staged.exists() or recovery.exists():
                 raise RuntimeError("docelowe artefakty staging już istnieją")
             os.replace(fresh.package, staged)
@@ -189,7 +214,9 @@ class QuarantinePurgeTransaction:
             except OSError:
                 pass
             payload["status"] = "PURGE-COMMITTED"
-            payload["completed_at"] = self._now().astimezone().isoformat(timespec="seconds")
+            payload["completed_at"] = (
+                self._now().astimezone().isoformat(timespec="seconds")
+            )
             self._write_manifest(audit, payload)
             recovery.unlink()
             recovery_created = False
@@ -198,17 +225,26 @@ class QuarantinePurgeTransaction:
             self._write_manifest(audit, payload)
             result.status = "PURGED"
             result.committed = True
-            result.steps.append(QuarantinePurgeStep("purge", True, "Pakiet trwale usunięto"))
+            result.steps.append(
+                QuarantinePurgeStep("purge", True, "Pakiet trwale usunięto")
+            )
         except Exception as exc:
             rollback_ok = False
-            if moved and staged.is_dir() and not recovery_created and not fresh.package.exists():
+            if (
+                moved
+                and staged.is_dir()
+                and not recovery_created
+                and not fresh.package.exists()
+            ):
                 try:
                     fresh.package.parent.mkdir(parents=True, exist_ok=True, mode=0o750)
                     os.replace(staged, fresh.package)
                     moved = False
                     rollback_ok = True
                     result.steps.append(
-                        QuarantinePurgeStep("rollback", True, "Przywrócono pakiet z staging")
+                        QuarantinePurgeStep(
+                            "rollback", True, "Przywrócono pakiet z staging"
+                        )
                     )
                 except Exception as rollback_exc:
                     result.steps.append(

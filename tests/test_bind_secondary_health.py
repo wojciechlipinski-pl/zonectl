@@ -11,14 +11,20 @@ def _query(values):
         return SecondarySoaObservation(
             server, authoritative, serial, f"{zone}: {serial}"
         )
+
     return query
 
 
 def test_matching_authoritative_serial_is_pass() -> None:
-    gate = BindSecondaryHealthGate(query=_query({
-        "127.0.0.1": (True, 2026082001),
-        "192.0.2.53": (True, 2026082001),
-    }), attempts=1)
+    gate = BindSecondaryHealthGate(
+        query=_query(
+            {
+                "127.0.0.1": (True, 2026082001),
+                "192.0.2.53": (True, 2026082001),
+            }
+        ),
+        attempts=1,
+    )
 
     report = gate.check(("example.test",), ("192.0.2.53",))[0]
 
@@ -26,10 +32,15 @@ def test_matching_authoritative_serial_is_pass() -> None:
 
 
 def test_missing_aa_is_failure() -> None:
-    gate = BindSecondaryHealthGate(query=_query({
-        "127.0.0.1": (True, 2026082001),
-        "192.0.2.53": (False, 2026082001),
-    }), attempts=1)
+    gate = BindSecondaryHealthGate(
+        query=_query(
+            {
+                "127.0.0.1": (True, 2026082001),
+                "192.0.2.53": (False, 2026082001),
+            }
+        ),
+        attempts=1,
+    )
 
     report = gate.check(("example.test",), ("192.0.2.53",))[0]
 
@@ -38,10 +49,15 @@ def test_missing_aa_is_failure() -> None:
 
 
 def test_lower_secondary_serial_is_pending_not_failure() -> None:
-    gate = BindSecondaryHealthGate(query=_query({
-        "127.0.0.1": (True, 2026082002),
-        "192.0.2.53": (True, 2026082001),
-    }), attempts=1)
+    gate = BindSecondaryHealthGate(
+        query=_query(
+            {
+                "127.0.0.1": (True, 2026082002),
+                "192.0.2.53": (True, 2026082001),
+            }
+        ),
+        attempts=1,
+    )
 
     report = gate.check(("example.test",), ("192.0.2.53",))[0]
 
@@ -49,10 +65,15 @@ def test_lower_secondary_serial_is_pending_not_failure() -> None:
 
 
 def test_secondary_serial_ahead_of_primary_is_failure() -> None:
-    gate = BindSecondaryHealthGate(query=_query({
-        "127.0.0.1": (True, 2026082001),
-        "192.0.2.53": (True, 2026082002),
-    }), attempts=1)
+    gate = BindSecondaryHealthGate(
+        query=_query(
+            {
+                "127.0.0.1": (True, 2026082001),
+                "192.0.2.53": (True, 2026082002),
+            }
+        ),
+        attempts=1,
+    )
 
     report = gate.check(("example.test",), ("192.0.2.53",))[0]
 
@@ -72,9 +93,7 @@ def test_dig_output_parser_reads_aa_and_soa_serial(monkeypatch) -> None:
         ),
     )
 
-    observation = BindSecondaryHealthGate._query_soa(
-        "192.0.2.53", "example.test"
-    )
+    observation = BindSecondaryHealthGate._query_soa("192.0.2.53", "example.test")
 
     assert observation.authoritative is True
     assert observation.serial == 2026082003

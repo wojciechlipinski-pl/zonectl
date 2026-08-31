@@ -132,15 +132,11 @@ class ZoneFileParser:
             index += 1
 
             if not stripped:
-                document.nodes.append(
-                    BlankLine(raw=raw_line)
-                )
+                document.nodes.append(BlankLine(raw=raw_line))
                 continue
 
             if stripped.startswith(";"):
-                document.nodes.append(
-                    Comment(raw=raw_line)
-                )
+                document.nodes.append(Comment(raw=raw_line))
                 continue
 
             directive = cls._parse_directive(raw_line)
@@ -161,9 +157,7 @@ class ZoneFileParser:
                     continuation = lines[index]
                     index += 1
                     block.append(continuation)
-                    depth += cls._parenthesis_delta(
-                        cls._remove_comment(continuation)
-                    )
+                    depth += cls._parenthesis_delta(cls._remove_comment(continuation))
 
                 multiline = cls._parse_multiline_soa(
                     block,
@@ -178,9 +172,7 @@ class ZoneFileParser:
                     if owner_was_explicit:
                         previous_owner = record.owner
                 else:
-                    document.nodes.extend(
-                        RawLine(raw=line) for line in block
-                    )
+                    document.nodes.extend(RawLine(raw=line) for line in block)
                 continue
 
             parsed = cls._parse_record_line(
@@ -189,9 +181,7 @@ class ZoneFileParser:
             )
 
             if parsed is None:
-                document.nodes.append(
-                    RawLine(raw=raw_line)
-                )
+                document.nodes.append(RawLine(raw=raw_line))
                 continue
 
             record, owner_was_explicit = parsed
@@ -378,10 +368,7 @@ class ZoneFileParser:
             return True
 
         # Obsługa składni RFC 3597, np. TYPE65280.
-        return (
-            value.startswith("TYPE")
-            and value[4:].isdigit()
-        )
+        return value.startswith("TYPE") and value[4:].isdigit()
 
     @staticmethod
     def _normalise_class(value: str) -> str:

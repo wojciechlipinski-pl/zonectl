@@ -25,7 +25,7 @@ from .paths import (
     TRANSACTION_BACKUP_DIR,
     TRANSACTION_DIR,
 )
-from .runner import CommandResult, run
+from .runner import run
 
 
 _flock = cast(Callable[[int, int], None], getattr(fcntl, "flock"))
@@ -57,7 +57,11 @@ class TransactionResult:
 
     @property
     def ok(self) -> bool:
-        return bool(self.steps) and all(step.ok for step in self.steps) and (self.committed or not self.rolled_back)
+        return (
+            bool(self.steps)
+            and all(step.ok for step in self.steps)
+            and (self.committed or not self.rolled_back)
+        )
 
 
 class ZoneLock:
@@ -72,7 +76,9 @@ class ZoneLock:
             _flock(self.handle.fileno(), _LOCK_EX | _LOCK_NB)
         except BlockingIOError as exc:
             self.handle.close()
-            raise RuntimeError(f"Strefa jest już objęta inną transakcją: {self.path.stem}") from exc
+            raise RuntimeError(
+                f"Strefa jest już objęta inną transakcją: {self.path.stem}"
+            ) from exc
         self.handle.seek(0)
         self.handle.truncate()
         self.handle.write(f"pid={os.getpid()} time={int(time.time())}\n")
@@ -131,14 +137,15 @@ class TransactionEngine:
                 ),
             )
         )
-        self.audit = AuditLog(
-            Path(t.get("audit_log", str(AUDIT_LOG)))
-        )
+        self.audit = AuditLog(Path(t.get("audit_log", str(AUDIT_LOG))))
         self.timeout = int(t.get("command_timeout", "20"))
         self.local_server = t.get("local_server", "127.0.0.1")
-        self.read_only = str(
-            t.get("read_only", "no")
-        ).strip().casefold() in {"1", "yes", "true", "on"}
+        self.read_only = str(t.get("read_only", "no")).strip().casefold() in {
+            "1",
+            "yes",
+            "true",
+            "on",
+        }
 
     def find_zone(self, name: str) -> Zone:
         wanted = name.rstrip(".").casefold()
@@ -159,13 +166,19 @@ class TransactionEngine:
                 digest.update(chunk)
         return digest.hexdigest()
 
-    def _step_command(self, name: str, command: list[str], timeout: int | None = None) -> StepResult:
+    def _step_command(
+        self, name: str, command: list[str], timeout: int | None = None
+    ) -> StepResult:
         result = run(command, timeout or self.timeout)
         message = "OK" if result.returncode == 0 else f"kod {result.returncode}"
-        return StepResult(name, result.returncode == 0, message, command, result.stdout, result.stderr)
+        return StepResult(
+            name, result.returncode == 0, message, command, result.stdout, result.stderr
+        )
 
     def _zone_validation(self, zone: Zone, candidate: Path) -> StepResult:
-        return self._step_command("named-checkzone", ["named-checkzone", zone.name, str(candidate)])
+        return self._step_command(
+            "named-checkzone", ["named-checkzone", zone.name, str(candidate)]
+        )
 
     def _config_validation(self) -> StepResult:
         return self._step_command("named-checkconf", ["named-checkconf", "-z"])
@@ -181,7 +194,18 @@ class TransactionEngine:
         return None
 
     def _serial(self, zone: str) -> str | None:
-        result = run(["dig", f"@{self.local_server}", zone, "SOA", "+short", "+time=3", "+tries=1"], 6)
+        result = run(
+            [
+                "dig",
+                f"@{self.local_server}",
+                zone,
+                "SOA",
+                "+short",
+                "+time=3",
+                "+tries=1",
+            ],
+            6,
+        )
         if result.returncode != 0 or not result.stdout.strip():
             return None
         parts = result.stdout.splitlines()[0].split()
@@ -222,16 +246,30 @@ class TransactionEngine:
         txid = self._new_id(zone.name)
         result = TransactionResult(txid, zone.name, committed=False)
         if not candidate:
-            result.steps.append(StepResult("candidate", False, "Brak ścieżki pliku strefy"))
+            result.steps.append(
+                StepResult("candidate", False, "Brak ścieżki pliku strefy")
+            )
             return result
         if not candidate.is_file():
-            result.steps.append(StepResult("candidate", False, f"Plik nie istnieje: {candidate}"))
+            result.steps.append(
+                StepResult("candidate", False, f"Plik nie istnieje: {candidate}")
+            )
             return result
-        result.steps.append(StepResult("candidate", True, f"{candidate} sha256={self._digest(candidate)}"))
+        result.steps.append(
+            StepResult(
+                "candidate", True, f"{candidate} sha256={self._digest(candidate)}"
+            )
+        )
         result.steps.append(self._zone_validation(zone, candidate))
         result.steps.append(self._config_validation())
         self._save_manifest(result, {"mode": "validate", "candidate": str(candidate)})
-        self.audit.append(txid, zone.name, "validate", "PASS" if all(s.ok for s in result.steps) else "FAIL", candidate=str(candidate))
+        self.audit.append(
+            txid,
+            zone.name,
+            "validate",
+            "PASS" if all(s.ok for s in result.steps) else "FAIL",
+            candidate=str(candidate),
+        )
         return result
 
     def verify(self, zone_name: str) -> TransactionResult:
@@ -241,7 +279,11 @@ class TransactionEngine:
 
         if not zone.file:
             result.steps.append(
-                StepResult("zone-file", False, f"Strefa {zone.name} nie ma ustawionego parametru file")
+                StepResult(
+                    "zone-file",
+                    False,
+                    f"Strefa {zone.name} nie ma ustawionego parametru file",
+                )
             )
             return self._finish(result, "FAIL", mode="verify")
 
@@ -249,7 +291,9 @@ class TransactionEngine:
 
         if not candidate.is_file():
             result.steps.append(
-                StepResult("zone-file", False, f"Aktywny plik strefy nie istnieje: {candidate}")
+                StepResult(
+                    "zone-file", False, f"Aktywny plik strefy nie istnieje: {candidate}"
+                )
             )
             return self._finish(
                 result,
@@ -373,27 +417,49 @@ class TransactionEngine:
                 metadata=result.metadata,
             )
             if not source.is_file():
-                result.steps.append(StepResult("source", False, f"Plik źródłowy nie istnieje: {source}"))
-                return self._finish(result, "FAIL", source=str(source), target=str(target))
+                result.steps.append(
+                    StepResult("source", False, f"Plik źródłowy nie istnieje: {source}")
+                )
+                return self._finish(
+                    result, "FAIL", source=str(source), target=str(target)
+                )
             if not target.is_file():
-                result.steps.append(StepResult("target", False, f"Aktywny plik strefy nie istnieje: {target}"))
-                return self._finish(result, "FAIL", source=str(source), target=str(target))
+                result.steps.append(
+                    StepResult(
+                        "target", False, f"Aktywny plik strefy nie istnieje: {target}"
+                    )
+                )
+                return self._finish(
+                    result, "FAIL", source=str(source), target=str(target)
+                )
             if source == target:
-                result.steps.append(StepResult("source", False, "Źródło i plik aktywny są tym samym plikiem"))
-                return self._finish(result, "FAIL", source=str(source), target=str(target))
+                result.steps.append(
+                    StepResult(
+                        "source", False, "Źródło i plik aktywny są tym samym plikiem"
+                    )
+                )
+                return self._finish(
+                    result, "FAIL", source=str(source), target=str(target)
+                )
 
-            result.steps.append(StepResult("source", True, f"{source} sha256={self._digest(source)}"))
+            result.steps.append(
+                StepResult("source", True, f"{source} sha256={self._digest(source)}")
+            )
             zone_check = self._zone_validation(zone, source)
             result.steps.append(zone_check)
             if not zone_check.ok:
-                return self._finish(result, "FAIL", source=str(source), target=str(target))
+                return self._finish(
+                    result, "FAIL", source=str(source), target=str(target)
+                )
 
             # named-checkconf checks the currently active configuration. The candidate
             # is independently checked above and is not exposed to named before commit.
             conf_check = self._config_validation()
             result.steps.append(conf_check)
             if not conf_check.ok:
-                return self._finish(result, "FAIL", source=str(source), target=str(target))
+                return self._finish(
+                    result, "FAIL", source=str(source), target=str(target)
+                )
 
             source_digest = self._digest(source)
             target_digest = self._digest(target)
@@ -414,30 +480,56 @@ class TransactionEngine:
                 )
 
             if not commit:
-                result.steps.append(StepResult("dry-run", True, "Walidacja zakończona. Nie zmieniono pliku (brak --commit)."))
-                return self._finish(result, "DRY-RUN", source=str(source), target=str(target))
+                result.steps.append(
+                    StepResult(
+                        "dry-run",
+                        True,
+                        "Walidacja zakończona. Nie zmieniono pliku (brak --commit).",
+                    )
+                )
+                return self._finish(
+                    result, "DRY-RUN", source=str(source), target=str(target)
+                )
 
             backup = self._backup(zone, target, txid)
             result.backup = str(backup)
             result.steps.append(StepResult("backup", True, str(backup)))
             expected_serial = self._zone_serial(zone, source)
             if expected_serial is None:
-                result.steps.append(StepResult("expected-serial", False, "Nie udało się odczytać seriala z pliku źródłowego"))
-                return self._finish(result, "FAILED", source=str(source), target=str(target))
-            result.steps.append(StepResult("expected-serial", True, f"serial oczekiwany={expected_serial}"))
+                result.steps.append(
+                    StepResult(
+                        "expected-serial",
+                        False,
+                        "Nie udało się odczytać seriala z pliku źródłowego",
+                    )
+                )
+                return self._finish(
+                    result, "FAILED", source=str(source), target=str(target)
+                )
+            result.steps.append(
+                StepResult(
+                    "expected-serial", True, f"serial oczekiwany={expected_serial}"
+                )
+            )
             old_serial = self._serial(zone.name)
             try:
                 self._atomic_install(source, target)
-                result.steps.append(StepResult("atomic-install", True, f"Zainstalowano {target}"))
+                result.steps.append(
+                    StepResult("atomic-install", True, f"Zainstalowano {target}")
+                )
                 post_zone = self._zone_validation(zone, target)
                 result.steps.append(post_zone)
                 if not post_zone.ok:
-                    raise RuntimeError("Walidacja aktywnego pliku po instalacji nie powiodła się")
+                    raise RuntimeError(
+                        "Walidacja aktywnego pliku po instalacji nie powiodła się"
+                    )
                 post_conf = self._config_validation()
                 result.steps.append(post_conf)
                 if not post_conf.ok:
                     raise RuntimeError("named-checkconf po instalacji nie powiódł się")
-                reload_step = self._step_command("rndc-reload", ["rndc", "reload", zone.name])
+                reload_step = self._step_command(
+                    "rndc-reload", ["rndc", "reload", zone.name]
+                )
                 result.steps.append(reload_step)
                 if not reload_step.ok:
                     raise RuntimeError("rndc reload nie powiódł się")
@@ -448,22 +540,38 @@ class TransactionEngine:
                 result.steps.append(verify_step)
 
                 if loaded_serial is None:
-                    raise RuntimeError("Nie udało się odczytać seriala z rndc zonestatus")
+                    raise RuntimeError(
+                        "Nie udało się odczytać seriala z rndc zonestatus"
+                    )
 
                 if not verify_step.ok:
                     raise RuntimeError(
                         f"Załadowany serial ({loaded_serial}) różni się od oczekiwanego ({expected_serial})"
                     )
                 result.committed = True
-                return self._finish(result, "COMMIT", source=str(source), target=str(target), old_serial=old_serial, new_serial=new_serial)
+                return self._finish(
+                    result,
+                    "COMMIT",
+                    source=str(source),
+                    target=str(target),
+                    old_serial=old_serial,
+                    new_serial=new_serial,
+                )
             except Exception as exc:
                 result.steps.append(StepResult("transaction", False, str(exc)))
                 rollback = self._rollback(zone, target, backup)
                 result.steps.append(rollback)
                 result.rolled_back = rollback.ok
-                return self._finish(result, "ROLLED-BACK" if rollback.ok else "ROLLBACK-FAILED", source=str(source), target=str(target))
+                return self._finish(
+                    result,
+                    "ROLLED-BACK" if rollback.ok else "ROLLBACK-FAILED",
+                    source=str(source),
+                    target=str(target),
+                )
 
-    def rollback(self, zone_name: str, backup: Path, commit: bool = False) -> TransactionResult:
+    def rollback(
+        self, zone_name: str, backup: Path, commit: bool = False
+    ) -> TransactionResult:
         zone = self.find_zone(zone_name)
         if not zone.file:
             raise RuntimeError(f"Strefa {zone.name} nie ma ustawionego parametru file")
@@ -483,14 +591,24 @@ class TransactionEngine:
                 backup=str(backup),
             )
         if not backup.is_file():
-            result.steps.append(StepResult("backup", False, f"Nie znaleziono backupu: {backup}"))
+            result.steps.append(
+                StepResult("backup", False, f"Nie znaleziono backupu: {backup}")
+            )
             return result
         check = self._zone_validation(zone, backup)
         result.steps.append(check)
         if not check.ok or not commit:
             if not commit:
-                result.steps.append(StepResult("dry-run", True, "Backup poprawny. Użyj --commit, aby przywrócić."))
-            return self._finish(result, "DRY-RUN" if not commit else "FAIL", backup=str(backup))
+                result.steps.append(
+                    StepResult(
+                        "dry-run",
+                        True,
+                        "Backup poprawny. Użyj --commit, aby przywrócić.",
+                    )
+                )
+            return self._finish(
+                result, "DRY-RUN" if not commit else "FAIL", backup=str(backup)
+            )
         current_backup = self._backup(zone, zone.file, txid + "-pre-rollback")
         result.backup = str(current_backup)
         result.steps.append(StepResult("backup-current", True, str(current_backup)))
@@ -499,14 +617,20 @@ class TransactionEngine:
         reload_step = self._step_command("rndc-reload", ["rndc", "reload", zone.name])
         result.steps.append(reload_step)
         result.committed = reload_step.ok
-        return self._finish(result, "ROLLBACK-COMMIT" if reload_step.ok else "FAIL", backup=str(backup))
+        return self._finish(
+            result, "ROLLBACK-COMMIT" if reload_step.ok else "FAIL", backup=str(backup)
+        )
 
     def backups(self, zone_name: str, limit: int = 20) -> list[Path]:
         safe = self._safe_zone_name(self.find_zone(zone_name).name)
         path = self.backup_dir / safe
         if not path.exists():
             return []
-        return sorted((p for p in path.iterdir() if p.is_file() and not p.name.endswith(".json")), key=lambda p: p.stat().st_mtime, reverse=True)[:limit]
+        return sorted(
+            (p for p in path.iterdir() if p.is_file() and not p.name.endswith(".json")),
+            key=lambda p: p.stat().st_mtime,
+            reverse=True,
+        )[:limit]
 
     def history(
         self,
@@ -517,11 +641,7 @@ class TransactionEngine:
         if not self.transaction_dir.exists():
             return []
 
-        wanted = (
-            zone_name.rstrip(".").casefold()
-            if zone_name
-            else None
-        )
+        wanted = zone_name.rstrip(".").casefold() if zone_name else None
         records: list[dict[str, object]] = []
         paths = sorted(
             self.transaction_dir.glob("*.json"),
@@ -531,9 +651,7 @@ class TransactionEngine:
 
         for path in paths:
             try:
-                payload = json.loads(
-                    path.read_text(encoding="utf-8")
-                )
+                payload = json.loads(path.read_text(encoding="utf-8"))
             except (OSError, json.JSONDecodeError):
                 continue
 
@@ -542,10 +660,7 @@ class TransactionEngine:
             record = cast(dict[str, object], payload)
             zone = str(record.get("zone", ""))
 
-            if (
-                wanted is not None
-                and zone.rstrip(".").casefold() != wanted
-            ):
+            if wanted is not None and zone.rstrip(".").casefold() != wanted:
                 continue
 
             record.setdefault(
@@ -553,7 +668,9 @@ class TransactionEngine:
                 datetime.fromtimestamp(
                     path.stat().st_mtime,
                     tz=timezone.utc,
-                ).astimezone().isoformat(timespec="seconds"),
+                )
+                .astimezone()
+                .isoformat(timespec="seconds"),
             )
             records.append(record)
 
@@ -571,24 +688,17 @@ class TransactionEngine:
             not transaction_id
             or Path(transaction_id).name != transaction_id
             or transaction_id in {".", ".."}
-            or transaction_id
-            != self._safe_zone_name(transaction_id)
+            or transaction_id != self._safe_zone_name(transaction_id)
         ):
-            raise RuntimeError(
-                "Nieprawidłowy identyfikator transakcji"
-            )
+            raise RuntimeError("Nieprawidłowy identyfikator transakcji")
 
         path = self.transaction_dir / f"{transaction_id}.json"
 
         if not path.is_file():
-            raise RuntimeError(
-                f"Nie znaleziono transakcji: {transaction_id}"
-            )
+            raise RuntimeError(f"Nie znaleziono transakcji: {transaction_id}")
 
         try:
-            payload_raw = json.loads(
-                path.read_text(encoding="utf-8")
-            )
+            payload_raw = json.loads(path.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError) as exc:
             raise RuntimeError(
                 f"Nie można odczytać manifestu transakcji: {path}"
@@ -619,17 +729,13 @@ class TransactionEngine:
                         payload.get("outcome", "UNKNOWN"),
                     )
                 ),
-                rolled_back=bool(
-                    payload.get("rolled_back", False)
-                ),
+                rolled_back=bool(payload.get("rolled_back", False)),
                 backup=payload.get("backup"),
                 steps=steps,
                 metadata=dict(payload.get("metadata", {})),
             )
         except (KeyError, TypeError, ValueError) as exc:
-            raise RuntimeError(
-                f"Nieprawidłowy manifest transakcji: {path}"
-            ) from exc
+            raise RuntimeError(f"Nieprawidłowy manifest transakcji: {path}") from exc
 
     def _new_id(self, zone: str) -> str:
         stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
@@ -652,14 +758,18 @@ class TransactionEngine:
                 "gid": target.stat().st_gid,
             },
         }
-        backup.with_suffix(backup.suffix + ".json").write_text(json.dumps(metadata, ensure_ascii=False, indent=2), encoding="utf-8")
+        backup.with_suffix(backup.suffix + ".json").write_text(
+            json.dumps(metadata, ensure_ascii=False, indent=2), encoding="utf-8"
+        )
         return backup
 
     @staticmethod
     def _atomic_install(source: Path, target: Path) -> None:
         target.parent.mkdir(parents=True, exist_ok=True)
         target_stat = target.stat()
-        fd, temp_name = tempfile.mkstemp(prefix=f".{target.name}.elkman-", dir=target.parent)
+        fd, temp_name = tempfile.mkstemp(
+            prefix=f".{target.name}.elkman-", dir=target.parent
+        )
         temp = Path(temp_name)
         try:
             with os.fdopen(fd, "wb") as out, source.open("rb") as inp:
@@ -691,7 +801,14 @@ class TransactionEngine:
             self._atomic_install(backup, target)
             reload_result = run(["rndc", "reload", zone.name], self.timeout)
             if reload_result.returncode != 0:
-                return StepResult("rollback", False, "Plik przywrócono, ale rndc reload nie powiódł się", ["rndc", "reload", zone.name], reload_result.stdout, reload_result.stderr)
+                return StepResult(
+                    "rollback",
+                    False,
+                    "Plik przywrócono, ale rndc reload nie powiódł się",
+                    ["rndc", "reload", zone.name],
+                    reload_result.stdout,
+                    reload_result.stderr,
+                )
             return StepResult("rollback", True, f"Przywrócono {backup}")
         except Exception as exc:
             return StepResult("rollback", False, str(exc))
@@ -705,12 +822,12 @@ class TransactionEngine:
         payload = asdict(result)
         payload.update(extra)
         payload["saved_at"] = (
-            datetime.now(timezone.utc)
-            .astimezone()
-            .isoformat(timespec="seconds")
+            datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds")
         )
         path = self.transaction_dir / f"{result.transaction_id}.json"
-        path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+        path.write_text(
+            json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8"
+        )
 
     def _finish(
         self,

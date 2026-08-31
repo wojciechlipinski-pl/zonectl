@@ -26,7 +26,7 @@ def test_acl_real_validation_and_forced_post_gate_rollback(tmp_path: Path) -> No
     root.write_text(f'include "{options}";\n', encoding="utf-8")
     options.write_text(
         'acl "maintenance" { localhost; 192.0.2.0/24; };\n'
-        'options { recursion no; allow-query { maintenance; }; };\n',
+        "options { recursion no; allow-query { maintenance; }; };\n",
         encoding="utf-8",
     )
     before = options.read_bytes()
@@ -41,13 +41,17 @@ def test_acl_real_validation_and_forced_post_gate_rollback(tmp_path: Path) -> No
         return BindAclStep("rndc-reconfig", True, "symulacja izolowana")
 
     result = BindAclTransaction(
-        tmp_path / "backups", tmp_path / "manifests",
-        root_config=root, activator=simulated_reconfig,
+        tmp_path / "backups",
+        tmp_path / "manifests",
+        root_config=root,
+        activator=simulated_reconfig,
         post_validator=lambda _plan: BindAclStep(
             "post-config-state", False, "wymuszona awaria drillu"
         ),
     ).apply(
-        plan, commit=True, activate=True,
+        plan,
+        commit=True,
+        activate=True,
         reason="izolowany drill ACL",
     )
 
@@ -65,9 +69,9 @@ def test_secondary_real_validation_and_forced_operational_rollback(
 ) -> None:
     root = tmp_path / "named.conf"
     root.write_text(
-        'primaries lab-notify { 192.0.2.53; };\n'
+        "primaries lab-notify { 192.0.2.53; };\n"
         'zone "integration.example" { type primary; file "integration.db"; '
-        'also-notify { lab-notify; }; };\n',
+        "also-notify { lab-notify; }; };\n",
         encoding="utf-8",
     )
     before = root.read_bytes()
@@ -80,8 +84,10 @@ def test_secondary_real_validation_and_forced_operational_rollback(
         return BindSecondaryStep("rndc-reconfig", True, "symulacja izolowana")
 
     result = BindSecondaryTransaction(
-        tmp_path / "backups", tmp_path / "manifests",
-        root_config=root, activator=simulated_reconfig,
+        tmp_path / "backups",
+        tmp_path / "manifests",
+        root_config=root,
+        activator=simulated_reconfig,
         post_validator=lambda _plan: BindSecondaryStep(
             "post-config-state", True, "stan kandydata poprawny"
         ),
@@ -89,7 +95,9 @@ def test_secondary_real_validation_and_forced_operational_rollback(
             "secondary-operational", False, "wymuszona awaria drillu"
         ),
     ).apply(
-        plan, commit=True, activate=True,
+        plan,
+        commit=True,
+        activate=True,
         reason="izolowany drill secondary",
     )
 

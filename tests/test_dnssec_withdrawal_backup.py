@@ -24,12 +24,12 @@ def plan(tmp_path: Path):
     declaration = tmp_path / "zones.conf"
     declaration.write_text(
         'zone "example.pl" {\n'
-        ' type primary;\n'
+        " type primary;\n"
         f' file "{zone_file}";\n'
-        ' dnssec-policy default;\n'
-        ' inline-signing yes;\n'
+        " dnssec-policy default;\n"
+        " inline-signing yes;\n"
         f' key-directory "{keys}";\n'
-        '};\n'
+        "};\n"
     )
     zone = ZoneConfig(
         "example.pl",
@@ -82,9 +82,7 @@ def test_changed_configuration_is_rejected(tmp_path: Path) -> None:
     current = plan(tmp_path)
     current.declaration_file.write_text("changed\n")
 
-    result = DnssecWithdrawalBackup(tmp_path / "backups").create(
-        current, commit=True
-    )
+    result = DnssecWithdrawalBackup(tmp_path / "backups").create(current, commit=True)
 
     assert result.status == "CONFLICT"
     assert not (tmp_path / "backups").exists()
@@ -94,9 +92,7 @@ def test_missing_key_is_rejected_without_partial_package(tmp_path: Path) -> None
     current = plan(tmp_path)
     current.key_files[0].unlink()
 
-    result = DnssecWithdrawalBackup(tmp_path / "backups").create(
-        current, commit=True
-    )
+    result = DnssecWithdrawalBackup(tmp_path / "backups").create(current, commit=True)
 
     assert result.status == "CONFLICT"
     assert not (tmp_path / "backups").exists()

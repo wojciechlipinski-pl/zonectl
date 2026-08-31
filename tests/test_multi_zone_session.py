@@ -34,13 +34,7 @@ class FakeSession:
             transaction_id=f"tx-{self.zone.name}-{commit}",
             zone=self.zone.name,
             committed=commit and ok,
-            status=(
-                "COMMIT"
-                if commit and ok
-                else "DRY-RUN"
-                if ok
-                else "FAIL"
-            ),
+            status=("COMMIT" if commit and ok else "DRY-RUN" if ok else "FAIL"),
             steps=[StepResult("test", ok, "OK" if ok else "FAIL")],
         )
         if transaction.committed:

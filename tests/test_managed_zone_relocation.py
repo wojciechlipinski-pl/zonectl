@@ -17,11 +17,11 @@ def _planner(tmp_path: Path):
     old.mkdir()
     target.mkdir(parents=True)
     source = old / "example.pl"
-    source.write_text("$TTL 3600\n@ IN SOA ns1.example. hostmaster.example. 1 1 1 1 1\n")
-    declaration = managed / "example.pl.conf"
-    declaration.write_text(
-        f'zone "example.pl" {{ type primary; file "{source}"; }};\n'
+    source.write_text(
+        "$TTL 3600\n@ IN SOA ns1.example. hostmaster.example. 1 1 1 1 1\n"
     )
+    declaration = managed / "example.pl.conf"
+    declaration.write_text(f'zone "example.pl" {{ type primary; file "{source}"; }};\n')
     root = bind / "named.conf"
     root.write_text(f'include "{declaration}";\n')
     planner = ManagedZoneRelocationPlanner(

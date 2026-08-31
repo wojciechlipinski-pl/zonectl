@@ -18,6 +18,7 @@ def format_days_pl(value: int) -> str:
 @dataclass(frozen=True, slots=True)
 class QuarantineRetentionRecord:
     """One quarantine package retention decision."""
+
     zone: str
     transaction_id: str
     created_at: str
@@ -55,13 +56,17 @@ class QuarantineRetentionAuditor:
             self._inspect(path)
             for path in sorted(self.quarantine_root.glob("*/*/manifest.json"))
         ]
-        return sorted(records, key=lambda item: (item.zone, item.created_at, item.package))
+        return sorted(
+            records, key=lambda item: (item.zone, item.created_at, item.package)
+        )
 
     def inspect_package(self, package: Path) -> QuarantineRetentionRecord:
         """Inspect one direct child package without changing it."""
         manifest = package / "manifest.json"
         if not manifest.is_file():
-            return self._blocked(package, package.parent.name, "brak pliku manifest.json")
+            return self._blocked(
+                package, package.parent.name, "brak pliku manifest.json"
+            )
         return self._inspect(manifest)
 
     def _inspect(self, manifest_path: Path) -> QuarantineRetentionRecord:
@@ -72,17 +77,37 @@ class QuarantineRetentionAuditor:
         except (OSError, json.JSONDecodeError) as exc:
             return self._blocked(package, fallback_zone, f"niepoprawny manifest: {exc}")
         if not isinstance(payload, dict):
-            return self._blocked(package, fallback_zone, "manifest nie jest obiektem JSON")
+            return self._blocked(
+                package, fallback_zone, "manifest nie jest obiektem JSON"
+            )
 
         zone = str(payload.get("zone") or fallback_zone)
         transaction_id = str(payload.get("transaction_id") or "-")
         created_text = str(payload.get("created_at") or "")
         if payload.get("status") != "QUARANTINED":
-            return self._blocked(package, zone, "manifest nie ma stanu QUARANTINED", transaction_id, created_text)
+            return self._blocked(
+                package,
+                zone,
+                "manifest nie ma stanu QUARANTINED",
+                transaction_id,
+                created_text,
+            )
         if zone != fallback_zone:
-            return self._blocked(package, zone, "nazwa strefy nie zgadza się ze ścieżką pakietu", transaction_id, created_text)
+            return self._blocked(
+                package,
+                zone,
+                "nazwa strefy nie zgadza się ze ścieżką pakietu",
+                transaction_id,
+                created_text,
+            )
         if package.is_symlink() or manifest_path.is_symlink():
-            return self._blocked(package, zone, "pakiet lub manifest jest dowiązaniem symbolicznym", transaction_id, created_text)
+            return self._blocked(
+                package,
+                zone,
+                "pakiet lub manifest jest dowiązaniem symbolicznym",
+                transaction_id,
+                created_text,
+            )
 
         try:
             created = datetime.fromisoformat(created_text)
@@ -90,15 +115,29 @@ class QuarantineRetentionAuditor:
                 raise ValueError("brak strefy czasowej")
             created = created.astimezone(timezone.utc)
         except ValueError as exc:
-            return self._blocked(package, zone, f"niepoprawna data utworzenia: {exc}", transaction_id, created_text)
+            return self._blocked(
+                package,
+                zone,
+                f"niepoprawna data utworzenia: {exc}",
+                transaction_id,
+                created_text,
+            )
 
         integrity_error = self._integrity_error(package, payload.get("files"))
         if integrity_error:
-            return self._blocked(package, zone, integrity_error, transaction_id, created_text)
+            return self._blocked(
+                package, zone, integrity_error, transaction_id, created_text
+            )
 
         age = self._now().astimezone(timezone.utc) - created
         if age.total_seconds() < 0:
-            return self._blocked(package, zone, "data utworzenia leży w przyszłości", transaction_id, created_text)
+            return self._blocked(
+                package,
+                zone,
+                "data utworzenia leży w przyszłości",
+                transaction_id,
+                created_text,
+            )
         age_days = age.days
         eligible = age_days >= self.retention_days
         return QuarantineRetentionRecord(
@@ -127,7 +166,10 @@ class QuarantineRetentionAuditor:
             if path.is_symlink() or not path.is_file():
                 return f"brak pliku {name}"
             actual = hashlib.sha256(path.read_bytes()).hexdigest()
-            if not isinstance(expected, str) or actual.casefold() != expected.casefold():
+            if (
+                not isinstance(expected, str)
+                or actual.casefold() != expected.casefold()
+            ):
                 return f"niezgodna suma SHA-256 pliku {name}"
         return None
 

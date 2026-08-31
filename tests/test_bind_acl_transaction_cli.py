@@ -11,24 +11,30 @@ class _EmptyConfig:
 
 def _root(tmp_path: Path) -> Path:
     root = tmp_path / "named.conf"
-    root.write_text(
-        'acl "trusted" { 198.51.100/24; };\n', encoding="utf-8"
-    )
+    root.write_text('acl "trusted" { 198.51.100/24; };\n', encoding="utf-8")
     return root
 
 
 def test_acl_apply_cli_dry_run(monkeypatch, tmp_path: Path, capsys) -> None:
     monkeypatch.setattr(cli.ToolkitConfig, "load", lambda self: _EmptyConfig())
     monkeypatch.setattr(
-        BindAclPlanner, "_validate_candidate",
+        BindAclPlanner,
+        "_validate_candidate",
         lambda self, source, candidate: (True, "kod 0"),
     )
     root = _root(tmp_path)
     before = root.read_bytes()
-    code = cli.main([
-        "bind", "acl-apply", "trusted", "--root-config", str(root),
-        "--replace", "198.51.100/24=198.51.100.0/24",
-    ])
+    code = cli.main(
+        [
+            "bind",
+            "acl-apply",
+            "trusted",
+            "--root-config",
+            str(root),
+            "--replace",
+            "198.51.100/24=198.51.100.0/24",
+        ]
+    )
     assert code == 0
     assert "Status:      DRY-RUN" in capsys.readouterr().out
     assert root.read_bytes() == before
@@ -36,10 +42,16 @@ def test_acl_apply_cli_dry_run(monkeypatch, tmp_path: Path, capsys) -> None:
 
 def test_acl_apply_requires_both_flags(monkeypatch, tmp_path: Path, capsys) -> None:
     monkeypatch.setattr(cli.ToolkitConfig, "load", lambda self: _EmptyConfig())
-    code = cli.main([
-        "bind", "acl-apply", "trusted", "--root-config", str(_root(tmp_path)),
-        "--commit",
-    ])
+    code = cli.main(
+        [
+            "bind",
+            "acl-apply",
+            "trusted",
+            "--root-config",
+            str(_root(tmp_path)),
+            "--commit",
+        ]
+    )
     assert code == 2
     assert "--commit i --activate" in capsys.readouterr().err
 
@@ -49,7 +61,8 @@ def test_acl_apply_full_entry_list_is_dry_run(
 ) -> None:
     monkeypatch.setattr(cli.ToolkitConfig, "load", lambda self: _EmptyConfig())
     monkeypatch.setattr(
-        BindAclPlanner, "_validate_candidate",
+        BindAclPlanner,
+        "_validate_candidate",
         lambda self, source, candidate: (True, "kod 0"),
     )
     root = tmp_path / "named.conf"
@@ -58,10 +71,19 @@ def test_acl_apply_full_entry_list_is_dry_run(
         encoding="utf-8",
     )
     before = root.read_bytes()
-    code = cli.main([
-        "bind", "acl-apply", "trusted", "--entry", "localhost",
-        "--entry", "198.51.100.0/24", "--root-config", str(root),
-    ])
+    code = cli.main(
+        [
+            "bind",
+            "acl-apply",
+            "trusted",
+            "--entry",
+            "localhost",
+            "--entry",
+            "198.51.100.0/24",
+            "--root-config",
+            str(root),
+        ]
+    )
     assert code == 0
     assert "DRY-RUN" in capsys.readouterr().out
     assert root.read_bytes() == before
@@ -71,10 +93,19 @@ def test_acl_apply_requires_exact_confirmation(
     monkeypatch, tmp_path: Path, capsys
 ) -> None:
     monkeypatch.setattr(cli.ToolkitConfig, "load", lambda self: _EmptyConfig())
-    code = cli.main([
-        "bind", "acl-apply", "trusted", "--root-config", str(_root(tmp_path)),
-        "--commit", "--activate", "--confirm", "wrong",
-    ])
+    code = cli.main(
+        [
+            "bind",
+            "acl-apply",
+            "trusted",
+            "--root-config",
+            str(_root(tmp_path)),
+            "--commit",
+            "--activate",
+            "--confirm",
+            "wrong",
+        ]
+    )
     assert code == 2
     assert "pełnej nazwie ACL" in capsys.readouterr().err
 
@@ -82,10 +113,19 @@ def test_acl_apply_requires_exact_confirmation(
 def test_acl_apply_commit_requires_reason(monkeypatch, tmp_path, capsys) -> None:
     monkeypatch.setattr(cli.ToolkitConfig, "load", lambda self: _EmptyConfig())
 
-    code = cli.main([
-        "bind", "acl-apply", "trusted", "--root-config", str(_root(tmp_path)),
-        "--commit", "--activate", "--confirm", "trusted",
-    ])
+    code = cli.main(
+        [
+            "bind",
+            "acl-apply",
+            "trusted",
+            "--root-config",
+            str(_root(tmp_path)),
+            "--commit",
+            "--activate",
+            "--confirm",
+            "trusted",
+        ]
+    )
 
     assert code == 2
     assert "--reason" in capsys.readouterr().err

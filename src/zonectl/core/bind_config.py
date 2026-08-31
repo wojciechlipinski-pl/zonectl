@@ -39,12 +39,12 @@ class BindConfigDiscovery:
     )
 
     NOTIFY = re.compile(
-        r'\bnotify\s+(?P<value>yes|no|explicit|master-only|primary-only)\s*;',
+        r"\bnotify\s+(?P<value>yes|no|explicit|master-only|primary-only)\s*;",
         re.IGNORECASE,
     )
 
     TYPE = re.compile(
-        r'\btype\s+(?P<value>[a-z0-9_-]+)\s*;',
+        r"\btype\s+(?P<value>[a-z0-9_-]+)\s*;",
         re.IGNORECASE,
     )
 
@@ -130,9 +130,7 @@ class BindConfigDiscovery:
             closing_brace = self._matching_brace(text, opening_brace)
 
             if closing_brace is None:
-                raise BindConfigError(
-                    f"Niedomknięty blok strefy {name} w {source}"
-                )
+                raise BindConfigError(f"Niedomknięty blok strefy {name} w {source}")
 
             block = text[opening_brace + 1 : closing_brace]
 
@@ -195,11 +193,7 @@ class BindConfigDiscovery:
             else:
                 zone_file = (source.parent / candidate).resolve()
 
-        zone_type = (
-            type_match.group("value").casefold()
-            if type_match
-            else "master"
-        )
+        zone_type = type_match.group("value").casefold() if type_match else "master"
 
         notify = True
         if notify_match:
@@ -249,11 +243,7 @@ class BindConfigDiscovery:
         if normalized.endswith(".in-addr.arpa") or normalized.endswith(".ip6.arpa"):
             return "Strefy odwrotne"
 
-        if (
-            "rpz" in normalized
-            or "response-policy" in lowered
-            or "rpz" in source_parts
-        ):
+        if "rpz" in normalized or "response-policy" in lowered or "rpz" in source_parts:
             return "RPZ"
 
         if "reverse" in source_parts:

@@ -210,7 +210,9 @@ zrealizowane, a `[ ]` pozostają do wykonania.
   typuje wspólne funkcje CLI i usuwa pozostałe kolizje inferencji; `cli.py`
   przechodzi ścisły audyt i trafia do CI. Historyczny moduł kompatybilności
   `legacy_v220.py` pozostaje jawnym, osobno wydzielonym wyjątkiem.
-- [ ] Dodać automatyczne formatowanie i lint.
+- [x] Dodać automatyczne formatowanie i lint. Ruff normalizuje cały kod,
+  testy i skrypty, a CI blokuje niepoprawne formatowanie, podstawowe błędy
+  składniowe, nieużywane importy oraz niezdefiniowane nazwy.
 - [x] Dodać testy integracyjne z odseparowaną konfiguracją i prawdziwymi
   narzędziami walidacyjnymi BIND, bez kontaktu z produkcyjnym `rndc`.
 - [ ] Dodać testy stref `inline-signing`.

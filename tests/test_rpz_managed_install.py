@@ -32,7 +32,9 @@ def _plan(tmp_path: Path, *, status: str = "READY") -> RpzManagedPlan:
     )
 
 
-def test_dry_run_builds_and_validates_candidates_without_system_writes(tmp_path: Path) -> None:
+def test_dry_run_builds_and_validates_candidates_without_system_writes(
+    tmp_path: Path,
+) -> None:
     commands: list[list[str]] = []
 
     def runner(command: list[str], _timeout: int) -> CommandResult:
@@ -46,7 +48,11 @@ def test_dry_run_builds_and_validates_candidates_without_system_writes(tmp_path:
     ).execute(plan)
 
     assert result.status == "DRY-RUN"
-    assert {command[0] for command in commands} == {"bash", "named-checkzone", "named-checkconf"}
+    assert {command[0] for command in commands} == {
+        "bash",
+        "named-checkzone",
+        "named-checkconf",
+    }
     assert "options" in result.candidate_hashes
     assert not plan.zone_file.exists()
     assert not plan.declaration_file.exists()
@@ -56,9 +62,9 @@ def test_dry_run_builds_and_validates_candidates_without_system_writes(tmp_path:
 
 
 def test_dry_run_blocks_external_or_conflicting_plan(tmp_path: Path) -> None:
-    result = RpzManagedInstallDryRun(
-        fetcher=lambda _url: b"unused"
-    ).execute(_plan(tmp_path, status="BLOCKED_EXTERNAL"))
+    result = RpzManagedInstallDryRun(fetcher=lambda _url: b"unused").execute(
+        _plan(tmp_path, status="BLOCKED_EXTERNAL")
+    )
     assert result.status == "BLOCKED"
     assert result.steps[0].name == "preflight"
 
@@ -164,9 +170,12 @@ def test_transaction_requires_both_flags_and_exact_confirmation(tmp_path: Path) 
         manifest_directory=tmp_path / "manifests",
     )
     assert transaction.apply(_plan(tmp_path), commit=True).status == "REJECTED"
-    assert transaction.apply(
-        _plan(tmp_path), commit=True, activate=True, confirm="wrong"
-    ).status == "REJECTED"
+    assert (
+        transaction.apply(
+            _plan(tmp_path), commit=True, activate=True, confirm="wrong"
+        ).status
+        == "REJECTED"
+    )
 
 
 def test_transaction_commits_after_all_gates(tmp_path: Path, monkeypatch) -> None:
@@ -186,7 +195,9 @@ def test_transaction_commits_after_all_gates(tmp_path: Path, monkeypatch) -> Non
     assert result.status == "COMMIT"
     assert result.committed and result.activated and not result.rolled_back
     assert plan.zone_file.exists()
-    assert 'response-policy { zone "cert-rpz.local"; };' in plan.options_file.read_text()
+    assert (
+        'response-policy { zone "cert-rpz.local"; };' in plan.options_file.read_text()
+    )
     assert f'include "{plan.declaration_file}";' in plan.root_config.read_text()
     assert result.manifest and Path(result.manifest).exists()
 
@@ -215,7 +226,9 @@ def test_transaction_rolls_back_configuration_after_activation_failure(
     assert result.rolled_back and not result.committed
     assert plan.options_file.read_bytes() == original_options
     assert plan.root_config.read_bytes() == original_root
-    assert not any(path.exists() for path in RpzManagedInstallTransaction._targets(plan))
+    assert not any(
+        path.exists() for path in RpzManagedInstallTransaction._targets(plan)
+    )
 
 
 def test_transaction_retries_zonestatus_until_large_zone_is_loaded(

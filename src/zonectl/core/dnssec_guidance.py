@@ -75,14 +75,9 @@ def build_dnssec_guidance(report: DnssecReport) -> DnssecGuidance:
             "zone rrsig",
             "key rrsig",
         )
-        hidden = sum(
-            states.get(name) == "hidden"
-            for name in withdrawal_states
-        )
+        hidden = sum(states.get(name) == "hidden" for name in withdrawal_states)
         not_before = localize_bind_time(report.next_key_event)
-        if all(
-            states.get(name) == "hidden" for name in ("goal", "dnskey", "ds")
-        ):
+        if all(states.get(name) == "hidden" for name in ("goal", "dnskey", "ds")):
             return DnssecGuidance(
                 stage="READY_TO_FINALIZE",
                 title="KASP zakończył wycofywanie DNSSEC",
@@ -95,7 +90,9 @@ def build_dnssec_guidance(report: DnssecReport) -> DnssecGuidance:
             )
         action = f"Ponów kontrolę: zctl dnssec report {report.zone}"
         if not_before:
-            action = f"Po {not_before} uruchom ponownie: zctl dnssec report {report.zone}"
+            action = (
+                f"Po {not_before} uruchom ponownie: zctl dnssec report {report.zone}"
+            )
         return DnssecGuidance(
             stage="WITHDRAWING",
             title="Trwa bezpieczne wycofywanie DNSSEC przez KASP",

@@ -19,16 +19,14 @@ _SENSITIVE_TEXT = (
 )
 
 
-def safe_manifest_payload(result: object, allowed_fields: Iterable[str]) -> dict[str, Any]:
+def safe_manifest_payload(
+    result: object, allowed_fields: Iterable[str]
+) -> dict[str, Any]:
     """Return only explicitly allowed, recursively sanitized result fields."""
     if isinstance(result, type) or not is_dataclass(result):
         raise TypeError("Manifest source must be a dataclass instance")
     source: dict[str, Any] = asdict(cast(Any, result))
-    payload = {
-        field: source[field]
-        for field in allowed_fields
-        if field in source
-    }
+    payload = {field: source[field] for field in allowed_fields if field in source}
     sanitized = _sanitize(payload)
     if not isinstance(sanitized, dict):
         raise TypeError("Sanitized manifest payload must be a dictionary")
@@ -47,6 +45,8 @@ def _sanitize(value: Any, *, key: str = "") -> Any:
         return [_sanitize(item) for item in value]
     if isinstance(value, tuple):
         return [_sanitize(item) for item in value]
-    if isinstance(value, str) and any(pattern.search(value) for pattern in _SENSITIVE_TEXT):
+    if isinstance(value, str) and any(
+        pattern.search(value) for pattern in _SENSITIVE_TEXT
+    ):
         return REDACTED
     return value

@@ -38,8 +38,7 @@ def make_session(
 ) -> tuple[ZoneEditSession, Path]:
     source = tmp_path / "example.pl"
     source.write_text(
-        "$TTL 3600\n"
-        "www 300 IN A 192.0.2.10\n",
+        "$TTL 3600\nwww 300 IN A 192.0.2.10\n",
         encoding="utf-8",
     )
     session = ZoneEditSession(

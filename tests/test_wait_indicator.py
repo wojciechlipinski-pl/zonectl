@@ -22,7 +22,9 @@ class FakeClock:
 def test_indicator_advances_deterministically_and_wraps() -> None:
     clock = FakeClock()
     indicator = WaitIndicator.start(
-        "Odświeżanie stref", clock=clock, interval=1.0,
+        "Odświeżanie stref",
+        clock=clock,
+        interval=1.0,
     )
 
     assert indicator.frame() == BRAILLE_FRAMES[0]
@@ -35,7 +37,10 @@ def test_indicator_advances_deterministically_and_wraps() -> None:
 def test_ascii_fallback_has_portable_frames() -> None:
     clock = FakeClock()
     indicator = WaitIndicator.start(
-        "BIND", clock=clock, ascii_only=True, interval=1.0,
+        "BIND",
+        clock=clock,
+        ascii_only=True,
+        interval=1.0,
     )
 
     assert wait_frames(ascii_only=True) == ASCII_FRAMES
@@ -78,11 +83,14 @@ def test_animation_is_disabled_for_machine_readable_output(
     log_output: bool,
     expected: bool,
 ) -> None:
-    assert animation_allowed(
-        interactive=interactive,
-        json_output=json_output,
-        log_output=log_output,
-    ) is expected
+    assert (
+        animation_allowed(
+            interactive=interactive,
+            json_output=json_output,
+            log_output=log_output,
+        )
+        is expected
+    )
 
 
 def test_clock_rollback_cannot_produce_negative_elapsed_time() -> None:

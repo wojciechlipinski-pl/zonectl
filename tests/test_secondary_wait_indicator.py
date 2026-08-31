@@ -30,7 +30,10 @@ def test_wait_view_uses_centered_framed_overlay() -> None:
     assert "(height - box_height) // 2" in box
     assert "(width - box_width) // 2" in box
     for border in (
-        "ACS_ULCORNER", "ACS_URCORNER", "ACS_LLCORNER", "ACS_LRCORNER",
+        "ACS_ULCORNER",
+        "ACS_URCORNER",
+        "ACS_LLCORNER",
+        "ACS_LRCORNER",
     ):
         assert border in box
     assert "stage = indicator.label" in box

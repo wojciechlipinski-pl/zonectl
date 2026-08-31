@@ -9,12 +9,12 @@ def _config(tmp_path: Path) -> tuple[Path, Path]:
     root.write_text(f'include "{options}";\n', encoding="utf-8")
     options.write_text(
         'acl "trusted" {\n'
-        '    localhost; // zachowaj komentarz\n'
-        '    198.51.100/24;\n'
-        '    203.0.113.0/24;\n'
-        '    203.0.113.0/24;\n'
-        '};\n'
-        'options { allow-query { trusted; }; };\n',
+        "    localhost; // zachowaj komentarz\n"
+        "    198.51.100/24;\n"
+        "    203.0.113.0/24;\n"
+        "    203.0.113.0/24;\n"
+        "};\n"
+        "options { allow-query { trusted; }; };\n",
         encoding="utf-8",
     )
     return root, options
@@ -73,12 +73,11 @@ def test_full_list_plan_preserves_unchanged_inline_comment(
 ) -> None:
     root, _ = _config(tmp_path)
     monkeypatch.setattr(
-        BindAclPlanner, "_validate_candidate",
+        BindAclPlanner,
+        "_validate_candidate",
         lambda self, source, candidate: (True, "kod 0"),
     )
-    plan = BindAclPlanner(root).plan(
-        "trusted", entries=["localhost", "192.0.2.0/24"]
-    )
+    plan = BindAclPlanner(root).plan("trusted", entries=["localhost", "192.0.2.0/24"])
     assert "localhost; // zachowaj komentarz" in plan.candidate_text
     assert "192.0.2.0/24;" in plan.candidate_text
     assert "203.0.113.0/24" not in plan.candidate_text
@@ -108,12 +107,12 @@ def test_plan_blocks_indeterminate_cyclic_acl_impact(
 ) -> None:
     root = tmp_path / "named.conf"
     root.write_text(
-        'acl "a" { b; };\nacl "b" { a; };\n'
-        'options { allow-query { a; }; };\n',
+        'acl "a" { b; };\nacl "b" { a; };\noptions { allow-query { a; }; };\n',
         encoding="utf-8",
     )
     monkeypatch.setattr(
-        BindAclPlanner, "_validate_candidate",
+        BindAclPlanner,
+        "_validate_candidate",
         lambda self, source, candidate: (True, "kod 0"),
     )
     plan = BindAclPlanner(root).plan("a", entries=["b"])

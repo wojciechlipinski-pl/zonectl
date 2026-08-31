@@ -165,15 +165,15 @@ class DnssecFinalizeSerialTransaction:
             r"^signed serial:\s*(\d+)\s*$",
             text,
             re.MULTILINE | re.IGNORECASE,
-        ) or re.search(
-            r"^serial:\s*(\d+)\s*$", text, re.MULTILINE | re.IGNORECASE
-        )
+        ) or re.search(r"^serial:\s*(\d+)\s*$", text, re.MULTILINE | re.IGNORECASE)
         return int(match.group(1)) if match else None
 
     @staticmethod
     def _validate_zone(zone: str, candidate: Path) -> DnssecFinalizeSerialStep:
         outcome = run(["named-checkzone", zone, str(candidate)], 30)
-        message = (outcome.stdout or outcome.stderr).strip() or f"kod {outcome.returncode}"
+        message = (
+            outcome.stdout or outcome.stderr
+        ).strip() or f"kod {outcome.returncode}"
         return DnssecFinalizeSerialStep(
             "named-checkzone", outcome.returncode == 0, message
         )

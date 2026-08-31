@@ -12,14 +12,15 @@ class _EmptyConfig:
 
 def test_migration_dry_run_cli_has_no_commit_path(monkeypatch, capsys) -> None:
     result = RpzMigrationDryRunResult(
-        "cert-rpz.local", "DRY-RUN", False, False,
+        "cert-rpz.local",
+        "DRY-RUN",
+        False,
+        False,
         {"updater": "a" * 64},
         [RpzMigrationDryRunStep("no-activation", True, "bez zmian")],
     )
     monkeypatch.setattr(cli.ToolkitConfig, "load", lambda self: _EmptyConfig())
-    monkeypatch.setattr(
-        cli.RpzExternalMigrationPlanner, "plan", lambda self: object()
-    )
+    monkeypatch.setattr(cli.RpzExternalMigrationPlanner, "plan", lambda self: object())
     monkeypatch.setattr(
         cli.RpzExternalMigrationDryRun, "execute", lambda self, plan: result
     )

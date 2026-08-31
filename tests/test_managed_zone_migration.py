@@ -12,15 +12,13 @@ def _tree(tmp_path: Path) -> ManagedZoneMigrationPlanner:
     bind = tmp_path / "bind"
     managed = bind / "zonectl-zones.d"
     managed.mkdir(parents=True)
-    (bind / "named.conf").write_text(
-        'include "named.conf.local";\n', encoding="utf-8"
-    )
+    (bind / "named.conf").write_text('include "named.conf.local";\n', encoding="utf-8")
     (bind / "named.conf.local").write_text(
         'include "zonectl-zones.conf";\n\n'
         '// komentarz strefy\nzone "legacy.example" {\n'
         '    type primary;\n    file "/zones/legacy.example"; // zachowaj\n};\n\n'
         'zone "signed.example" { type primary; file "/zones/signed"; '
-        'dnssec-policy default; inline-signing yes; };\n'
+        "dnssec-policy default; inline-signing yes; };\n"
         'zone "secondary.example" { type secondary; primaries { 192.0.2.1; }; };\n'
         'zone "cert-rpz.local" { type primary; file "/zones/rpz"; };\n',
         encoding="utf-8",
@@ -60,8 +58,8 @@ def test_plan_preserves_block_and_has_no_side_effects(tmp_path: Path) -> None:
 
     plan = planner.plan("legacy.example")
 
-    assert '// komentarz strefy' not in plan.declaration_text
-    assert '// zachowaj' in plan.declaration_text
+    assert "// komentarz strefy" not in plan.declaration_text
+    assert "// zachowaj" in plan.declaration_text
     assert 'zone "legacy.example"' not in plan.source_candidate
     assert 'zone "signed.example"' in plan.source_candidate
     assert str(plan.declaration_file) in plan.managed_candidate

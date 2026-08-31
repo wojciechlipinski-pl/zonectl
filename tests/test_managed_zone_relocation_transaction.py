@@ -1,7 +1,9 @@
 from pathlib import Path
 
 from zonectl.core.managed_zone_migration_transaction import ManagedZoneMigrationStep
-from zonectl.core.managed_zone_relocation_transaction import ManagedZoneRelocationTransaction
+from zonectl.core.managed_zone_relocation_transaction import (
+    ManagedZoneRelocationTransaction,
+)
 from test_managed_zone_relocation import _planner
 
 
@@ -14,8 +16,10 @@ def test_dry_run_does_not_write(tmp_path: Path) -> None:
     plan = planner.plan("example.pl")
     original = declaration.read_text()
     tx = ManagedZoneRelocationTransaction(
-        tmp_path / "backups", tmp_path / "manifests",
-        root_config=planner.root_config, zone_validator=_ok("named-checkzone"),
+        tmp_path / "backups",
+        tmp_path / "manifests",
+        root_config=planner.root_config,
+        zone_validator=_ok("named-checkzone"),
     )
 
     result = tx.apply(plan)
@@ -30,7 +34,8 @@ def test_commit_relocates_source_and_updates_declaration(tmp_path: Path) -> None
     plan = planner.plan("example.pl")
     content = source.read_bytes()
     tx = ManagedZoneRelocationTransaction(
-        tmp_path / "backups", tmp_path / "manifests",
+        tmp_path / "backups",
+        tmp_path / "manifests",
         root_config=planner.root_config,
         zone_validator=_ok("named-checkzone"),
         config_validator=_ok("named-checkconf"),
@@ -53,7 +58,8 @@ def test_failed_activation_restores_source_and_declaration(tmp_path: Path) -> No
     plan = planner.plan("example.pl")
     original = declaration.read_text()
     tx = ManagedZoneRelocationTransaction(
-        tmp_path / "backups", tmp_path / "manifests",
+        tmp_path / "backups",
+        tmp_path / "manifests",
         root_config=planner.root_config,
         zone_validator=_ok("named-checkzone"),
         config_validator=_ok("named-checkconf"),

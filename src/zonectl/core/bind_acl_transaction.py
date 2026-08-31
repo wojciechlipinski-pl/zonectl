@@ -70,7 +70,11 @@ class BindAclTransaction:
         self.post_validator = post_validator or self._validate_applied_state
 
     def apply(
-        self, plan: BindAclPlan, *, commit: bool = False, activate: bool = False,
+        self,
+        plan: BindAclPlan,
+        *,
+        commit: bool = False,
+        activate: bool = False,
         reason: str | None = None,
     ) -> BindAclResult:
         txid = (
@@ -80,7 +84,10 @@ class BindAclTransaction:
         risk = plan.impact.risk if plan.impact is not None else "INDETERMINATE"
         before_entries = plan.impact.current_entries if plan.impact else ()
         result = BindAclResult(
-            txid, plan.name, "PLAN", operator=getpass.getuser(),
+            txid,
+            plan.name,
+            "PLAN",
+            operator=getpass.getuser(),
             reason=(reason or "nie podano").strip() or "nie podano",
             risk=risk,
             roles=plan.impact.roles if plan.impact else (),
@@ -89,35 +96,44 @@ class BindAclTransaction:
                 plan.original_text, before_entries, plan.source
             ),
         )
-        if plan.source.read_text(encoding="utf-8", errors="replace") != plan.original_text:
+        if (
+            plan.source.read_text(encoding="utf-8", errors="replace")
+            != plan.original_text
+        ):
             result.status = "CONFLICT"
-            result.steps.append(BindAclStep(
-                "preflight", False, f"Plik zmienił się od utworzenia planu: {plan.source}"
-            ))
+            result.steps.append(
+                BindAclStep(
+                    "preflight",
+                    False,
+                    f"Plik zmienił się od utworzenia planu: {plan.source}",
+                )
+            )
             return result
         if not plan.validation_ok:
             result.status = "BLOCKED"
-            result.steps.append(BindAclStep(
-                "candidate-validation", False, plan.validation_message
-            ))
+            result.steps.append(
+                BindAclStep("candidate-validation", False, plan.validation_message)
+            )
             return result
         if not commit:
             result.status = "DRY-RUN"
-            result.steps.append(BindAclStep(
-                "dry-run", True, "Nie zmieniono konfiguracji ani BIND"
-            ))
+            result.steps.append(
+                BindAclStep("dry-run", True, "Nie zmieniono konfiguracji ani BIND")
+            )
             return result
         if plan.impact is not None and plan.impact.risk == "HIGH":
             result.status = "BLOCKED"
-            result.steps.append(BindAclStep(
-                "impact-gate",
-                False,
-                "Zmiana HIGH jest zablokowana przed backupem: role "
-                f"{', '.join(plan.impact.roles) or '-'}; usuwane wpisy: "
-                f"{', '.join(plan.impact.removed_entries) or '-'}. "
-                "Nie można usunąć ostatniego dostępu administracyjnego, "
-                "transferowego ani notify.",
-            ))
+            result.steps.append(
+                BindAclStep(
+                    "impact-gate",
+                    False,
+                    "Zmiana HIGH jest zablokowana przed backupem: role "
+                    f"{', '.join(plan.impact.roles) or '-'}; usuwane wpisy: "
+                    f"{', '.join(plan.impact.removed_entries) or '-'}. "
+                    "Nie można usunąć ostatniego dostępu administracyjnego, "
+                    "transferowego ani notify.",
+                )
+            )
             return result
 
         self.backup_root.mkdir(parents=True, exist_ok=True, mode=0o750)
@@ -135,9 +151,9 @@ class BindAclTransaction:
                 metadata.st_uid,
                 metadata.st_gid,
             )
-            result.steps.append(BindAclStep(
-                "configuration", True, f"Zaktualizowano {plan.source}"
-            ))
+            result.steps.append(
+                BindAclStep("configuration", True, f"Zaktualizowano {plan.source}")
+            )
             check = self.config_validator(self.root_config)
             result.steps.append(check)
             if not check.ok:
@@ -167,9 +183,13 @@ class BindAclTransaction:
                 )
                 if activation_attempted:
                     reload_step = self.activator()
-                    result.steps.append(BindAclStep(
-                        "rndc-reconfig-rollback", reload_step.ok, reload_step.message
-                    ))
+                    result.steps.append(
+                        BindAclStep(
+                            "rndc-reconfig-rollback",
+                            reload_step.ok,
+                            reload_step.message,
+                        )
+                    )
                     rollback_ok = reload_step.ok
                 rollback_state = BindAclStep(
                     "post-rollback-state",
@@ -183,9 +203,11 @@ class BindAclTransaction:
                 rollback_ok = False
                 result.steps.append(BindAclStep("rollback", False, str(rollback_error)))
             if rollback_ok:
-                result.steps.append(BindAclStep(
-                    "rollback", True, "Przywrócono konfigurację sprzed transakcji"
-                ))
+                result.steps.append(
+                    BindAclStep(
+                        "rollback", True, "Przywrócono konfigurację sprzed transakcji"
+                    )
+                )
             result.rolled_back = rollback_ok
             result.status = "ROLLED-BACK" if rollback_ok else "ROLLBACK-FAILED"
         after_entries = (
@@ -217,15 +239,16 @@ class BindAclTransaction:
     def _validate_applied_state(self, plan: BindAclPlan) -> BindAclStep:
         inventory = BindAccessInventoryReader(self.root_config).collect()
         matches = [
-            item for item in inventory.definitions
+            item
+            for item in inventory.definitions
             if item.kind == "acl" and item.name.casefold() == plan.name.casefold()
         ]
         expected = plan.impact.candidate_entries if plan.impact else ()
         ok = len(matches) == 1 and matches[0].entries == expected
         detail = (
             "Aktywna konfiguracja ACL odpowiada zatwierdzonemu planowi"
-            if ok else
-            "Aktywna konfiguracja ACL nie odpowiada zatwierdzonemu planowi"
+            if ok
+            else "Aktywna konfiguracja ACL nie odpowiada zatwierdzonemu planowi"
         )
         return BindAclStep("post-config-state", ok, detail)
 
@@ -233,18 +256,37 @@ class BindAclTransaction:
         self.manifest_directory.mkdir(parents=True, exist_ok=True, mode=0o750)
         path = self.manifest_directory / f"{result.transaction_id}.json"
         result.manifest = str(path)
-        payload = safe_manifest_payload(result, (
-            "transaction_id", "acl", "status", "committed", "rolled_back",
-            "backup", "manifest", "operator", "reason", "risk", "roles",
-            "zones", "state_before", "state_after", "steps",
-        ))
-        payload["saved_at"] = datetime.now(timezone.utc).astimezone().isoformat(
-            timespec="seconds"
+        payload = safe_manifest_payload(
+            result,
+            (
+                "transaction_id",
+                "acl",
+                "status",
+                "committed",
+                "rolled_back",
+                "backup",
+                "manifest",
+                "operator",
+                "reason",
+                "risk",
+                "roles",
+                "zones",
+                "state_before",
+                "state_after",
+                "steps",
+            ),
         )
-        path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+        payload["saved_at"] = (
+            datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds")
+        )
+        path.write_text(
+            json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8"
+        )
 
     @staticmethod
-    def _atomic_write(path: Path, content: bytes, mode: int, uid: int, gid: int) -> None:
+    def _atomic_write(
+        path: Path, content: bytes, mode: int, uid: int, gid: int
+    ) -> None:
         fd, temporary_name = tempfile.mkstemp(prefix=f".{path.name}.", dir=path.parent)
         temporary = Path(temporary_name)
         try:
@@ -263,11 +305,15 @@ class BindAclTransaction:
     @staticmethod
     def _validate_config(root: Path) -> BindAclStep:
         outcome = run(["named-checkconf", str(root)], 30)
-        detail = (outcome.stdout or outcome.stderr).strip() or f"kod {outcome.returncode}"
+        detail = (
+            outcome.stdout or outcome.stderr
+        ).strip() or f"kod {outcome.returncode}"
         return BindAclStep("named-checkconf", outcome.returncode == 0, detail)
 
     @staticmethod
     def _activate() -> BindAclStep:
         outcome = run(["rndc", "reconfig"], 30)
-        detail = (outcome.stdout or outcome.stderr).strip() or f"kod {outcome.returncode}"
+        detail = (
+            outcome.stdout or outcome.stderr
+        ).strip() or f"kod {outcome.returncode}"
         return BindAclStep("rndc-reconfig", outcome.returncode == 0, detail)

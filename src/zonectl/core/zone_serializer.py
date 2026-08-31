@@ -16,8 +16,7 @@ class ZoneSerializationError(RuntimeError):
 
 class ZoneModelProtocol(Protocol):
     @property
-    def records(self) -> Iterable[DNSRecord]:
-        ...
+    def records(self) -> Iterable[DNSRecord]: ...
 
 
 class ZoneSerializer:
@@ -110,9 +109,7 @@ class ZoneSerializer:
             if value is not None:
                 return ZoneSerializer._normalise_owner(str(value))
 
-        raise ZoneSerializationError(
-            f"Rekord {record!r} nie zawiera pola owner/name"
-        )
+        raise ZoneSerializationError(f"Rekord {record!r} nie zawiera pola owner/name")
 
     @staticmethod
     def _record_type(record: DNSRecord) -> str:
@@ -126,9 +123,7 @@ class ZoneSerializer:
             if value:
                 return str(value).strip().upper()
 
-        raise ZoneSerializationError(
-            f"Rekord {record!r} nie zawiera typu rekordu"
-        )
+        raise ZoneSerializationError(f"Rekord {record!r} nie zawiera typu rekordu")
 
     @staticmethod
     def _record_rdata(record: DNSRecord) -> str:
@@ -145,9 +140,7 @@ class ZoneSerializer:
                 if result:
                     return result
 
-        raise ZoneSerializationError(
-            f"Rekord {record!r} nie zawiera danych RDATA"
-        )
+        raise ZoneSerializationError(f"Rekord {record!r} nie zawiera danych RDATA")
 
     @staticmethod
     def _record_ttl(record: DNSRecord) -> int | None:
@@ -164,9 +157,7 @@ class ZoneSerializer:
             ) from exc
 
         if value < 0:
-            raise ZoneSerializationError(
-                f"TTL nie może być ujemny: {value}"
-            )
+            raise ZoneSerializationError(f"TTL nie może być ujemny: {value}")
 
         return value
 
@@ -180,17 +171,13 @@ class ZoneSerializer:
             value = getattr(record, attribute, None)
 
             if value:
-                return ZoneSerializer._normalise_class(
-                    str(value)
-                ).upper()
+                return ZoneSerializer._normalise_class(str(value)).upper()
 
         return "IN"
 
     def render_record(self, record: DNSRecord) -> str:
         if self._is_deleted(record):
-            raise ZoneSerializationError(
-                "Nie można renderować usuniętego rekordu"
-            )
+            raise ZoneSerializationError("Nie można renderować usuniętego rekordu")
 
         owner = self._record_owner(record)
         ttl = self._record_ttl(record)
@@ -255,9 +242,7 @@ class ZoneSerializer:
         text = self.render_model(model)
 
         target_directory = (
-            directory.expanduser().resolve()
-            if directory is not None
-            else None
+            directory.expanduser().resolve() if directory is not None else None
         )
 
         if target_directory is not None:
@@ -270,9 +255,7 @@ class ZoneSerializer:
             fd, raw_path = tempfile.mkstemp(
                 prefix=prefix,
                 suffix=suffix,
-                dir=str(target_directory)
-                if target_directory is not None
-                else None,
+                dir=str(target_directory) if target_directory is not None else None,
                 text=True,
             )
         except OSError as exc:

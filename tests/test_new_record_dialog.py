@@ -104,10 +104,7 @@ def test_build_record_expands_relative_owner() -> None:
     assert result.rrclass == "IN"
     assert result.rtype == "A"
     assert result.rdata == "192.0.2.15"
-    assert (
-        result.raw
-        == "www.example.pl. 3600 IN A 192.0.2.15"
-    )
+    assert result.raw == "www.example.pl. 3600 IN A 192.0.2.15"
 
 
 def test_build_record_accepts_zone_apex() -> None:

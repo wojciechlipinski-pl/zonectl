@@ -45,9 +45,7 @@ def test_bulk_save_is_one_transaction_with_manifest_metadata(
 ) -> None:
     source = tmp_path / "example.pl"
     source.write_text(
-        "$TTL 3600\n"
-        "www 300 IN A 192.0.2.10\n"
-        "api 300 IN A 192.0.2.20\n",
+        "$TTL 3600\nwww 300 IN A 192.0.2.10\napi 300 IN A 192.0.2.20\n",
         encoding="utf-8",
     )
     engine = RecordingEngine(source)
@@ -57,9 +55,7 @@ def test_bulk_save_is_one_transaction_with_manifest_metadata(
         auto_bump_serial=False,
     )
 
-    operation = BulkOperation.parse(
-        "SELECT type:A SET ttl=7200"
-    )
+    operation = BulkOperation.parse("SELECT type:A SET ttl=7200")
     assert operation.apply(session.model) == 2
 
     result = session.save(commit=True)
@@ -78,9 +74,5 @@ def test_bulk_save_is_one_transaction_with_manifest_metadata(
             "matched_count": 2,
         }
     ]
-    assert "www\t7200\tIN\tA\t192.0.2.10" in source.read_text(
-        encoding="utf-8"
-    )
-    assert "api\t7200\tIN\tA\t192.0.2.20" in source.read_text(
-        encoding="utf-8"
-    )
+    assert "www\t7200\tIN\tA\t192.0.2.10" in source.read_text(encoding="utf-8")
+    assert "api\t7200\tIN\tA\t192.0.2.20" in source.read_text(encoding="utf-8")

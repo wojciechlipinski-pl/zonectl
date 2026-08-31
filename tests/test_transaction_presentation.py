@@ -36,9 +36,7 @@ def test_dry_run_is_presented_as_success() -> None:
     assert result.ok is True
     assert transaction_exit_code(result) == 0
     assert transaction_title(result) == "Wynik transakcji: DRY-RUN"
-    assert "[OK  ] dry-run: Nie zmieniono pliku" in transaction_lines(
-        result
-    )
+    assert "[OK  ] dry-run: Nie zmieniono pliku" in transaction_lines(result)
 
 
 def test_failed_step_has_consistent_details_and_exit_code() -> None:
@@ -99,7 +97,4 @@ def test_bulk_operation_is_presented_from_manifest_metadata() -> None:
     lines = transaction_lines(result)
 
     assert "Operacje masowe:" in lines
-    assert (
-        "  SELECT type:A SET ttl=7200 (3 rekordów)"
-        in lines
-    )
+    assert "  SELECT type:A SET ttl=7200 (3 rekordów)" in lines

@@ -16,10 +16,7 @@ class FakeConfig:
         zone_file.write_text("zone\n", encoding="utf-8")
         declaration = tmp_path / "example.conf"
         declaration.write_text(
-            'zone "example.pl" {\n'
-            "    type primary;\n"
-            f'    file "{zone_file}";\n'
-            "};\n",
+            f'zone "example.pl" {{\n    type primary;\n    file "{zone_file}";\n}};\n',
             encoding="utf-8",
         )
         self.zone = Zone("example.pl", zone_file)

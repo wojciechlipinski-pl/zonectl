@@ -57,7 +57,9 @@ def audit_file(path: Path) -> tuple[int, list[MissingDocstring]]:
                 if not ast.get_docstring(member):
                     missing.append(
                         MissingDocstring(
-                            str(path), member.lineno, "method",
+                            str(path),
+                            member.lineno,
+                            "method",
                             f"{node.name}.{member.name}",
                         )
                     )
@@ -89,10 +91,16 @@ def main(argv: list[str] | None = None) -> int:
     args = parser().parse_args(argv)
     total, missing = audit(args.paths)
     if args.json:
-        print(json.dumps({
-            "public_objects": total,
-            "missing": [asdict(item) for item in missing],
-        }, ensure_ascii=False, indent=2))
+        print(
+            json.dumps(
+                {
+                    "public_objects": total,
+                    "missing": [asdict(item) for item in missing],
+                },
+                ensure_ascii=False,
+                indent=2,
+            )
+        )
     else:
         print(f"Publiczne obiekty API: {total}")
         print(f"Brakujące docstringi: {len(missing)}")

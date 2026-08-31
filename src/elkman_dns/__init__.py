@@ -4,4 +4,4 @@ from __future__ import annotations
 
 from zonectl import __path__, __version__
 
-__all__ = ["__version__"]
+__all__ = ["__path__", "__version__"]

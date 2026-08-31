@@ -42,7 +42,9 @@ class MemoryHealthProvider:
             dns2_serial="2026082701",
             dnssec=zone.dnssec_policy is not None,
             file_exists=True,
-            message="Kontrola demonstracyjna" if not warning else "Przykładowe ostrzeżenie",
+            message="Kontrola demonstracyjna"
+            if not warning
+            else "Przykładowe ostrzeżenie",
         )
 
 
@@ -146,9 +148,21 @@ class ScreenshotDemoApp(CursesApp):
         )
         win.erase()
         height, width = win.getmaxyx()
-        win.addnstr(0, 0, " DNSSEC: alpha.example.test ".ljust(width), width - 1, curses.A_REVERSE | curses.A_BOLD)
+        win.addnstr(
+            0,
+            0,
+            " DNSSEC: alpha.example.test ".ljust(width),
+            width - 1,
+            curses.A_REVERSE | curses.A_BOLD,
+        )
         self._draw_dnssec_status_48(win, DEMO_ZONES[0], view, None, view.stage)
-        win.addnstr(height - 1, 0, " q/Esc/F10 Powrót ".ljust(width), width - 1, curses.A_REVERSE)
+        win.addnstr(
+            height - 1,
+            0,
+            " q/Esc/F10 Powrót ".ljust(width),
+            width - 1,
+            curses.A_REVERSE,
+        )
         win.refresh()
         while win.getch() not in (ord("q"), ord("Q"), 27, curses.KEY_F10):
             pass
@@ -165,7 +179,7 @@ class ScreenshotDemoApp(CursesApp):
                 "@                     NS     3600   ns1.example.test.",
                 "@                     NS     3600   ns2.example.test.",
                 "www                   CNAME  3600   alpha.example.test.",
-                "_service              TXT    3600   \"synthetic fixture\"",
+                '_service              TXT    3600   "synthetic fixture"',
                 "",
                 "Status: BEZ ZMIAN — dane wyłącznie demonstracyjne",
             ],
@@ -176,8 +190,11 @@ class ScreenshotDemoApp(CursesApp):
         zone = Zone("alpha.example.test", None, group="Examples")
         records = (
             DNSRecord(
-                owner="alpha.example.test.", ttl=3600, rrclass="IN",
-                rtype="SOA", rdata="ns1.example.test. hostmaster.example.test. 2026082701 3600 900 1209600 3600",
+                owner="alpha.example.test.",
+                ttl=3600,
+                rrclass="IN",
+                rtype="SOA",
+                rdata="ns1.example.test. hostmaster.example.test. 2026082701 3600 900 1209600 3600",
                 raw="",
             ),
         )

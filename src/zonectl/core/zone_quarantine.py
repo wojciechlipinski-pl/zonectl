@@ -16,6 +16,7 @@ from pathlib import Path
 @dataclass(frozen=True, slots=True)
 class ZoneQuarantinePlan:
     """Validated source paths and destination for quarantining one zone."""
+
     zone_name: str
     zone_file: Path
     archived_declaration: Path
@@ -27,6 +28,7 @@ class ZoneQuarantinePlan:
 @dataclass(slots=True)
 class ZoneQuarantineStep:
     """One observable step of a zone quarantine transaction."""
+
     name: str
     ok: bool
     message: str
@@ -35,6 +37,7 @@ class ZoneQuarantineStep:
 @dataclass(slots=True)
 class ZoneQuarantineResult:
     """Final status, package path and rollback state for quarantine."""
+
     transaction_id: str
     zone: str
     status: str
@@ -76,8 +79,7 @@ class ZoneQuarantineTransaction:
             raise ZoneQuarantineError(f"Brak pliku strefy: {zone_file}")
         if not archived_declaration.is_file():
             raise ZoneQuarantineError(
-                f"Strefa nie jest wyłączona lub brak archiwum: "
-                f"{archived_declaration}"
+                f"Strefa nie jest wyłączona lub brak archiwum: {archived_declaration}"
             )
         if active_declaration.exists():
             raise ZoneQuarantineError(
@@ -112,9 +114,7 @@ class ZoneQuarantineTransaction:
             datetime.now().strftime("%Y%m%d-%H%M%S")
             + f"-quarantine-{plan.zone_name}-{uuid.uuid4().hex[:8]}"
         )
-        result = ZoneQuarantineResult(
-            txid, plan.zone_name, "PLAN", plan.reason
-        )
+        result = ZoneQuarantineResult(txid, plan.zone_name, "PLAN", plan.reason)
         if not commit:
             result.status = "DRY-RUN"
             result.steps.append(
@@ -158,9 +158,9 @@ class ZoneQuarantineTransaction:
                 "status": "QUARANTINED",
                 "reason": plan.reason,
                 "operator": getpass.getuser(),
-                "created_at": datetime.now(timezone.utc).astimezone().isoformat(
-                    timespec="seconds"
-                ),
+                "created_at": datetime.now(timezone.utc)
+                .astimezone()
+                .isoformat(timespec="seconds"),
                 "original_paths": {
                     "zone_file": str(plan.zone_file),
                     "declaration": str(plan.archived_declaration),

@@ -41,10 +41,9 @@ def base_zone() -> list[DNSRecord]:
         ("TLSA", "3 1 1 " + "ab" * 32),
         (
             "SOA",
-            "ns.example.pl. hostmaster.example.pl. "
-            "1 3600 900 1209600 300",
+            "ns.example.pl. hostmaster.example.pl. 1 3600 900 1209600 300",
         ),
-        ('TXT', '"tekst z odstępami"'),
+        ("TXT", '"tekst z odstępami"'),
         ("NAPTR", '10 20 "U" "E2U+sip" "!^.*$!sip:x!" .'),
         ("SVCB", "1 svc.example.pl. alpn=h2 port=443"),
         ("HTTPS", "0 service.example.pl."),
@@ -86,19 +85,12 @@ def test_invalid_type_dependent_rdata(
 
 
 def issue_codes(records: list[DNSRecord]) -> set[str]:
-    return {
-        issue.code
-        for issue in validate_zone("example.pl", records)
-    }
+    return {issue.code for issue in validate_zone("example.pl", records)}
 
 
 def test_valid_zone_has_no_errors() -> None:
     issues = validate_zone("example.pl", base_zone())
-    assert not [
-        issue
-        for issue in issues
-        if issue.severity is ValidationSeverity.ERROR
-    ]
+    assert not [issue for issue in issues if issue.severity is ValidationSeverity.ERROR]
 
 
 def test_cname_cannot_coexist_with_address() -> None:
@@ -119,22 +111,20 @@ def test_cname_at_apex_is_rejected_by_coexistence_rule() -> None:
 def test_local_dangling_cname_is_warning_not_error() -> None:
     issues = validate_zone(
         "example.pl",
-        base_zone() + [
+        base_zone()
+        + [
             record("www.example.pl.", "CNAME", "missing.example.pl."),
         ],
     )
-    dangling = [
-        issue
-        for issue in issues
-        if issue.code == "missing-local-target"
-    ]
+    dangling = [issue for issue in issues if issue.code == "missing-local-target"]
     assert len(dangling) == 1
     assert dangling[0].severity is ValidationSeverity.WARN
 
 
 def test_external_cname_does_not_require_local_address() -> None:
     codes = issue_codes(
-        base_zone() + [
+        base_zone()
+        + [
             record("www.example.pl.", "CNAME", "www.example.net."),
         ]
     )
@@ -158,17 +148,9 @@ def test_mx_target_cannot_be_cname() -> None:
 
 
 def test_local_ns_requires_glue_address() -> None:
-    records = [
-        item
-        for item in base_zone()
-        if item.owner != "ns.example.pl."
-    ]
+    records = [item for item in base_zone() if item.owner != "ns.example.pl."]
     issues = validate_zone("example.pl", records)
-    glue = [
-        issue
-        for issue in issues
-        if issue.code == "missing-local-target"
-    ]
+    glue = [issue for issue in issues if issue.code == "missing-local-target"]
     assert glue
     assert glue[0].severity is ValidationSeverity.ERROR
 
@@ -180,7 +162,6 @@ def test_duplicate_record_is_warning() -> None:
         base_zone() + [duplicate, duplicate],
     )
     assert any(
-        issue.code == "duplicate-record"
-        and issue.severity is ValidationSeverity.WARN
+        issue.code == "duplicate-record" and issue.severity is ValidationSeverity.WARN
         for issue in issues
     )

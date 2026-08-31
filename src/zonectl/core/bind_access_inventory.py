@@ -96,7 +96,9 @@ class BindAccessInventoryReader:
                     )
                 )
             for match in self._usage.finditer(masked):
-                if any(start <= match.start() < end for start, end in definition_ranges):
+                if any(
+                    start <= match.start() < end for start, end in definition_ranges
+                ):
                     continue
                 opening = masked.find("{", match.start(), match.end())
                 closing = BindConfigDiscovery._find_block_end(masked, opening, source)
@@ -117,8 +119,15 @@ class BindAccessInventoryReader:
                     )
                 )
         return BindAccessInventory(
-            definitions=tuple(sorted(definitions, key=lambda x: (x.name.casefold(), str(x.source), x.line))),
-            usages=tuple(sorted(usages, key=lambda x: (x.directive, str(x.source), x.line))),
+            definitions=tuple(
+                sorted(
+                    definitions,
+                    key=lambda x: (x.name.casefold(), str(x.source), x.line),
+                )
+            ),
+            usages=tuple(
+                sorted(usages, key=lambda x: (x.directive, str(x.source), x.line))
+            ),
         )
 
     @staticmethod
@@ -137,11 +146,7 @@ class BindAccessInventoryReader:
     @staticmethod
     def _entries(body: str) -> tuple[str, ...]:
         cleaned = BindAccessInventoryReader._mask_comments(body)
-        return tuple(
-            value.strip()
-            for value in cleaned.split(";")
-            if value.strip()
-        )
+        return tuple(value.strip() for value in cleaned.split(";") if value.strip())
 
     @staticmethod
     def _mask_comments(text: str) -> str:

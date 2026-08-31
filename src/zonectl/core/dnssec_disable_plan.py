@@ -36,9 +36,7 @@ class DnssecDisablePlan:
             value = payload[field]
             payload[field] = str(value) if value is not None else None
         payload["key_files"] = [str(path) for path in self.key_files]
-        payload["signing_artifacts"] = [
-            str(path) for path in self.signing_artifacts
-        ]
+        payload["signing_artifacts"] = [str(path) for path in self.signing_artifacts]
         return payload
 
 
@@ -81,15 +79,11 @@ class DnssecDisablePlanner:
                 "Strefa nie ma pełnej konfiguracji dnssec-policy i inline-signing"
             )
         if not zone.config_file.is_file():
-            raise DnssecDisablePlanError(
-                f"Brak pliku deklaracji: {zone.config_file}"
-            )
+            raise DnssecDisablePlanError(f"Brak pliku deklaracji: {zone.config_file}")
 
         original = zone.config_file.read_text(encoding="utf-8")
         try:
-            opening, closing = DnssecEnablePlanner._target_block(
-                original, zone.name
-            )
+            opening, closing = DnssecEnablePlanner._target_block(original, zone.name)
         except ValueError as exc:
             raise DnssecDisablePlanError(str(exc)) from exc
         body = original[opening + 1 : closing]
@@ -101,11 +95,7 @@ class DnssecDisablePlanner:
         candidate_body = self._policy.sub("", body, count=1)
         candidate_body = self._inline.sub("", candidate_body, count=1)
         candidate_body = self._key_directory.sub("", candidate_body, count=1)
-        candidate = (
-            original[: opening + 1]
-            + candidate_body
-            + original[closing:]
-        )
+        candidate = original[: opening + 1] + candidate_body + original[closing:]
         diff = DnssecEnablePlanner._unified_diff(
             original,
             candidate,
@@ -116,12 +106,8 @@ class DnssecDisablePlanner:
         # Etap 1 wycofania: podmiana polityki na wbudowaną "insecure".
         # BIND wymaga tego kroku, aby uporządkowanie wycofać klucze i podpisy;
         # samo usunięcie dnssec-policy spowodowałoby ponowne podpisanie strefy.
-        insecure_body = self._policy.sub(
-            "    dnssec-policy insecure;\n", body, count=1
-        )
-        insecure = (
-            original[: opening + 1] + insecure_body + original[closing:]
-        )
+        insecure_body = self._policy.sub("    dnssec-policy insecure;\n", body, count=1)
+        insecure = original[: opening + 1] + insecure_body + original[closing:]
         insecure_diff = DnssecEnablePlanner._unified_diff(
             original,
             insecure,

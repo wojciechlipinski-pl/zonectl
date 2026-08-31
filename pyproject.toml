@@ -26,6 +26,13 @@ python_version = "3.11"
 strict = true
 warn_unused_configs = true
 
+[tool.ruff]
+target-version = "py311"
+line-length = 88
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F"]
+
 [[tool.mypy.overrides]]
 module = "zonectl.legacy_v220"
 ignore_errors = true

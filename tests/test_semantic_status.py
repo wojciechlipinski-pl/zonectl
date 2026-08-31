@@ -37,6 +37,7 @@ def test_kasp_transition_is_warning_not_failure() -> None:
 
 def test_kasp_line_parser_accepts_rndc_presentation() -> None:
     assert parse_kasp_line("- zone rrsig:     omnipresent") == (
-        "zone rrsig", "omnipresent"
+        "zone rrsig",
+        "omnipresent",
     )
     assert parse_kasp_line("STAN KASP") is None

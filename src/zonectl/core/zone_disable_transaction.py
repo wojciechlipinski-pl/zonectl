@@ -19,6 +19,7 @@ from .runner import run
 @dataclass(frozen=True, slots=True)
 class ZoneDisablePlan:
     """Validated file and configuration paths for disabling one zone."""
+
     zone_name: str
     zone_file: Path
     declaration_file: Path
@@ -33,6 +34,7 @@ class ZoneDisablePlan:
 @dataclass(slots=True)
 class ZoneDisableStep:
     """One observable step of a zone disable transaction."""
+
     name: str
     ok: bool
     message: str
@@ -41,6 +43,7 @@ class ZoneDisableStep:
 @dataclass(slots=True)
 class ZoneDisableResult:
     """Final status, manifest and rollback state for zone disable."""
+
     transaction_id: str
     zone: str
     status: str
@@ -78,9 +81,7 @@ class ZoneDisableTransaction:
         self.manifest_directory = manifest_directory
         self.config_validator = config_validator or self._validate_config
         self.activator = activator or self._activate_bind
-        self.unavailable_verifier = (
-            unavailable_verifier or self._verify_unavailable
-        )
+        self.unavailable_verifier = unavailable_verifier or self._verify_unavailable
 
     @staticmethod
     def plan(
@@ -261,8 +262,8 @@ class ZoneDisableTransaction:
         result.manifest = str(path)
         payload = asdict(result)
         payload["operator"] = getpass.getuser()
-        payload["saved_at"] = datetime.now(timezone.utc).astimezone().isoformat(
-            timespec="seconds"
+        payload["saved_at"] = (
+            datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds")
         )
         path.write_text(
             json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8"

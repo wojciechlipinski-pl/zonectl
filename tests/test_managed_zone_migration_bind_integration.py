@@ -28,9 +28,9 @@ def _isolated(tmp_path: Path):
     local.write_text(
         f'include "{index}";\n'
         'zone "migration.invalid" {\n'
-        '    type primary;\n'
+        "    type primary;\n"
         f'    file "{tmp_path / "migration.invalid"}";\n'
-        '};\n',
+        "};\n",
         encoding="utf-8",
     )
     index.write_text("# managed zones\n", encoding="utf-8")
@@ -68,9 +68,7 @@ def test_real_named_checkconf_failure_restores_every_file(tmp_path: Path) -> Non
     plan, transaction = _isolated(tmp_path)
     broken = replace(
         plan,
-        declaration_text=plan.declaration_text.replace(
-            "type primary;", "type ;"
-        ),
+        declaration_text=plan.declaration_text.replace("type primary;", "type ;"),
     )
 
     result = transaction.apply(broken, commit=True)

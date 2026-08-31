@@ -70,7 +70,9 @@ class ManagedZoneRelocationPlanner:
         source = zone.source_file.resolve()
         target = (self.target_directory / source.name).resolve()
         if source.parent == self.target_directory:
-            raise ManagedZoneRelocationError("Plik strefy jest już w katalogu docelowym")
+            raise ManagedZoneRelocationError(
+                "Plik strefy jest już w katalogu docelowym"
+            )
         if not source.is_file():
             raise ManagedZoneRelocationError(f"Brak pliku źródłowego: {source}")
         if target.exists():

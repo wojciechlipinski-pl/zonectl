@@ -37,9 +37,7 @@ def test_audit_reports_public_objects_without_importing_target(tmp_path: Path) -
 def test_strict_mode_fails_only_for_missing_docs(tmp_path: Path, capsys) -> None:
     target = tmp_path / "clean.py"
     target.write_text(
-        '"""module"""\n\n'
-        "def public():\n"
-        '    """documented"""\n',
+        '"""module"""\n\ndef public():\n    """documented"""\n',
         encoding="utf-8",
     )
     assert MODULE.main(["--strict", str(target)]) == 0

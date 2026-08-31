@@ -80,9 +80,7 @@ class RpzExternalMigrationPlanner:
         *,
         command_runner: Callable[[list[str], int], CommandResult] = run,
         managed_updater: Path = Path("/usr/lib/zonectl/update-cert-rpz"),
-        managed_service: Path = Path(
-            "/etc/systemd/system/zonectl-cert-rpz.service"
-        ),
+        managed_service: Path = Path("/etc/systemd/system/zonectl-cert-rpz.service"),
         managed_timer: Path = Path("/etc/systemd/system/zonectl-cert-rpz.timer"),
         backup_root: Path = Path("/var/backups/zonectl-rpz/migrations"),
     ) -> None:
@@ -112,13 +110,21 @@ class RpzExternalMigrationPlanner:
         service_path = self._fragment_path(
             integration.service_unit if integration else None
         )
-        timer_path = self._fragment_path(integration.timer_unit if integration else None)
+        timer_path = self._fragment_path(
+            integration.timer_unit if integration else None
+        )
         artifacts = (
             self._artifact(
-                "zone-file", Path(integration.source_file) if integration and integration.source_file else None
+                "zone-file",
+                Path(integration.source_file)
+                if integration and integration.source_file
+                else None,
             ),
             self._artifact(
-                "updater", Path(integration.updater_path) if integration and integration.updater_path else None
+                "updater",
+                Path(integration.updater_path)
+                if integration and integration.updater_path
+                else None,
             ),
             self._artifact("service-unit", service_path),
             self._artifact("timer-unit", timer_path),

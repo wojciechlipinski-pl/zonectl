@@ -68,10 +68,7 @@ def test_commit_creates_files_and_manifest(tmp_path: Path) -> None:
     assert result.status == "COMMIT"
     assert result.committed is True
     assert candidate.zone_file.read_text() == candidate.zone_text
-    assert (
-        candidate.zone_declaration_file.read_text()
-        == candidate.bind_declaration
-    )
+    assert candidate.zone_declaration_file.read_text() == candidate.bind_declaration
     assert (
         f'include "{candidate.zone_declaration_file}";'
         in candidate.managed_config.read_text()

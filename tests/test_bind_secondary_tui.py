@@ -1,4 +1,3 @@
-import curses
 import inspect
 
 from zonectl.ui.curses_app import CursesApp
@@ -24,6 +23,7 @@ def test_bind_access_browser_uses_midnight_commander_keys() -> None:
 
 def test_secondary_edit_requires_plan_dry_run_and_exact_name() -> None:
     source = inspect.getsource(CursesApp._edit_secondary_group)
+    source = " ".join(source.split())
 
     assert "planner.plan(name, addresses)" in source
     assert "dry_run = self._run_with_wait_indicator" in source
@@ -56,6 +56,7 @@ def test_acl_write_is_not_mixed_with_secondary_transaction() -> None:
 def test_acl_editor_uses_mc_keys_and_guarded_transaction() -> None:
     editor = inspect.getsource(CursesApp._acl_entry_editor)
     workflow = inspect.getsource(CursesApp._edit_acl)
+    workflow = " ".join(workflow.split())
 
     for key in ("KEY_IC", "KEY_F4", "KEY_F8", "KEY_DC", "KEY_F2"):
         assert key in editor
@@ -84,6 +85,7 @@ def test_bind_access_tui_presents_impact_risk_and_operational_health() -> None:
 def test_zone_details_open_secondary_assignment_with_f5() -> None:
     details = inspect.getsource(CursesApp._domain_view)
     workflow = inspect.getsource(CursesApp._zone_secondary_view)
+    workflow = " ".join(workflow.split())
     assert "curses.KEY_F5" in details
     assert "_zone_secondary_view" in details
     assert "planner.plan(zone.name" in workflow

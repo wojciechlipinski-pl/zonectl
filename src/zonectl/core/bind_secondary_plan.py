@@ -49,7 +49,7 @@ class BindSecondaryPlan:
 
 class BindSecondaryPlanner:
     _definition = re.compile(
-        r'\b(?P<kind>acl|primaries|masters)\s+'
+        r"\b(?P<kind>acl|primaries|masters)\s+"
         r'(?:["\'](?P<quoted>[^"\']+)["\']|(?P<plain>[A-Za-z0-9_.-]+))\s*\{',
         re.IGNORECASE,
     )
@@ -57,11 +57,14 @@ class BindSecondaryPlanner:
     def __init__(self, root_config: Path = Path("/etc/bind/named.conf")) -> None:
         self.root_config = root_config.expanduser().resolve()
 
-    def plan(self, name: str, addresses: list[str] | tuple[str, ...]) -> BindSecondaryPlan:
+    def plan(
+        self, name: str, addresses: list[str] | tuple[str, ...]
+    ) -> BindSecondaryPlan:
         normalized = self._validate_addresses(addresses)
         inventory = BindAccessInventoryReader(self.root_config).collect()
         definitions = [
-            item for item in inventory.definitions
+            item
+            for item in inventory.definitions
             if item.name.casefold() == name.casefold()
         ]
         if len(definitions) != 1:
@@ -82,7 +85,8 @@ class BindSecondaryPlanner:
         masked = BindAccessInventoryReader._mask_comments(original)
         match = next(
             (
-                item for item in self._definition.finditer(masked)
+                item
+                for item in self._definition.finditer(masked)
                 if (item.group("quoted") or item.group("plain")).casefold()
                 == name.casefold()
             ),
@@ -91,7 +95,9 @@ class BindSecondaryPlanner:
         if match is None:
             raise BindSecondaryPlanError(f"Nie można wydzielić grupy {name}")
         opening = masked.find("{", match.start(), match.end())
-        closing = BindConfigDiscovery._find_block_end(masked, opening, definition.source)
+        closing = BindConfigDiscovery._find_block_end(
+            masked, opening, definition.source
+        )
         body = original[opening + 1 : closing]
         replacement_body = self._format_body(body, normalized)
         candidate = original[: opening + 1] + replacement_body + original[closing:]
@@ -112,8 +118,10 @@ class BindSecondaryPlanner:
         if impact.blockers:
             validation_ok = False
             validation_message = (
-                validation_message + "; " if validation_message else ""
-            ) + "raport wpływu: " + "; ".join(impact.blockers)
+                (validation_message + "; " if validation_message else "")
+                + "raport wpływu: "
+                + "; ".join(impact.blockers)
+            )
         return BindSecondaryPlan(
             name=definition.name,
             kind=definition.kind,
@@ -186,7 +194,9 @@ class BindSecondaryPlanner:
             )
             target_root = temporary / self.root_config.relative_to(config_root)
             outcome = run(["named-checkconf", str(target_root)], 30)
-            detail = (outcome.stdout or outcome.stderr).strip() or f"kod {outcome.returncode}"
+            detail = (
+                outcome.stdout or outcome.stderr
+            ).strip() or f"kod {outcome.returncode}"
             return outcome.returncode == 0, detail
         except (OSError, ValueError) as exc:
             return False, str(exc)

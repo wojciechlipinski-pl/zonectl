@@ -43,11 +43,14 @@ class ZoneEditLock:
     def __init__(self, directory: Path, zone_name: str):
         self.directory = Path(directory)
         self.zone_name = zone_name.rstrip(".")
-        safe_name = re.sub(
-            r"[^A-Za-z0-9_.-]+",
-            "_",
-            self.zone_name,
-        ).strip("._") or "zone"
+        safe_name = (
+            re.sub(
+                r"[^A-Za-z0-9_.-]+",
+                "_",
+                self.zone_name,
+            ).strip("._")
+            or "zone"
+        )
         self.path = self.directory / f"{safe_name}.lock"
         self.handle: TextIO | None = None
         self.token = uuid.uuid4().hex
@@ -63,9 +66,7 @@ class ZoneEditLock:
             "user": getpass.getuser(),
             "host": socket.gethostname(),
             "started_at": (
-                datetime.now(timezone.utc)
-                .astimezone()
-                .isoformat(timespec="seconds")
+                datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds")
             ),
             "token": self.token,
         }

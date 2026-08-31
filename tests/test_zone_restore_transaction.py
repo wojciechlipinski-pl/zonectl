@@ -69,9 +69,7 @@ def test_failed_loaded_check_restores_disabled_state(tmp_path: Path) -> None:
     original = index.read_bytes()
     result = engine(
         tmp_path,
-        loaded=lambda name: ZoneRestoreStep(
-            "rndc-zonestatus", False, "not loaded"
-        ),
+        loaded=lambda name: ZoneRestoreStep("rndc-zonestatus", False, "not loaded"),
     ).apply(plan, commit=True)
     assert result.status == "ROLLED-BACK"
     assert archived.exists() and not declaration.exists()

@@ -18,6 +18,7 @@ from .runner import run
 @dataclass(frozen=True, slots=True)
 class ZoneRestorePlan:
     """Validated paths and include statement for restoring one zone."""
+
     zone_name: str
     zone_file: Path
     declaration_file: Path
@@ -30,6 +31,7 @@ class ZoneRestorePlan:
 @dataclass(slots=True)
 class ZoneRestoreStep:
     """One observable step of a zone restore transaction."""
+
     name: str
     ok: bool
     message: str
@@ -38,6 +40,7 @@ class ZoneRestoreStep:
 @dataclass(slots=True)
 class ZoneRestoreResult:
     """Final status, manifest and rollback state for zone restoration."""
+
     transaction_id: str
     zone: str
     status: str
@@ -173,9 +176,7 @@ class ZoneRestoreTransaction:
                 b"" if not index_original or index_original.endswith(b"\n") else b"\n"
             )
             updated = (
-                index_original
-                + separator
-                + (plan.include_line + "\n").encode("utf-8")
+                index_original + separator + (plan.include_line + "\n").encode("utf-8")
             )
             self._atomic_write(
                 plan.managed_index,
@@ -257,8 +258,8 @@ class ZoneRestoreTransaction:
         path = self.manifest_directory / f"{result.transaction_id}.json"
         result.manifest = str(path)
         payload = asdict(result)
-        payload["saved_at"] = datetime.now(timezone.utc).astimezone().isoformat(
-            timespec="seconds"
+        payload["saved_at"] = (
+            datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds")
         )
         path.write_text(
             json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8"

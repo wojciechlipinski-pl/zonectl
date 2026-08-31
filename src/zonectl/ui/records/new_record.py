@@ -52,10 +52,7 @@ class NewRecordDialog:
                 return record.ttl
 
         for record in records_list:
-            if (
-                record.rtype.upper() == "SOA"
-                and record.ttl is not None
-            ):
+            if record.rtype.upper() == "SOA" and record.ttl is not None:
                 return record.ttl
 
         for record in records_list:
@@ -96,10 +93,7 @@ class NewRecordDialog:
             if label.startswith("-") or label.endswith("-"):
                 return False
 
-            if not all(
-                character.isalnum() or character in "-_"
-                for character in label
-            ):
+            if not all(character.isalnum() or character in "-_" for character in label):
                 return False
 
         return True
@@ -152,10 +146,7 @@ class NewRecordDialog:
             fields = value.split()
 
             if len(fields) != 4:
-                return (
-                    "SRV: oczekiwany format "
-                    "„priorytet waga port serwer”."
-                )
+                return "SRV: oczekiwany format „priorytet waga port serwer”."
 
             try:
                 numbers = tuple(int(item) for item in fields[:3])
@@ -186,10 +177,7 @@ class NewRecordDialog:
             fields = value.split()
 
             if len(fields) != 4:
-                return (
-                    "TLSA: oczekiwany format "
-                    "„usage selector matching-type dane”."
-                )
+                return "TLSA: oczekiwany format „usage selector matching-type dane”."
 
             try:
                 usage, selector, matching = (
@@ -336,10 +324,7 @@ class NewRecordDialog:
 
         active = self.FIELD_OWNER
         type_index = RECORD_TYPES.index("A")
-        cursors = [
-            len(value)
-            for value in values
-        ]
+        cursors = [len(value) for value in values]
         message = ""
 
         # Formularz musi działać w trybie blokującym.
@@ -425,9 +410,7 @@ class NewRecordDialog:
                     ):
                         marker = "▶" if index == type_index else " "
                         attr = (
-                            curses.A_REVERSE
-                            if index == type_index
-                            else curses.A_NORMAL
+                            curses.A_REVERSE if index == type_index else curses.A_NORMAL
                         )
 
                         self._put(
@@ -542,9 +525,7 @@ class NewRecordDialog:
                         curses.KEY_LEFT,
                         ord("k"),
                     ):
-                        type_index = (
-                            type_index - 1
-                        ) % len(RECORD_TYPES)
+                        type_index = (type_index - 1) % len(RECORD_TYPES)
                         values[self.FIELD_TYPE] = RECORD_TYPES[type_index]
                         message = ""
                         continue
@@ -554,9 +535,7 @@ class NewRecordDialog:
                         curses.KEY_RIGHT,
                         ord("j"),
                     ):
-                        type_index = (
-                            type_index + 1
-                        ) % len(RECORD_TYPES)
+                        type_index = (type_index + 1) % len(RECORD_TYPES)
                         values[self.FIELD_TYPE] = RECORD_TYPES[type_index]
                         message = ""
                         continue
@@ -566,15 +545,11 @@ class NewRecordDialog:
                         character = chr(key).upper()
 
                         for offset in range(1, len(RECORD_TYPES) + 1):
-                            candidate = (
-                                type_index + offset
-                            ) % len(RECORD_TYPES)
+                            candidate = (type_index + offset) % len(RECORD_TYPES)
 
                             if RECORD_TYPES[candidate].startswith(character):
                                 type_index = candidate
-                                values[self.FIELD_TYPE] = (
-                                    RECORD_TYPES[type_index]
-                                )
+                                values[self.FIELD_TYPE] = RECORD_TYPES[type_index]
                                 break
 
                     continue
@@ -607,37 +582,24 @@ class NewRecordDialog:
                     127,
                 ):
                     if cursor > 0:
-                        values[active] = (
-                            value[: cursor - 1]
-                            + value[cursor:]
-                        )
+                        values[active] = value[: cursor - 1] + value[cursor:]
                         cursors[active] -= 1
                     continue
 
                 if key == curses.KEY_DC:
                     if cursor < len(value):
-                        values[active] = (
-                            value[:cursor]
-                            + value[cursor + 1 :]
-                        )
+                        values[active] = value[:cursor] + value[cursor + 1 :]
                     continue
 
                 if 32 <= key <= 126:
                     character = chr(key)
 
                     # TTL przyjmuje tylko cyfry.
-                    if (
-                        active == self.FIELD_TTL
-                        and not character.isdigit()
-                    ):
+                    if active == self.FIELD_TTL and not character.isdigit():
                         message = "TTL może zawierać wyłącznie cyfry."
                         continue
 
-                    values[active] = (
-                        value[:cursor]
-                        + character
-                        + value[cursor:]
-                    )
+                    values[active] = value[:cursor] + character + value[cursor:]
                     cursors[active] += 1
                     message = ""
                     continue
@@ -652,6 +614,7 @@ class NewRecordDialog:
                 win.nodelay(True)
             except curses.error:
                 pass
+
     @staticmethod
     def _get_key(win: curses.window) -> int:
         """Odczytaj klawisz, normalizując sekwencje xterm/PuTTY."""

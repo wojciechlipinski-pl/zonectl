@@ -12,24 +12,33 @@ from zonectl.core.zone_writer import ZoneWriter
 
 
 def test_old_serial_becomes_today_sequence_01() -> None:
-    assert next_soa_serial(
-        2026072701,
-        today=date(2026, 7, 29),
-    ) == 2026072901
+    assert (
+        next_soa_serial(
+            2026072701,
+            today=date(2026, 7, 29),
+        )
+        == 2026072901
+    )
 
 
 def test_today_serial_is_incremented() -> None:
-    assert next_soa_serial(
-        2026072901,
-        today=date(2026, 7, 29),
-    ) == 2026072902
+    assert (
+        next_soa_serial(
+            2026072901,
+            today=date(2026, 7, 29),
+        )
+        == 2026072902
+    )
 
 
 def test_future_or_higher_serial_remains_monotonic() -> None:
-    assert next_soa_serial(
-        2026073005,
-        today=date(2026, 7, 29),
-    ) == 2026073006
+    assert (
+        next_soa_serial(
+            2026073005,
+            today=date(2026, 7, 29),
+        )
+        == 2026073006
+    )
 
 
 def test_bump_can_exceed_an_external_minimum_serial() -> None:
@@ -73,14 +82,8 @@ def test_multiline_soa_serial_is_bumped_without_format_loss() -> None:
 
     assert change.previous == 2026072701
     assert change.current == 2026072901
-    assert (
-        "                2026072901     "
-        "; serial: RRRRMMDDNN\n"
-    ) in rendered
-    assert (
-        "@       IN SOA  ns1.example.pl. "
-        "hostmaster.example.pl. (\n"
-    ) in rendered
+    assert ("                2026072901     ; serial: RRRRMMDDNN\n") in rendered
+    assert ("@       IN SOA  ns1.example.pl. hostmaster.example.pl. (\n") in rendered
     assert "@       IN A    192.0.2.10\n" in rendered
 
 
@@ -104,9 +107,7 @@ def test_single_line_soa_serial_is_bumped() -> None:
 
 
 def test_missing_soa_is_rejected() -> None:
-    document = ZoneFileParser.parse_text(
-        "www IN A 192.0.2.10\n"
-    )
+    document = ZoneFileParser.parse_text("www IN A 192.0.2.10\n")
 
     with pytest.raises(
         SoaSerialError,

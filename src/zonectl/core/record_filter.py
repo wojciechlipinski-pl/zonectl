@@ -77,9 +77,7 @@ class RecordFilter:
         try:
             tokens = shlex.split(query)
         except ValueError as exc:
-            raise RecordFilterError(
-                f"Nieprawidłowe cudzysłowy: {exc}"
-            ) from exc
+            raise RecordFilterError(f"Nieprawidłowe cudzysłowy: {exc}") from exc
 
         terms: list[FilterTerm] = []
 
@@ -108,9 +106,7 @@ class RecordFilter:
             value = value.strip()
 
             if not value:
-                raise RecordFilterError(
-                    f"Brak wartości filtra: {original}"
-                )
+                raise RecordFilterError(f"Brak wartości filtra: {original}")
 
             pattern = None
             if operator == "~":
@@ -118,8 +114,7 @@ class RecordFilter:
                     pattern = re.compile(value, re.IGNORECASE)
                 except re.error as exc:
                     raise RecordFilterError(
-                        f"Nieprawidłowe wyrażenie regularne "
-                        f"{value!r}: {exc}"
+                        f"Nieprawidłowe wyrażenie regularne {value!r}: {exc}"
                     ) from exc
 
             if field == "ttl" and operator in {
@@ -183,9 +178,7 @@ class RecordFilter:
             return record.rdata
         if term.field == "status":
             return _status(view)
-        raise RecordFilterError(
-            f"Nieobsługiwane pole filtra: {term.field}"
-        )
+        raise RecordFilterError(f"Nieobsługiwane pole filtra: {term.field}")
 
     @staticmethod
     def _match_ttl(term: FilterTerm, view: ZoneRecordView) -> bool:
@@ -261,18 +254,11 @@ class RecordFilter:
         view: ZoneRecordView,
         zone_name: str,
     ) -> bool:
-        return all(
-            self._match_term(term, view, zone_name)
-            for term in self.terms
-        )
+        return all(self._match_term(term, view, zone_name) for term in self.terms)
 
     def apply(
         self,
         records: Iterable[ZoneRecordView],
         zone_name: str,
     ) -> list[ZoneRecordView]:
-        return [
-            view
-            for view in records
-            if self.matches(view, zone_name)
-        ]
+        return [view for view in records if self.matches(view, zone_name)]

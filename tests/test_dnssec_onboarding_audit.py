@@ -6,13 +6,17 @@ from zonectl.core.models import Zone
 
 
 class _Reporter:
-    def __init__(self, **kwargs): pass
+    def __init__(self, **kwargs):
+        pass
+
     def collect(self, zone, directory):
         return SimpleNamespace(status="PASS", parent_ds_matches=True)
 
 
 class _Checker:
-    def __init__(self, **kwargs): pass
+    def __init__(self, **kwargs):
+        pass
+
     def collect(self, zone, resolvers):
         return SimpleNamespace(status="PASS", kasp_ready=True)
 

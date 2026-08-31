@@ -50,10 +50,7 @@ class ZoneRecordParser:
             if lowered == "ok":
                 continue
 
-            if any(
-                lowered.startswith(prefix)
-                for prefix in cls.IGNORED_PREFIXES
-            ):
+            if any(lowered.startswith(prefix) for prefix in cls.IGNORED_PREFIXES):
                 continue
 
             record = cls.parse_line(line)

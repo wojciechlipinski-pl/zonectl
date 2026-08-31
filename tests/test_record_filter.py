@@ -71,8 +71,7 @@ def identifiers(
     records: list[ZoneRecordView],
 ) -> list[int]:
     return [
-        item.identifier
-        for item in RecordFilter(query).apply(records, "example.pl")
+        item.identifier for item in RecordFilter(query).apply(records, "example.pl")
     ]
 
 

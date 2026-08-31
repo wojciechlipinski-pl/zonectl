@@ -84,9 +84,13 @@ def test_reports_stale_rpz_and_inactive_timer(tmp_path: Path) -> None:
         raise AssertionError(command)
 
     now = zone_file.stat().st_mtime + 1300
-    rpz = BindEnvironmentReporter(
-        root, command_runner=runner, clock=lambda: now, rpz_max_age=600
-    ).collect().rpz[0]
+    rpz = (
+        BindEnvironmentReporter(
+            root, command_runner=runner, clock=lambda: now, rpz_max_age=600
+        )
+        .collect()
+        .rpz[0]
+    )
 
     assert rpz.mode == "OFF"
     assert rpz.health == "DISABLED"
@@ -112,7 +116,9 @@ def test_classifies_delayed_stale_and_failed_rpz(tmp_path: Path) -> None:
             if "--property=NextElapseUSecRealtime" in command:
                 return CommandResult(0, "Tue 2026-08-18 10:40:02 CEST\n", "")
             if "--property=ExecStart" in command:
-                return CommandResult(0, "{ path=/usr/local/sbin/update-cert-rpz.sh ; }\n", "")
+                return CommandResult(
+                    0, "{ path=/usr/local/sbin/update-cert-rpz.sh ; }\n", ""
+                )
             if command[:2] == ["rndc", "zonestatus"]:
                 return CommandResult(
                     0 if loaded else 1,
@@ -121,12 +127,16 @@ def test_classifies_delayed_stale_and_failed_rpz(tmp_path: Path) -> None:
                 )
             raise AssertionError(command)
 
-        return BindEnvironmentReporter(
-            root,
-            command_runner=runner,
-            clock=lambda: zone_file.stat().st_mtime + age,
-            rpz_max_age=600,
-        ).collect().rpz[0]
+        return (
+            BindEnvironmentReporter(
+                root,
+                command_runner=runner,
+                clock=lambda: zone_file.stat().st_mtime + age,
+                rpz_max_age=600,
+            )
+            .collect()
+            .rpz[0]
+        )
 
     assert collect(601).health == "DELAYED"
     assert collect(1201).health == "STALE"
@@ -157,11 +167,15 @@ def test_prefers_installed_managed_units_over_external_defaults(tmp_path: Path) 
             return CommandResult(0, "serial: 123\nnodes: 42\n", "")
         raise AssertionError(command)
 
-    rpz = BindEnvironmentReporter(
-        root,
-        command_runner=runner,
-        clock=lambda: zone_file.stat().st_mtime + 10,
-    ).collect().rpz[0]
+    rpz = (
+        BindEnvironmentReporter(
+            root,
+            command_runner=runner,
+            clock=lambda: zone_file.stat().st_mtime + 10,
+        )
+        .collect()
+        .rpz[0]
+    )
     assert rpz.mode == "MANAGED"
     assert rpz.timer_unit == "zonectl-cert-rpz.timer"
     assert rpz.service_unit == "zonectl-cert-rpz.service"

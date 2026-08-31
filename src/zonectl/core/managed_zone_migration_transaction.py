@@ -19,6 +19,7 @@ from .runner import run
 @dataclass(slots=True)
 class ManagedZoneMigrationStep:
     """One observable step of a managed declaration migration."""
+
     name: str
     ok: bool
     message: str
@@ -27,6 +28,7 @@ class ManagedZoneMigrationStep:
 @dataclass(slots=True)
 class ManagedZoneMigrationResult:
     """Final status, backup and rollback state for declaration migration."""
+
     transaction_id: str
     zone: str
     status: str
@@ -140,34 +142,46 @@ class ManagedZoneMigrationTransaction:
             result.committed = True
             result.status = "COMMIT"
         except Exception as exc:
-            result.steps.append(ManagedZoneMigrationStep("transaction", False, str(exc)))
+            result.steps.append(
+                ManagedZoneMigrationStep("transaction", False, str(exc))
+            )
             rollback_ok = True
             try:
                 self._atomic_write(
-                    plan.source_config, plan.source_original.encode(),
-                    source_stat.st_mode & 0o777, source_stat.st_uid, source_stat.st_gid,
+                    plan.source_config,
+                    plan.source_original.encode(),
+                    source_stat.st_mode & 0o777,
+                    source_stat.st_uid,
+                    source_stat.st_gid,
                 )
                 self._atomic_write(
-                    plan.managed_config, plan.managed_original.encode(),
-                    index_stat.st_mode & 0o777, index_stat.st_uid, index_stat.st_gid,
+                    plan.managed_config,
+                    plan.managed_original.encode(),
+                    index_stat.st_mode & 0o777,
+                    index_stat.st_uid,
+                    index_stat.st_gid,
                 )
                 plan.declaration_file.unlink(missing_ok=True)
                 if activation_attempted:
                     step = self.activator(plan.zone)
-                    result.steps.append(ManagedZoneMigrationStep(
-                        "rndc-reconfig-rollback", step.ok, step.message
-                    ))
+                    result.steps.append(
+                        ManagedZoneMigrationStep(
+                            "rndc-reconfig-rollback", step.ok, step.message
+                        )
+                    )
                     if not step.ok:
                         rollback_ok = False
             except Exception as rollback_error:
                 rollback_ok = False
-                result.steps.append(ManagedZoneMigrationStep(
-                    "rollback", False, str(rollback_error)
-                ))
+                result.steps.append(
+                    ManagedZoneMigrationStep("rollback", False, str(rollback_error))
+                )
             if rollback_ok:
-                result.steps.append(ManagedZoneMigrationStep(
-                    "rollback", True, "Przywrócono stan sprzed transakcji"
-                ))
+                result.steps.append(
+                    ManagedZoneMigrationStep(
+                        "rollback", True, "Przywrócono stan sprzed transakcji"
+                    )
+                )
             result.rolled_back = rollback_ok
             result.status = "ROLLED-BACK" if rollback_ok else "ROLLBACK-FAILED"
 
@@ -195,13 +209,17 @@ class ManagedZoneMigrationTransaction:
         path = self.manifest_directory / f"{result.transaction_id}.json"
         result.manifest = str(path)
         payload = asdict(result)
-        payload["saved_at"] = datetime.now(timezone.utc).astimezone().isoformat(
-            timespec="seconds"
+        payload["saved_at"] = (
+            datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds")
         )
-        path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+        path.write_text(
+            json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8"
+        )
 
     @staticmethod
-    def _atomic_write(path: Path, content: bytes, mode: int, uid: int, gid: int) -> None:
+    def _atomic_write(
+        path: Path, content: bytes, mode: int, uid: int, gid: int
+    ) -> None:
         path.parent.mkdir(parents=True, exist_ok=True, mode=0o750)
         fd, temporary_name = tempfile.mkstemp(prefix=f".{path.name}.", dir=path.parent)
         temporary = Path(temporary_name)
@@ -221,17 +239,29 @@ class ManagedZoneMigrationTransaction:
     @staticmethod
     def _validate_config(root: Path) -> ManagedZoneMigrationStep:
         outcome = run(["named-checkconf", str(root)], 30)
-        detail = (outcome.stdout or outcome.stderr).strip() or f"kod {outcome.returncode}"
-        return ManagedZoneMigrationStep("named-checkconf", outcome.returncode == 0, detail)
+        detail = (
+            outcome.stdout or outcome.stderr
+        ).strip() or f"kod {outcome.returncode}"
+        return ManagedZoneMigrationStep(
+            "named-checkconf", outcome.returncode == 0, detail
+        )
 
     @staticmethod
     def _activate(_zone: str) -> ManagedZoneMigrationStep:
         outcome = run(["rndc", "reconfig"], 30)
-        detail = (outcome.stdout or outcome.stderr).strip() or f"kod {outcome.returncode}"
-        return ManagedZoneMigrationStep("rndc-reconfig", outcome.returncode == 0, detail)
+        detail = (
+            outcome.stdout or outcome.stderr
+        ).strip() or f"kod {outcome.returncode}"
+        return ManagedZoneMigrationStep(
+            "rndc-reconfig", outcome.returncode == 0, detail
+        )
 
     @staticmethod
     def _verify_loaded(zone: str) -> ManagedZoneMigrationStep:
         outcome = run(["rndc", "zonestatus", zone], 30)
-        detail = (outcome.stdout or outcome.stderr).strip() or f"kod {outcome.returncode}"
-        return ManagedZoneMigrationStep("rndc-zonestatus", outcome.returncode == 0, detail)
+        detail = (
+            outcome.stdout or outcome.stderr
+        ).strip() or f"kod {outcome.returncode}"
+        return ManagedZoneMigrationStep(
+            "rndc-zonestatus", outcome.returncode == 0, detail
+        )

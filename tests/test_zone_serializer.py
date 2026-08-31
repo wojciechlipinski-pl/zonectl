@@ -34,10 +34,7 @@ def test_render_record_with_ttl() -> None:
         rdata="192.0.2.10",
     )
 
-    assert (
-        serializer.render_record(record)
-        == "www\t3600\tIN\tA\t192.0.2.10"
-    )
+    assert serializer.render_record(record) == "www\t3600\tIN\tA\t192.0.2.10"
 
 
 def test_render_record_without_ttl() -> None:
@@ -50,10 +47,7 @@ def test_render_record_without_ttl() -> None:
         rdata="10 mail.example.pl.",
     )
 
-    assert (
-        serializer.render_record(record)
-        == "@\tIN\tMX\t10 mail.example.pl."
-    )
+    assert serializer.render_record(record) == "@\tIN\tMX\t10 mail.example.pl."
 
 
 def test_empty_owner_becomes_apex() -> None:
@@ -65,10 +59,7 @@ def test_empty_owner_becomes_apex() -> None:
         rdata='"test"',
     )
 
-    assert (
-        serializer.render_record(record)
-        == '@\tIN\tTXT\t"test"'
-    )
+    assert serializer.render_record(record) == '@\tIN\tTXT\t"test"'
 
 
 def test_deleted_records_are_skipped() -> None:
@@ -90,10 +81,7 @@ def test_deleted_records_are_skipped() -> None:
         ]
     )
 
-    assert (
-        serializer.render_model(model)
-        == "www\tIN\tA\t192.0.2.10\n"
-    )
+    assert serializer.render_model(model) == "www\tIN\tA\t192.0.2.10\n"
 
 
 def test_multiple_records() -> None:
@@ -117,8 +105,7 @@ def test_multiple_records() -> None:
     )
 
     assert serializer.render_model(model) == (
-        "@\t3600\tIN\tA\t192.0.2.1\n"
-        "www\t300\tIN\tCNAME\t@\n"
+        "@\t3600\tIN\tA\t192.0.2.1\nwww\t300\tIN\tCNAME\t@\n"
     )
 
 
@@ -177,9 +164,7 @@ def test_write_candidate_creates_secure_file(
     )
 
     assert path.is_file()
-    assert path.read_text(
-        encoding="utf-8"
-    ) == "www\t300\tIN\tA\t192.0.2.10\n"
+    assert path.read_text(encoding="utf-8") == "www\t300\tIN\tA\t192.0.2.10\n"
 
     mode = path.stat().st_mode & 0o777
     assert mode == 0o600

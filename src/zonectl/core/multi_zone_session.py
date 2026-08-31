@@ -49,11 +49,7 @@ class MultiZoneEditSession:
 
     @property
     def dirty_zone_names(self) -> tuple[str, ...]:
-        return tuple(
-            name
-            for name, session in self._sessions.items()
-            if session.dirty
-        )
+        return tuple(name for name, session in self._sessions.items() if session.dirty)
 
     def open(self, zone_name: str) -> ZoneEditSession:
         """Otwórz strefę lub zwróć już istniejącą sesję roboczą."""
@@ -62,9 +58,7 @@ class MultiZoneEditSession:
         try:
             zone = self._zones[zone_name]
         except KeyError as exc:
-            raise MultiZoneSessionError(
-                f"Nieznana strefa: {zone_name}"
-            ) from exc
+            raise MultiZoneSessionError(f"Nieznana strefa: {zone_name}") from exc
         session = self._session_factory(zone)
         self._sessions[zone_name] = session
         return session
@@ -80,9 +74,7 @@ class MultiZoneEditSession:
         if session is None:
             return
         if session.dirty and not discard:
-            raise MultiZoneSessionError(
-                f"Strefa {zone_name} ma niezapisane zmiany"
-            )
+            raise MultiZoneSessionError(f"Strefa {zone_name} ma niezapisane zmiany")
         if discard and session.dirty:
             session.discard()
         session.close()
@@ -123,9 +115,7 @@ class MultiZoneEditSession:
         """Zamknij wszystkie sesje i zwolnij ich blokady."""
         dirty = self.dirty_zone_names
         if dirty and not discard:
-            raise MultiZoneSessionError(
-                "Niezapisane strefy: " + ", ".join(dirty)
-            )
+            raise MultiZoneSessionError("Niezapisane strefy: " + ", ".join(dirty))
         for name in tuple(self.open_zone_names):
             self.close_zone(name, discard=discard)
 

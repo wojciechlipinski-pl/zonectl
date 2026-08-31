@@ -8,7 +8,7 @@ import os
 import shutil
 import tempfile
 import uuid
-from dataclasses import asdict, dataclass, field
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -67,9 +67,7 @@ class DnssecWithdrawalBackup:
             os.chown(target, source_stat.st_uid, source_stat.st_gid)
         target_hash = cls._sha256(target)
         if target_hash != source_hash:
-            raise DnssecWithdrawalBackupError(
-                f"Niezgodna suma SHA-256 kopii: {source}"
-            )
+            raise DnssecWithdrawalBackupError(f"Niezgodna suma SHA-256 kopii: {source}")
         return {
             "source": str(source),
             "stored_as": str(relative),
@@ -88,8 +86,7 @@ class DnssecWithdrawalBackup:
         ]
         entries.extend((path, Path("keys") / path.name) for path in plan.key_files)
         entries.extend(
-            (path, Path("artifacts") / path.name)
-            for path in plan.signing_artifacts
+            (path, Path("artifacts") / path.name) for path in plan.signing_artifacts
         )
         return tuple(entries)
 
@@ -99,7 +96,9 @@ class DnssecWithdrawalBackup:
             raise DnssecWithdrawalBackupError(
                 "Konfiguracja zmieniła się od utworzenia planu"
             )
-        missing = [source for source, _relative in cls._sources(plan) if not source.is_file()]
+        missing = [
+            source for source, _relative in cls._sources(plan) if not source.is_file()
+        ]
         if missing:
             raise DnssecWithdrawalBackupError(f"Brak pliku do backupu: {missing[0]}")
         if not plan.key_files:
@@ -153,9 +152,9 @@ class DnssecWithdrawalBackup:
                 "transaction_id": txid,
                 "zone": plan.zone,
                 "status": "BACKUP-CREATED",
-                "created_at": datetime.now(timezone.utc).astimezone().isoformat(
-                    timespec="seconds"
-                ),
+                "created_at": datetime.now(timezone.utc)
+                .astimezone()
+                .isoformat(timespec="seconds"),
                 "policy": plan.policy,
                 "candidate_diff_after_safe_withdrawal": plan.unified_diff,
                 "files": records,
@@ -182,7 +181,5 @@ class DnssecWithdrawalBackup:
         except Exception as exc:
             shutil.rmtree(temporary, ignore_errors=True)
             result.status = "FAILED"
-            result.steps.append(
-                DnssecWithdrawalBackupStep("package", False, str(exc))
-            )
+            result.steps.append(DnssecWithdrawalBackupStep("package", False, str(exc)))
             return result

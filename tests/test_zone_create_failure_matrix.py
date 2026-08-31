@@ -90,7 +90,11 @@ def test_existing_configuration_metadata_survives_commit(
 
     assert result.status == "COMMIT"
     for path, metadata in before.items():
-        assert (path.stat().st_uid, path.stat().st_gid, path.stat().st_mode & 0o777) == metadata
+        assert (
+            path.stat().st_uid,
+            path.stat().st_gid,
+            path.stat().st_mode & 0o777,
+        ) == metadata
 
 
 def test_activation_failure_rolls_back_and_reconfigures(
@@ -136,9 +140,6 @@ def test_failed_rollback_reconfiguration_is_reported_not_raised(
 
     assert result.status == "ROLLBACK-FAILED"
     assert result.rolled_back is False
-    assert any(
-        step.name == "rollback" and not step.ok
-        for step in result.steps
-    )
+    assert any(step.name == "rollback" and not step.ok for step in result.steps)
     assert not candidate.zone_file.exists()
     assert not candidate.zone_declaration_file.exists()

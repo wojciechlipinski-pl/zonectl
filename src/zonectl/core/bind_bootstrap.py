@@ -111,8 +111,7 @@ class BindBootstrapTransaction:
             )
         if managed_zone_directory.exists() and not managed_zone_directory.is_dir():
             raise BindBootstrapError(
-                f"Ścieżka deklaracji nie jest katalogiem: "
-                f"{managed_zone_directory}"
+                f"Ścieżka deklaracji nie jest katalogiem: {managed_zone_directory}"
             )
         return BindBootstrapPlan(
             local_config=local_config,
@@ -153,14 +152,10 @@ class BindBootstrapTransaction:
             backup = self.backup_directory / f"{txid}-named.conf.local"
             self._atomic_write(backup, local_original)
             result.backup = str(backup)
-            result.steps.append(
-                BindBootstrapStep("backup", True, f"Backup: {backup}")
-            )
+            result.steps.append(BindBootstrapStep("backup", True, f"Backup: {backup}"))
 
             if not directory_existed:
-                plan.managed_zone_directory.mkdir(
-                    parents=True, mode=0o750
-                )
+                plan.managed_zone_directory.mkdir(parents=True, mode=0o750)
                 directory_created = True
                 result.steps.append(
                     BindBootstrapStep(
@@ -189,7 +184,8 @@ class BindBootstrapTransaction:
 
             if not plan.include_present:
                 separator = (
-                    b"" if not local_original or local_original.endswith(b"\n")
+                    b""
+                    if not local_original or local_original.endswith(b"\n")
                     else b"\n"
                 )
                 updated = (
@@ -221,9 +217,7 @@ class BindBootstrapTransaction:
             result.status = "COMMIT"
             return self._save_manifest(result)
         except Exception as exc:
-            result.steps.append(
-                BindBootstrapStep("transaction", False, str(exc))
-            )
+            result.steps.append(BindBootstrapStep("transaction", False, str(exc)))
             rollback_ok = True
             try:
                 if include_added:
@@ -250,22 +244,16 @@ class BindBootstrapTransaction:
                     )
                 )
             result.rolled_back = rollback_ok
-            result.status = (
-                "ROLLED-BACK" if rollback_ok else "ROLLBACK-FAILED"
-            )
+            result.status = "ROLLED-BACK" if rollback_ok else "ROLLBACK-FAILED"
             return self._save_manifest(result)
 
-    def _save_manifest(
-        self, result: BindBootstrapResult
-    ) -> BindBootstrapResult:
+    def _save_manifest(self, result: BindBootstrapResult) -> BindBootstrapResult:
         self.manifest_directory.mkdir(parents=True, exist_ok=True, mode=0o750)
         path = self.manifest_directory / f"{result.transaction_id}.json"
         result.manifest = str(path)
         payload = asdict(result)
         payload["saved_at"] = (
-            datetime.now(timezone.utc)
-            .astimezone()
-            .isoformat(timespec="seconds")
+            datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds")
         )
         self._atomic_write(
             path,
@@ -281,9 +269,7 @@ class BindBootstrapTransaction:
         mode: int = 0o640,
     ) -> None:
         path.parent.mkdir(parents=True, exist_ok=True, mode=0o750)
-        fd, temporary_name = tempfile.mkstemp(
-            prefix=f".{path.name}.", dir=path.parent
-        )
+        fd, temporary_name = tempfile.mkstemp(prefix=f".{path.name}.", dir=path.parent)
         temporary = Path(temporary_name)
         try:
             with os.fdopen(fd, "wb") as handle:
@@ -301,6 +287,5 @@ class BindBootstrapTransaction:
         return BindBootstrapStep(
             "named-checkconf",
             outcome.returncode == 0,
-            (outcome.stdout or outcome.stderr).strip()
-            or f"kod {outcome.returncode}",
+            (outcome.stdout or outcome.stderr).strip() or f"kod {outcome.returncode}",
         )

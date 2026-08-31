@@ -111,8 +111,10 @@ class BindAccessAuditor:
 
         rank = {"ERROR": 0, "WARN": 1, "INFO": 2}
         findings.sort(key=lambda item: (rank[item.severity], item.code, item.message))
-        status = "FAIL" if any(x.severity == "ERROR" for x in findings) else (
-            "WARN" if findings else "PASS"
+        status = (
+            "FAIL"
+            if any(x.severity == "ERROR" for x in findings)
+            else ("WARN" if findings else "PASS")
         )
         return BindAccessAudit(status, tuple(findings))
 
@@ -128,7 +130,9 @@ class BindAccessAuditor:
             value = raw.lstrip("!").strip()
             reference = self._reference(value)
             if reference is not None:
-                normalized.append(("!" if raw.startswith("!") else "") + reference.casefold())
+                normalized.append(
+                    ("!" if raw.startswith("!") else "") + reference.casefold()
+                )
                 if reference.casefold() not in self.BUILTINS | defined_names:
                     findings.append(
                         BindAccessFinding(

@@ -20,10 +20,7 @@ def setup_plan(tmp_path: Path):
     source.write_text("$TTL 3600\n", encoding="utf-8")
     declaration = tmp_path / "named.conf.local"
     declaration.write_text(
-        'zone "example.pl" {\n'
-        "    type primary;\n"
-        f'    file "{source}";\n'
-        "};\n",
+        f'zone "example.pl" {{\n    type primary;\n    file "{source}";\n}};\n',
         encoding="utf-8",
     )
     target_dir = tmp_path / "var" / "Primary"
@@ -79,7 +76,9 @@ def test_dry_run_has_no_side_effects(tmp_path: Path) -> None:
     assert not (tmp_path / "backups").exists()
 
 
-def test_commit_creates_backups_target_manifest_and_configuration(tmp_path: Path) -> None:
+def test_commit_creates_backups_target_manifest_and_configuration(
+    tmp_path: Path,
+) -> None:
     plan, declaration, source = setup_plan(tmp_path)
 
     result = engine(tmp_path).apply(plan, commit=True, activate=True)
@@ -94,10 +93,14 @@ def test_commit_creates_backups_target_manifest_and_configuration(tmp_path: Path
     assert (backup / "zone-source.db").is_file()
 
 
-def test_validation_failure_restores_configuration_and_removes_target(tmp_path: Path) -> None:
+def test_validation_failure_restores_configuration_and_removes_target(
+    tmp_path: Path,
+) -> None:
     plan, declaration, source = setup_plan(tmp_path)
     before = declaration.read_bytes()
-    bad = lambda *_args: DnssecEnableStep("named-checkconf", False, "invalid")
+
+    def bad(*_args: object) -> DnssecEnableStep:
+        return DnssecEnableStep("named-checkconf", False, "invalid")
 
     result = engine(tmp_path, config_validator=bad).apply(plan, commit=True)
 
@@ -119,7 +122,9 @@ def test_rollback_preserves_original_configuration_owner(
     original = declaration.stat()
     test_gid = original.st_gid + 1000
     os.chown(declaration, original.st_uid, test_gid)
-    bad = lambda *_args: DnssecEnableStep("named-checkconf", False, "invalid")
+
+    def bad(*_args: object) -> DnssecEnableStep:
+        return DnssecEnableStep("named-checkconf", False, "invalid")
 
     result = engine(tmp_path, config_validator=bad).apply(plan, commit=True)
 

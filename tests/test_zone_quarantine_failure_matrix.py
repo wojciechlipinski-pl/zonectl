@@ -107,12 +107,8 @@ def test_quarantine_restore_write_failure_keeps_package_and_disabled_state(
         config_validator=lambda _path: QuarantineRestoreStep(
             "named-checkconf", True, "OK"
         ),
-        activator=lambda _name: QuarantineRestoreStep(
-            "rndc-reconfig", True, "OK"
-        ),
-        loaded_verifier=lambda _name: QuarantineRestoreStep(
-            "loaded", True, "OK"
-        ),
+        activator=lambda _name: QuarantineRestoreStep("rndc-reconfig", True, "OK"),
+        loaded_verifier=lambda _name: QuarantineRestoreStep("loaded", True, "OK"),
     )
     result = engine.apply(plan, commit=True)
 
@@ -149,12 +145,8 @@ def test_restore_uses_metadata_saved_by_quarantine(tmp_path: Path) -> None:
         config_validator=lambda _path: QuarantineRestoreStep(
             "named-checkconf", True, "OK"
         ),
-        activator=lambda _name: QuarantineRestoreStep(
-            "rndc-reconfig", True, "OK"
-        ),
-        loaded_verifier=lambda _name: QuarantineRestoreStep(
-            "loaded", True, "OK"
-        ),
+        activator=lambda _name: QuarantineRestoreStep("rndc-reconfig", True, "OK"),
+        loaded_verifier=lambda _name: QuarantineRestoreStep("loaded", True, "OK"),
     )
 
     result = engine.apply(restore_plan, commit=True)
@@ -194,9 +186,7 @@ def test_restore_activation_failure_rolls_back_and_reconfigures(
     def activate(_name: str) -> QuarantineRestoreStep:
         nonlocal calls
         calls += 1
-        return QuarantineRestoreStep(
-            "rndc-reconfig", calls == 2, f"call {calls}"
-        )
+        return QuarantineRestoreStep("rndc-reconfig", calls == 2, f"call {calls}")
 
     engine = QuarantineRestoreTransaction(
         zone_validator=lambda _name, _path: QuarantineRestoreStep(
@@ -206,9 +196,7 @@ def test_restore_activation_failure_rolls_back_and_reconfigures(
             "named-checkconf", True, "OK"
         ),
         activator=activate,
-        loaded_verifier=lambda _name: QuarantineRestoreStep(
-            "loaded", True, "OK"
-        ),
+        loaded_verifier=lambda _name: QuarantineRestoreStep("loaded", True, "OK"),
     )
     result = engine.apply(plan, commit=True)
 
@@ -232,9 +220,7 @@ def test_restore_failed_rollback_is_reported(tmp_path: Path) -> None:
         activator=lambda _name: QuarantineRestoreStep(
             "rndc-reconfig", False, "BIND unavailable"
         ),
-        loaded_verifier=lambda _name: QuarantineRestoreStep(
-            "loaded", True, "OK"
-        ),
+        loaded_verifier=lambda _name: QuarantineRestoreStep("loaded", True, "OK"),
     )
     result = engine.apply(plan, commit=True)
 

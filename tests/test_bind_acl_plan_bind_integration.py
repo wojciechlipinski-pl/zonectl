@@ -17,11 +17,11 @@ def test_real_named_checkconf_accepts_acl_candidate(tmp_path: Path) -> None:
     root.write_text(f'include "{options}";\n', encoding="utf-8")
     options.write_text(
         'acl "trusted" {\n'
-        '  198.51.100/24;\n'
-        '  203.0.113.0/24;\n'
-        '  203.0.113.0/24;\n'
-        '};\n'
-        'options { allow-query { trusted; }; };\n',
+        "  198.51.100/24;\n"
+        "  203.0.113.0/24;\n"
+        "  203.0.113.0/24;\n"
+        "};\n"
+        "options { allow-query { trusted; }; };\n",
         encoding="utf-8",
     )
     before = options.read_bytes()
@@ -39,7 +39,8 @@ def test_real_named_checkconf_accepts_full_acl_list(tmp_path: Path) -> None:
     root = tmp_path / "named.conf"
     root.write_text(
         'acl "trusted" {\n  localhost;\n  192.0.2.0/24;\n};\n'
-        'options { allow-query { trusted; }; };\n', encoding="utf-8"
+        "options { allow-query { trusted; }; };\n",
+        encoding="utf-8",
     )
     before = root.read_bytes()
     plan = BindAclPlanner(root).plan(

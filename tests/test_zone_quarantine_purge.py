@@ -34,8 +34,7 @@ def make_package(root: Path, created: str = "2026-05-01T12:00:00+00:00") -> Path
         "status": "QUARANTINED",
         "created_at": created,
         "files": {
-            name: hashlib.sha256(content).hexdigest()
-            for name, content in files.items()
+            name: hashlib.sha256(content).hexdigest() for name, content in files.items()
         },
     }
     (package / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
@@ -62,9 +61,7 @@ def test_plan_accepts_only_verified_package_after_retention(tmp_path: Path) -> N
 
 
 def test_plan_rejects_package_still_in_retention(tmp_path: Path) -> None:
-    package = make_package(
-        tmp_path / "quarantine", "2026-08-20T12:00:00+00:00"
-    )
+    package = make_package(tmp_path / "quarantine", "2026-08-20T12:00:00+00:00")
     with pytest.raises(QuarantinePurgeError, match="RETAIN"):
         transaction(tmp_path).plan("example.invalid", package, reason="test")
 
@@ -110,7 +107,9 @@ def test_preflight_blocks_changed_package_after_plan(tmp_path: Path) -> None:
     assert package.is_dir()
 
 
-def test_verified_commit_purges_package_and_keeps_external_audit(tmp_path: Path) -> None:
+def test_verified_commit_purges_package_and_keeps_external_audit(
+    tmp_path: Path,
+) -> None:
     package = make_package(tmp_path / "quarantine")
     tx = transaction(tmp_path)
     plan = tx.plan("example.invalid", package, reason="koniec retencji")
@@ -139,11 +138,14 @@ def test_archive_failure_restores_atomically_staged_package(
     tx = transaction(tmp_path)
     plan = tx.plan("example.invalid", package, reason="test")
     monkeypatch.setattr(
-        tx, "_create_recovery_archive",
+        tx,
+        "_create_recovery_archive",
         lambda source, target: (_ for _ in ()).throw(OSError("archive failure")),
     )
     result = tx.apply(
-        plan, commit=True, confirmation="example.invalid",
+        plan,
+        commit=True,
+        confirmation="example.invalid",
         package_confirmation="tx-old",
     )
     assert result.status == "PURGE-FAILED"
@@ -158,11 +160,14 @@ def test_delete_failure_preserves_verified_recovery_archive(
     tx = transaction(tmp_path)
     plan = tx.plan("example.invalid", package, reason="test")
     monkeypatch.setattr(
-        tx, "_remove_staged_package",
+        tx,
+        "_remove_staged_package",
         lambda target: (_ for _ in ()).throw(OSError("delete failure")),
     )
     result = tx.apply(
-        plan, commit=True, confirmation="example.invalid",
+        plan,
+        commit=True,
+        confirmation="example.invalid",
         package_confirmation="tx-old",
     )
     assert result.status == "PURGE-FAILED"
@@ -170,7 +175,9 @@ def test_delete_failure_preserves_verified_recovery_archive(
     recovery = Path(payload["recovery_archive"])
     assert payload["recovery_available"] is True
     assert recovery.is_file()
-    assert hashlib.sha256(recovery.read_bytes()).hexdigest() == payload["recovery_sha256"]
+    assert (
+        hashlib.sha256(recovery.read_bytes()).hexdigest() == payload["recovery_sha256"]
+    )
 
 
 def test_initial_audit_failure_leaves_package_untouched(
@@ -180,11 +187,14 @@ def test_initial_audit_failure_leaves_package_untouched(
     tx = transaction(tmp_path)
     plan = tx.plan("example.invalid", package, reason="test")
     monkeypatch.setattr(
-        tx, "_write_manifest",
+        tx,
+        "_write_manifest",
         lambda path, payload: (_ for _ in ()).throw(OSError("audit failure")),
     )
     result = tx.apply(
-        plan, commit=True, confirmation="example.invalid",
+        plan,
+        commit=True,
+        confirmation="example.invalid",
         package_confirmation="tx-old",
     )
     assert result.status == "PURGE-FAILED"
@@ -210,7 +220,9 @@ def test_commit_audit_failure_keeps_recovery_after_source_removal(
 
     monkeypatch.setattr(tx, "_write_manifest", fail_fourth)
     result = tx.apply(
-        plan, commit=True, confirmation="example.invalid",
+        plan,
+        commit=True,
+        confirmation="example.invalid",
         package_confirmation="tx-old",
     )
     assert result.status == "PURGE-FAILED"
@@ -226,13 +238,21 @@ def test_cli_purge_is_dry_run_by_default(monkeypatch, tmp_path: Path, capsys) ->
 
     code = cli.main(
         [
-            "zone", "quarantine-purge", "example.invalid",
-            "--package", str(package),
-            "--quarantine-root", str(tmp_path / "quarantine"),
-            "--audit-directory", str(tmp_path / "audit"),
-            "--staging-root", str(tmp_path / "staging"),
-            "--retention-days", "1",
-            "--reason", "test CLI",
+            "zone",
+            "quarantine-purge",
+            "example.invalid",
+            "--package",
+            str(package),
+            "--quarantine-root",
+            str(tmp_path / "quarantine"),
+            "--audit-directory",
+            str(tmp_path / "audit"),
+            "--staging-root",
+            str(tmp_path / "staging"),
+            "--retention-days",
+            "1",
+            "--reason",
+            "test CLI",
         ]
     )
 

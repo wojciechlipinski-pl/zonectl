@@ -86,11 +86,7 @@ def test_zones_conf_overrides_toolkit_metadata_only(
     )
 
     zones_config.write_text(
-        "[example.pl]\n"
-        f"file = {wrong_source}\n"
-        "group = Testowe\n"
-        "dns2 = no\n"
-        "he = yes\n",
+        f"[example.pl]\nfile = {wrong_source}\ngroup = Testowe\ndns2 = no\nhe = yes\n",
         encoding="utf-8",
     )
 
@@ -138,8 +134,7 @@ def test_disabled_zone_is_hidden(
     )
 
     zones_config.write_text(
-        "[example.pl]\n"
-        "enabled = no\n",
+        "[example.pl]\nenabled = no\n",
         encoding="utf-8",
     )
 
@@ -203,9 +198,7 @@ def test_legacy_mode_uses_zones_conf(
     source = tmp_path / "legacy.pl"
 
     zones_config.write_text(
-        "[legacy.pl]\n"
-        f"file = {source}\n"
-        "group = Legacy\n",
+        f"[legacy.pl]\nfile = {source}\ngroup = Legacy\n",
         encoding="utf-8",
     )
 

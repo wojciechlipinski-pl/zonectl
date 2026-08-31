@@ -93,7 +93,9 @@ class RpzManagedInstallDryRun:
         if plan.status != "READY":
             return self._blocked(result, "; ".join(plan.conflicts) or plan.status)
         if plan.options_file is None:
-            return self._blocked(result, "Nie wskazano pliku zawierającego blok options")
+            return self._blocked(
+                result, "Nie wskazano pliku zawierającego blok options"
+            )
         if not plan.source_url.casefold().startswith("https://"):
             return self._blocked(result, "Źródło RPZ musi używać HTTPS")
 
@@ -106,7 +108,8 @@ class RpzManagedInstallDryRun:
                 candidates = self._build_candidates(plan, payload, workspace)
                 result.steps.append(
                     RpzManagedInstallStep(
-                        "candidates", True,
+                        "candidates",
+                        True,
                         f"Kandydaci utworzeni wyłącznie w {workspace}",
                     )
                 )
@@ -114,22 +117,29 @@ class RpzManagedInstallDryRun:
                     name: hashlib.sha256(path.read_bytes()).hexdigest()
                     for name, path in candidates.items()
                 }
-                self._command(result, "updater-syntax", ["bash", "-n", str(candidates["updater"])])
                 self._command(
-                    result, "named-checkzone",
+                    result, "updater-syntax", ["bash", "-n", str(candidates["updater"])]
+                )
+                self._command(
+                    result,
+                    "named-checkzone",
                     ["named-checkzone", plan.zone, str(candidates["zone-file"])],
                 )
                 self._command(
-                    result, "named-checkconf",
+                    result,
+                    "named-checkconf",
                     ["named-checkconf", str(candidates["root-config"])],
                 )
-                self._validate_units(result, candidates["service"], candidates["timer"], plan)
+                self._validate_units(
+                    result, candidates["service"], candidates["timer"], plan
+                )
         except (OSError, ValueError) as exc:
             result.steps.append(RpzManagedInstallStep("dry-run", False, str(exc)))
 
         result.steps.append(
             RpzManagedInstallStep(
-                "no-system-write", True,
+                "no-system-write",
+                True,
                 "Nie zapisano /etc, /usr ani /var i nie uruchomiono systemctl lub rndc",
             )
         )
@@ -205,14 +215,20 @@ class RpzManagedInstallDryRun:
             raw = Path(match.group("path"))
             resolved = raw if raw.is_absolute() else root_path.parent / raw
             if resolved.resolve() == options_path.resolve():
-                return root_text[: match.start()] + f'include "{candidate}";' + root_text[match.end() :]
+                return (
+                    root_text[: match.start()]
+                    + f'include "{candidate}";'
+                    + root_text[match.end() :]
+                )
         if root_path.resolve() == options_path.resolve():
             return root_text.replace(root_text, candidate.read_text(encoding="utf-8"))
-        raise ValueError("Plik options nie jest bezpośrednio dołączony przez konfigurację główną")
+        raise ValueError(
+            "Plik options nie jest bezpośrednio dołączony przez konfigurację główną"
+        )
 
     @staticmethod
     def _updater(plan: RpzManagedPlan) -> str:
-        return f'''#!/bin/sh
+        return f"""#!/bin/sh
 set -eu
 umask 027
 tmp=$(mktemp /var/tmp/zonectl-rpz.XXXXXX)
@@ -242,11 +258,11 @@ install -o root -g bind -m 0644 "$checked" '{plan.zone_file}.candidate'
 mv -f '{plan.zone_file}.candidate' '{plan.zone_file}'
 rndc reload '{plan.zone}'
 rm -f "$normalized"
-'''
+"""
 
     @staticmethod
     def _service(plan: RpzManagedPlan) -> str:
-        return f'''[Unit]
+        return f"""[Unit]
 Description=Update CERT Polska RPZ managed by ZoneCTL
 Wants=network-online.target
 After=network-online.target
@@ -261,11 +277,11 @@ PrivateTmp=yes
 ProtectSystem=full
 ProtectHome=yes
 ReadWritePaths={plan.zone_file.parent} {plan.backup_root} /var/tmp
-'''
+"""
 
     @staticmethod
     def _timer(plan: RpzManagedPlan) -> str:
-        return f'''[Unit]
+        return f"""[Unit]
 Description=Update CERT Polska RPZ every 5 minutes
 
 [Timer]
@@ -277,18 +293,23 @@ Unit={plan.service_file.name}
 
 [Install]
 WantedBy=timers.target
-'''
+"""
 
     def _command(
         self, result: RpzManagedInstallResult, name: str, command: list[str]
     ) -> None:
         outcome = self.command_runner(command, 30)
         message = _short_command_message(outcome)
-        result.steps.append(RpzManagedInstallStep(name, outcome.returncode == 0, message))
+        result.steps.append(
+            RpzManagedInstallStep(name, outcome.returncode == 0, message)
+        )
 
     @staticmethod
     def _validate_units(
-        result: RpzManagedInstallResult, service: Path, timer: Path, plan: RpzManagedPlan
+        result: RpzManagedInstallResult,
+        service: Path,
+        timer: Path,
+        plan: RpzManagedPlan,
     ) -> None:
         service_text = service.read_text(encoding="utf-8")
         timer_text = timer.read_text(encoding="utf-8")
@@ -299,9 +320,11 @@ WantedBy=timers.target
         )
         result.steps.append(
             RpzManagedInstallStep(
-                "unit-candidates", valid,
+                "unit-candidates",
+                valid,
                 "Timer co 5 minut i usługa MANAGED są spójne"
-                if valid else "Niespójne unity MANAGED",
+                if valid
+                else "Niespójne unity MANAGED",
             )
         )
 
@@ -347,7 +370,10 @@ class RpzManagedInstallTransaction:
         activate: bool = False,
         confirm: str | None = None,
     ) -> RpzManagedInstallResult:
-        txid = datetime.now().strftime("%Y%m%d-%H%M%S") + f"-rpz-install-{uuid.uuid4().hex[:8]}"
+        txid = (
+            datetime.now().strftime("%Y%m%d-%H%M%S")
+            + f"-rpz-install-{uuid.uuid4().hex[:8]}"
+        )
         result = RpzManagedInstallResult(plan.zone, "PLAN", transaction_id=txid)
         if plan.status != "READY":
             return self._blocked(result, "; ".join(plan.conflicts) or plan.status)
@@ -382,11 +408,16 @@ class RpzManagedInstallTransaction:
         if not commit:
             result.status = "DRY-RUN"
             return result
-        if plan.options_file.read_bytes() != options_original or plan.root_config.read_bytes() != root_original:
+        if (
+            plan.options_file.read_bytes() != options_original
+            or plan.root_config.read_bytes() != root_original
+        ):
             return self._blocked(result, "Konfiguracja BIND zmieniła się po dry-runie")
         for target in self._targets(plan):
             if target.exists():
-                return self._blocked(result, f"Plik docelowy pojawił się po dry-runie: {target}")
+                return self._blocked(
+                    result, f"Plik docelowy pojawił się po dry-runie: {target}"
+                )
 
         backup = plan.backup_root / "installs" / txid
         result.backup = str(backup)
@@ -397,9 +428,13 @@ class RpzManagedInstallTransaction:
             backup.mkdir(parents=True, mode=0o750)
             shutil.copy2(plan.options_file, backup / plan.options_file.name)
             shutil.copy2(plan.root_config, backup / plan.root_config.name)
-            result.steps.append(RpzManagedInstallStep("backup", True, f"Backup: {backup}"))
+            result.steps.append(
+                RpzManagedInstallStep("backup", True, f"Backup: {backup}")
+            )
 
-            with tempfile.TemporaryDirectory(prefix="zonectl-rpz-install-commit-") as raw:
+            with tempfile.TemporaryDirectory(
+                prefix="zonectl-rpz-install-commit-"
+            ) as raw:
                 candidates = RpzManagedInstallDryRun(
                     command_runner=self.command_runner, fetcher=self.fetcher
                 )._build_candidates(plan, payload, Path(raw))
@@ -409,12 +444,42 @@ class RpzManagedInstallTransaction:
                     plan.zone_file.parent, options_stat.st_uid, options_stat.st_gid
                 )
                 writes = (
-                    (plan.zone_file, candidates["zone-file"].read_bytes(), 0o644, options_stat.st_uid, options_stat.st_gid),
-                    (plan.declaration_file, candidates["declaration"].read_bytes(), 0o640, options_stat.st_uid, options_stat.st_gid),
-                    (plan.updater_file, candidates["updater"].read_bytes(), 0o750, 0, 0),
-                    (plan.service_file, candidates["service"].read_bytes(), 0o644, 0, 0),
+                    (
+                        plan.zone_file,
+                        candidates["zone-file"].read_bytes(),
+                        0o644,
+                        options_stat.st_uid,
+                        options_stat.st_gid,
+                    ),
+                    (
+                        plan.declaration_file,
+                        candidates["declaration"].read_bytes(),
+                        0o640,
+                        options_stat.st_uid,
+                        options_stat.st_gid,
+                    ),
+                    (
+                        plan.updater_file,
+                        candidates["updater"].read_bytes(),
+                        0o750,
+                        0,
+                        0,
+                    ),
+                    (
+                        plan.service_file,
+                        candidates["service"].read_bytes(),
+                        0o644,
+                        0,
+                        0,
+                    ),
                     (plan.timer_file, candidates["timer"].read_bytes(), 0o644, 0, 0),
-                    (plan.options_file, candidates["options"].read_bytes(), options_stat.st_mode & 0o777, options_stat.st_uid, options_stat.st_gid),
+                    (
+                        plan.options_file,
+                        candidates["options"].read_bytes(),
+                        options_stat.st_mode & 0o777,
+                        options_stat.st_uid,
+                        options_stat.st_gid,
+                    ),
                 )
                 for target, content, mode, uid, gid in writes:
                     self._atomic_write(target, content, mode, uid, gid)
@@ -423,13 +488,20 @@ class RpzManagedInstallTransaction:
                 root_active = root_original.decode("utf-8", errors="replace")
                 root_active += f'\ninclude "{plan.declaration_file}";\n'
                 self._atomic_write(
-                    plan.root_config, root_active.encode("utf-8"),
-                    root_stat.st_mode & 0o777, root_stat.st_uid, root_stat.st_gid,
+                    plan.root_config,
+                    root_active.encode("utf-8"),
+                    root_stat.st_mode & 0o777,
+                    root_stat.st_uid,
+                    root_stat.st_gid,
                 )
             result.steps.append(
-                RpzManagedInstallStep("configuration", True, "Zapisano artefakty MANAGED atomowo")
+                RpzManagedInstallStep(
+                    "configuration", True, "Zapisano artefakty MANAGED atomowo"
+                )
             )
-            self._must_run(["named-checkconf", str(plan.root_config)], "named-checkconf", result)
+            self._must_run(
+                ["named-checkconf", str(plan.root_config)], "named-checkconf", result
+            )
             activation_started = True
             self._must_run(["systemctl", "daemon-reload"], "daemon-reload", result)
             self._must_run(["rndc", "reconfig"], "rndc-reconfig", result)
@@ -442,11 +514,13 @@ class RpzManagedInstallTransaction:
             )
             self._must_run(
                 ["systemctl", "enable", "--now", plan.timer_file.name],
-                "timer-enable", result,
+                "timer-enable",
+                result,
             )
             self._must_run(
                 ["systemctl", "start", plan.service_file.name],
-                "first-update", result,
+                "first-update",
+                result,
             )
             self._post_gate(plan, result)
             result.status = "COMMIT"
@@ -456,21 +530,31 @@ class RpzManagedInstallTransaction:
         except (OSError, RuntimeError) as exc:
             result.steps.append(RpzManagedInstallStep("transaction", False, str(exc)))
             result.rolled_back = self._rollback(
-                plan, options_original, root_original, installed,
-                created_directories, activation_started, result
+                plan,
+                options_original,
+                root_original,
+                installed,
+                created_directories,
+                activation_started,
+                result,
             )
             result.status = "ROLLED-BACK" if result.rolled_back else "ROLLBACK-FAILED"
             try:
                 self._write_manifest(result)
             except OSError as manifest_error:
-                result.steps.append(RpzManagedInstallStep("manifest", False, str(manifest_error)))
+                result.steps.append(
+                    RpzManagedInstallStep("manifest", False, str(manifest_error))
+                )
         return result
 
     @staticmethod
     def _targets(plan: RpzManagedPlan) -> tuple[Path, ...]:
         return (
-            plan.zone_file, plan.declaration_file, plan.updater_file,
-            plan.service_file, plan.timer_file,
+            plan.zone_file,
+            plan.declaration_file,
+            plan.updater_file,
+            plan.service_file,
+            plan.timer_file,
         )
 
     def _must_run(
@@ -478,7 +562,9 @@ class RpzManagedInstallTransaction:
     ) -> CommandResult:
         outcome = self.command_runner(command, 30)
         message = _short_command_message(outcome)
-        result.steps.append(RpzManagedInstallStep(name, outcome.returncode == 0, message))
+        result.steps.append(
+            RpzManagedInstallStep(name, outcome.returncode == 0, message)
+        )
         if outcome.returncode != 0:
             raise RuntimeError(f"{name}: {message}")
         return outcome
@@ -510,15 +596,28 @@ class RpzManagedInstallTransaction:
         raise RuntimeError(f"{name}: {message}")
 
     def _post_gate(self, plan: RpzManagedPlan, result: RpzManagedInstallResult) -> None:
-        self._must_run(["systemctl", "is-enabled", plan.timer_file.name], "timer-enabled", result)
-        self._must_run(["systemctl", "is-active", plan.timer_file.name], "timer-active", result)
+        self._must_run(
+            ["systemctl", "is-enabled", plan.timer_file.name], "timer-enabled", result
+        )
+        self._must_run(
+            ["systemctl", "is-active", plan.timer_file.name], "timer-active", result
+        )
         self._must_run(["systemctl", "is-active", "bind9"], "bind-active", result)
         service = self._must_run(
-            ["systemctl", "show", plan.service_file.name, "--property=Result", "--value"],
-            "service-result", result,
+            [
+                "systemctl",
+                "show",
+                plan.service_file.name,
+                "--property=Result",
+                "--value",
+            ],
+            "service-result",
+            result,
         )
         if service.stdout.strip() != "success":
-            raise RuntimeError("Usługa aktualizująca nie zakończyła się wynikiem success")
+            raise RuntimeError(
+                "Usługa aktualizująca nie zakończyła się wynikiem success"
+            )
         age = max(0, int(self.clock() - plan.zone_file.stat().st_mtime))
         fresh = age <= self.max_zone_age
         result.steps.append(RpzManagedInstallStep("freshness", fresh, f"wiek {age} s"))
@@ -545,20 +644,29 @@ class RpzManagedInstallTransaction:
             )
             return False
         if activation_started:
-            if self.command_runner(
-                ["systemctl", "disable", "--now", plan.timer_file.name], 30
-            ).returncode != 0:
+            if (
+                self.command_runner(
+                    ["systemctl", "disable", "--now", plan.timer_file.name], 30
+                ).returncode
+                != 0
+            ):
                 ok = False
         try:
             options_stat = options_file.stat()
             root_stat = plan.root_config.stat()
             self._atomic_write(
-                options_file, options_original, options_stat.st_mode & 0o777,
-                options_stat.st_uid, options_stat.st_gid,
+                options_file,
+                options_original,
+                options_stat.st_mode & 0o777,
+                options_stat.st_uid,
+                options_stat.st_gid,
             )
             self._atomic_write(
-                plan.root_config, root_original, root_stat.st_mode & 0o777,
-                root_stat.st_uid, root_stat.st_gid,
+                plan.root_config,
+                root_original,
+                root_stat.st_mode & 0o777,
+                root_stat.st_uid,
+                root_stat.st_gid,
             )
             for path in reversed(installed):
                 path.unlink(missing_ok=True)
@@ -576,9 +684,11 @@ class RpzManagedInstallTransaction:
                 ok = False
         result.steps.append(
             RpzManagedInstallStep(
-                "rollback", ok,
+                "rollback",
+                ok,
                 "Usunięto MANAGED i przywrócono konfigurację BIND"
-                if ok else "Nie udało się w pełni przywrócić konfiguracji",
+                if ok
+                else "Nie udało się w pełni przywrócić konfiguracji",
             )
         )
         return ok
@@ -598,7 +708,9 @@ class RpzManagedInstallTransaction:
         return missing
 
     @staticmethod
-    def _atomic_write(path: Path, content: bytes, mode: int, uid: int, gid: int) -> None:
+    def _atomic_write(
+        path: Path, content: bytes, mode: int, uid: int, gid: int
+    ) -> None:
         path.parent.mkdir(parents=True, exist_ok=True, mode=0o750)
         fd, raw = tempfile.mkstemp(prefix=f".{path.name}.", dir=path.parent)
         temporary = Path(raw)
@@ -620,8 +732,12 @@ class RpzManagedInstallTransaction:
         path = self.manifest_directory / f"{result.transaction_id}.json"
         result.manifest = str(path)
         payload = result.to_dict()
-        payload["saved_at"] = datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds")
-        path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+        payload["saved_at"] = (
+            datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds")
+        )
+        path.write_text(
+            json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8"
+        )
 
     @staticmethod
     def _blocked(

@@ -19,6 +19,7 @@ from .zone_lifecycle import ZoneCreatePlan
 @dataclass(slots=True)
 class ZoneCreateStep:
     """One observable step of a zone creation transaction."""
+
     name: str
     ok: bool
     message: str
@@ -27,6 +28,7 @@ class ZoneCreateStep:
 @dataclass(slots=True)
 class ZoneCreateResult:
     """Final status, manifest and rollback state for zone creation."""
+
     transaction_id: str
     zone: str
     status: str
@@ -62,13 +64,9 @@ class ZoneCreateTransaction:
         self.manifest_directory = manifest_directory
         self.root_config = root_config
         self.zone_validator = zone_validator or self._validate_zone
-        self.config_validator = (
-            config_validator or self._validate_config
-        )
+        self.config_validator = config_validator or self._validate_config
         self.activator = activator or self._activate_bind
-        self.loaded_verifier = (
-            loaded_verifier or self._verify_loaded
-        )
+        self.loaded_verifier = loaded_verifier or self._verify_loaded
 
     def apply(
         self,
@@ -120,17 +118,9 @@ class ZoneCreateTransaction:
             )
 
         config_existed = plan.managed_config.exists()
-        original_config = (
-            plan.managed_config.read_bytes()
-            if config_existed
-            else None
-        )
+        original_config = plan.managed_config.read_bytes() if config_existed else None
         groups_existed = plan.groups_config.exists()
-        original_groups = (
-            plan.groups_config.read_bytes()
-            if groups_existed
-            else None
-        )
+        original_groups = plan.groups_config.read_bytes() if groups_existed else None
         zone_created = False
         config_written = False
         declaration_created = False
@@ -165,18 +155,12 @@ class ZoneCreateTransaction:
 
             current = original_config or b""
             separator = b"" if not current or current.endswith(b"\n") else b"\n"
-            include_line = (
-                f'include "{plan.zone_declaration_file}";\n'
-            ).encode("utf-8")
-            if include_line in current.splitlines(keepends=True):
-                raise RuntimeError(
-                    "Indeks już zawiera deklarację strefy"
-                )
-            updated = (
-                current
-                + separator
-                + include_line
+            include_line = (f'include "{plan.zone_declaration_file}";\n').encode(
+                "utf-8"
             )
+            if include_line in current.splitlines(keepends=True):
+                raise RuntimeError("Indeks już zawiera deklarację strefy")
+            updated = current + separator + include_line
             self._atomic_write(plan.managed_config, updated)
             config_written = True
             result.steps.append(
@@ -230,9 +214,7 @@ class ZoneCreateTransaction:
             return self._finish(result, "COMMIT")
 
         except Exception as exc:
-            result.steps.append(
-                ZoneCreateStep("transaction", False, str(exc))
-            )
+            result.steps.append(ZoneCreateStep("transaction", False, str(exc)))
             rollback_ok = True
             try:
                 if config_written:
@@ -254,9 +236,7 @@ class ZoneCreateTransaction:
                 if zone_created:
                     plan.zone_file.unlink(missing_ok=True)
                 if declaration_created:
-                    plan.zone_declaration_file.unlink(
-                        missing_ok=True
-                    )
+                    plan.zone_declaration_file.unlink(missing_ok=True)
                 if activation_attempted:
                     restore_step = self.activator(plan.zone_name)
                     result.steps.append(
@@ -308,16 +288,11 @@ class ZoneCreateTransaction:
                 exist_ok=True,
                 mode=0o750,
             )
-            path = (
-                self.manifest_directory
-                / f"{result.transaction_id}.json"
-            )
+            path = self.manifest_directory / f"{result.transaction_id}.json"
             result.manifest = str(path)
             payload = asdict(result)
             payload["saved_at"] = (
-                datetime.now(timezone.utc)
-                .astimezone()
-                .isoformat(timespec="seconds")
+                datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds")
             )
             path.write_text(
                 json.dumps(payload, ensure_ascii=False, indent=2),
@@ -361,8 +336,7 @@ class ZoneCreateTransaction:
         return ZoneCreateStep(
             "named-checkzone",
             outcome.returncode == 0,
-            (outcome.stdout or outcome.stderr).strip()
-            or f"kod {outcome.returncode}",
+            (outcome.stdout or outcome.stderr).strip() or f"kod {outcome.returncode}",
         )
 
     @staticmethod
@@ -372,8 +346,7 @@ class ZoneCreateTransaction:
         return ZoneCreateStep(
             "named-checkconf",
             outcome.returncode == 0,
-            (outcome.stdout or outcome.stderr).strip()
-            or f"kod {outcome.returncode}",
+            (outcome.stdout or outcome.stderr).strip() or f"kod {outcome.returncode}",
         )
 
     @staticmethod
@@ -382,8 +355,7 @@ class ZoneCreateTransaction:
         return ZoneCreateStep(
             "rndc-reconfig",
             outcome.returncode == 0,
-            (outcome.stdout or outcome.stderr).strip()
-            or f"kod {outcome.returncode}",
+            (outcome.stdout or outcome.stderr).strip() or f"kod {outcome.returncode}",
         )
 
     @staticmethod
@@ -399,6 +371,5 @@ class ZoneCreateTransaction:
         return ZoneCreateStep(
             "rndc-zonestatus",
             outcome.returncode == 0,
-            (outcome.stdout or outcome.stderr).strip()
-            or f"kod {outcome.returncode}",
+            (outcome.stdout or outcome.stderr).strip() or f"kod {outcome.returncode}",
         )

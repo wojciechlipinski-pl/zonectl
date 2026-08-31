@@ -7,25 +7,72 @@ import re
 from ..core.models import Health
 
 
-PASS_STATES = frozenset({
-    "ACTIVE", "COMMIT", "ENABLED", "MATCH", "OK", "OMNIPRESENT",
-    "PASS", "READY", "READY-FOR-DS", "SUCCESS", "MANAGED", "NONE",
-    "NO-CHANGE", "LOW",
-})
-WARN_STATES = frozenset({
-    "DELAYED", "DISABLED", "DRY-RUN", "DS-CONFIRMATION-REQUIRED",
-    "DS-PROPAGATING", "EXTERNAL", "INDETERMINATE", "LEGACY-PRIMARY",
-    "MANAGED-LEGACY-PATH", "MEDIUM", "NOT-PUBLISHED", "PENDING",
-    "PROPAGATING", "READY-TO-FINALIZE", "RUMOURED", "ROLLED-BACK",
-    "UNRETENTIVE", "UNKNOWN", "WARN", "WARNING", "WITHDRAWING",
-})
-FAIL_STATES = frozenset({
-    "BLOCKED", "CONFLICT", "ERROR", "FAIL", "FAILED", "HIGH", "MISMATCH",
-    "MISSING", "NOT-AUTH", "ROLLBACK-FAILED", "STALE",
-})
-NEUTRAL_STATES = frozenset({
-    "N/A", "PLAN", "SKIP", "UNSIGNED",
-})
+PASS_STATES = frozenset(
+    {
+        "ACTIVE",
+        "COMMIT",
+        "ENABLED",
+        "MATCH",
+        "OK",
+        "OMNIPRESENT",
+        "PASS",
+        "READY",
+        "READY-FOR-DS",
+        "SUCCESS",
+        "MANAGED",
+        "NONE",
+        "NO-CHANGE",
+        "LOW",
+    }
+)
+WARN_STATES = frozenset(
+    {
+        "DELAYED",
+        "DISABLED",
+        "DRY-RUN",
+        "DS-CONFIRMATION-REQUIRED",
+        "DS-PROPAGATING",
+        "EXTERNAL",
+        "INDETERMINATE",
+        "LEGACY-PRIMARY",
+        "MANAGED-LEGACY-PATH",
+        "MEDIUM",
+        "NOT-PUBLISHED",
+        "PENDING",
+        "PROPAGATING",
+        "READY-TO-FINALIZE",
+        "RUMOURED",
+        "ROLLED-BACK",
+        "UNRETENTIVE",
+        "UNKNOWN",
+        "WARN",
+        "WARNING",
+        "WITHDRAWING",
+    }
+)
+FAIL_STATES = frozenset(
+    {
+        "BLOCKED",
+        "CONFLICT",
+        "ERROR",
+        "FAIL",
+        "FAILED",
+        "HIGH",
+        "MISMATCH",
+        "MISSING",
+        "NOT-AUTH",
+        "ROLLBACK-FAILED",
+        "STALE",
+    }
+)
+NEUTRAL_STATES = frozenset(
+    {
+        "N/A",
+        "PLAN",
+        "SKIP",
+        "UNSIGNED",
+    }
+)
 
 _BRACKET_STATE = re.compile(r"\[(?P<state>[A-Z][A-Z_-]*)\]", re.IGNORECASE)
 _LABELED_STATE = re.compile(

@@ -10,10 +10,24 @@ def _report(*rpz: RpzEnvironment) -> BindEnvironmentReport:
 
 def _external() -> RpzEnvironment:
     return RpzEnvironment(
-        "cert-rpz.local", "/etc/bind/domains_rpz.db", "EXTERNAL", "ACTIVE",
-        20, 600, "123", 42, True, "update-cert-rpz.timer", True, True,
-        "update-cert-rpz.service", "success", "now", "later",
-        "/usr/local/sbin/update-cert-rpz.sh", (),
+        "cert-rpz.local",
+        "/etc/bind/domains_rpz.db",
+        "EXTERNAL",
+        "ACTIVE",
+        20,
+        600,
+        "123",
+        42,
+        True,
+        "update-cert-rpz.timer",
+        True,
+        True,
+        "update-cert-rpz.service",
+        "success",
+        "now",
+        "later",
+        "/usr/local/sbin/update-cert-rpz.sh",
+        (),
     )
 
 
@@ -29,16 +43,24 @@ def test_plan_blocks_silent_takeover_of_external_integration(monkeypatch) -> Non
     assert plan.source_url == CERT_POLSKA_RPZ_URL
 
 
-def test_clean_environment_produces_read_only_ready_plan(monkeypatch, tmp_path: Path) -> None:
+def test_clean_environment_produces_read_only_ready_plan(
+    monkeypatch, tmp_path: Path
+) -> None:
     monkeypatch.setattr(
         "zonectl.core.rpz_managed_plan.BindEnvironmentReporter.collect",
         lambda self: _report(),
     )
-    targets = [tmp_path / name for name in ("zone", "decl", "updater", "service", "timer")]
+    targets = [
+        tmp_path / name for name in ("zone", "decl", "updater", "service", "timer")
+    ]
     plan = RpzManagedPlanner(
         tmp_path / "named.conf",
-        zone_file=targets[0], declaration_file=targets[1], updater_file=targets[2],
-        service_file=targets[3], timer_file=targets[4], backup_root=tmp_path / "backup",
+        zone_file=targets[0],
+        declaration_file=targets[1],
+        updater_file=targets[2],
+        service_file=targets[3],
+        timer_file=targets[4],
+        backup_root=tmp_path / "backup",
     ).plan()
     assert plan.status == "READY"
     assert plan.conflicts == ()

@@ -134,14 +134,20 @@ class RpzExternalMigrationTransaction:
             timer_source = originals["timer-unit"]
             self._atomic_copy(updater_source, plan.managed_updater)
             service_text = service_source.read_text(encoding="utf-8", errors="replace")
-            service_text = service_text.replace(str(updater_source), str(plan.managed_updater))
-            self._atomic_write(plan.managed_service, service_text.encode("utf-8"), service_source)
+            service_text = service_text.replace(
+                str(updater_source), str(plan.managed_updater)
+            )
+            self._atomic_write(
+                plan.managed_service, service_text.encode("utf-8"), service_source
+            )
             timer_text = timer_source.read_text(encoding="utf-8", errors="replace")
             if plan.current_service:
                 timer_text = timer_text.replace(
                     plan.current_service, plan.managed_service.name
                 )
-            self._atomic_write(plan.managed_timer, timer_text.encode("utf-8"), timer_source)
+            self._atomic_write(
+                plan.managed_timer, timer_text.encode("utf-8"), timer_source
+            )
             result.steps.append(
                 RpzMigrationTransactionStep(
                     "managed-artifacts", True, "Zapisano równoległe artefakty MANAGED"
@@ -151,24 +157,31 @@ class RpzExternalMigrationTransaction:
             self._must_run(["systemctl", "daemon-reload"], "daemon-reload", result)
             self._must_run(
                 ["systemctl", "disable", "--now", plan.current_timer or ""],
-                "external-stop", result,
+                "external-stop",
+                result,
             )
             switched = True
             self._must_run(
                 ["systemctl", "enable", "--now", plan.managed_timer.name],
-                "managed-enable", result,
+                "managed-enable",
+                result,
             )
             self._must_run(
                 ["systemctl", "start", plan.managed_service.name],
-                "managed-first-run", result,
+                "managed-first-run",
+                result,
             )
-            self._post_activation_gate(plan, originals["zone-file"], serial_before, result)
+            self._post_activation_gate(
+                plan, originals["zone-file"], serial_before, result
+            )
             result.status = "COMMIT"
             result.committed = True
             result.activated = True
             self._write_manifest(result)
         except (OSError, RuntimeError) as exc:
-            result.steps.append(RpzMigrationTransactionStep("transaction", False, str(exc)))
+            result.steps.append(
+                RpzMigrationTransactionStep("transaction", False, str(exc))
+            )
             result.rolled_back = self._rollback(
                 plan, result, switched, external_was_enabled, external_was_active
             )
@@ -178,7 +191,9 @@ class RpzExternalMigrationTransaction:
             except OSError as manifest_error:
                 result.steps.append(
                     RpzMigrationTransactionStep(
-                        "manifest", False, f"Nie zapisano wyniku rollbacku: {manifest_error}"
+                        "manifest",
+                        False,
+                        f"Nie zapisano wyniku rollbacku: {manifest_error}",
                     )
                 )
         return result
@@ -213,7 +228,9 @@ class RpzExternalMigrationTransaction:
         self, command: list[str], name: str, result: RpzMigrationTransactionResult
     ) -> None:
         outcome = self.command_runner(command, 30)
-        message = (outcome.stdout or outcome.stderr).strip() or f"kod {outcome.returncode}"
+        message = (
+            outcome.stdout or outcome.stderr
+        ).strip() or f"kod {outcome.returncode}"
         result.steps.append(
             RpzMigrationTransactionStep(name, outcome.returncode == 0, message)
         )
@@ -241,7 +258,8 @@ class RpzExternalMigrationTransaction:
         old_inactive = old.returncode != 0 and old.stdout.strip() != "active"
         result.steps.append(
             RpzMigrationTransactionStep(
-                "external-inactive", old_inactive,
+                "external-inactive",
+                old_inactive,
                 old.stdout.strip() or "inactive",
             )
         )
@@ -250,8 +268,11 @@ class RpzExternalMigrationTransaction:
 
         service = self.command_runner(
             [
-                "systemctl", "show", plan.managed_service.name,
-                "--property=Result", "--value",
+                "systemctl",
+                "show",
+                plan.managed_service.name,
+                "--property=Result",
+                "--value",
             ],
             30,
         )
@@ -259,7 +280,8 @@ class RpzExternalMigrationTransaction:
         service_ok = service.returncode == 0 and service_result == "success"
         result.steps.append(
             RpzMigrationTransactionStep(
-                "managed-service-result", service_ok,
+                "managed-service-result",
+                service_ok,
                 service_result or f"kod {service.returncode}",
             )
         )
@@ -270,7 +292,8 @@ class RpzExternalMigrationTransaction:
         serial_ok = serial_after is not None and serial_after >= serial_before
         result.steps.append(
             RpzMigrationTransactionStep(
-                "serial", serial_ok,
+                "serial",
+                serial_ok,
                 f"{serial_before} -> {serial_after if serial_after is not None else '-'}",
             )
         )
@@ -306,9 +329,13 @@ class RpzExternalMigrationTransaction:
         external_was_active: bool,
     ) -> bool:
         ok = True
-        if switched and self.command_runner(
-            ["systemctl", "disable", "--now", plan.managed_timer.name], 30
-        ).returncode != 0:
+        if (
+            switched
+            and self.command_runner(
+                ["systemctl", "disable", "--now", plan.managed_timer.name], 30
+            ).returncode
+            != 0
+        ):
             ok = False
         for target in (plan.managed_timer, plan.managed_service, plan.managed_updater):
             try:
@@ -329,9 +356,11 @@ class RpzExternalMigrationTransaction:
                     ok = False
         result.steps.append(
             RpzMigrationTransactionStep(
-                "rollback", ok,
+                "rollback",
+                ok,
                 "Usunięto MANAGED i przywrócono stan timera EXTERNAL"
-                if ok else "Nie udało się w pełni przywrócić integracji EXTERNAL",
+                if ok
+                else "Nie udało się w pełni przywrócić integracji EXTERNAL",
             )
         )
         return ok
@@ -367,7 +396,9 @@ class RpzExternalMigrationTransaction:
         path = self.manifest_directory / f"{result.transaction_id}.json"
         result.manifest = str(path)
         payload = result.to_dict()
-        payload["saved_at"] = datetime.now(timezone.utc).astimezone().isoformat(
-            timespec="seconds"
+        payload["saved_at"] = (
+            datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds")
         )
-        path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+        path.write_text(
+            json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8"
+        )

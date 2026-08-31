@@ -85,9 +85,7 @@ def test_migration_activation_failure_rolls_back_and_reconfigures(
     def activate(_zone: str) -> ManagedZoneMigrationStep:
         nonlocal calls
         calls += 1
-        return ManagedZoneMigrationStep(
-            "rndc-reconfig", calls == 2, f"call {calls}"
-        )
+        return ManagedZoneMigrationStep("rndc-reconfig", calls == 2, f"call {calls}")
 
     result = ManagedZoneMigrationTransaction(
         tmp_path / "backups",

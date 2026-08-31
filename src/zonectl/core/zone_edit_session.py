@@ -32,8 +32,7 @@ class TransactionEngineProtocol(Protocol):
         source: Path,
         commit: bool = False,
         metadata: dict[str, object] | None = None,
-    ) -> TransactionResult:
-        ...
+    ) -> TransactionResult: ...
 
 
 class ZoneEditSessionError(RuntimeError):
@@ -147,9 +146,7 @@ class ZoneEditSession:
         self._serial_prepared = False
 
         if not source.is_file():
-            raise ZoneEditSessionError(
-                f"Plik strefy nie istnieje: {source}"
-            )
+            raise ZoneEditSessionError(f"Plik strefy nie istnieje: {source}")
 
         self.document = ZoneFileParser.parse_file(source)
         self.model = ZoneModel(
@@ -165,11 +162,7 @@ class ZoneEditSession:
     def _prepare_document(self) -> None:
         self.adapter.apply()
 
-        if (
-            self.auto_bump_serial
-            and self.model.dirty
-            and not self._serial_prepared
-        ):
+        if self.auto_bump_serial and self.model.dirty and not self._serial_prepared:
             try:
                 self.serial_change = bump_document_soa_serial(
                     self.document,
@@ -227,25 +220,17 @@ class ZoneEditSession:
         content = self.unified_diff()
 
         if not content:
-            raise ZoneEditSessionError(
-                "Brak zmian do wyeksportowania"
-            )
+            raise ZoneEditSessionError("Brak zmian do wyeksportowania")
 
         directory = directory.expanduser().resolve()
         directory.mkdir(parents=True, exist_ok=True, mode=0o750)
 
         safe_zone = "".join(
-            character
-            if character.isalnum() or character in ".-_"
-            else "_"
+            character if character.isalnum() or character in ".-_" else "_"
             for character in self.zone.name
         )
-        stamp = (timestamp or datetime.now()).strftime(
-            "%Y%m%d-%H%M%S"
-        )
-        filename = (
-            f"{stamp}-{safe_zone}-{uuid.uuid4().hex[:8]}.diff"
-        )
+        stamp = (timestamp or datetime.now()).strftime("%Y%m%d-%H%M%S")
+        filename = f"{stamp}-{safe_zone}-{uuid.uuid4().hex[:8]}.diff"
         destination = directory / filename
         fd, temporary_name = tempfile.mkstemp(
             prefix=f".{filename}.",

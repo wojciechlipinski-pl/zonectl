@@ -28,7 +28,8 @@ def test_record_commit_keeps_existing_transaction_result_flow() -> None:
         wait_call = source.index("self._run_with_wait_indicator")
         result_view = source.index("self._transaction_result_view", wait_call)
         committed_check = source.index(
-            "save_result.transaction.committed", result_view,
+            "save_result.transaction.committed",
+            result_view,
         )
 
         assert wait_call < result_view < committed_check

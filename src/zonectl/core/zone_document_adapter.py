@@ -93,8 +93,7 @@ class ZoneDocumentAdapter:
 
             if binding is None:
                 raise ZoneDocumentAdapterError(
-                    "Brak powiązania dokumentu dla rekordu "
-                    f"{view.identifier}"
+                    f"Brak powiązania dokumentu dla rekordu {view.identifier}"
                 )
 
             node = binding.node
@@ -132,10 +131,7 @@ class ZoneDocumentAdapter:
             else:
                 # Zachowaj zmianę serialu przygotowaną przez sesję między
                 # kolejnymi wywołaniami render_candidate().
-                if not (
-                    node.modified
-                    and node.record.rtype.upper() == "SOA"
-                ):
+                if not (node.modified and node.record.rtype.upper() == "SOA"):
                     node.modified = False
 
         self._remove_abandoned_added_nodes(active_identifiers)

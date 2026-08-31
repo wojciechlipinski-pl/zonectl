@@ -70,9 +70,7 @@ class ZoneInventory:
         if not self.quarantine_root.is_dir():
             return []
         records: list[InactiveZone] = []
-        for manifest_path in sorted(
-            self.quarantine_root.glob("*/*/manifest.json")
-        ):
+        for manifest_path in sorted(self.quarantine_root.glob("*/*/manifest.json")):
             manifest = self._load_json(manifest_path)
             if not manifest:
                 continue
@@ -94,10 +92,7 @@ class ZoneInventory:
         candidates: list[tuple[str, dict[str, object]]] = []
         for path in self.disable_manifest_directory.glob("*.json"):
             payload = self._load_json(path)
-            if (
-                payload.get("zone") == zone
-                and payload.get("status") == "DISABLED"
-            ):
+            if payload.get("zone") == zone and payload.get("status") == "DISABLED":
                 candidates.append(
                     (str(payload.get("saved_at") or self._mtime(path)), payload)
                 )
@@ -138,6 +133,8 @@ class ZoneInventory:
 
     @staticmethod
     def _mtime(path: Path) -> str:
-        return datetime.fromtimestamp(
-            path.stat().st_mtime, timezone.utc
-        ).astimezone().isoformat(timespec="seconds")
+        return (
+            datetime.fromtimestamp(path.stat().st_mtime, timezone.utc)
+            .astimezone()
+            .isoformat(timespec="seconds")
+        )
