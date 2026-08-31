@@ -35,6 +35,12 @@ def test_screenshot_demo_uses_only_reserved_names_and_addresses() -> None:
     assert "2001:db8::10" in source
     assert "DnssecStatusView" in source
     assert '"A1" * 32' in source
+    assert "_show_access_report" in source
+    assert "_show_transaction_result" in source
+    assert "_show_rollback_result" in source
+    assert 'status="COMMITTED"' in source
+    assert 'status="ROLLED-BACK"' in source
+    assert "/tmp/zonectl-demo/backups/" in source
 
 
 def _png_chunk_types(path: Path) -> list[bytes]:
@@ -57,11 +63,14 @@ def test_published_screenshots_have_no_textual_metadata() -> None:
     images = sorted(IMAGES.glob("*.png"))
     assert [image.name for image in images] == [
         "tui-add-record.png",
+        "tui-bind-access.png",
         "tui-bind-environment.png",
         "tui-create-zone.png",
         "tui-dnssec-status.png",
         "tui-main-wait.png",
         "tui-records.png",
+        "tui-rollback-result.png",
+        "tui-transaction-result.png",
     ]
     forbidden_metadata = {b"tEXt", b"zTXt", b"iTXt", b"eXIf"}
     for image in images:

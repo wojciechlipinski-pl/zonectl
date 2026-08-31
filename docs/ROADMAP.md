@@ -282,6 +282,9 @@ zrealizowane, a `[ ]` pozostają do wykonania.
   przepuszcza każde przykładowe RDATA przez produkcyjny walidator formularza.
 - [x] Dodać bezpieczne, syntetyczne zrzuty ekranów TUI generowane bez dostępu
   do konfiguracji produkcyjnej.
+- [x] Rozszerzyć izolowany demonstrator o syntetyczne widoki ACL/secondary,
+  udanej transakcji i zakończonego rollbacku oraz opublikować ich zrzuty bez
+  dostępu do hosta, sieci ani konfiguracji BIND.
 - [x] Przygotować polską i angielską instrukcję odtwarzania po awarii,
   rozdzielając rollback pojedynczej strefy, naprawę niedostępnego BIND,
   pełne odtworzenie hosta oraz kontrolę DNSSEC i zarządzanej integracji RPZ.
