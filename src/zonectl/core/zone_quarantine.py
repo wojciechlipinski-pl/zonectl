@@ -12,6 +12,9 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 
+from .audit_store import AuditStore, ResourceKind, Risk
+from .family_audit_adapter import FamilyAuditAdapter
+
 
 @dataclass(frozen=True, slots=True)
 class ZoneQuarantinePlan:
@@ -59,6 +62,10 @@ class ZoneQuarantineError(RuntimeError):
 
 class ZoneQuarantineTransaction:
     """Przenosi uprzednio wyłączoną strefę do pakietu odtworzeniowego."""
+
+    def __init__(self, *, audit_store: AuditStore | None = None) -> None:
+        self.audit_store = audit_store
+        self.audit_v1: FamilyAuditAdapter | None = None
 
     @staticmethod
     def plan(
@@ -115,12 +122,26 @@ class ZoneQuarantineTransaction:
             + f"-quarantine-{plan.zone_name}-{uuid.uuid4().hex[:8]}"
         )
         result = ZoneQuarantineResult(txid, plan.zone_name, "PLAN", plan.reason)
+        manifest_directory = plan.quarantine_root / plan.zone_name
+        self.audit_v1 = FamilyAuditAdapter(
+            self.audit_store or FamilyAuditAdapter.default_store(manifest_directory),
+            manifest_directory=manifest_directory,
+            backup_root=plan.quarantine_root,
+        )
+        self.audit_v1.start(
+            txid,
+            "zone.quarantine",
+            ResourceKind.ZONE,
+            plan.zone_name,
+            risk=Risk.CRITICAL if commit else Risk.MEDIUM,
+            reason=plan.reason,
+        )
         if not commit:
             result.status = "DRY-RUN"
             result.steps.append(
                 ZoneQuarantineStep("dry-run", True, "Nie przeniesiono danych")
             )
-            return result
+            return self._finish_audit(result)
         if (confirmation or "").strip().rstrip(".").casefold() != plan.zone_name:
             result.status = "CONFIRMATION-REQUIRED"
             result.steps.append(
@@ -130,7 +151,7 @@ class ZoneQuarantineTransaction:
                     "Potwierdzenie nie odpowiada pełnej nazwie strefy",
                 )
             )
-            return result
+            return self._finish_audit(result)
 
         package = plan.quarantine_root / plan.zone_name / txid
         result.package_directory = str(package)
@@ -209,7 +230,7 @@ class ZoneQuarantineTransaction:
             )
             result.committed = True
             result.status = "QUARANTINED"
-            return result
+            return self._finish_audit(result)
         except Exception as exc:
             result.steps.append(ZoneQuarantineStep("transaction", False, str(exc)))
             rollback_ok = True
@@ -248,7 +269,13 @@ class ZoneQuarantineTransaction:
                 )
             result.rolled_back = rollback_ok
             result.status = "ROLLED-BACK" if rollback_ok else "ROLLBACK-FAILED"
-            return result
+            return self._finish_audit(result)
+
+    def _finish_audit(self, result: ZoneQuarantineResult) -> ZoneQuarantineResult:
+        if self.audit_v1 is None:
+            raise RuntimeError("Brak adaptera audytu kwarantanny")
+        self.audit_v1.finish_result(result)
+        return result
 
     @staticmethod
     def _sha256(path: Path) -> str:

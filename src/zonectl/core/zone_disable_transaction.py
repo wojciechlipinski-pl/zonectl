@@ -13,6 +13,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable
 
+from .audit_store import AuditStore, ResourceKind, Risk
+from .family_audit_adapter import FamilyAuditAdapter
 from .runner import run
 
 
@@ -77,11 +79,16 @@ class ZoneDisableTransaction:
         config_validator: ConfigValidator | None = None,
         activator: ZoneAction | None = None,
         unavailable_verifier: ZoneAction | None = None,
+        audit_store: AuditStore | None = None,
     ) -> None:
         self.manifest_directory = manifest_directory
         self.config_validator = config_validator or self._validate_config
         self.activator = activator or self._activate_bind
         self.unavailable_verifier = unavailable_verifier or self._verify_unavailable
+        self.audit_v1 = FamilyAuditAdapter(
+            audit_store or FamilyAuditAdapter.default_store(manifest_directory),
+            manifest_directory=manifest_directory,
+        )
 
     @staticmethod
     def plan(
@@ -142,12 +149,20 @@ class ZoneDisableTransaction:
             + f"-disable-{plan.zone_name}-{uuid.uuid4().hex[:8]}"
         )
         result = ZoneDisableResult(txid, plan.zone_name, "PLAN", plan.reason)
+        self.audit_v1.start(
+            txid,
+            "zone.disable",
+            ResourceKind.ZONE,
+            plan.zone_name,
+            risk=Risk.HIGH if commit else Risk.MEDIUM,
+            reason=plan.reason,
+        )
         if not commit:
             result.status = "DRY-RUN"
             result.steps.append(
                 ZoneDisableStep("dry-run", True, "Nie zmieniono konfiguracji")
             )
-            return result
+            return self._finish_audit(result)
 
         index_original = plan.managed_index.read_bytes()
         declaration_original = plan.declaration_file.read_bytes()
@@ -268,6 +283,10 @@ class ZoneDisableTransaction:
         path.write_text(
             json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8"
         )
+        return self._finish_audit(result)
+
+    def _finish_audit(self, result: ZoneDisableResult) -> ZoneDisableResult:
+        self.audit_v1.finish_result(result)
         return result
 
     @staticmethod

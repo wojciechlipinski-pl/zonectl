@@ -75,7 +75,9 @@ def test_changed_source_hash_blocks_before_dry_run(tmp_path: Path) -> None:
     plan = _plan(tmp_path)
     plan.artifacts[1].path.write_text("changed", encoding="utf-8")
     result = RpzExternalMigrationTransaction(
-        command_runner=lambda command, timeout: (_ for _ in ()).throw(AssertionError())
+        tmp_path / "backups",
+        tmp_path / "manifests",
+        command_runner=lambda command, timeout: (_ for _ in ()).throw(AssertionError()),
     ).apply(plan)
     assert result.status == "BLOCKED"
     assert "SHA-256" in result.steps[0].message

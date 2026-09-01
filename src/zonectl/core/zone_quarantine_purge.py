@@ -14,6 +14,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable
 
+from .audit_store import AuditStore, ResourceKind, Risk
+from .family_audit_adapter import FamilyAuditAdapter
 from .zone_quarantine_retention import QuarantineRetentionAuditor
 
 
@@ -73,12 +75,18 @@ class QuarantinePurgeTransaction:
         staging_root: Path = Path("/var/lib/zonectl/purge-staging"),
         retention_days: int = 90,
         now: Callable[[], datetime] | None = None,
+        audit_store: AuditStore | None = None,
     ) -> None:
         self.quarantine_root = quarantine_root
         self.audit_directory = audit_directory
         self.staging_root = staging_root
         self.retention_days = retention_days
         self._now = now or (lambda: datetime.now(timezone.utc))
+        self.audit_v1 = FamilyAuditAdapter(
+            audit_store or FamilyAuditAdapter.default_store(audit_directory),
+            manifest_directory=audit_directory,
+            backup_root=quarantine_root,
+        )
 
     def plan(self, zone: str, package: Path, *, reason: str) -> QuarantinePurgePlan:
         """Validate retention, location, contents and integrity without changes."""
@@ -131,11 +139,19 @@ class QuarantinePurgeTransaction:
             + f"-purge-{plan.zone}-{uuid.uuid4().hex[:8]}"
         )
         result = QuarantinePurgeResult(txid, plan.zone, str(plan.package), "DRY-RUN")
+        self.audit_v1.start(
+            txid,
+            "zone.quarantine_purge",
+            ResourceKind.ZONE,
+            plan.zone,
+            risk=Risk.CRITICAL if commit else Risk.MEDIUM,
+            reason=plan.reason,
+        )
         if not commit:
             result.steps.append(
                 QuarantinePurgeStep("dry-run", True, "Nie usunięto pakietu")
             )
-            return result
+            return self._finish_audit(result)
         if (confirmation or "").strip().rstrip(".").casefold() != plan.zone:
             result.status = "CONFIRMATION-REQUIRED"
             result.steps.append(
@@ -143,7 +159,7 @@ class QuarantinePurgeTransaction:
                     "zone-confirmation", False, "potwierdzenie strefy jest niezgodne"
                 )
             )
-            return result
+            return self._finish_audit(result)
         if (package_confirmation or "").strip() != plan.package_id:
             result.status = "CONFIRMATION-REQUIRED"
             result.steps.append(
@@ -153,7 +169,7 @@ class QuarantinePurgeTransaction:
                     "potwierdzenie identyfikatora pakietu jest niezgodne",
                 )
             )
-            return result
+            return self._finish_audit(result)
 
         # Rebuild the plan immediately before the irreversible operation.
         try:
@@ -161,7 +177,7 @@ class QuarantinePurgeTransaction:
         except QuarantinePurgeError as exc:
             result.status = "BLOCKED"
             result.steps.append(QuarantinePurgeStep("preflight", False, str(exc)))
-            return result
+            return self._finish_audit(result)
 
         audit = self.audit_directory / f"{txid}.json"
         staged = self.staging_root / f"{txid}.package"
@@ -260,6 +276,10 @@ class QuarantinePurgeTransaction:
             result.status = "PURGE-FAILED"
             result.rolled_back = rollback_ok
             result.steps.append(QuarantinePurgeStep("purge", False, str(exc)))
+        return self._finish_audit(result)
+
+    def _finish_audit(self, result: QuarantinePurgeResult) -> QuarantinePurgeResult:
+        self.audit_v1.finish_result(result)
         return result
 
     @staticmethod

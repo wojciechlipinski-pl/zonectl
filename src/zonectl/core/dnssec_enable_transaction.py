@@ -14,6 +14,8 @@ from pathlib import Path
 from typing import Callable
 
 from .dnssec_enable_plan import DnssecEnablePlan
+from .audit_store import AuditStore, ResourceKind, Risk
+from .family_audit_adapter import FamilyAuditAdapter
 from .runner import run
 
 
@@ -59,6 +61,7 @@ class DnssecEnableTransaction:
         activator: ZoneAction | None = None,
         loaded_verifier: ZoneAction | None = None,
         dnssec_verifier: ZoneAction | None = None,
+        audit_store: AuditStore | None = None,
     ) -> None:
         self.backup_root = backup_root
         self.manifest_directory = manifest_directory
@@ -68,6 +71,11 @@ class DnssecEnableTransaction:
         self.activator = activator or self._activate_bind
         self.loaded_verifier = loaded_verifier or self._verify_loaded
         self.dnssec_verifier = dnssec_verifier or self._verify_dnssec
+        self.audit_v1 = FamilyAuditAdapter(
+            audit_store or FamilyAuditAdapter.default_store(manifest_directory),
+            manifest_directory=manifest_directory,
+            backup_root=backup_root,
+        )
 
     def apply(
         self,
@@ -81,6 +89,13 @@ class DnssecEnableTransaction:
             + f"-dnssec-enable-{plan.zone}-{uuid.uuid4().hex[:8]}"
         )
         result = DnssecEnableResult(txid, plan.zone, "PLAN")
+        self.audit_v1.start(
+            txid,
+            "dnssec.enable",
+            ResourceKind.ZONE,
+            plan.zone,
+            risk=Risk.HIGH if commit else Risk.LOW,
+        )
         conflict = self._preflight(plan)
         if conflict is not None:
             return self._finish(result, "CONFLICT", conflict, write_manifest=False)
@@ -276,6 +291,7 @@ class DnssecEnableTransaction:
             path.write_text(
                 json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8"
             )
+        self.audit_v1.finish_result(result)
         return result
 
     @staticmethod

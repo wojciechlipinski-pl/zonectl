@@ -12,7 +12,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable
 
+from .audit_store import AuditStore, ResourceKind, Risk
 from .dnssec_ds_check import DnssecDsCheck
+from .family_audit_adapter import FamilyAuditAdapter
 from .runner import CommandResult, run
 
 
@@ -47,11 +49,16 @@ class DnssecConfirmDsTransaction:
         checker: DsChecker,
         confirmer: ZoneAction | None = None,
         verifier: ZoneAction | None = None,
+        audit_store: AuditStore | None = None,
     ) -> None:
         self.manifest_directory = manifest_directory
         self.checker = checker
         self.confirmer = confirmer or self._confirm
         self.verifier = verifier or self._verify
+        self.audit_v1 = FamilyAuditAdapter(
+            audit_store or FamilyAuditAdapter.default_store(manifest_directory),
+            manifest_directory=manifest_directory,
+        )
 
     def apply(
         self,
@@ -66,6 +73,13 @@ class DnssecConfirmDsTransaction:
             + f"-dnssec-confirm-ds-{zone}-{uuid.uuid4().hex[:8]}"
         )
         result = DnssecConfirmResult(txid, zone, "PLAN")
+        self.audit_v1.start(
+            txid,
+            "dnssec.confirm_ds",
+            ResourceKind.ZONE,
+            zone,
+            risk=Risk.HIGH if commit else Risk.MEDIUM,
+        )
 
         check = self.checker(zone, resolvers)
         check_ok = check.status == "PASS"
@@ -135,6 +149,7 @@ class DnssecConfirmDsTransaction:
                 datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds")
             )
             self._atomic_json(path, payload)
+        self.audit_v1.finish_result(result)
         return result
 
     @staticmethod

@@ -9,6 +9,9 @@
   reads, corruption diagnostics and explicit atomic retention
 - connect the base zone validation, verification, apply and rollback engine to
   START/RESULT audit v1 envelopes while retaining legacy manifests and history
+- connect BIND ACL/secondary, DNSSEC enable/disable/DS confirmation, RPZ
+  install/migration and zone lifecycle transactions to the same fail-closed
+  START/RESULT audit envelopes without changing their domain behavior
 
 ### Tests
 
@@ -16,6 +19,9 @@
   append behavior, corrupt-line isolation and guarded retention
 - verify canonical base-transaction outcomes, fail-closed audit startup,
   rollback reporting, relative references and exclusion of raw metadata
+- verify family-adapter outcome mapping, bounded validation summaries,
+  relative manifest/backup references, rollback results and rejection of
+  sensitive reasons before START is persisted
 
 ### Documentation
 

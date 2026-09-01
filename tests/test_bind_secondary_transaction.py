@@ -2,6 +2,7 @@ import json
 from dataclasses import replace
 from pathlib import Path
 
+from zonectl.core.audit_store import Outcome, RecordKind
 from zonectl.core.bind_secondary_plan import BindSecondaryPlanner
 from zonectl.core.bind_secondary_transaction import (
     BindSecondaryStep,
@@ -29,12 +30,18 @@ def _ok(name: str):
 def test_dry_run_has_no_side_effects(tmp_path: Path) -> None:
     plan, root = _plan(tmp_path)
     before = root.read_bytes()
-    result = BindSecondaryTransaction(
+    transaction = BindSecondaryTransaction(
         tmp_path / "backups", tmp_path / "manifests", root_config=root
-    ).apply(plan)
+    )
+    result = transaction.apply(plan)
     assert result.status == "DRY-RUN"
     assert result.zones == ("a",)
     assert root.read_bytes() == before
+    records = transaction.audit_v1.store.read().records
+    final = next(item for item in records if item.record_kind is RecordKind.RESULT)
+    assert final.operation == "bind.secondary.apply"
+    assert final.outcome is Outcome.DRY_RUN
+    assert final.resource.name == "dns2-notify"
 
 
 def test_commit_writes_backup_manifest_and_audit_context(tmp_path: Path) -> None:

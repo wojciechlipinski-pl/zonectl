@@ -15,6 +15,8 @@ from pathlib import Path
 from typing import Callable
 
 from .rpz_external_migration_dry_run import RpzExternalMigrationDryRun
+from .audit_store import AuditStore, ResourceKind, Risk
+from .family_audit_adapter import FamilyAuditAdapter
 from .rpz_external_migration_plan import RpzExternalMigrationPlan
 from .runner import CommandResult, run
 
@@ -54,6 +56,7 @@ class RpzExternalMigrationTransaction:
         command_runner: Callable[[list[str], int], CommandResult] = run,
         clock: Callable[[], float] = time.time,
         max_zone_age: int = 600,
+        audit_store: AuditStore | None = None,
     ) -> None:
         self.backup_root = backup_root
         self.manifest_directory = manifest_directory
@@ -61,6 +64,11 @@ class RpzExternalMigrationTransaction:
         self.command_runner = command_runner
         self.clock = clock
         self.max_zone_age = max_zone_age
+        self.audit_v1 = FamilyAuditAdapter(
+            audit_store or FamilyAuditAdapter.default_store(manifest_directory),
+            manifest_directory=manifest_directory,
+            backup_root=backup_root,
+        )
 
     def apply(
         self,
@@ -75,6 +83,13 @@ class RpzExternalMigrationTransaction:
             + f"-rpz-migrate-{uuid.uuid4().hex[:8]}"
         )
         result = RpzMigrationTransactionResult(txid, plan.zone, "PLAN")
+        self.audit_v1.start(
+            txid,
+            "rpz.migrate",
+            ResourceKind.RPZ,
+            plan.zone,
+            risk=Risk.CRITICAL if commit else Risk.MEDIUM,
+        )
         if plan.status != "READY":
             return self._blocked(result, "; ".join(plan.blockers) or plan.status)
         if commit != activate:
@@ -100,10 +115,10 @@ class RpzExternalMigrationTransaction:
             )
         if dry_run.status != "DRY-RUN":
             result.status = "BLOCKED"
-            return result
+            return self._finish_audit(result)
         if not commit:
             result.status = "DRY-RUN"
-            return result
+            return self._finish_audit(result)
 
         integrity_error = self._integrity_error(plan)
         if integrity_error:
@@ -196,22 +211,26 @@ class RpzExternalMigrationTransaction:
                         f"Nie zapisano wyniku rollbacku: {manifest_error}",
                     )
                 )
-        return result
+        return self._finish_audit(result)
 
-    @staticmethod
     def _blocked(
-        result: RpzMigrationTransactionResult, message: str
+        self, result: RpzMigrationTransactionResult, message: str
     ) -> RpzMigrationTransactionResult:
         result.status = "BLOCKED"
         result.steps.append(RpzMigrationTransactionStep("preflight", False, message))
-        return result
+        return self._finish_audit(result)
 
-    @staticmethod
     def _rejected(
-        result: RpzMigrationTransactionResult, message: str
+        self, result: RpzMigrationTransactionResult, message: str
     ) -> RpzMigrationTransactionResult:
         result.status = "REJECTED"
         result.steps.append(RpzMigrationTransactionStep("guard", False, message))
+        return self._finish_audit(result)
+
+    def _finish_audit(
+        self, result: RpzMigrationTransactionResult
+    ) -> RpzMigrationTransactionResult:
+        self.audit_v1.finish_result(result)
         return result
 
     @staticmethod
