@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Documentation
+
+- audit the existing transaction manifests, backups, identifiers and history,
+  and define the privacy-safe, versioned `zonectl.audit/v1` data contract for
+  ZoneCTL 4.12 without changing production behavior
+
 ## 4.11.0 - 2026-09-01
 
 ### Changed
