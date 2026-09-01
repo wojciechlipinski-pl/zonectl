@@ -641,6 +641,10 @@ wielojęzyczność są planowane dla ZoneCTL 5.0.
 - [x] Przeprowadzić odczytowy audyt istniejących manifestów, backupów,
   identyfikatorów i historii oraz zdefiniować wersjonowany, prywatnościowy
   kontrakt `zonectl.audit/v1` w `docs/AUDIT_4_12_CONTRACT.md`.
+- [x] Dodać bezpieczny magazyn kopert `zonectl.audit/v1`: allowlistę i
+  walidację danych, blokadę międzyprocesową, append z `fsync`, stałe tryby
+  `0750/0640`, ochronę przed symlinkami, diagnostykę uszkodzonych linii oraz
+  jawny dry-run i atomowe, potwierdzane zastosowanie retencji.
 - [ ] Dodać spójny rejestr audytowy operacji z czasem, strefą, rodzajem,
   wynikiem, identyfikatorem transakcji i informacją o rollbacku.
 - [ ] Udostępnić odczytową przeglądarkę audytu w CLI i TUI z filtrowaniem po

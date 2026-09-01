@@ -28,3 +28,4 @@ def test_transaction_paths_share_state_and_log_roots() -> None:
     assert paths.LOCK_DIR == paths.STATE_DIR / "locks"
     assert paths.DNSSEC_DS_DIR == paths.STATE_DIR / "ds"
     assert paths.AUDIT_LOG == paths.LOG_DIR / "audit.jsonl"
+    assert paths.AUDIT_V1_LOG == paths.LOG_DIR / "audit-v1.jsonl"
