@@ -638,6 +638,9 @@ wielojęzyczność są planowane dla ZoneCTL 5.0.
 
 ## ZoneCTL 4.12 — audyt i obsługa transakcji
 
+- [x] Przeprowadzić odczytowy audyt istniejących manifestów, backupów,
+  identyfikatorów i historii oraz zdefiniować wersjonowany, prywatnościowy
+  kontrakt `zonectl.audit/v1` w `docs/AUDIT_4_12_CONTRACT.md`.
 - [ ] Dodać spójny rejestr audytowy operacji z czasem, strefą, rodzajem,
   wynikiem, identyfikatorem transakcji i informacją o rollbacku.
 - [ ] Udostępnić odczytową przeglądarkę audytu w CLI i TUI z filtrowaniem po
