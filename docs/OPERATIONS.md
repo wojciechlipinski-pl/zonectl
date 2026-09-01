@@ -147,6 +147,11 @@ zctl audit export --zone example.test --format text
 zctl audit export --operation rpz.install --format json
 ```
 
+W TUI ten sam rejestr otwiera klawisz `F6`. Dostępne są filtry zasobu (`/`),
+operacji (`o`) i statusu (`s`), przełącznik par START/RESULT (`e`), czyszczenie
+filtrów (`c`) oraz bezpieczne ponowne odczytanie rejestru (`F5`). Widok nie
+zapisuje ani nie naprawia wpisów i działa w układzie zwartym na małym terminalu.
+
 Znaczniki czasu muszą być zgodne z ISO-8601 i zawierać strefę czasową, np.
 `Z` albo `+02:00`. Domyślnie lista i eksport pokazują tylko końcowe rekordy
 `RESULT`; `--events` dołącza również `START`. Diagnostyka uszkodzonych linii

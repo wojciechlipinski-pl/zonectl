@@ -37,6 +37,8 @@ All names, addresses, keys and environment values shown below are synthetic.
 
 ![ZoneCTL DNSSEC operational status](docs/images/tui-dnssec-status.png)
 
+![ZoneCTL read-only audit browser](docs/images/tui-audit-browser.png)
+
 [View the complete screenshot gallery](docs/SCREENSHOTS.md).
 
 Operations: [operator guide](docs/en/OPERATIONS.md) ·
@@ -145,6 +147,9 @@ zctl audit export --operation dnssec.enable \
 `--since` and `--until` require ISO-8601 timestamps with an explicit timezone.
 Exports contain only fields allowed by `zonectl.audit/v1`; malformed registry
 lines produce sanitized diagnostics and do not expose their original payload.
+
+In the TUI, `F6` opens a read-only browser for the same registry with resource,
+operation and outcome filters plus allowlisted transaction details.
 
 The record view supports structured filters, for example:
 

@@ -119,6 +119,7 @@ def test_pending_changes_f2_commits_and_reloads_session(
         "_run_with_wait_indicator",
         lambda win, *, title, label, operation: operation(),
     )
+    monkeypatch.setattr(app, "_confirm_record_changes", lambda *args: True)
 
     app._pending_changes_view(
         FakeWindow(),

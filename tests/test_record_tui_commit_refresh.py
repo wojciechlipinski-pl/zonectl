@@ -69,6 +69,7 @@ def test_f8_delete_commit_rereads_active_file(
         lambda win, *, title, label, operation: operation(),
     )
     monkeypatch.setattr(app, "_start_refresh", lambda force=False: None)
+    monkeypatch.setattr(app, "_confirm_record_changes", lambda *args: True)
     monkeypatch.setattr(
         CursesDialogs,
         "confirm",

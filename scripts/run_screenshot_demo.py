@@ -12,9 +12,18 @@ import curses
 import time
 
 from zonectl.core.models import Health, Zone, ZoneStatus
+from zonectl.core.audit_store import (
+    AuditRecord,
+    AuditResource,
+    AuditRollback,
+    Outcome,
+    RecordKind,
+    ResourceKind,
+)
 from zonectl.core.transaction import StepResult, TransactionResult
 from zonectl.core.zone_parser import DNSRecord
 from zonectl.ui.curses_app import CursesApp
+from zonectl.ui.audit_view import AuditViewState
 from zonectl.ui.dnssec_status_view import DnssecStatusView
 from zonectl.ui.records.new_record import NewRecordDialog
 from zonectl.ui.zone_create_dialog import ZoneCreateDialog, ZoneCreateForm
@@ -92,6 +101,8 @@ class ScreenshotDemoApp(CursesApp):
                 self._show_transaction_result(stdscr)
             elif key == ord("x"):
                 self._show_rollback_result(stdscr)
+            elif key == ord("u"):
+                self._show_audit_browser(stdscr)
         self.stop_event.set()
 
     def _show_bind_report(self, win: curses.window) -> None:
@@ -253,6 +264,56 @@ class ScreenshotDemoApp(CursesApp):
                     StepResult("rndc-reload", True, "Poprzednia strefa aktywna"),
                 ],
             ),
+        )
+
+    def _show_audit_browser(self, win: curses.window) -> None:
+        records = (
+            self._audit_record(
+                "11111111-1111-4111-8111-111111111111",
+                "demo-transaction-003",
+                "2026-09-01T12:03:11Z",
+                "zone.records.save",
+                "alpha.example.test",
+                Outcome.COMMITTED,
+            ),
+            self._audit_record(
+                "22222222-2222-4222-8222-222222222222",
+                "demo-transaction-002",
+                "2026-09-01T11:42:07Z",
+                "dnssec.enable",
+                "bravo.example.test",
+                Outcome.DRY_RUN,
+            ),
+            self._audit_record(
+                "33333333-3333-4333-8333-333333333333",
+                "demo-transaction-001",
+                "2026-09-01T10:18:42Z",
+                "zone.disable",
+                "sample.invalid",
+                Outcome.BLOCKED,
+            ),
+        )
+        self._audit_browser_view(win, AuditViewState(records))
+
+    @staticmethod
+    def _audit_record(
+        record_id: str,
+        transaction_id: str,
+        recorded_at: str,
+        operation: str,
+        zone: str,
+        outcome: Outcome,
+    ) -> AuditRecord:
+        return AuditRecord(
+            record_id=record_id,
+            transaction_id=transaction_id,
+            recorded_at=recorded_at,
+            record_kind=RecordKind.RESULT,
+            operation=operation,
+            resource=AuditResource(ResourceKind.ZONE, zone),
+            outcome=outcome,
+            committed=outcome is Outcome.COMMITTED,
+            rollback=AuditRollback(),
         )
 
     @staticmethod

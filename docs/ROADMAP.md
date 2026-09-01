@@ -655,9 +655,10 @@ wielojęzyczność są planowane dla ZoneCTL 5.0.
 - [x] Udostępnić odczytowe CLI audytu z listą ostatnich operacji, szczegółami
   pary START/RESULT, filtrowaniem po strefie, statusie, rodzaju operacji i
   zakresie czasu oraz eksportem tekstowym i JSON.
-- [ ] Udostępnić odczytową przeglądarkę audytu w TUI z tym samym zakresem
+- [x] Udostępnić odczytową przeglądarkę audytu w TUI z tym samym zakresem
   filtrów i bez zależności od dostępności konfiguracji BIND.
-- [ ] Przed zatwierdzeniem pokazywać zwarte podsumowanie zmian: pliki,
+- [x] Przed zatwierdzeniem zapisu rekordów pokazywać zwarte podsumowanie zmian:
+  pliki,
   rekordy, serial, planowane walidacje, backup oraz operacje BIND.
 - [ ] Zapewnić bezpieczny eksport audytu w JSON i formacie tekstowym oraz
   zdefiniować retencję bez ujawniania sekretów i materiału kluczy DNSSEC.
@@ -665,8 +666,11 @@ wielojęzyczność są planowane dla ZoneCTL 5.0.
   zarządzanych plików stref, nigdy jako zamiennik backupu transakcyjnego.
 - [ ] Domyślnie wykluczyć automatycznie aktualizowane strefy RPZ z opcjonalnej
   historii Git.
-- [ ] Objąć przeglądarkę, filtry, podsumowania i eksport testami prywatności,
-  retencji, małych terminali oraz uszkodzonych wpisów audytu.
+- [x] Opublikować syntetyczny zrzut przeglądarki audytu po pełnej kontroli
+  kadrowania, metadanych i identyfikatorów produkcyjnych.
+- [x] Objąć przeglądarkę, filtry i podsumowania testami prywatności, małych
+  terminali oraz uszkodzonych wpisów audytu; eksport i retencja mają osobne
+  testy warstwy CLI i magazynu.
 
 ## Rozwój po osiągnięciu pełnej funkcjonalności podstawowej
 
