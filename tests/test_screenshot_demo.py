@@ -38,6 +38,8 @@ def test_screenshot_demo_uses_only_reserved_names_and_addresses() -> None:
     assert "_show_access_report" in source
     assert "_show_transaction_result" in source
     assert "_show_rollback_result" in source
+    assert "_show_audit_browser" in source
+    assert "AuditViewState" in source
     assert 'status="COMMITTED"' in source
     assert 'status="ROLLED-BACK"' in source
     assert "/tmp/zonectl-demo/backups/" in source
@@ -63,6 +65,7 @@ def test_published_screenshots_have_no_textual_metadata() -> None:
     images = sorted(IMAGES.glob("*.png"))
     assert [image.name for image in images] == [
         "tui-add-record.png",
+        "tui-audit-browser.png",
         "tui-bind-access.png",
         "tui-bind-environment.png",
         "tui-create-zone.png",

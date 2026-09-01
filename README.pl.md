@@ -33,6 +33,8 @@ syntetyczne.
 
 ![Stan operacyjny DNSSEC w ZoneCTL](docs/images/tui-dnssec-status.png)
 
+![Odczytowa przeglądarka audytu ZoneCTL](docs/images/tui-audit-browser.png)
+
 [Zobacz kompletną galerię zrzutów](docs/SCREENSHOTS.md).
 
 Eksploatacja: [instrukcja operatorska](docs/OPERATIONS.md) ·
@@ -180,6 +182,9 @@ zctl audit export --operation dnssec.enable \
 Filtry `--since` i `--until` wymagają czasu ISO-8601 z jawną strefą czasową.
 Eksport zawiera wyłącznie pola dopuszczone przez `zonectl.audit/v1`, a
 diagnostyka uszkodzonego wpisu nie pokazuje jego surowej zawartości.
+
+W interfejsie TUI klawisz `F6` otwiera odczytową przeglądarkę tego samego
+rejestru z filtrami strefy, operacji i statusu oraz szczegółami transakcji.
 
 ## Bulk Operations
 

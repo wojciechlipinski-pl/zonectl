@@ -30,6 +30,13 @@ Run the first documentation view from the repository root:
 PYTHONPATH=src .venv/bin/python scripts/run_screenshot_demo.py
 ```
 
+On a headless documentation host with Xvfb, xterm, xdotool and ImageMagick,
+the audit view can be captured deterministically and stripped of metadata:
+
+```console
+sh scripts/capture_screenshot_demo.sh u docs/images/tui-audit-browser.png
+```
+
 The demo imports the production renderers but replaces BIND checks with
 deterministic in-memory results. Available keys are:
 
@@ -42,6 +49,7 @@ deterministic in-memory results. Available keys are:
 - `c` — show synthetic ACLs, secondary pairs and a zone assignment;
 - `t` — show a successful synthetic transaction in the production renderer;
 - `x` — show a controlled failure followed by a successful rollback;
+- `u` — open the read-only audit browser with synthetic operation history;
 - `q`, `Esc` or `F10` — exit the current view or the demo.
 
 ## Published gallery
@@ -84,6 +92,10 @@ reserved example domains, documentation address ranges and a fictional DS.
 ### Completed rollback
 
 ![Controlled synthetic failure followed by a successful rollback](images/tui-rollback-result.png)
+
+### Audit browser
+
+![Read-only audit browser with synthetic operation history](images/tui-audit-browser.png)
 
 ## Future additions
 

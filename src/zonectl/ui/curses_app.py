@@ -13,6 +13,12 @@ from zonectl.ui.dnssec_status_view import DnssecStatusView
 from zonectl.ui.rpz_status_view import RpzStatusView
 from zonectl.ui.bind_onboarding_view import BindOnboardingView
 from zonectl.ui.about_view import AboutView
+from zonectl.ui.audit_view import (
+    AuditViewState,
+    audit_detail_lines,
+    audit_list_line,
+    pending_change_summary,
+)
 from zonectl.ui.zone_details_view import ZoneDetailsView
 from zonectl.ui.semantic_status import (
     kasp_health,
@@ -35,6 +41,7 @@ from typing import TypeVar
 
 from .. import __version__
 from ..core.bind import BindService
+from ..core.audit_store import AuditStorageError, AuditStore, MAX_RESULTS
 from ..core.bind_access_inventory import (
     BindAccessInventoryError,
     BindAccessInventoryReader,
@@ -105,7 +112,7 @@ from ..core.multi_zone_session import (
     MultiZoneEditSession,
     MultiZoneSessionError,
 )
-from ..core.paths import EDIT_LOCK_DIR
+from ..core.paths import AUDIT_V1_LOG, EDIT_LOCK_DIR
 from ..core.record_filter import RecordFilter, RecordFilterError
 from ..core.record_validation import (
     ValidationSeverity,
@@ -156,6 +163,13 @@ class CursesApp:
         )
         self.config = config
         self.read_only = bool(config.read_only if config is not None else False)
+        self.audit_store = AuditStore(
+            Path(
+                config.toolkit.get("audit_v1_log", str(AUDIT_V1_LOG))
+                if config is not None
+                else AUDIT_V1_LOG
+            )
+        )
         self.edit_lock_directory = (
             Path(
                 config.toolkit.get(
@@ -239,6 +253,8 @@ class CursesApp:
                 self._bind_onboarding_view(stdscr)
             elif key == curses.KEY_F9:
                 self._bind_access_view(stdscr)
+            elif key == curses.KEY_F6:
+                self._audit_browser_view(stdscr)
             elif key == curses.KEY_F3:
                 self._selected_zone_preview(stdscr)
             elif key == curses.KEY_F4:
@@ -669,6 +685,7 @@ class CursesApp:
             ("F4", "Edycja"),
             ("Insert", "Dodaj"),
             ("r", "Odśwież"),
+            ("F6", "Audyt"),
             ("F9", "ACL/secondary"),
             ("F10", "Wyjście"),
         )
@@ -2504,10 +2521,7 @@ class CursesApp:
                     )
                     continue
 
-                confirmed = CursesDialogs.confirm(
-                    win,
-                    (f"Zapisać {model.change_count} zmian w strefie {zone.name}?"),
-                )
+                confirmed = self._confirm_record_changes(win, model, zone)
 
                 if not confirmed:
                     continue
@@ -3255,6 +3269,211 @@ class CursesApp:
             error=not result.ok,
         )
 
+    def _confirm_record_changes(
+        self,
+        win: curses.window,
+        model: ZoneModel,
+        zone: Zone,
+    ) -> bool:
+        """Show an explicit change summary before the final commit question."""
+        self._message_view(
+            win,
+            title=f"Podsumowanie przed zapisem: {zone.name}",
+            lines=pending_change_summary(model.pending_changes, zone.name),
+        )
+        return CursesDialogs.confirm(
+            win,
+            f"Zapisać {model.change_count} zmian w strefie {zone.name}?",
+        )
+
+    def _audit_browser_view(
+        self,
+        win: curses.window,
+        state: AuditViewState | None = None,
+    ) -> None:
+        """Browse the bounded audit v1 registry without modifying it."""
+        synthetic = state is not None
+        if state is None:
+            try:
+                read_result = self.audit_store.read(limit=MAX_RESULTS)
+            except (AuditStorageError, OSError, ValueError) as exc:
+                self._message_view(
+                    win,
+                    title="Audyt — błąd odczytu",
+                    lines=[f"{type(exc).__name__}: {exc}"],
+                    error=True,
+                )
+                return
+            state = AuditViewState(read_result.records, read_result.issues)
+        selected = 0
+        offset = 0
+
+        while True:
+            records = state.visible_records
+            selected = min(selected, max(0, len(records) - 1))
+            win.erase()
+            height, width = win.getmaxyx()
+            compact = width < 118 or height < 28
+            list_top = 5
+            footer_row = max(0, height - 2)
+            visible = max(1, footer_row - list_top)
+            if selected < offset:
+                offset = selected
+            if selected >= offset + visible:
+                offset = selected - visible + 1
+
+            self._safe_addnstr(
+                win,
+                0,
+                0,
+                " Audyt operacji ZoneCTL — tylko odczyt ".ljust(width),
+                width,
+                curses.A_REVERSE | curses.A_BOLD,
+            )
+            self._safe_addnstr(
+                win,
+                2,
+                1,
+                f"Wpisy: {len(records)}/{len(state.records)}  "
+                f"Uszkodzone pominięte: {len(state.issues)}",
+                max(0, width - 2),
+                curses.A_BOLD,
+            )
+            self._safe_addnstr(
+                win,
+                3,
+                1,
+                state.filter_summary(),
+                max(0, width - 2),
+                curses.A_DIM,
+            )
+            if not compact:
+                self._safe_addnstr(
+                    win,
+                    4,
+                    1,
+                    "CZAS                STATUS          ZASÓB                          OPERACJA                     TRANSAKCJA",
+                    max(0, width - 2),
+                    curses.A_BOLD,
+                )
+            for screen_row, record in enumerate(
+                records[offset : offset + visible], start=list_top
+            ):
+                index = offset + screen_row - list_top
+                attr = self._semantic_attr(record.outcome.value, bold_failure=True)
+                if index == selected:
+                    attr |= curses.A_REVERSE | curses.A_BOLD
+                self._safe_addnstr(
+                    win,
+                    screen_row,
+                    1,
+                    audit_list_line(record, compact=compact),
+                    max(0, width - 2),
+                    attr,
+                )
+            if not records:
+                self._safe_addnstr(
+                    win,
+                    list_top,
+                    2,
+                    "Brak wpisów spełniających filtry.",
+                    max(0, width - 3),
+                    curses.A_DIM,
+                )
+            footer = (
+                " ↑/↓ PgUp/PgDn Home/End  Enter szczegóły  / strefa  "
+                "o operacja  s status  e zdarzenia  c wyczyść  F5 odśwież  F10 powrót "
+            )
+            self._safe_addnstr(
+                win,
+                footer_row,
+                0,
+                footer.ljust(width),
+                width,
+                curses.A_REVERSE,
+            )
+            win.refresh()
+            key = self._get_key(win)
+            if key in (ord("q"), ord("Q"), 27, curses.KEY_F10):
+                return
+            if key in (curses.KEY_DOWN, ord("j")) and records:
+                selected = min(selected + 1, len(records) - 1)
+            elif key in (curses.KEY_UP, ord("k")) and records:
+                selected = max(0, selected - 1)
+            elif key == curses.KEY_NPAGE and records:
+                selected = min(selected + visible, len(records) - 1)
+            elif key == curses.KEY_PPAGE and records:
+                selected = max(0, selected - visible)
+            elif key == curses.KEY_HOME:
+                selected = 0
+            elif key == curses.KEY_END and records:
+                selected = len(records) - 1
+            elif key in (10, 13, curses.KEY_ENTER) and records:
+                self._message_view(
+                    win,
+                    title=f"Audyt: {records[selected].transaction_id}",
+                    lines=audit_detail_lines(records[selected]),
+                )
+            elif key == ord("/"):
+                value = CursesDialogs.search(
+                    win, prompt=" Strefa lub zasób: ", initial=state.zone_filter
+                )
+                if value is not None:
+                    state.zone_filter = value
+                    selected = offset = 0
+            elif key in (ord("o"), ord("O")):
+                value = CursesDialogs.search(
+                    win, prompt=" Operacja: ", initial=state.operation_filter
+                )
+                if value is not None:
+                    state.operation_filter = value
+                    selected = offset = 0
+            elif key in (ord("s"), ord("S")):
+                state.cycle_outcome()
+                selected = offset = 0
+            elif key in (ord("e"), ord("E")):
+                state.include_events = not state.include_events
+                selected = offset = 0
+            elif key in (ord("c"), ord("C")):
+                state.clear_filters()
+                selected = offset = 0
+            elif key == curses.KEY_F5:
+                if synthetic:
+                    continue
+                try:
+                    read_result = self.audit_store.read(limit=MAX_RESULTS)
+                    state.records = read_result.records
+                    state.issues = read_result.issues
+                    selected = offset = 0
+                except (AuditStorageError, OSError, ValueError) as exc:
+                    self._message_view(
+                        win,
+                        title="Audyt — błąd odczytu",
+                        lines=[f"{type(exc).__name__}: {exc}"],
+                        error=True,
+                    )
+
+    @staticmethod
+    def _safe_addnstr(
+        win: curses.window,
+        row: int,
+        column: int,
+        text: str,
+        limit: int,
+        attr: int = curses.A_NORMAL,
+    ) -> None:
+        """Write within terminal bounds and tolerate resize races."""
+        height, width = win.getmaxyx()
+        if row < 0 or row >= height or column < 0 or column >= width:
+            return
+        available = min(max(0, width - column - 1), max(0, limit))
+        if available <= 0:
+            return
+        try:
+            win.addnstr(row, column, str(text), available, attr)
+        except curses.error:
+            pass
+
     def _pending_changes_view(
         self,
         win: curses.window,
@@ -3433,6 +3652,9 @@ class CursesApp:
                         title=f"Zapis: {zone.name}",
                         lines=["Brak zmian do zapisania."],
                     )
+                    continue
+
+                if not self._confirm_record_changes(win, model, zone):
                     continue
 
                 try:
