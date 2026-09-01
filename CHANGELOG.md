@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Documentation
+
+- record the successful in-place production upgrade from ZoneCTL 4.10.0-1 to
+  4.11.0-1: package version, BIND configuration validation, active service and
+  the read-only environment report all passed; the managed RPZ integration
+  remained active, fresh and scheduled, without publishing environment data
+
 ## 4.11.0 - 2026-09-01
 
 ### Changed

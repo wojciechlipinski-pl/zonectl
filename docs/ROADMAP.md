@@ -635,6 +635,13 @@ wielojęzyczność są planowane dla ZoneCTL 5.0.
   prywatności oraz budowę wheel i pakietu DEB.
 - [x] Scalić przygotowanie wydania, utworzyć tag `v4.11.0` i uruchomić
   zatwierdzony workflow publikacyjny.
+- [x] Zweryfikować aktualizację produkcyjną z `4.10.0-1` do `4.11.0-1`:
+  spójność pakietu, `named-checkconf`, aktywną usługę BIND oraz odczytowy raport
+  środowiska z aktywną, świeżą i poprawnie zaplanowaną integracją managed RPZ.
+
+Wydania `4.11.x` stanowią linię stabilizacyjną. Do czasu rozpoczęcia 4.12
+przyjmowane są w niej wyłącznie poprawki błędów, bezpieczeństwa, pakietów i
+dokumentacji; nowe funkcje należą do następnego wydania rozwojowego.
 
 ## ZoneCTL 4.12 — audyt i obsługa transakcji
 
