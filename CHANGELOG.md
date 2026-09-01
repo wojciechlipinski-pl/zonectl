@@ -12,6 +12,9 @@
 - connect BIND ACL/secondary, DNSSEC enable/disable/DS confirmation, RPZ
   install/migration and zone lifecycle transactions to the same fail-closed
   START/RESULT audit envelopes without changing their domain behavior
+- add read-only `audit list`, `audit show` and `audit export` CLI commands with
+  bounded zone, outcome, operation and timezone-aware interval filters plus
+  safe text and JSON output independent of BIND configuration availability
 
 ### Tests
 
@@ -22,6 +25,8 @@
 - verify family-adapter outcome mapping, bounded validation summaries,
   relative manifest/backup references, rollback results and rejection of
   sensitive reasons before START is persisted
+- verify audit CLI filtering, transaction detail pairs, text/JSON export,
+  configuration independence and sanitized corrupt-record diagnostics
 
 ### Documentation
 

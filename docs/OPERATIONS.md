@@ -132,6 +132,26 @@ zctl tx history example.pl --events --limit 20
 
 Każde z poleceń historii obsługuje również format JSON przez `--json`.
 
+### Odczytowy rejestr audytu v1
+
+Rejestr v1 można przeglądać także wtedy, gdy konfiguracja BIND jest chwilowo
+niedostępna lub uszkodzona. Polecenia nie modyfikują rejestru ani konfiguracji:
+
+```console
+zctl audit list --limit 20
+zctl audit list --zone example.test --status COMMITTED
+zctl audit list --operation dnssec.enable \
+  --since 2026-09-01T00:00:00Z --until 2026-09-02T00:00:00Z
+zctl audit show 20260901-100000-example.test-a1b2c3d4
+zctl audit export --zone example.test --format text
+zctl audit export --operation rpz.install --format json
+```
+
+Znaczniki czasu muszą być zgodne z ISO-8601 i zawierać strefę czasową, np.
+`Z` albo `+02:00`. Domyślnie lista i eksport pokazują tylko końcowe rekordy
+`RESULT`; `--events` dołącza również `START`. Diagnostyka uszkodzonych linii
+podaje wyłącznie numer i bezpieczną przyczynę, nigdy surową zawartość wpisu.
+
 ### Operacje masowe w historii
 
 Operacje `SELECT ... SET` i `SELECT ... DELETE` są zapisywane jako jedna

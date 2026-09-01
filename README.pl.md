@@ -167,6 +167,20 @@ zctl tx backups city.example.pl
 zctl tx history city.example.pl
 ```
 
+Wersjonowany, prywatnościowy rejestr audytu można przeglądać bez wczytywania
+konfiguracji BIND:
+
+```console
+zctl audit list --zone city.example.pl --status COMMITTED --limit 20
+zctl audit show 20260901-100000-city.example.pl-a1b2c3d4 --json
+zctl audit export --operation dnssec.enable \
+  --since 2026-09-01T00:00:00Z --format json
+```
+
+Filtry `--since` i `--until` wymagają czasu ISO-8601 z jawną strefą czasową.
+Eksport zawiera wyłącznie pola dopuszczone przez `zonectl.audit/v1`, a
+diagnostyka uszkodzonego wpisu nie pokazuje jego surowej zawartości.
+
 ## Bulk Operations
 
 W widoku rekordów naciśnij `b`, wpisz pojedyncze polecenie i sprawdź

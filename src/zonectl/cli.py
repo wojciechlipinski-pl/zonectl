@@ -40,8 +40,16 @@ from .core.bind_secondary_plan import (
 from .core.bind_secondary_transaction import BindSecondaryTransaction
 from .core.bind_zone_secondary import BindZoneSecondaryError, BindZoneSecondaryPlanner
 from .core.config import ToolkitConfig
+from .core.audit_query import (
+    AuditFilters,
+    filter_audit,
+    parse_audit_time,
+    render_audit_details,
+    render_audit_list,
+)
+from .core.audit_store import AuditStorageError, AuditStore, MAX_RESULTS, Outcome
 from .core.models import Zone
-from .core.paths import DEFAULT_CONFIG, DEFAULT_GROUPS, DEFAULT_ZONES
+from .core.paths import AUDIT_V1_LOG, DEFAULT_CONFIG, DEFAULT_GROUPS, DEFAULT_ZONES
 from .core.dnssec_enable_plan import (
     DnssecEnablePlanError,
     DnssecEnablePlanner,
@@ -990,6 +998,36 @@ def parser() -> argparse.ArgumentParser:
     show.add_argument("transaction_id")
     show.add_argument("--json", action="store_true")
 
+    audit = sub.add_parser("audit", help="odczytaj bezpieczny rejestr audytu v1")
+    audit_sub = audit.add_subparsers(dest="audit_command", required=True)
+
+    def audit_filters(command: argparse.ArgumentParser) -> None:
+        command.add_argument("--zone", dest="resource_name")
+        command.add_argument(
+            "--status", choices=tuple(outcome.value for outcome in Outcome)
+        )
+        command.add_argument("--operation")
+        command.add_argument("--since", help="czas ISO-8601 ze strefą czasową")
+        command.add_argument("--until", help="czas ISO-8601 ze strefą czasową")
+        command.add_argument("--limit", type=int, default=50)
+        command.add_argument("--events", action="store_true")
+        command.add_argument("--audit-log", type=Path, default=AUDIT_V1_LOG)
+
+    audit_list = audit_sub.add_parser("list", help="pokaż ostatnie operacje")
+    audit_filters(audit_list)
+    audit_list.add_argument("--json", action="store_true")
+
+    audit_show = audit_sub.add_parser("show", help="pokaż wskazaną transakcję")
+    audit_show.add_argument("transaction_id")
+    audit_show.add_argument("--json", action="store_true")
+    audit_show.add_argument("--audit-log", type=Path, default=AUDIT_V1_LOG)
+
+    audit_export = audit_sub.add_parser(
+        "export", help="eksportuj przefiltrowany audyt na standardowe wyjście"
+    )
+    audit_filters(audit_export)
+    audit_export.add_argument("--format", choices=("text", "json"), required=True)
+
     legacy = sub.add_parser("legacy", help="uruchom zgodne polecenie silnika 2.2.0")
     legacy.add_argument("arguments", nargs=argparse.REMAINDER)
     return p
@@ -1099,10 +1137,52 @@ def transaction_main(args: argparse.Namespace, config: ToolkitConfig) -> int:
     return 2
 
 
+def audit_main(args: argparse.Namespace) -> int:
+    """Handle bounded, read-only audit v1 CLI commands."""
+    try:
+        source = AuditStore(args.audit_log).read(limit=MAX_RESULTS)
+        if args.audit_command == "show":
+            filters = AuditFilters(
+                transaction_id=args.transaction_id,
+                results_only=False,
+            )
+            result = filter_audit(source, filters, limit=2)
+        else:
+            filters = AuditFilters(
+                resource_name=(args.resource_name or "").rstrip(".") or None,
+                outcome=args.status,
+                operation=args.operation,
+                since=parse_audit_time(args.since),
+                until=parse_audit_time(args.until),
+                results_only=not args.events,
+            )
+            result = filter_audit(source, filters, limit=args.limit)
+    except (AuditStorageError, OSError, ValueError) as exc:
+        print(f"BŁĄD: {exc}", file=sys.stderr)
+        return 2
+
+    for issue in result.issues:
+        location = f"wiersz {issue.line_number}" if issue.line_number else "rejestr"
+        print(f"UWAGA: {location}: {issue.reason}", file=sys.stderr)
+
+    use_json = getattr(args, "json", False) or getattr(args, "format", None) == "json"
+    if use_json:
+        print(json.dumps(result.to_dict(), ensure_ascii=False, indent=2))
+    elif args.audit_command == "show":
+        print(render_audit_details(result.records))
+    else:
+        print(render_audit_list(result.records))
+    if args.audit_command == "show" and not result.records:
+        return 1
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     args = parser().parse_args(argv)
     if args.command == "legacy":
         return legacy_main(args.arguments)
+    if args.command == "audit":
+        return audit_main(args)
     try:
         config = ToolkitConfig(args.config, args.zones, args.groups).load()
     except RuntimeError as exc:
