@@ -21,6 +21,16 @@ Plan and execute zone lifecycle operations.
 .TP
 .B dnssec
 Report, enable, verify and safely withdraw DNSSEC.
+.TP
+.B audit list
+List recent privacy-safe audit results with optional zone, outcome, operation
+and timezone-aware interval filters.
+.TP
+.B audit show
+Show the allowlisted START and RESULT records for one transaction identifier.
+.TP
+.B audit export
+Export filtered audit records as text or JSON on standard output.
 .SH FILES
 .TP
 .I /etc/bind
@@ -31,6 +41,9 @@ ZoneCTL state, disabled zones and quarantine data.
 .TP
 .I /var/backups/zonectl-*
 Transactional backups and manifests.
+.TP
+.I /var/log/zonectl/audit-v1.jsonl
+Versioned privacy-safe audit registry read by the audit commands.
 .SH SEE ALSO
 .BR named (8),
 .BR rndc (8),

@@ -132,6 +132,20 @@ zctl tx history example.pl
 Candidate zones are checked before installation. Backups and transaction
 manifests are retained for audit and recovery.
 
+The versioned privacy-safe audit registry can be queried without loading BIND
+configuration:
+
+```console
+zctl audit list --zone example.test --status COMMITTED --limit 20
+zctl audit show 20260901-100000-example.test-a1b2c3d4 --json
+zctl audit export --operation dnssec.enable \
+  --since 2026-09-01T00:00:00Z --format json
+```
+
+`--since` and `--until` require ISO-8601 timestamps with an explicit timezone.
+Exports contain only fields allowed by `zonectl.audit/v1`; malformed registry
+lines produce sanitized diagnostics and do not expose their original payload.
+
 The record view supports structured filters, for example:
 
 ```text
