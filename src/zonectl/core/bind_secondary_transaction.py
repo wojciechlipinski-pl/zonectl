@@ -18,6 +18,8 @@ from .bind_access_inventory import BindAccessInventoryReader
 from .bind_audit_manifest import safe_manifest_payload
 from .bind_secondary_health import BindSecondaryHealthGate
 from .bind_secondary_plan import BindSecondaryPlan
+from .audit_store import AuditStore, ResourceKind
+from .family_audit_adapter import FamilyAuditAdapter, FamilyAuditContext, risk_from_text
 from .runner import run
 
 
@@ -66,6 +68,7 @@ class BindSecondaryTransaction:
         activator: Activator | None = None,
         post_validator: PostValidator | None = None,
         operational_validator: OperationalValidator | None = None,
+        audit_store: AuditStore | None = None,
     ) -> None:
         self.backup_root = backup_root
         self.manifest_directory = manifest_directory
@@ -75,6 +78,14 @@ class BindSecondaryTransaction:
         self.post_validator = post_validator or self._validate_applied_state
         self.operational_validator = (
             operational_validator or self._validate_operational_state
+        )
+        self.audit_v1 = FamilyAuditAdapter(
+            audit_store
+            or FamilyAuditAdapter.default_store(
+                manifest_directory, system_anchor=root_config
+            ),
+            manifest_directory=manifest_directory,
+            backup_root=backup_root,
         )
 
     def apply(
@@ -104,6 +115,14 @@ class BindSecondaryTransaction:
                 plan.original_text, plan.old_addresses, plan.source
             ),
         )
+        audit_context = self.audit_v1.start(
+            txid,
+            "bind.secondary.apply",
+            ResourceKind.SECONDARY_GROUP,
+            plan.name,
+            risk=risk_from_text(result.risk),
+            reason=result.reason,
+        )
         current = plan.source.read_text(encoding="utf-8", errors="replace")
         if current != plan.original_text:
             result.status = "CONFLICT"
@@ -112,7 +131,7 @@ class BindSecondaryTransaction:
                     "preflight", False, f"Plik zmienił się: {plan.source}"
                 )
             )
-            return result
+            return self._finish_audit(audit_context, result)
         if not plan.validation_ok:
             result.status = "BLOCKED"
             result.steps.append(
@@ -120,7 +139,7 @@ class BindSecondaryTransaction:
                     "candidate-validation", False, plan.validation_message
                 )
             )
-            return result
+            return self._finish_audit(audit_context, result)
         if not commit:
             result.status = "DRY-RUN"
             result.steps.append(
@@ -128,7 +147,7 @@ class BindSecondaryTransaction:
                     "dry-run", True, "Nie zmieniono konfiguracji ani BIND"
                 )
             )
-            return result
+            return self._finish_audit(audit_context, result)
         if plan.impact is not None and plan.impact.risk == "HIGH":
             result.status = "BLOCKED"
             result.steps.append(
@@ -141,7 +160,7 @@ class BindSecondaryTransaction:
                     "Nie można odłączyć ostatniego aktywnego secondary.",
                 )
             )
-            return result
+            return self._finish_audit(audit_context, result)
 
         self.backup_root.mkdir(parents=True, exist_ok=True, mode=0o750)
         backup = self.backup_root / f"{txid}-{plan.source.name}"
@@ -234,6 +253,12 @@ class BindSecondaryTransaction:
             plan.source,
         )
         self._write_manifest(result)
+        return self._finish_audit(audit_context, result)
+
+    def _finish_audit(
+        self, context: FamilyAuditContext, result: BindSecondaryResult
+    ) -> BindSecondaryResult:
+        self.audit_v1.finish(context, result)
         return result
 
     @staticmethod

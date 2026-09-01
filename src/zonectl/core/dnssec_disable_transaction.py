@@ -35,6 +35,8 @@ from pathlib import Path
 from typing import Callable
 
 from .dnssec_disable_plan import DnssecDisablePlan
+from .audit_store import AuditStore, ResourceKind, Risk
+from .family_audit_adapter import FamilyAuditAdapter
 from .runner import run
 
 
@@ -116,6 +118,7 @@ class DnssecDisableTransaction:
         activator: ZoneAction | None = None,
         loaded_verifier: ZoneAction | None = None,
         serial_gate: SerialGate | None = None,
+        audit_store: AuditStore | None = None,
     ) -> None:
         self.backup_root = backup_root
         self.manifest_directory = manifest_directory
@@ -126,6 +129,11 @@ class DnssecDisableTransaction:
         self.activator = activator or self._activate_bind
         self.loaded_verifier = loaded_verifier or self._verify_loaded
         self.serial_gate = serial_gate or self._serial_gate
+        self.audit_v1 = FamilyAuditAdapter(
+            audit_store or FamilyAuditAdapter.default_store(manifest_directory),
+            manifest_directory=manifest_directory,
+            backup_root=backup_root,
+        )
 
     def apply(
         self,
@@ -144,6 +152,13 @@ class DnssecDisableTransaction:
         )
         result = DnssecDisableResult(txid, plan.zone, "PLAN")
         result.stage = stage
+        self.audit_v1.start(
+            txid,
+            "dnssec.disable",
+            ResourceKind.ZONE,
+            plan.zone,
+            risk=Risk.CRITICAL if commit else Risk.MEDIUM,
+        )
         target_text = plan.insecure_text if stage == "insecure" else plan.candidate_text
 
         conflict = self._preflight(plan, target_text)
@@ -440,6 +455,7 @@ class DnssecDisableTransaction:
             path.write_text(
                 json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8"
             )
+        self.audit_v1.finish_result(result)
         return result
 
     @staticmethod

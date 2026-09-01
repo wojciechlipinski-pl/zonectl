@@ -128,6 +128,8 @@ Nazwa jest stabilnym identyfikatorem w formacie `obszar.czasownik`, np.:
 - `zone.disable`
 - `zone.restore`
 - `zone.quarantine`
+- `zone.quarantine_restore`
+- `zone.quarantine_purge`
 - `bind.acl.apply`
 - `bind.secondary.apply`
 - `dnssec.enable`
@@ -274,7 +276,7 @@ instalacji, migracji, błędy i zmiany stanu zarządzania.
 1. model, walidator i sanitizer koperty v1;
 2. bezpieczny writer/reader oraz diagnostyka uszkodzonych wpisów;
 3. adapter bazowego `TransactionEngine` — wykonany;
-4. adaptery pozostałych rodzin transakcji;
+4. adaptery pozostałych rodzin transakcji — wykonane;
 5. filtry i eksport CLI;
 6. odczytowa przeglądarka TUI;
 7. retencja oraz dopiero później opcjonalna historia Git.

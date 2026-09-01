@@ -648,8 +648,10 @@ wielojęzyczność są planowane dla ZoneCTL 5.0.
 - [x] Podłączyć bazowy `TransactionEngine` do par START/RESULT dla walidacji,
   weryfikacji, zastosowania pliku strefy i ręcznego rollbacku, zachowując
   dotychczasowe manifesty oraz polecenia historii bez zmian.
-- [ ] Dodać spójny rejestr audytowy operacji z czasem, strefą, rodzajem,
-  wynikiem, identyfikatorem transakcji i informacją o rollbacku.
+- [x] Dodać spójny rejestr audytowy operacji z czasem, strefą, rodzajem,
+  wynikiem, identyfikatorem transakcji i informacją o rollbacku. Adaptery
+  obejmują bazowy silnik oraz rodziny ACL/secondary, DNSSEC, RPZ i pełny cykl
+  życia stref, zachowując dotychczasowe manifesty i mechanizmy rollbacku.
 - [ ] Udostępnić odczytową przeglądarkę audytu w CLI i TUI z filtrowaniem po
   strefie, statusie, rodzaju operacji i zakresie czasu.
 - [ ] Przed zatwierdzeniem pokazywać zwarte podsumowanie zmian: pliki,

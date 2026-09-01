@@ -47,6 +47,7 @@ jobs:
             src/zonectl/core/managed_zone_relocation_transaction.py \
             src/zonectl/core/audit_store.py \
             src/zonectl/core/transaction_audit_adapter.py \
+            src/zonectl/core/family_audit_adapter.py \
             src/zonectl/core/bind_audit_manifest.py \
             src/zonectl/core/bind_secondary_health.py \
             src/zonectl/core/bind_access_impact.py \
@@ -86,6 +87,8 @@ jobs:
             src/zonectl/ui/curses_app.py \
             src/zonectl/cli.py \
             src/zonectl/core/dnssec_enable_transaction.py \
+            src/zonectl/core/dnssec_disable_transaction.py \
+            src/zonectl/core/dnssec_confirm_ds.py \
             src/zonectl/core/multi_zone_session.py \
             scripts/audit_public_api.py
 
@@ -137,7 +140,8 @@ jobs:
             src/zonectl/core/managed_zone_migration_transaction.py \
             src/zonectl/core/managed_zone_relocation_transaction.py \
             src/zonectl/core/audit_store.py \
-            src/zonectl/core/transaction_audit_adapter.py
+            src/zonectl/core/transaction_audit_adapter.py \
+            src/zonectl/core/family_audit_adapter.py
       - name: Reject whitespace errors
         run: git diff --check $(git hash-object -t tree /dev/null) HEAD
       - name: Reject executable documentation and Python sources

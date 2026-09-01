@@ -16,7 +16,9 @@ from pathlib import Path
 from typing import Callable, cast
 from urllib.request import urlopen
 
+from .audit_store import AuditStore, ResourceKind, Risk
 from .bind_config import BindConfigDiscovery
+from .family_audit_adapter import FamilyAuditAdapter
 from .rpz_managed_plan import RpzManagedPlan
 from .runner import CommandResult, run
 
@@ -354,6 +356,7 @@ class RpzManagedInstallTransaction:
         clock: Callable[[], float] = time.time,
         sleeper: Callable[[float], None] = time.sleep,
         max_zone_age: int = 600,
+        audit_store: AuditStore | None = None,
     ) -> None:
         self.command_runner = command_runner
         self.fetcher = fetcher or RpzManagedInstallDryRun._fetch
@@ -361,6 +364,10 @@ class RpzManagedInstallTransaction:
         self.clock = clock
         self.sleeper = sleeper
         self.max_zone_age = max_zone_age
+        self.audit_v1 = FamilyAuditAdapter(
+            audit_store or FamilyAuditAdapter.default_store(manifest_directory),
+            manifest_directory=manifest_directory,
+        )
 
     def apply(
         self,
@@ -375,6 +382,13 @@ class RpzManagedInstallTransaction:
             + f"-rpz-install-{uuid.uuid4().hex[:8]}"
         )
         result = RpzManagedInstallResult(plan.zone, "PLAN", transaction_id=txid)
+        self.audit_v1.start(
+            txid,
+            "rpz.install",
+            ResourceKind.RPZ,
+            plan.zone,
+            risk=Risk.CRITICAL if commit else Risk.MEDIUM,
+        )
         if plan.status != "READY":
             return self._blocked(result, "; ".join(plan.conflicts) or plan.status)
         if commit != activate:
@@ -404,10 +418,10 @@ class RpzManagedInstallTransaction:
         )
         if dry_run.status != "DRY-RUN":
             result.status = "BLOCKED"
-            return result
+            return self._finish_audit(result)
         if not commit:
             result.status = "DRY-RUN"
-            return result
+            return self._finish_audit(result)
         if (
             plan.options_file.read_bytes() != options_original
             or plan.root_config.read_bytes() != root_original
@@ -545,7 +559,7 @@ class RpzManagedInstallTransaction:
                 result.steps.append(
                     RpzManagedInstallStep("manifest", False, str(manifest_error))
                 )
-        return result
+        return self._finish_audit(result)
 
     @staticmethod
     def _targets(plan: RpzManagedPlan) -> tuple[Path, ...]:
@@ -739,18 +753,20 @@ class RpzManagedInstallTransaction:
             json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8"
         )
 
-    @staticmethod
     def _blocked(
-        result: RpzManagedInstallResult, message: str
+        self, result: RpzManagedInstallResult, message: str
     ) -> RpzManagedInstallResult:
         result.status = "BLOCKED"
         result.steps.append(RpzManagedInstallStep("preflight", False, message))
-        return result
+        return self._finish_audit(result)
 
-    @staticmethod
     def _rejected(
-        result: RpzManagedInstallResult, message: str
+        self, result: RpzManagedInstallResult, message: str
     ) -> RpzManagedInstallResult:
         result.status = "REJECTED"
         result.steps.append(RpzManagedInstallStep("guard", False, message))
+        return self._finish_audit(result)
+
+    def _finish_audit(self, result: RpzManagedInstallResult) -> RpzManagedInstallResult:
+        self.audit_v1.finish_result(result)
         return result

@@ -13,6 +13,8 @@ from pathlib import Path
 from typing import Callable
 
 from .runner import run
+from .audit_store import AuditStore, ResourceKind, Risk
+from .family_audit_adapter import FamilyAuditAdapter
 from .zone_lifecycle import ZoneCreatePlan
 
 
@@ -60,6 +62,7 @@ class ZoneCreateTransaction:
         config_validator: ConfigValidator | None = None,
         activator: ZoneAction | None = None,
         loaded_verifier: ZoneAction | None = None,
+        audit_store: AuditStore | None = None,
     ) -> None:
         self.manifest_directory = manifest_directory
         self.root_config = root_config
@@ -67,6 +70,10 @@ class ZoneCreateTransaction:
         self.config_validator = config_validator or self._validate_config
         self.activator = activator or self._activate_bind
         self.loaded_verifier = loaded_verifier or self._verify_loaded
+        self.audit_v1 = FamilyAuditAdapter(
+            audit_store or FamilyAuditAdapter.default_store(manifest_directory),
+            manifest_directory=manifest_directory,
+        )
 
     def apply(
         self,
@@ -84,6 +91,13 @@ class ZoneCreateTransaction:
             transaction_id=txid,
             zone=plan.zone_name,
             status="PLAN",
+        )
+        self.audit_v1.start(
+            txid,
+            "zone.create",
+            ResourceKind.ZONE,
+            plan.zone_name,
+            risk=Risk.HIGH if commit else Risk.LOW,
         )
         if plan.zone_file.exists():
             return self._finish(
@@ -298,6 +312,7 @@ class ZoneCreateTransaction:
                 json.dumps(payload, ensure_ascii=False, indent=2),
                 encoding="utf-8",
             )
+        self.audit_v1.finish_result(result)
         return result
 
     @staticmethod

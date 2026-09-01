@@ -17,6 +17,8 @@ from typing import Callable
 from .bind_access_inventory import BindAccessInventoryReader
 from .bind_audit_manifest import safe_manifest_payload
 from .bind_acl_plan import BindAclPlan
+from .audit_store import AuditStore, ResourceKind
+from .family_audit_adapter import FamilyAuditAdapter, FamilyAuditContext, risk_from_text
 from .runner import run
 
 
@@ -61,6 +63,7 @@ class BindAclTransaction:
         config_validator: ConfigValidator | None = None,
         activator: Activator | None = None,
         post_validator: PostValidator | None = None,
+        audit_store: AuditStore | None = None,
     ) -> None:
         self.backup_root = backup_root
         self.manifest_directory = manifest_directory
@@ -68,6 +71,14 @@ class BindAclTransaction:
         self.config_validator = config_validator or self._validate_config
         self.activator = activator or self._activate
         self.post_validator = post_validator or self._validate_applied_state
+        self.audit_v1 = FamilyAuditAdapter(
+            audit_store
+            or FamilyAuditAdapter.default_store(
+                manifest_directory, system_anchor=root_config
+            ),
+            manifest_directory=manifest_directory,
+            backup_root=backup_root,
+        )
 
     def apply(
         self,
@@ -96,6 +107,14 @@ class BindAclTransaction:
                 plan.original_text, before_entries, plan.source
             ),
         )
+        audit_context = self.audit_v1.start(
+            txid,
+            "bind.acl.apply",
+            ResourceKind.ACL,
+            plan.name,
+            risk=risk_from_text(risk),
+            reason=result.reason,
+        )
         if (
             plan.source.read_text(encoding="utf-8", errors="replace")
             != plan.original_text
@@ -108,19 +127,19 @@ class BindAclTransaction:
                     f"Plik zmienił się od utworzenia planu: {plan.source}",
                 )
             )
-            return result
+            return self._finish_audit(audit_context, result)
         if not plan.validation_ok:
             result.status = "BLOCKED"
             result.steps.append(
                 BindAclStep("candidate-validation", False, plan.validation_message)
             )
-            return result
+            return self._finish_audit(audit_context, result)
         if not commit:
             result.status = "DRY-RUN"
             result.steps.append(
                 BindAclStep("dry-run", True, "Nie zmieniono konfiguracji ani BIND")
             )
-            return result
+            return self._finish_audit(audit_context, result)
         if plan.impact is not None and plan.impact.risk == "HIGH":
             result.status = "BLOCKED"
             result.steps.append(
@@ -134,7 +153,7 @@ class BindAclTransaction:
                     "transferowego ani notify.",
                 )
             )
-            return result
+            return self._finish_audit(audit_context, result)
 
         self.backup_root.mkdir(parents=True, exist_ok=True, mode=0o750)
         backup = self.backup_root / f"{txid}-{plan.source.name}"
@@ -221,6 +240,12 @@ class BindAclTransaction:
             plan.source,
         )
         self._write_manifest(result)
+        return self._finish_audit(audit_context, result)
+
+    def _finish_audit(
+        self, context: FamilyAuditContext, result: BindAclResult
+    ) -> BindAclResult:
+        self.audit_v1.finish(context, result)
         return result
 
     @staticmethod

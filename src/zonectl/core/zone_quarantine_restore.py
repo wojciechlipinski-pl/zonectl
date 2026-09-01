@@ -13,6 +13,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Callable
 
+from .audit_store import AuditStore, ResourceKind, Risk
+from .family_audit_adapter import FamilyAuditAdapter
 from .runner import run
 
 
@@ -84,11 +86,14 @@ class QuarantineRestoreTransaction:
         config_validator: ConfigValidator | None = None,
         activator: ZoneAction | None = None,
         loaded_verifier: ZoneAction | None = None,
+        audit_store: AuditStore | None = None,
     ) -> None:
         self.zone_validator = zone_validator or self._validate_zone
         self.config_validator = config_validator or self._validate_config
         self.activator = activator or self._activate_bind
         self.loaded_verifier = loaded_verifier or self._verify_loaded
+        self.audit_store = audit_store
+        self.audit_v1: FamilyAuditAdapter | None = None
 
     @staticmethod
     def plan(
@@ -197,12 +202,25 @@ class QuarantineRestoreTransaction:
         result = QuarantineRestoreResult(
             txid, plan.zone_name, "PLAN", str(plan.package_directory)
         )
+        self.audit_v1 = FamilyAuditAdapter(
+            self.audit_store
+            or FamilyAuditAdapter.default_store(plan.package_directory),
+            manifest_directory=plan.package_directory,
+            backup_root=plan.package_directory.parent.parent,
+        )
+        self.audit_v1.start(
+            txid,
+            "zone.quarantine_restore",
+            ResourceKind.ZONE,
+            plan.zone_name,
+            risk=Risk.HIGH if commit else Risk.MEDIUM,
+        )
         if not commit:
             result.status = "DRY-RUN"
             result.steps.append(
                 QuarantineRestoreStep("dry-run", True, "Nie odtworzono danych")
             )
-            return result
+            return self._finish_audit(result)
 
         index_original = plan.managed_index.read_bytes()
         index_stat = plan.managed_index.stat()
@@ -270,7 +288,7 @@ class QuarantineRestoreTransaction:
                 raise RuntimeError(loaded.message)
             result.committed = True
             result.status = "RESTORED"
-            return result
+            return self._finish_audit(result)
         except Exception as exc:
             result.steps.append(QuarantineRestoreStep("transaction", False, str(exc)))
             rollback_ok = True
@@ -309,7 +327,13 @@ class QuarantineRestoreTransaction:
                 )
             result.rolled_back = rollback_ok
             result.status = "ROLLED-BACK" if rollback_ok else "ROLLBACK-FAILED"
-            return result
+            return self._finish_audit(result)
+
+    def _finish_audit(self, result: QuarantineRestoreResult) -> QuarantineRestoreResult:
+        if self.audit_v1 is None:
+            raise RuntimeError("Brak adaptera audytu odtworzenia kwarantanny")
+        self.audit_v1.finish_result(result)
+        return result
 
     @staticmethod
     def _sha256(path: Path) -> str:

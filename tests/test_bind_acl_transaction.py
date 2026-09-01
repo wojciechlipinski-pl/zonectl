@@ -1,6 +1,7 @@
 import json
 from pathlib import Path
 
+from zonectl.core.audit_store import Outcome, RecordKind
 from zonectl.core.bind_acl_plan import BindAclPlanner
 from zonectl.core.bind_acl_transaction import (
     BindAclStep,
@@ -29,12 +30,18 @@ def _ok(name: str):
 def test_dry_run_has_no_side_effects(tmp_path: Path) -> None:
     plan, root = _plan(tmp_path)
     before = root.read_bytes()
-    result = BindAclTransaction(
+    transaction = BindAclTransaction(
         tmp_path / "backups", tmp_path / "manifests", root_config=root
-    ).apply(plan)
+    )
+    result = transaction.apply(plan)
     assert result.status == "DRY-RUN"
     assert root.read_bytes() == before
     assert not (tmp_path / "backups").exists()
+    records = transaction.audit_v1.store.read().records
+    final = next(item for item in records if item.record_kind is RecordKind.RESULT)
+    assert final.operation == "bind.acl.apply"
+    assert final.outcome is Outcome.DRY_RUN
+    assert final.resource.name == "trusted"
 
 
 def test_commit_preserves_metadata_and_writes_manifest(tmp_path: Path) -> None:

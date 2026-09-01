@@ -12,6 +12,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable
 
+from .audit_store import AuditStore, ResourceKind, Risk
+from .family_audit_adapter import FamilyAuditAdapter
 from .runner import run
 
 
@@ -75,12 +77,17 @@ class ZoneRestoreTransaction:
         config_validator: ConfigValidator | None = None,
         activator: ZoneAction | None = None,
         loaded_verifier: ZoneAction | None = None,
+        audit_store: AuditStore | None = None,
     ) -> None:
         self.manifest_directory = manifest_directory
         self.zone_validator = zone_validator or self._validate_zone
         self.config_validator = config_validator or self._validate_config
         self.activator = activator or self._activate_bind
         self.loaded_verifier = loaded_verifier or self._verify_loaded
+        self.audit_v1 = FamilyAuditAdapter(
+            audit_store or FamilyAuditAdapter.default_store(manifest_directory),
+            manifest_directory=manifest_directory,
+        )
 
     @staticmethod
     def plan(
@@ -136,12 +143,19 @@ class ZoneRestoreTransaction:
             + f"-restore-{plan.zone_name}-{uuid.uuid4().hex[:8]}"
         )
         result = ZoneRestoreResult(txid, plan.zone_name, "PLAN")
+        self.audit_v1.start(
+            txid,
+            "zone.restore",
+            ResourceKind.ZONE,
+            plan.zone_name,
+            risk=Risk.HIGH if commit else Risk.MEDIUM,
+        )
         if not commit:
             result.status = "DRY-RUN"
             result.steps.append(
                 ZoneRestoreStep("dry-run", True, "Nie zmieniono konfiguracji")
             )
-            return result
+            return self._finish_audit(result)
 
         index_original = plan.managed_index.read_bytes()
         index_stat = plan.managed_index.stat()
@@ -264,6 +278,10 @@ class ZoneRestoreTransaction:
         path.write_text(
             json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8"
         )
+        return self._finish_audit(result)
+
+    def _finish_audit(self, result: ZoneRestoreResult) -> ZoneRestoreResult:
+        self.audit_v1.finish_result(result)
         return result
 
     @staticmethod
