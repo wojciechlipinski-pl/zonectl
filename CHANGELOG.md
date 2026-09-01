@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+### Added
+
+- add the validated `zonectl.audit/v1` model and a privacy-safe JSONL store
+  with inter-process locking, fixed permissions, symlink protection, bounded
+  reads, corruption diagnostics and explicit atomic retention
+
+### Tests
+
+- verify audit allowlisting, sensitive-value rejection, file modes, fsync-safe
+  append behavior, corrupt-line isolation and guarded retention
+
 ### Documentation
 
 - audit the existing transaction manifests, backups, identifiers and history,
