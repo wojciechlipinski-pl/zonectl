@@ -7,11 +7,15 @@
 - add the validated `zonectl.audit/v1` model and a privacy-safe JSONL store
   with inter-process locking, fixed permissions, symlink protection, bounded
   reads, corruption diagnostics and explicit atomic retention
+- connect the base zone validation, verification, apply and rollback engine to
+  START/RESULT audit v1 envelopes while retaining legacy manifests and history
 
 ### Tests
 
 - verify audit allowlisting, sensitive-value rejection, file modes, fsync-safe
   append behavior, corrupt-line isolation and guarded retention
+- verify canonical base-transaction outcomes, fail-closed audit startup,
+  rollback reporting, relative references and exclusion of raw metadata
 
 ### Documentation
 
