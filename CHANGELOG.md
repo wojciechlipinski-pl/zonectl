@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 4.11.0 - 2026-09-01
+
 ### Changed
 
 - extend the isolated screenshot demonstrator with synthetic ACL/secondary,

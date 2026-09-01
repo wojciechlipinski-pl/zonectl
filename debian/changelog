@@ -1,3 +1,13 @@
+zonectl (4.11.0-1) unstable; urgency=medium
+
+  * Enforce Ruff formatting, lint and static analysis in the quality gate.
+  * Add isolated BIND inline-signing integration coverage.
+  * Validate responsive TUI behavior across representative terminal profiles.
+  * Publish bilingual disaster-recovery and DNS record documentation.
+  * Complete the synthetic TUI gallery with ACL and transaction outcomes.
+
+ -- Wojciech Lipiński <wojciech.lipinski.elk@gmail.com>  Tue, 01 Sep 2026 12:00:00 +0200
+
 zonectl (4.10.1-1) unstable; urgency=medium
 
   * Publish an isolated synthetic TUI screenshot demonstrator and gallery.

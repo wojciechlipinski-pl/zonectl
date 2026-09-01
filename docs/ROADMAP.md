@@ -348,14 +348,14 @@ odczytowe; import wymaga osobnego planu, dry-runu i potwierdzenia operatora.
 ### Bezpieczne materiały demonstracyjne
 
 Deterministyczny demonstrator i pierwsza publiczna galeria zostały wydane
-w ZoneCTL 4.10.1. Brakujące widoki pozostają zakresem jakościowym 4.11.
+w ZoneCTL 4.10.1, a komplet widoków domknięto w ZoneCTL 4.11.0.
 
 - [x] Dodać deterministyczny generator demonstracyjnego stanu TUI, który nie
   czyta `/etc/bind`, `/var/lib/bind`, nazw hostów ani danych operatora.
 - [x] Opublikować pochodzące z rzeczywistego renderera syntetyczne ekrany:
   listę stref z ramką oczekiwania, raport BIND, DNSSEC, rekordy oraz formularze
   dodawania rekordu i tworzenia strefy.
-- [ ] Uzupełnić galerię 4.11 o widoki ACL/secondary, wyniku transakcji oraz
+- [x] Uzupełnić galerię 4.11 o widoki ACL/secondary, wyniku transakcji oraz
   kontrolowanego rollbacku.
 - [x] Zapisać obrazy w `docs/images/` i osadzić je w obu wersjach README.
 - [x] Dodać test wykrywający w metadanych obrazów i plikach demonstracyjnych
@@ -613,6 +613,45 @@ zaczynając od raportu wpływu tylko do odczytu.
 Wydania `4.10.x` pozostają linią stabilizacyjną przeznaczoną na poprawki
 błędów, bezpieczeństwa i pakietów. Rozszerzenia polityk DNSSEC/KASP oraz
 wielojęzyczność są planowane dla ZoneCTL 5.0.
+
+## ZoneCTL 4.11 — jakość, odporność i dokumentacja
+
+- [x] Wprowadzić automatyczne formatowanie Ruff, lint i analizę statyczną do
+  lokalnej oraz githubowej bramki jakości.
+- [x] Dodać izolowane testy integracyjne rzeczywistych narzędzi BIND dla
+  poprawnych i błędnych konfiguracji `inline-signing`.
+- [x] Zweryfikować responsywność TUI na małym VT100, typowym xtermie i
+  szerokim terminalu, w trybie UTF-8 i ASCII.
+- [x] Opublikować po polsku i angielsku procedury odtwarzania po nieudanej
+  transakcji, awarii BIND oraz utracie hosta.
+- [x] Udokumentować i walidować przykłady wszystkich typów rekordów
+  obsługiwanych przez formularze ZoneCTL.
+- [x] Uzupełnić syntetyczną galerię o ACL/secondary, udaną transakcję i
+  kontrolowany rollback, bez danych środowiska produkcyjnego.
+
+### Bramka wydania ZoneCTL 4.11.0
+
+- [x] Uruchomić pełne testy jednostkowe i integracyjne, Ruff, mypy, kontrolę
+  prywatności oraz budowę wheel i pakietu DEB.
+- [ ] Scalić przygotowanie wydania, utworzyć tag `v4.11.0` i uruchomić
+  zatwierdzony workflow publikacyjny.
+
+## ZoneCTL 4.12 — audyt i obsługa transakcji
+
+- [ ] Dodać spójny rejestr audytowy operacji z czasem, strefą, rodzajem,
+  wynikiem, identyfikatorem transakcji i informacją o rollbacku.
+- [ ] Udostępnić odczytową przeglądarkę audytu w CLI i TUI z filtrowaniem po
+  strefie, statusie, rodzaju operacji i zakresie czasu.
+- [ ] Przed zatwierdzeniem pokazywać zwarte podsumowanie zmian: pliki,
+  rekordy, serial, planowane walidacje, backup oraz operacje BIND.
+- [ ] Zapewnić bezpieczny eksport audytu w JSON i formacie tekstowym oraz
+  zdefiniować retencję bez ujawniania sekretów i materiału kluczy DNSSEC.
+- [ ] Rozważyć opcjonalne lokalne repozytorium Git jako dodatkową historię
+  zarządzanych plików stref, nigdy jako zamiennik backupu transakcyjnego.
+- [ ] Domyślnie wykluczyć automatycznie aktualizowane strefy RPZ z opcjonalnej
+  historii Git.
+- [ ] Objąć przeglądarkę, filtry, podsumowania i eksport testami prywatności,
+  retencji, małych terminali oraz uszkodzonych wpisów audytu.
 
 ## Rozwój po osiągnięciu pełnej funkcjonalności podstawowej
 
