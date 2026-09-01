@@ -16,16 +16,19 @@ from types import TracebackType
 from typing import Any, Callable, TextIO, cast
 
 from .audit import AuditLog
+from .audit_store import AuditStore, Risk
 from .config import ToolkitConfig
 from .models import Zone
 from .paths import (
     AUDIT_LOG,
+    AUDIT_V1_LOG,
     LOCK_DIR,
     STATE_DIR,
     TRANSACTION_BACKUP_DIR,
     TRANSACTION_DIR,
 )
 from .runner import run
+from .transaction_audit_adapter import TransactionAuditAdapter
 
 
 _flock = cast(Callable[[int, int], None], getattr(fcntl, "flock"))
@@ -138,6 +141,15 @@ class TransactionEngine:
             )
         )
         self.audit = AuditLog(Path(t.get("audit_log", str(AUDIT_LOG))))
+        default_audit_v1 = (
+            self.state_dir / "audit-v1.jsonl"
+            if self.state_dir != STATE_DIR
+            else AUDIT_V1_LOG
+        )
+        self.audit_v1 = TransactionAuditAdapter(
+            AuditStore(Path(t.get("audit_v1_log", str(default_audit_v1)))),
+            self.backup_dir,
+        )
         self.timeout = int(t.get("command_timeout", "20"))
         self.local_server = t.get("local_server", "127.0.0.1")
         self.read_only = str(t.get("read_only", "no")).strip().casefold() in {
@@ -245,16 +257,19 @@ class TransactionEngine:
         candidate = source or zone.file
         txid = self._new_id(zone.name)
         result = TransactionResult(txid, zone.name, committed=False)
+        self.audit_v1.start(txid, zone.name, "zone.validate", risk=Risk.LOW)
         if not candidate:
             result.steps.append(
                 StepResult("candidate", False, "Brak ścieżki pliku strefy")
             )
-            return result
+            return self._finish(result, "FAIL", mode="validate")
         if not candidate.is_file():
             result.steps.append(
                 StepResult("candidate", False, f"Plik nie istnieje: {candidate}")
             )
-            return result
+            return self._finish(
+                result, "FAIL", mode="validate", candidate=str(candidate)
+            )
         result.steps.append(
             StepResult(
                 "candidate", True, f"{candidate} sha256={self._digest(candidate)}"
@@ -262,20 +277,18 @@ class TransactionEngine:
         )
         result.steps.append(self._zone_validation(zone, candidate))
         result.steps.append(self._config_validation())
-        self._save_manifest(result, {"mode": "validate", "candidate": str(candidate)})
-        self.audit.append(
-            txid,
-            zone.name,
-            "validate",
+        return self._finish(
+            result,
             "PASS" if all(s.ok for s in result.steps) else "FAIL",
+            mode="validate",
             candidate=str(candidate),
         )
-        return result
 
     def verify(self, zone_name: str) -> TransactionResult:
         zone = self.find_zone(zone_name)
         txid = self._new_id(zone.name)
         result = TransactionResult(txid, zone.name, committed=False)
+        self.audit_v1.start(txid, zone.name, "zone.verify", risk=Risk.LOW)
 
         if not zone.file:
             result.steps.append(
@@ -389,6 +402,12 @@ class TransactionEngine:
             zone.name,
             committed=False,
             metadata=dict(metadata or {}),
+        )
+        self.audit_v1.start(
+            txid,
+            zone.name,
+            "zone.records.apply",
+            risk=Risk.HIGH if commit else Risk.LOW,
         )
         if commit and self.read_only:
             result.steps.append(
@@ -577,6 +596,12 @@ class TransactionEngine:
             raise RuntimeError(f"Strefa {zone.name} nie ma ustawionego parametru file")
         txid = self._new_id(zone.name)
         result = TransactionResult(txid, zone.name, committed=False)
+        self.audit_v1.start(
+            txid,
+            zone.name,
+            "zone.rollback",
+            risk=Risk.CRITICAL if commit else Risk.MEDIUM,
+        )
         if commit and self.read_only:
             result.steps.append(
                 StepResult(
@@ -594,7 +619,7 @@ class TransactionEngine:
             result.steps.append(
                 StepResult("backup", False, f"Nie znaleziono backupu: {backup}")
             )
-            return result
+            return self._finish(result, "FAIL", backup=str(backup))
         check = self._zone_validation(zone, backup)
         result.steps.append(check)
         if not check.ok or not commit:
@@ -849,4 +874,5 @@ class TransactionEngine:
             outcome,
             **audit_details,
         )
+        self.audit_v1.finish(result, outcome)
         return result

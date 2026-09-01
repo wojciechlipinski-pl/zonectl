@@ -273,7 +273,7 @@ instalacji, migracji, błędy i zmiany stanu zarządzania.
 
 1. model, walidator i sanitizer koperty v1;
 2. bezpieczny writer/reader oraz diagnostyka uszkodzonych wpisów;
-3. adapter bazowego `TransactionEngine`;
+3. adapter bazowego `TransactionEngine` — wykonany;
 4. adaptery pozostałych rodzin transakcji;
 5. filtry i eksport CLI;
 6. odczytowa przeglądarka TUI;

@@ -645,6 +645,9 @@ wielojęzyczność są planowane dla ZoneCTL 5.0.
   walidację danych, blokadę międzyprocesową, append z `fsync`, stałe tryby
   `0750/0640`, ochronę przed symlinkami, diagnostykę uszkodzonych linii oraz
   jawny dry-run i atomowe, potwierdzane zastosowanie retencji.
+- [x] Podłączyć bazowy `TransactionEngine` do par START/RESULT dla walidacji,
+  weryfikacji, zastosowania pliku strefy i ręcznego rollbacku, zachowując
+  dotychczasowe manifesty oraz polecenia historii bez zmian.
 - [ ] Dodać spójny rejestr audytowy operacji z czasem, strefą, rodzajem,
   wynikiem, identyfikatorem transakcji i informacją o rollbacku.
 - [ ] Udostępnić odczytową przeglądarkę audytu w CLI i TUI z filtrowaniem po
