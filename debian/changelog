@@ -1,3 +1,13 @@
+zonectl (4.12.0-1) unstable; urgency=medium
+
+  * Add the privacy-safe zonectl.audit/v1 registry with guarded retention.
+  * Cover base, ACL/secondary, DNSSEC, RPZ and zone lifecycle transactions.
+  * Add filtered text and JSON audit CLI output plus an F6 TUI browser.
+  * Show record-change summaries before final transaction confirmation.
+  * Add optional local-only Git history with RPZ and remote safeguards.
+
+ -- Wojciech Lipiński <wojciech.lipinski.elk@gmail.com>  Wed, 02 Sep 2026 10:00:00 +0200
+
 zonectl (4.11.0-1) unstable; urgency=medium
 
   * Enforce Ruff formatting, lint and static analysis in the quality gate.

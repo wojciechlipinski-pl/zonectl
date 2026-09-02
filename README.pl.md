@@ -8,7 +8,7 @@ ZoneCTL jest terminalowym narzędziem do bezpiecznego zarządzania strefami DNS 
 
 ## Wersja
 
-**4.11.0 — jakość, odporność i kompletna syntetyczna dokumentacja TUI**
+**4.12.0 — bezpieczny audyt, widoczność transakcji i opcjonalna historia lokalna**
 
 ## Uruchomienie
 

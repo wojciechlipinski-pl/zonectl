@@ -660,7 +660,7 @@ wielojęzyczność są planowane dla ZoneCTL 5.0.
 - [x] Przed zatwierdzeniem zapisu rekordów pokazywać zwarte podsumowanie zmian:
   pliki,
   rekordy, serial, planowane walidacje, backup oraz operacje BIND.
-- [ ] Zapewnić bezpieczny eksport audytu w JSON i formacie tekstowym oraz
+- [x] Zapewnić bezpieczny eksport audytu w JSON i formacie tekstowym oraz
   zdefiniować retencję bez ujawniania sekretów i materiału kluczy DNSSEC.
 - [x] Dodać opcjonalne lokalne repozytorium Git jako dodatkową historię
   zarządzanych plików stref, nigdy jako zamiennik backupu transakcyjnego.
@@ -671,6 +671,16 @@ wielojęzyczność są planowane dla ZoneCTL 5.0.
 - [x] Objąć przeglądarkę, filtry i podsumowania testami prywatności, małych
   terminali oraz uszkodzonych wpisów audytu; eksport i retencja mają osobne
   testy warstwy CLI i magazynu.
+
+### Bramka wydania ZoneCTL 4.12.0
+
+- [ ] Uruchomić pełne testy jednostkowe i integracyjne, Ruff, mypy, kontrolę
+  prywatności oraz budowę wheel i pakietu DEB.
+- [ ] Zweryfikować instalację pakietu 4.12.0 na środowisku testowym bez zmian
+  produkcyjnej konfiguracji BIND.
+- [ ] Scalić przygotowanie wydania do `main`.
+- [ ] Utworzyć tag `v4.12.0` i uruchomić zatwierdzony workflow publikacyjny
+  dopiero po wszystkich wcześniejszych kontrolach.
 
 ## Rozwój po osiągnięciu pełnej funkcjonalności podstawowej
 

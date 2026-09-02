@@ -11,7 +11,7 @@ atomic replacement and rollback.
 
 ## Current release
 
-**4.11.0 — quality, resilience and complete synthetic TUI documentation**
+**4.12.0 — privacy-safe audit, transaction visibility and optional local history**
 
 ## Highlights
 
@@ -61,7 +61,7 @@ exact patch version.
 Install the Debian package attached to the GitHub release:
 
 ```bash
-sudo apt install ./zonectl_4.11.0-1_all.deb
+sudo apt install ./zonectl_4.12.0-1_all.deb
 zctl --version
 ```
 
