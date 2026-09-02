@@ -75,6 +75,14 @@ Brak docstringa.
 
 Core services for ZoneCTL.
 
+## `src/zonectl/core/git_history.py`
+
+Opcjonalne, lokalne repozytorium dodatkowej historii plików stref. Moduł jest
+domyślnie wyłączony, uruchamia Git bez powłoki i hooków, wymusza prywatny
+katalog bez `remote`, kopiuje atomowo tylko plik strefy wybrany przez
+`ToolkitConfig` i odrzuca profil RPZ. Snapshot nie uczestniczy w rollbacku i
+nie zastępuje backupu transakcyjnego ani backupu hosta.
+
 ## `src/zonectl/core/audit.py`
 
 Brak docstringa.

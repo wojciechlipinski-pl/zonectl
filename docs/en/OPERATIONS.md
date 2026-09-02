@@ -367,6 +367,32 @@ apt install ./zonectl_4.7.0-1_all.deb
 The package does not own `/etc/bind` or transaction backup directories, and
 its maintainer scripts do not reconfigure BIND.
 
+## Optional local zone-file Git history
+
+This additional history is disabled by default. It accepts only files selected
+for managed zones by ZoneCTL, rejects RPZ profiles and refuses any repository
+with a configured remote. Enable it explicitly in `[toolkit]`:
+
+```ini
+git_history_enabled = yes
+git_history_directory = /var/lib/zonectl/git-history
+```
+
+Always inspect the dry-run before confirming a write:
+
+```bash
+zctl git-history init
+zctl git-history init --commit --confirm INITIALIZE
+zctl git-history snapshot example.test
+zctl git-history snapshot example.test --commit --confirm example.test
+zctl git-history status
+zctl git-history log --limit 20
+```
+
+Take a snapshot only after the transaction and BIND verification succeed.
+Local Git is not used for rollback and never replaces transaction or full-host
+backups.
+
 ## Post-change checklist
 
 ```bash

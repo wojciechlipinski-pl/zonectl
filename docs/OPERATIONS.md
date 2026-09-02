@@ -590,6 +590,33 @@ operacyjnym do szybkiego cofania pojedynczych zmian. Nie zastępują Veeam.
 Repozytorium Git przechowuje historię kodu aplikacji i również nie zastępuje
 backupu maszyny wirtualnej.
 
+### Opcjonalna lokalna historia plików stref
+
+Oddzielne repozytorium historii stref jest domyślnie wyłączone. Nie ma remote,
+nie przechowuje kluczy DNSSEC i odmawia snapshotów profilu RPZ. Aby je włączyć,
+dodaj do sekcji `[toolkit]`:
+
+```ini
+git_history_enabled = yes
+git_history_directory = /var/lib/zonectl/git-history
+```
+
+Inicjalizacja i każdy snapshot mają bezpieczny plan bez zapisu oraz osobne,
+jawne potwierdzenie:
+
+```bash
+zctl git-history init
+zctl git-history init --commit --confirm INITIALIZE
+zctl git-history snapshot example.test
+zctl git-history snapshot example.test --commit --confirm example.test
+zctl git-history status
+zctl git-history log --limit 20
+```
+
+Snapshot wolno wykonać dopiero po udanej transakcji i weryfikacji BIND. Git
+jest tylko dodatkową historią: nie bierze udziału w rollbacku, nie usuwa ani
+nie zastępuje backupów i nie może mieć skonfigurowanego `remote`.
+
 Przed wydaniem, migracją lub większą zmianą konfiguracji należy potwierdzić,
 że ostatnie zadanie Veeam zakończyło się powodzeniem. Po odtworzeniu maszyny
 z Veeam trzeba wykonać co najmniej:

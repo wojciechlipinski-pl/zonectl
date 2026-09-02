@@ -19,6 +19,9 @@
   filters, START/RESULT switching, bounded refresh and responsive compact mode
 - show a complete record-change summary before the final commit confirmation,
   including counts, validation, backup and BIND activation expectations
+- add an explicitly enabled, local-only Git history for managed zone files,
+  with dry-run, typed confirmation, RPZ exclusion, remote rejection and fixed
+  private permissions; transaction and full-host backups remain mandatory
 
 ### Tests
 
@@ -33,6 +36,8 @@
   configuration independence and sanitized corrupt-record diagnostics
 - verify TUI audit filtering, allowlisted details, compact terminal rendering,
   synthetic fixtures and mandatory pre-commit record summaries
+- verify local Git history opt-in, dry-run, confirmation, atomic snapshots,
+  remote rejection and default exclusion of automatically managed RPZ zones
 
 ### Documentation
 

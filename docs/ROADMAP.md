@@ -662,9 +662,9 @@ wielojęzyczność są planowane dla ZoneCTL 5.0.
   rekordy, serial, planowane walidacje, backup oraz operacje BIND.
 - [ ] Zapewnić bezpieczny eksport audytu w JSON i formacie tekstowym oraz
   zdefiniować retencję bez ujawniania sekretów i materiału kluczy DNSSEC.
-- [ ] Rozważyć opcjonalne lokalne repozytorium Git jako dodatkową historię
+- [x] Dodać opcjonalne lokalne repozytorium Git jako dodatkową historię
   zarządzanych plików stref, nigdy jako zamiennik backupu transakcyjnego.
-- [ ] Domyślnie wykluczyć automatycznie aktualizowane strefy RPZ z opcjonalnej
+- [x] Domyślnie wykluczyć automatycznie aktualizowane strefy RPZ z opcjonalnej
   historii Git.
 - [x] Opublikować syntetyczny zrzut przeglądarki audytu po pełnej kontroli
   kadrowania, metadanych i identyfikatorów produkcyjnych.
@@ -705,10 +705,10 @@ walidacji, backupu i rollbacku.
 
 ## Pomysły po 4.4
 
-- [ ] Rozważyć lokalne repozytorium Git jako dodatkową historię zmian stref.
-- [ ] Nie traktować Git jako zamiennika backupu Veeam ani backupów
+- [x] Dodać lokalne repozytorium Git jako dodatkową historię zmian stref.
+- [x] Nie traktować Git jako zamiennika backupu Veeam ani backupów
   transakcyjnych ZoneCTL.
-- [ ] Domyślnie wykluczyć automatycznie aktualizowaną strefę RPZ z historii
+- [x] Domyślnie wykluczyć automatycznie aktualizowaną strefę RPZ z historii
   Git.
 ### Pierwsze uruchomienie i import środowiska
 

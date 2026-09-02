@@ -151,6 +151,27 @@ lines produce sanitized diagnostics and do not expose their original payload.
 In the TUI, `F6` opens a read-only browser for the same registry with resource,
 operation and outcome filters plus allowlisted transaction details.
 
+An optional local Git repository can keep additional versions of managed zone
+files. It is disabled by default, refuses repositories with remotes and excludes
+RPZ zones. Enable it explicitly in `[toolkit]`, initialize it, then use a dry-run
+before every confirmed snapshot:
+
+```ini
+git_history_enabled = yes
+git_history_directory = /var/lib/zonectl/git-history
+```
+
+```console
+zctl git-history init
+zctl git-history init --commit --confirm INITIALIZE
+zctl git-history snapshot example.test
+zctl git-history snapshot example.test --commit --confirm example.test
+zctl git-history log --limit 20
+```
+
+This local history never replaces ZoneCTL transaction backups or a full-host
+backup and is not synchronized to GitHub.
+
 The record view supports structured filters, for example:
 
 ```text
