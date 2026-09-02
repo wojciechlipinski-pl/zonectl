@@ -48,6 +48,7 @@ from .core.audit_query import (
     render_audit_list,
 )
 from .core.audit_store import AuditStorageError, AuditStore, MAX_RESULTS, Outcome
+from .core.git_history import GitHistoryError, LocalGitHistory
 from .core.models import Zone
 from .core.paths import AUDIT_V1_LOG, DEFAULT_CONFIG, DEFAULT_GROUPS, DEFAULT_ZONES
 from .core.dnssec_enable_plan import (
@@ -1028,6 +1029,27 @@ def parser() -> argparse.ArgumentParser:
     audit_filters(audit_export)
     audit_export.add_argument("--format", choices=("text", "json"), required=True)
 
+    git_history = sub.add_parser(
+        "git-history", help="opcjonalna lokalna historia zarządzanych plików stref"
+    )
+    git_history_sub = git_history.add_subparsers(
+        dest="git_history_command", required=True
+    )
+    git_history_init = git_history_sub.add_parser(
+        "init", help="zaplanuj lub utwórz prywatne repozytorium bez remote"
+    )
+    git_history_init.add_argument("--commit", action="store_true")
+    git_history_init.add_argument("--confirm")
+    git_history_snapshot = git_history_sub.add_parser(
+        "snapshot", help="zaplanuj lub zapisz wersję jednej zarządzanej strefy"
+    )
+    git_history_snapshot.add_argument("zone")
+    git_history_snapshot.add_argument("--commit", action="store_true")
+    git_history_snapshot.add_argument("--confirm")
+    git_history_sub.add_parser("status", help="pokaż lokalne niezapisane zmiany")
+    git_history_log = git_history_sub.add_parser("log", help="pokaż lokalne commity")
+    git_history_log.add_argument("--limit", type=int, default=20)
+
     legacy = sub.add_parser("legacy", help="uruchom zgodne polecenie silnika 2.2.0")
     legacy.add_argument("arguments", nargs=argparse.REMAINDER)
     return p
@@ -1177,6 +1199,63 @@ def audit_main(args: argparse.Namespace) -> int:
     return 0
 
 
+def git_history_main(args: argparse.Namespace, config: ToolkitConfig) -> int:
+    """Handle explicitly enabled, local-only zone history commands."""
+    if not config.git_history_enabled:
+        print(
+            "BŁĄD: lokalna historia Git jest wyłączona; ustaw "
+            "git_history_enabled = yes",
+            file=sys.stderr,
+        )
+        return 2
+    history = LocalGitHistory(config.git_history_directory)
+    try:
+        if args.git_history_command == "init":
+            if args.commit and args.confirm != "INITIALIZE":
+                raise GitHistoryError("--commit wymaga --confirm INITIALIZE")
+            planned = history.initialize(commit=args.commit)
+            action = "utworzono" if args.commit and planned else "gotowe"
+            if not args.commit:
+                action = "PLAN: zostanie utworzone"
+            print(f"{action}: {config.git_history_directory}")
+            print("UWAGA: historia Git nie zastępuje backupów transakcyjnych.")
+            return 0
+        if args.git_history_command == "snapshot":
+            zones = {zone.name.rstrip(".").casefold(): zone for zone in config.zones()}
+            name = args.zone.rstrip(".").casefold()
+            zone = zones.get(name)
+            if zone is None or zone.file is None:
+                raise GitHistoryError("strefa nie jest zarządzana lub nie ma pliku")
+            if args.commit and args.confirm != name:
+                raise GitHistoryError("--commit wymaga --confirm z nazwą strefy")
+            result = history.snapshot(
+                zone.name,
+                zone.file,
+                profile=zone.health_profile,
+                commit=args.commit,
+            )
+            if result.dry_run:
+                state = "zmiana" if result.changed else "bez zmian"
+                print(f"PLAN: {result.zone}: {state}")
+            elif result.changed:
+                print(f"COMMITTED: {result.zone}: {result.commit}")
+            else:
+                print(f"BEZ ZMIAN: {result.zone}")
+            print("Backup transakcyjny pozostaje wymagany i niezależny od Git.")
+            return 0
+        if args.git_history_command == "status":
+            lines = history.status()
+            print("\n".join(lines) if lines else "Czyste repozytorium lokalne.")
+            return 0
+        if args.git_history_command == "log":
+            print("\n".join(history.log(limit=args.limit)))
+            return 0
+    except (GitHistoryError, OSError) as exc:
+        print(f"BŁĄD: {exc}", file=sys.stderr)
+        return 2
+    return 2
+
+
 def main(argv: list[str] | None = None) -> int:
     args = parser().parse_args(argv)
     if args.command == "legacy":
@@ -1190,6 +1269,8 @@ def main(argv: list[str] | None = None) -> int:
         return 2
     if args.command in {"transaction", "tx"}:
         return transaction_main(args, config)
+    if args.command == "git-history":
+        return git_history_main(args, config)
     zones = config.zones()
     if args.command == "bind" and args.bind_command in {
         "zone-secondary-plan",

@@ -130,6 +130,32 @@ ani pakietu odtworzeniowego żaden z etapów nie usuwa.
 
 ## Filtrowanie rekordów
 
+## Opcjonalna lokalna historia Git
+
+ZoneCTL może przechowywać dodatkowe wersje zarządzanych plików stref w
+prywatnym, lokalnym repozytorium Git. Funkcja jest domyślnie wyłączona, odrzuca
+repozytoria z `remote` i automatycznie wyklucza strefy RPZ. Włącz ją jawnie:
+
+```ini
+[toolkit]
+git_history_enabled = yes
+git_history_directory = /var/lib/zonectl/git-history
+```
+
+Następnie wykonuj najpierw plan, a dopiero potem operację potwierdzoną:
+
+```console
+zctl git-history init
+zctl git-history init --commit --confirm INITIALIZE
+zctl git-history snapshot example.test
+zctl git-history snapshot example.test --commit --confirm example.test
+zctl git-history status
+zctl git-history log --limit 20
+```
+
+Ta historia nie zastępuje backupów transakcyjnych ZoneCTL ani backupu całej
+maszyny i nie jest wysyłana do GitHuba.
+
 W widoku rekordów naciśnij `/`. Zwykły tekst nadal przeszukuje wszystkie
 widoczne pola. Filtry pól można łączyć spacjami (AND):
 

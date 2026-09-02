@@ -169,6 +169,19 @@ class ToolkitConfig:
         return _yes(self.toolkit.get("read_only"), False)
 
     @property
+    def git_history_enabled(self) -> bool:
+        """Return whether the optional local Git history is explicitly enabled."""
+        return _yes(self.toolkit.get("git_history_enabled"), False)
+
+    @property
+    def git_history_directory(self) -> Path:
+        """Return the private repository path for optional zone history."""
+        from .paths import GIT_HISTORY_DIR
+
+        raw = self.toolkit.get("git_history_directory", str(GIT_HISTORY_DIR)).strip()
+        return Path(raw).expanduser()
+
+    @property
     def bind_config_path(self) -> Path:
         raw = self.toolkit.get(
             "bind_config",

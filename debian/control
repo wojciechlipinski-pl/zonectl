@@ -23,6 +23,7 @@ Depends:
  bind9 (>= 1:9.20.0),
  bind9-utils (>= 1:9.20.0),
  bind9-dnsutils (>= 1:9.20.0)
+Suggests: git
 Description: transactional DNS management toolkit for BIND 9
  ZoneCTL provides guarded CLI and TUI workflows for BIND DNS zones, records,
  lifecycle operations and DNSSEC management. Mutating operations use plans,

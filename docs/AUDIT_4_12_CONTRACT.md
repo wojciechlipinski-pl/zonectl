@@ -279,4 +279,5 @@ instalacji, migracji, błędy i zmiany stanu zarządzania.
 4. adaptery pozostałych rodzin transakcji — wykonane;
 5. filtry i eksport CLI;
 6. odczytowa przeglądarka TUI;
-7. retencja oraz dopiero później opcjonalna historia Git.
+7. retencja oraz opcjonalna, lokalna historia Git — wykonane; Git jest
+   domyślnie wyłączony, nie ma remote, wyklucza RPZ i nie zastępuje backupów.

@@ -49,6 +49,7 @@ jobs:
             src/zonectl/core/transaction_audit_adapter.py \
             src/zonectl/core/family_audit_adapter.py \
             src/zonectl/core/audit_query.py \
+            src/zonectl/core/git_history.py \
             src/zonectl/ui/audit_view.py \
             src/zonectl/core/bind_audit_manifest.py \
             src/zonectl/core/bind_secondary_health.py \
@@ -145,6 +146,7 @@ jobs:
             src/zonectl/core/transaction_audit_adapter.py \
             src/zonectl/core/family_audit_adapter.py \
             src/zonectl/core/audit_query.py \
+            src/zonectl/core/git_history.py \
             src/zonectl/ui/audit_view.py
       - name: Reject whitespace errors
         run: git diff --check $(git hash-object -t tree /dev/null) HEAD
