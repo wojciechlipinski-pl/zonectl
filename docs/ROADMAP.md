@@ -674,9 +674,9 @@ wielojęzyczność są planowane dla ZoneCTL 5.0.
 
 ### Bramka wydania ZoneCTL 4.12.0
 
-- [ ] Uruchomić pełne testy jednostkowe i integracyjne, Ruff, mypy, kontrolę
+- [x] Uruchomić pełne testy jednostkowe i integracyjne, Ruff, mypy, kontrolę
   prywatności oraz budowę wheel i pakietu DEB.
-- [ ] Zweryfikować instalację pakietu 4.12.0 na środowisku testowym bez zmian
+- [x] Zweryfikować instalację pakietu 4.12.0 na środowisku testowym bez zmian
   produkcyjnej konfiguracji BIND.
 - [ ] Scalić przygotowanie wydania do `main`.
 - [ ] Utworzyć tag `v4.12.0` i uruchomić zatwierdzony workflow publikacyjny
