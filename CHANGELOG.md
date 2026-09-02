@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 4.12.0 - 2026-09-02
+
 ### Added
 
 - add the validated `zonectl.audit/v1` model and a privacy-safe JSONL store

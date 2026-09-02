@@ -44,6 +44,15 @@ def test_package_build_checksums_and_uploads_without_publishing() -> None:
     assert "twine upload" not in text
 
 
+def test_package_build_installs_deb_only_inside_the_clean_container() -> None:
+    text = workflow_text()
+
+    assert "Install and verify package in the isolated container" in text
+    assert 'apt-get install --yes "$deb"' in text
+    assert 'test "$(zctl --version)" = "zctl $expected"' in text
+    assert "dpkg-query -W" in text
+
+
 def test_workflows_use_node24_action_generations() -> None:
     workflows = tuple((ROOT / ".github" / "workflows").glob("*.yml"))
     combined = "\n".join(path.read_text(encoding="utf-8") for path in workflows)

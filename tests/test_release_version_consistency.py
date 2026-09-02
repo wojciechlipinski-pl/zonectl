@@ -11,14 +11,14 @@ def test_release_version_is_consistent_across_public_artifacts() -> None:
     metadata = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
     version = metadata["project"]["version"]
 
-    assert version == "4.11.0"
+    assert version == "4.12.0"
     assert zonectl.__version__ == version
     assert (
         (ROOT / "debian/changelog")
         .read_text(encoding="utf-8")
         .startswith(f"zonectl ({version}-1) ")
     )
-    assert f"## {version} - 2026-09-01" in (ROOT / "CHANGELOG.md").read_text(
+    assert f"## {version} - 2026-09-02" in (ROOT / "CHANGELOG.md").read_text(
         encoding="utf-8"
     )
     assert f"**{version} —" in (ROOT / "README.md").read_text(encoding="utf-8")

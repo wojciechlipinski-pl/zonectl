@@ -65,6 +65,15 @@ jobs:
             echo "BŁĄD: pakiet zawiera pliki /etc/bind"
             exit 1
           fi
+      - name: Install and verify package in the isolated container
+        shell: bash
+        run: |
+          deb="$(find .. -maxdepth 1 -type f -name 'zonectl_*_all.deb' -print -quit)"
+          test -n "$deb"
+          apt-get install --yes "$deb"
+          expected="$(dpkg-deb -f "$deb" Version | sed 's/-[^-]*$//')"
+          test "$(zctl --version)" = "zctl $expected"
+          test "$(dpkg-query -W -f='${Status}' zonectl)" = "install ok installed"
       - name: Run Lintian
         run: lintian ../zonectl_*.changes
       - name: Collect verified artifacts and checksums
