@@ -33,3 +33,19 @@ directly into a root shell.
 The checksum published beside an asset protects against transfer corruption.
 It does not replace review of the GitHub repository, release workflow, and tag
 when the GitHub account itself is outside the threat model.
+
+## Failed final validation
+
+If package installation started but a final check failed, inspect the state:
+
+```bash
+dpkg-query -W zonectl
+zctl --version
+named-checkconf
+systemctl status bind9 --no-pager
+```
+
+The script deliberately does not downgrade automatically. Reinstall the
+previous version only from a separately verified package or trusted APT
+source, after diagnosing the failure. The ZoneCTL package does not own
+`/etc/bind`; installing it should not modify BIND configuration or zone files.

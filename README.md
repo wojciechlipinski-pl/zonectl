@@ -43,7 +43,8 @@ All names, addresses, keys and environment values shown below are synthetic.
 
 Operations: [operator guide](docs/en/OPERATIONS.md) ·
 [disaster recovery](docs/en/DISASTER_RECOVERY.md) ·
-[DNS record examples](docs/en/RECORD_EXAMPLES.md)
+[DNS record examples](docs/en/RECORD_EXAMPLES.md) ·
+[guarded release upgrades](docs/en/UPGRADE.md)
 
 ## Requirements
 
@@ -284,6 +285,8 @@ delete DNSSEC keys or recovery packages.
 
 - [English operations guide](docs/en/OPERATIONS.md)
 - [Polish operations guide](docs/OPERATIONS.md)
+- [Guarded GitHub release upgrades](docs/en/UPGRADE.md)
+- [Bezpieczna aktualizacja z GitHub Release](docs/UPGRADE.md)
 - [Polish README](README.pl.md)
 - [Architecture](docs/ARCHITECTURE.md)
 - [Module reference](docs/MODULE_REFERENCE.md)

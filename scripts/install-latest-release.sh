@@ -2,13 +2,15 @@
 set -Eeuo pipefail
 
 readonly REPOSITORY="wojciechlipinski-pl/zonectl"
-readonly API_ROOT="https://api.github.com/repos/${REPOSITORY}"
-readonly LOCK_FILE="/run/lock/zonectl-release-upgrade.lock"
+readonly API_ROOT="${ZONECTL_UPDATE_API_ROOT:-https://api.github.com/repos/${REPOSITORY}}"
+readonly LOCK_FILE="${ZONECTL_UPDATE_LOCK_FILE:-/run/lock/zonectl-release-upgrade.lock}"
 
 CHECK_ONLY=0
 ALLOW_DOWNGRADE=0
 REQUESTED_TAG=""
 WORK_DIR=""
+INSTALL_STARTED=0
+INSTALLED_VERSION=""
 
 usage() {
     cat <<'EOF'
@@ -26,7 +28,7 @@ EOF
 
 die() {
     printf 'ERROR: %s\n' "$*" >&2
-    exit 1
+    return 1
 }
 
 log() {
@@ -37,6 +39,20 @@ cleanup() {
     if [ -n "$WORK_DIR" ] && [ -d "$WORK_DIR" ]; then
         rm -rf -- "$WORK_DIR"
     fi
+}
+
+report_failure() {
+    status=$?
+    if [ "$INSTALL_STARTED" -eq 1 ]; then
+        printf '\nERROR: installation started but final verification failed.\n' >&2
+        printf 'ZoneCTL does not automatically downgrade packages.\n' >&2
+        printf 'Inspect: dpkg-query -W zonectl; zctl --version; named-checkconf; systemctl status bind9\n' >&2
+        if [ -n "$INSTALLED_VERSION" ]; then
+            printf 'Previous package version was: %s\n' "$INSTALLED_VERSION" >&2
+            printf 'Reinstall it only from a separately verified package or trusted APT source.\n' >&2
+        fi
+    fi
+    return "$status"
 }
 
 while [ "$#" -gt 0 ]; do
@@ -65,6 +81,7 @@ flock -n 9 || die "another ZoneCTL upgrade is already running"
 
 WORK_DIR="$(mktemp -d /tmp/zonectl-release-upgrade.XXXXXX)"
 trap cleanup EXIT
+trap report_failure ERR
 
 if [ -n "$REQUESTED_TAG" ]; then
     case "$REQUESTED_TAG" in
@@ -170,6 +187,7 @@ named-checkconf
 systemctl is-active --quiet bind9 || die "bind9 is not active before upgrade"
 
 log "Installing $DEB_NAME"
+INSTALL_STARTED=1
 DEBIAN_FRONTEND=noninteractive apt-get install --yes "$DEB_PATH"
 
 log "Validating installation"
@@ -179,3 +197,4 @@ named-checkconf
 systemctl is-active --quiet bind9 || die "bind9 is not active after upgrade"
 
 log "Upgrade complete: $ACTUAL_VERSION ($PACKAGE_VERSION)"
+INSTALL_STARTED=0

@@ -130,6 +130,15 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: "3.13"
+      - name: Install shell analysis
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes shellcheck
+      - name: Validate release updater shell
+        run: |
+          bash -n scripts/install-latest-release.sh
+          shellcheck scripts/install-latest-release.sh
+          test "$(git ls-files -s scripts/install-latest-release.sh | awk '{print $1}')" = "100755"
       - name: Require documented public API in new critical modules
         run: |
           python scripts/audit_public_api.py --strict \
