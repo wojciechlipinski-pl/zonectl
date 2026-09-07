@@ -706,10 +706,15 @@ wielojęzyczność są planowane dla ZoneCTL 5.0.
 
 ### Bramka wydania ZoneCTL 4.13.0
 
-- [ ] Przeprowadzić najpierw odczytowy `--check`, a następnie kontrolowaną
+- [x] Przeprowadzić najpierw odczytowy `--check`, a następnie kontrolowaną
   aktualizację poprzedniego wydania na środowisku produkcyjnym; potwierdzić
-  wersję pakietu, poprawność konfiguracji i aktywność BIND.
-- [ ] Zbudować i niezależnie zweryfikować wheel, DEB oraz `SHA256SUMS`.
+  wersję pakietu, poprawność konfiguracji i aktywność BIND. Aktualizacja
+  `4.12.0-1` do `4.13.0-1` zakończyła się poprawnie; `named-checkconf`, aktywność
+  BIND oraz odczytowy raport środowiska zostały potwierdzone.
+- [x] Zbudować i niezależnie zweryfikować wheel, DEB oraz `SHA256SUMS`.
+  Artefakty z bramki CI przeszły kontrolę sum, metadanych, punktu wejścia i
+  braku plików `/etc/bind`; dokładnie ten pakiet DEB wykorzystano w próbie
+  produkcyjnej.
 - [ ] Dopiero po testach produkcyjnych scalić przygotowanie wydania, utworzyć
   tag `v4.13.0` i opublikować GitHub Release jako ostatnią czynność.
 
