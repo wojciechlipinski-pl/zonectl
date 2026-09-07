@@ -1,3 +1,13 @@
+zonectl (4.13.0-1) unstable; urgency=medium
+
+  * Add a guarded updater for stable public GitHub releases.
+  * Verify checksums and Debian metadata before package installation.
+  * Refuse accidental downgrades and serialize concurrent update attempts.
+  * Validate BIND and the installed ZoneCTL version before and after upgrade.
+  * Add isolated failure-path tests, ShellCheck and bilingual instructions.
+
+ -- Wojciech Lipiński <wojciech.lipinski.elk@gmail.com>  Mon, 07 Sep 2026 14:00:00 +0200
+
 zonectl (4.12.0-1) unstable; urgency=medium
 
   * Add the privacy-safe zonectl.audit/v1 registry with guarded retention.

@@ -11,7 +11,7 @@ atomic replacement and rollback.
 
 ## Current release
 
-**4.12.0 — privacy-safe audit, transaction visibility and optional local history**
+**4.13.0 — guarded, verified upgrades from stable GitHub releases**
 
 ## Highlights
 
@@ -62,7 +62,7 @@ exact patch version.
 Install the Debian package attached to the GitHub release:
 
 ```bash
-sudo apt install ./zonectl_4.12.0-1_all.deb
+sudo apt install ./zonectl_4.13.0-1_all.deb
 zctl --version
 ```
 

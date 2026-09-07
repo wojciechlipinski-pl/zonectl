@@ -2,6 +2,30 @@
 
 ## Unreleased
 
+## 4.13.0 - 2026-09-07
+
+### Added
+
+- add a guarded production updater that downloads the latest stable GitHub
+  release without requiring the `gh` client, verifies `SHA256SUMS` and Debian
+  package metadata, rejects accidental downgrades and serializes executions
+- provide a read-only `--check` mode and explicit stable-tag selection before
+  any package installation
+
+### Safety
+
+- validate BIND configuration and service state immediately before and after
+  installation, confirm the installed `zctl` version and print actionable
+  recovery guidance without attempting an unsafe automatic downgrade
+
+### Tests and documentation
+
+- exercise stable-release parsing, missing assets, invalid checksums, package
+  metadata mismatches, downgrade refusal, lock contention, network failure,
+  package failure and pre/post-install validation through isolated fixtures
+- enforce Bash syntax, ShellCheck and executable mode in CI and publish Polish
+  and English operator instructions for normal and failed upgrades
+
 ## 4.12.0 - 2026-09-02
 
 ### Added
