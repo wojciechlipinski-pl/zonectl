@@ -39,7 +39,8 @@ syntetyczne.
 
 Eksploatacja: [instrukcja operatorska](docs/OPERATIONS.md) ·
 [odtwarzanie po awarii](docs/DISASTER_RECOVERY.md) ·
-[przykłady rekordów DNS](docs/RECORD_EXAMPLES.md)
+[przykłady rekordów DNS](docs/RECORD_EXAMPLES.md) ·
+[bezpieczna aktualizacja wydania](docs/UPGRADE.md)
 
 ## Cykl życia stref
 

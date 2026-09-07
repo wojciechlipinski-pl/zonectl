@@ -678,9 +678,37 @@ wielojęzyczność są planowane dla ZoneCTL 5.0.
   prywatności oraz budowę wheel i pakietu DEB.
 - [x] Zweryfikować instalację pakietu 4.12.0 na środowisku testowym bez zmian
   produkcyjnej konfiguracji BIND.
-- [ ] Scalić przygotowanie wydania do `main`.
-- [ ] Utworzyć tag `v4.12.0` i uruchomić zatwierdzony workflow publikacyjny
+- [x] Scalić przygotowanie wydania do `main`.
+- [x] Utworzyć tag `v4.12.0` i uruchomić zatwierdzony workflow publikacyjny
   dopiero po wszystkich wcześniejszych kontrolach.
+
+## ZoneCTL 4.13 — bezpieczna aktualizacja wydania
+
+- [ ] Włączyć do repozytorium skrypt `install-latest-release.sh`, pobierający
+  najnowsze stabilne wydanie z publicznego GitHub Release bez zależności od
+  klienta `gh` na serwerze produkcyjnym.
+- [ ] Weryfikować `SHA256SUMS`, nazwę, wersję i architekturę pakietu DEB przed
+  przekazaniem go do `apt-get` oraz blokować przypadkowy downgrade.
+- [ ] Zapewnić tryb odczytowy `--check`, blokadę równoległych aktualizacji i
+  możliwość jawnego wskazania stabilnego tagu przez `--version`.
+- [ ] Sprawdzać `named-checkconf` i aktywność `bind9` bezpośrednio przed oraz
+  po aktualizacji, a także potwierdzać oczekiwaną wersję `zctl`.
+- [ ] Udokumentować po polsku i angielsku wymagania, przebieg aktualizacji,
+  ograniczenia sum publikowanych na tym samym koncie GitHub oraz procedurę
+  postępowania po nieudanej walidacji końcowej.
+- [ ] Objąć parser metadanych wydania, weryfikację pakietu, odmowę downgrade'u,
+  tryb `--check` i awarie walidacji testami bez kontaktu z produkcyjnym BIND.
+- [ ] Dodać `shellcheck` skryptu do bramki CI i zachować pełną regresję
+  projektu oraz kontrolę prywatności.
+
+### Bramka wydania ZoneCTL 4.13.0
+
+- [ ] Przeprowadzić najpierw odczytowy `--check`, a następnie kontrolowaną
+  aktualizację poprzedniego wydania na środowisku produkcyjnym; potwierdzić
+  wersję pakietu, poprawność konfiguracji i aktywność BIND.
+- [ ] Zbudować i niezależnie zweryfikować wheel, DEB oraz `SHA256SUMS`.
+- [ ] Dopiero po testach produkcyjnych scalić przygotowanie wydania, utworzyć
+  tag `v4.13.0` i opublikować GitHub Release jako ostatnią czynność.
 
 ## Rozwój po osiągnięciu pełnej funkcjonalności podstawowej
 
