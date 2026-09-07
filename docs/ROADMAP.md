@@ -684,22 +684,25 @@ wielojęzyczność są planowane dla ZoneCTL 5.0.
 
 ## ZoneCTL 4.13 — bezpieczna aktualizacja wydania
 
-- [ ] Włączyć do repozytorium skrypt `install-latest-release.sh`, pobierający
+- [x] Włączyć do repozytorium skrypt `install-latest-release.sh`, pobierający
   najnowsze stabilne wydanie z publicznego GitHub Release bez zależności od
   klienta `gh` na serwerze produkcyjnym.
-- [ ] Weryfikować `SHA256SUMS`, nazwę, wersję i architekturę pakietu DEB przed
+- [x] Weryfikować `SHA256SUMS`, nazwę, wersję i architekturę pakietu DEB przed
   przekazaniem go do `apt-get` oraz blokować przypadkowy downgrade.
-- [ ] Zapewnić tryb odczytowy `--check`, blokadę równoległych aktualizacji i
+- [x] Zapewnić tryb odczytowy `--check`, blokadę równoległych aktualizacji i
   możliwość jawnego wskazania stabilnego tagu przez `--version`.
-- [ ] Sprawdzać `named-checkconf` i aktywność `bind9` bezpośrednio przed oraz
+- [x] Sprawdzać `named-checkconf` i aktywność `bind9` bezpośrednio przed oraz
   po aktualizacji, a także potwierdzać oczekiwaną wersję `zctl`.
-- [ ] Udokumentować po polsku i angielsku wymagania, przebieg aktualizacji,
+- [x] Udokumentować po polsku i angielsku wymagania, przebieg aktualizacji,
   ograniczenia sum publikowanych na tym samym koncie GitHub oraz procedurę
   postępowania po nieudanej walidacji końcowej.
-- [ ] Objąć parser metadanych wydania, weryfikację pakietu, odmowę downgrade'u,
+- [x] Objąć parser metadanych wydania, weryfikację pakietu, odmowę downgrade'u,
   tryb `--check` i awarie walidacji testami bez kontaktu z produkcyjnym BIND.
-- [ ] Dodać `shellcheck` skryptu do bramki CI i zachować pełną regresję
+- [x] Dodać `shellcheck` skryptu do bramki CI i zachować pełną regresję
   projektu oraz kontrolę prywatności.
+- [x] Zweryfikować na produkcji skrypt pobrany z oficjalnego `main` w trybie
+  `--check`: release `v4.12.0`, suma SHA-256 i zainstalowany pakiet
+  `4.12.0-1` zostały potwierdzone bez wprowadzania zmian.
 
 ### Bramka wydania ZoneCTL 4.13.0
 
