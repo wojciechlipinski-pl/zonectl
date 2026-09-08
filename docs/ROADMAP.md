@@ -715,8 +715,10 @@ wielojęzyczność są planowane dla ZoneCTL 5.0.
   Artefakty z bramki CI przeszły kontrolę sum, metadanych, punktu wejścia i
   braku plików `/etc/bind`; dokładnie ten pakiet DEB wykorzystano w próbie
   produkcyjnej.
-- [ ] Dopiero po testach produkcyjnych scalić przygotowanie wydania, utworzyć
-  tag `v4.13.0` i opublikować GitHub Release jako ostatnią czynność.
+- [x] Po testach produkcyjnych scalić przygotowanie wydania, utworzyć tag
+  `v4.13.0` i opublikować GitHub Release jako ostatnią czynność. Publiczne
+  wydanie zawiera zweryfikowane pliki wheel, DEB oraz `SHA256SUMS`, a tag
+  wskazuje dokładnie commit zweryfikowany przez końcową bramkę CI na `main`.
 
 ## Rozwój po osiągnięciu pełnej funkcjonalności podstawowej
 
