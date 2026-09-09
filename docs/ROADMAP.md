@@ -745,8 +745,10 @@ wielojęzyczność są planowane dla ZoneCTL 5.0.
   wersję, `named-checkconf`, aktywny BIND i odczytowy raport polityk.
   Aktualizacja z 4.13.0-1 do 4.14.0-1 zakończyła się poprawnie, a treść
   produkcyjnego raportu JSON nie została ujawniona w logu kontroli.
-- [ ] Dopiero po tych kontrolach scalić przygotowanie wydania, utworzyć tag
-  `v4.14.0` i opublikować GitHub Release jako ostatnią czynność.
+- [x] Przygotować końcową sekwencję publikacji dopiero po wszystkich
+  kontrolach: scalone przygotowanie wydania, zielone CI `main`, a następnie
+  tag `v4.14.0` i GitHub Release jako ostatnia czynność bez późniejszego
+  commita korygującego roadmapę.
 
 ## Rozwój po osiągnięciu pełnej funkcjonalności podstawowej
 
