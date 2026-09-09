@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 4.14.0 - 2026-09-09
+
 ### Added
 
 - discover built-in and named BIND `dnssec-policy` definitions and zone
