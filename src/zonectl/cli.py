@@ -69,6 +69,7 @@ from .core.dnssec_ds_check import DnssecDsChecker
 from .core.dnssec_confirm_ds import DnssecConfirmDsTransaction
 from .core.dnssec_guidance import build_dnssec_guidance
 from .core.dnssec_report import DnssecReporter
+from .core.dnssec_policy_inventory import DnssecPolicyInventoryReader
 from .core.transaction import TransactionEngine, TransactionResult
 from .core.zone_create_transaction import ZoneCreateTransaction
 from .core.zone_disable_transaction import (
@@ -418,6 +419,14 @@ def parser() -> argparse.ArgumentParser:
         help="odczytowy raport i przyszłe operacje DNSSEC",
     )
     dnssec_sub = dnssec.add_subparsers(dest="dnssec_command", required=True)
+    dnssec_policies = dnssec_sub.add_parser(
+        "policies",
+        help="pokaż nazwane polityki DNSSEC/KASP i ich ocenę bez zmian",
+    )
+    dnssec_policies.add_argument(
+        "--root-config", type=Path, default=Path("/etc/bind/named.conf")
+    )
+    dnssec_policies.add_argument("--json", action="store_true")
     dnssec_report = dnssec_sub.add_parser(
         "report",
         help="pokaż konfigurację, DNSKEY, RRSIG i DS bez wykonywania zmian",
@@ -1262,6 +1271,60 @@ def main(argv: list[str] | None = None) -> int:
         return legacy_main(args.arguments)
     if args.command == "audit":
         return audit_main(args)
+    if args.command == "dnssec" and args.dnssec_command == "policies":
+        try:
+            policy_inventory = DnssecPolicyInventoryReader(args.root_config).read()
+        except (BindDiscoveryError, OSError) as exc:
+            print(f"BŁĄD: {exc}", file=sys.stderr)
+            return 2
+        if args.json:
+            print(json.dumps(policy_inventory.to_dict(), ensure_ascii=False, indent=2))
+        else:
+            print("POLITYKI DNSSEC/KASP — RAPORT TYLKO DO ODCZYTU")
+            print(f"Konfiguracja: {policy_inventory.root_config}")
+            for policy in policy_inventory.policies:
+                source = "wbudowana" if policy.built_in else "nazwana"
+                print(f"\n[{policy.status}] {policy.name} ({source})")
+                print("  Strefy: " + (", ".join(policy.zones) or "-"))
+                print(
+                    "  inline-signing: "
+                    + (
+                        "dziedziczone"
+                        if policy.inline_signing is None
+                        else "yes"
+                        if policy.inline_signing
+                        else "no"
+                    )
+                )
+                if policy.keys:
+                    for key in policy.keys:
+                        size = f" {key.size}" if key.size is not None else ""
+                        storage = f", {key.storage}" if key.storage else ""
+                        print(
+                            f"  Klucz: {key.role}, {key.algorithm}{size}, "
+                            f"lifetime {key.lifetime}{storage}"
+                        )
+                else:
+                    print("  Klucze: -")
+                if policy.nsec3:
+                    print(
+                        f"  NSEC3: iterations={policy.nsec3_iterations}, "
+                        f"optout={policy.nsec3_optout}"
+                    )
+                for warning in policy.warnings:
+                    print(f"  UWAGA: {warning}")
+            if policy_inventory.undefined_references:
+                print(
+                    "\nBŁĄD: strefy odwołują się do niezdefiniowanych polityk: "
+                    + ", ".join(policy_inventory.undefined_references)
+                )
+            print("\nWynik: raport odczytowy — niczego nie zmieniono")
+        return (
+            1
+            if policy_inventory.undefined_references
+            or any(policy.status == "BLOCKED" for policy in policy_inventory.policies)
+            else 0
+        )
     try:
         config = ToolkitConfig(args.config, args.zones, args.groups).load()
     except RuntimeError as exc:
