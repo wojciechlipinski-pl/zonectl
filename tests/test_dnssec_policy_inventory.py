@@ -32,6 +32,19 @@ def test_reads_allowlisted_policy_parameters_and_zone_use(tmp_path: Path) -> Non
     zsk lifetime 60d algorithm ECDSAP384SHA384;
   };
   nsec3param iterations 0 optout no salt-length 0;
+  dnskey-ttl 1h;
+  parent-ds-ttl 1d;
+  publish-safety PT1H;
+  retire-safety PT2H;
+  zone-propagation-delay 5m;
+  parent-propagation-delay 2h;
+  signatures-refresh 5d;
+  signatures-validity 14d;
+  signatures-validity-dnskey 14d;
+  max-zone-ttl 1d;
+  cds-digest-types SHA-256 SHA-384;
+  cdnskey yes;
+  offline-ksk no;
 };""",
     )
     report = DnssecPolicyInventoryReader(root).read()
@@ -41,6 +54,12 @@ def test_reads_allowlisted_policy_parameters_and_zone_use(tmp_path: Path) -> Non
     assert policy.nsec3_iterations == 0
     assert policy.nsec3_optout is False
     assert policy.zones == ("alpha.example.test",)
+    assert policy.timing.dnskey_ttl == "1h"
+    assert policy.timing.parent_propagation_delay == "2h"
+    assert policy.timing.signatures_validity_dnskey == "14d"
+    assert policy.cds_digest_types == ("SHA-256", "SHA-384")
+    assert policy.cdnskey is True
+    assert policy.offline_ksk is False
 
 
 def test_blocks_obsolete_unknown_and_nonzero_nsec3(tmp_path: Path) -> None:
