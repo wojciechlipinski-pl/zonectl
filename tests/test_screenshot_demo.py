@@ -40,6 +40,9 @@ def test_screenshot_demo_uses_only_reserved_names_and_addresses() -> None:
     assert "_show_rollback_result" in source
     assert "_show_audit_browser" in source
     assert "AuditViewState" in source
+    assert "_show_dnssec_policies" in source
+    assert "modern-example" in source
+    assert "PolicyTiming" in source
     assert 'status="COMMITTED"' in source
     assert 'status="ROLLED-BACK"' in source
     assert "/tmp/zonectl-demo/backups/" in source
