@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import curses
 import time
+from pathlib import Path
 
 from zonectl.core.models import Health, Zone, ZoneStatus
 from zonectl.core.audit_store import (
@@ -21,10 +22,17 @@ from zonectl.core.audit_store import (
     ResourceKind,
 )
 from zonectl.core.transaction import StepResult, TransactionResult
+from zonectl.core.dnssec_policy_inventory import (
+    DnssecPolicy,
+    DnssecPolicyInventory,
+    PolicyKey,
+    PolicyTiming,
+)
 from zonectl.core.zone_parser import DNSRecord
 from zonectl.ui.curses_app import CursesApp
 from zonectl.ui.audit_view import AuditViewState
 from zonectl.ui.dnssec_status_view import DnssecStatusView
+from zonectl.ui.dnssec_policy_view import dnssec_policy_lines
 from zonectl.ui.records.new_record import NewRecordDialog
 from zonectl.ui.zone_create_dialog import ZoneCreateDialog, ZoneCreateForm
 
@@ -103,6 +111,8 @@ class ScreenshotDemoApp(CursesApp):
                 self._show_rollback_result(stdscr)
             elif key == ord("u"):
                 self._show_audit_browser(stdscr)
+            elif key == ord("p"):
+                self._show_dnssec_policies(stdscr)
         self.stop_event.set()
 
     def _show_bind_report(self, win: curses.window) -> None:
@@ -184,6 +194,43 @@ class ScreenshotDemoApp(CursesApp):
         win.refresh()
         while win.getch() not in (ord("q"), ord("Q"), 27, curses.KEY_F10):
             pass
+
+    def _show_dnssec_policies(self, win: curses.window) -> None:
+        policy = DnssecPolicy(
+            name="modern-example",
+            built_in=False,
+            keys=(PolicyKey("CSK", "ED25519", "P1Y"),),
+            inline_signing=True,
+            nsec3=False,
+            nsec3_iterations=None,
+            nsec3_optout=None,
+            timing=PolicyTiming(
+                dnskey_ttl="1h",
+                parent_ds_ttl="1d",
+                publish_safety="PT1H",
+                retire_safety="PT1H",
+                zone_propagation_delay="5m",
+                parent_propagation_delay="2h",
+                signatures_refresh="5d",
+                signatures_validity="14d",
+                signatures_validity_dnskey="14d",
+                max_zone_ttl="1d",
+            ),
+            cds_digest_types=("SHA-256",),
+            cdnskey=True,
+            offline_ksk=False,
+            status="PASS",
+            warnings=(),
+            zones=("alpha.example.test",),
+        )
+        inventory = DnssecPolicyInventory(
+            Path("/tmp/zonectl-demo/named.conf"), (policy,), ()
+        )
+        self._message_view(
+            win,
+            title="Polityki DNSSEC/KASP — demonstracja",
+            lines=dnssec_policy_lines(inventory, zone_name="alpha.example.test"),
+        )
 
     def _show_record_list(self, win: curses.window) -> None:
         self._message_view(

@@ -720,6 +720,30 @@ wielojęzyczność są planowane dla ZoneCTL 5.0.
   wydanie zawiera zweryfikowane pliki wheel, DEB oraz `SHA256SUMS`, a tag
   wskazuje dokładnie commit zweryfikowany przez końcową bramkę CI na `main`.
 
+## ZoneCTL 4.14 — odczytowa inwentaryzacja polityk DNSSEC/KASP
+
+- [x] Wykrywać wbudowane i nazwane polityki `dnssec-policy` w całym drzewie
+  konfiguracji BIND oraz pokazywać przypisane strefy.
+- [x] Prezentować wyłącznie dozwolone publiczne parametry: role KSK/ZSK/CSK,
+  algorytmy, rozmiary i okresy życia kluczy, NSEC3, czasy publikacji,
+  propagacji i podpisów oraz ustawienia CDS/CDNSKEY i offline KSK.
+- [x] Klasyfikować polityki jako zalecane, wymagające oceny albo zablokowane;
+  wykrywać algorytmy przestarzałe i nieznane oraz niedozwolone iteracje NSEC3.
+- [x] Udostępnić raport tylko do odczytu w CLI (tekst i JSON) oraz w TUI pod
+  F5 na ekranie DNSSEC, z ramką oczekiwania i obsługą małych terminali.
+- [x] Zachować politykę `default` jako prostą opcję bazową i nie dodawać w
+  4.14 wyboru ani migracji polityki aktywnej strefy.
+- [x] Zapewnić syntetyczny demonstrator, testy prywatności, parsera, CLI i TUI.
+
+### Bramka wydania ZoneCTL 4.14.0
+
+- [ ] Uruchomić pełne testy, Ruff, mypy, kontrolę prywatności oraz zbudować i
+  niezależnie zweryfikować wheel, DEB i `SHA256SUMS`.
+- [ ] Zainstalować dokładnie artefakt kandydata na produkcji, potwierdzić
+  wersję, `named-checkconf`, aktywny BIND i odczytowy raport polityk.
+- [ ] Dopiero po tych kontrolach scalić przygotowanie wydania, utworzyć tag
+  `v4.14.0` i opublikować GitHub Release jako ostatnią czynność.
+
 ## Rozwój po osiągnięciu pełnej funkcjonalności podstawowej
 
 Poniższe rozszerzenia nie mogą opóźniać stabilizacji podstawowych operacji
@@ -728,19 +752,20 @@ walidacji, backupu i rollbacku.
 
 ### Konfigurowalne polityki DNSSEC/KASP
 
-- [ ] Wykrywać nazwane polityki `dnssec-policy` dostępne w konfiguracji BIND
+- [x] Wykrywać nazwane polityki `dnssec-policy` dostępne w konfiguracji BIND
   i prezentować je operatorowi bez ujawniania kluczy prywatnych.
 - [ ] Umożliwić wybór całej, wcześniej zdefiniowanej polityki KASP podczas
   włączania DNSSEC zamiast prostego, podatnego na błędy wyboru algorytmu.
-- [ ] Przed zatwierdzeniem pokazywać algorytm, model kluczy KSK/ZSK lub CSK,
-  parametry publikacji, harmonogram rolloveru oraz zgodność z możliwościami
-  używanej wersji BIND.
-- [ ] Ostrzegać i domyślnie blokować polityki używające algorytmów
-  przestarzałych, niezalecanych lub nieobsługiwanych przez strefę nadrzędną.
+- [x] Odczytowo pokazywać algorytm, model kluczy KSK/ZSK lub CSK,
+  parametry publikacji i harmonogram rolloveru.
+- [ ] Weryfikować politykę względem możliwości wykrytej wersji BIND.
+- [x] Ostrzegać i blokować raportowane polityki używające algorytmów
+  przestarzałych, niezalecanych lub nierozpoznanych.
+- [ ] Sprawdzać obsługę algorytmu i parametrów DS przez strefę nadrzędną.
 - [ ] Migrację aktywnej strefy pomiędzy politykami realizować wyłącznie jako
   osobną transakcję z planem, dry-runem, kontrolą DNSKEY/DS/KASP, okresem
   przejściowym i rollbackiem.
-- [ ] Zachować `dnssec-policy default` jako bezpieczną i prostą opcję domyślną.
+- [x] Zachować `dnssec-policy default` jako bezpieczną i prostą opcję domyślną.
 
 ### Internationalization (i18n)
 

@@ -2,6 +2,32 @@
 
 ## Unreleased
 
+### Added
+
+- discover built-in and named BIND `dnssec-policy` definitions and zone
+  assignments through a privacy-safe, read-only CLI report in text and JSON
+- report allowlisted KSK/ZSK/CSK algorithms, lifetimes, NSEC3 settings,
+  publication and propagation delays, signature timing, CDS/CDNSKEY and
+  offline-KSK parameters without exposing private key material
+- classify recommended, review-required, obsolete and unsupported policy
+  configurations, including the BIND 9.20 NSEC3-iterations requirement
+- add an F5 policy inventory to the DNSSEC TUI with a framed wait dialog,
+  selected-zone prioritization and compact-terminal scrolling
+- extend the isolated screenshot demonstrator with a synthetic policy view
+
+### Safety
+
+- keep ZoneCTL 4.14 policy support strictly read-only; choosing or migrating
+  an active zone between KASP policies remains outside this release
+- reject duplicate policy definitions, report undefined zone references and
+  serialize only explicitly allowlisted public configuration fields
+
+### Tests
+
+- cover includes, named and built-in policies, algorithm classification,
+  timing extraction, NSEC3 restrictions, malformed references, CLI JSON,
+  TUI routing, compact rendering and secret exclusion
+
 ## 4.13.0 - 2026-09-07
 
 ### Added
