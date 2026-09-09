@@ -10,6 +10,7 @@ from zonectl.ui.records.controller import natural_name_key
 from zonectl.ui.records.renderer import RecordRenderer
 from zonectl.ui.zone_create_dialog import ZoneCreateDialog
 from zonectl.ui.dnssec_status_view import DnssecStatusView
+from zonectl.ui.dnssec_policy_view import dnssec_policy_lines
 from zonectl.ui.rpz_status_view import RpzStatusView
 from zonectl.ui.bind_onboarding_view import BindOnboardingView
 from zonectl.ui.about_view import AboutView
@@ -81,6 +82,7 @@ from ..core.dnssec_disable_transaction import (
 from ..core.dnssec_enable_plan import DnssecEnablePlan, DnssecEnablePlanner
 from ..core.dnssec_enable_transaction import DnssecEnableResult, DnssecEnableTransaction
 from ..core.dnssec_report import DnssecReporter
+from ..core.dnssec_policy_inventory import DnssecPolicyInventoryReader
 from ..core.dnssec_onboarding_audit import (
     DnssecOnboardingAuditItem,
     DnssecOnboardingAuditor,
@@ -4622,7 +4624,7 @@ class CursesApp:
                     f" Enter {view.operation_label if view else 'odśwież'}  "
                     "↑/↓ przewiń  PgUp/PgDn strona  F3 plan  "
                     f"F4 {view.operation_label if view else 'wskazówki'}  "
-                    "r odśwież  q/Esc powrót "
+                    "F5 polityki  r odśwież  q/Esc powrót "
                 )
                 win.addnstr(
                     height - 1,
@@ -4645,6 +4647,9 @@ class CursesApp:
                         refresh = True
                         continue
                 if key in (ord("r"), ord("R")):
+                    refresh = True
+                elif key == curses.KEY_F5:
+                    self._dnssec_policy_inventory_view(win, zone)
                     refresh = True
                 elif key == curses.KEY_F3:
                     try:
@@ -4714,6 +4719,7 @@ class CursesApp:
                             error=True,
                         )
                     refresh = True
+
                 elif key == curses.KEY_F4:
                     if view is None:
                         refresh = True
@@ -5018,6 +5024,37 @@ class CursesApp:
                 win.timeout(150)
             except curses.error:
                 pass
+
+    def _dnssec_policy_inventory_view(
+        self, win: curses.window, zone: Zone | None = None
+    ) -> None:
+        """Show named KASP policies through the privacy-safe read-only reader."""
+
+        try:
+            inventory = self._run_with_wait_indicator(
+                win,
+                title="Polityki DNSSEC/KASP",
+                label="Odczyt definicji i przypisań polityk",
+                operation=lambda: DnssecPolicyInventoryReader(
+                    self._bind_root_config()
+                ).read(),
+            )
+            self._message_view(
+                win,
+                title="Polityki DNSSEC/KASP — tylko odczyt",
+                lines=dnssec_policy_lines(
+                    inventory, zone_name=zone.name if zone is not None else None
+                ),
+                error=bool(inventory.undefined_references)
+                or any(policy.status == "BLOCKED" for policy in inventory.policies),
+            )
+        except Exception as exc:
+            self._message_view(
+                win,
+                title="Błąd odczytu polityk DNSSEC/KASP",
+                lines=[str(exc)],
+                error=True,
+            )
 
     def _draw_dnssec_status_48(
         self,
