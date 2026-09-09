@@ -1311,6 +1311,22 @@ def main(argv: list[str] | None = None) -> int:
                         f"  NSEC3: iterations={policy.nsec3_iterations}, "
                         f"optout={policy.nsec3_optout}"
                     )
+                timing = {
+                    key.replace("_", "-"): value
+                    for key, value in asdict(policy.timing).items()
+                    if value is not None
+                }
+                if timing:
+                    print(
+                        "  Czasy: "
+                        + ", ".join(f"{key}={value}" for key, value in timing.items())
+                    )
+                if policy.cds_digest_types:
+                    print("  CDS digest: " + ", ".join(policy.cds_digest_types))
+                if policy.cdnskey is not None:
+                    print(f"  CDNSKEY: {'yes' if policy.cdnskey else 'no'}")
+                if policy.offline_ksk is not None:
+                    print(f"  offline-KSK: {'yes' if policy.offline_ksk else 'no'}")
                 for warning in policy.warnings:
                     print(f"  UWAGA: {warning}")
             if policy_inventory.undefined_references:

@@ -37,6 +37,22 @@ class PolicyKey:
 
 
 @dataclass(frozen=True, slots=True)
+class PolicyTiming:
+    """Allowlisted publication, propagation and signature timing parameters."""
+
+    dnskey_ttl: str | None = None
+    parent_ds_ttl: str | None = None
+    publish_safety: str | None = None
+    retire_safety: str | None = None
+    zone_propagation_delay: str | None = None
+    parent_propagation_delay: str | None = None
+    signatures_refresh: str | None = None
+    signatures_validity: str | None = None
+    signatures_validity_dnskey: str | None = None
+    max_zone_ttl: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
 class DnssecPolicy:
     """One named policy without raw configuration or private material."""
 
@@ -47,6 +63,10 @@ class DnssecPolicy:
     nsec3: bool
     nsec3_iterations: int | None
     nsec3_optout: bool | None
+    timing: PolicyTiming
+    cds_digest_types: tuple[str, ...]
+    cdnskey: bool | None
+    offline_ksk: bool | None
     status: str
     warnings: tuple[str, ...]
     zones: tuple[str, ...]
@@ -98,6 +118,18 @@ class DnssecPolicyInventoryReader:
         r"\b(key-directory|key-store\s+(?:\"[^\"]+\"|'[^']+'|[A-Za-z0-9_.-]+))\b",
         re.IGNORECASE,
     )
+    _duration_directives = {
+        "dnskey_ttl": "dnskey-ttl",
+        "parent_ds_ttl": "parent-ds-ttl",
+        "publish_safety": "publish-safety",
+        "retire_safety": "retire-safety",
+        "zone_propagation_delay": "zone-propagation-delay",
+        "parent_propagation_delay": "parent-propagation-delay",
+        "signatures_refresh": "signatures-refresh",
+        "signatures_validity": "signatures-validity",
+        "signatures_validity_dnskey": "signatures-validity-dnskey",
+        "max_zone_ttl": "max-zone-ttl",
+    }
 
     def __init__(self, root_config: Path) -> None:
         self.root_config = root_config
@@ -106,9 +138,7 @@ class DnssecPolicyInventoryReader:
         """Read includes, definitions and zone references using no subprocesses."""
 
         discovery = BindConfigDiscovery(self.root_config).discover()
-        definitions: dict[
-            str, tuple[str, tuple[PolicyKey, ...], bool | None, str | None]
-        ] = {}
+        definitions: dict[str, tuple[str, str, tuple[PolicyKey, ...]]] = {}
 
         for path in discovery.config_files:
             try:
@@ -126,9 +156,8 @@ class DnssecPolicyInventoryReader:
                     )
                 definitions[folded] = (
                     name,
+                    body,
                     self._parse_keys(body, path),
-                    self._parse_inline(body),
-                    self._parse_nsec3(body),
                 )
 
         zones_by_policy: dict[str, list[str]] = {}
@@ -141,7 +170,9 @@ class DnssecPolicyInventoryReader:
         policies: list[DnssecPolicy] = []
         for built_in in BUILT_IN_POLICIES:
             policies.append(self._built_in(built_in, zones_by_policy.get(built_in, [])))
-        for folded, (name, keys, inline, nsec3) in sorted(definitions.items()):
+        for folded, (name, body, keys) in sorted(definitions.items()):
+            inline = self._parse_inline(body)
+            nsec3 = self._parse_nsec3(body)
             warnings, status = self._classify(keys, nsec3)
             iterations, optout = self._nsec3_values(nsec3)
             policies.append(
@@ -153,6 +184,10 @@ class DnssecPolicyInventoryReader:
                     nsec3=nsec3 is not None,
                     nsec3_iterations=iterations,
                     nsec3_optout=optout,
+                    timing=self._parse_timing(body),
+                    cds_digest_types=self._parse_words(body, "cds-digest-types"),
+                    cdnskey=self._parse_yes_no(body, "cdnskey"),
+                    offline_ksk=self._parse_yes_no(body, "offline-ksk"),
                     status=status,
                     warnings=warnings,
                     zones=tuple(
@@ -209,6 +244,29 @@ class DnssecPolicyInventoryReader:
         match = self._nsec3.search(body)
         return match.group("value") if match else None
 
+    def _parse_timing(self, body: str) -> PolicyTiming:
+        values: dict[str, str | None] = {}
+        for field, directive in self._duration_directives.items():
+            match = re.search(
+                rf"\b{re.escape(directive)}\s+([^\s;]+)\s*;", body, re.IGNORECASE
+            )
+            values[field] = match.group(1) if match else None
+        return PolicyTiming(**values)
+
+    @staticmethod
+    def _parse_words(body: str, directive: str) -> tuple[str, ...]:
+        match = re.search(rf"\b{re.escape(directive)}\s+([^;]+);", body, re.IGNORECASE)
+        return (
+            () if not match else tuple(word.upper() for word in match.group(1).split())
+        )
+
+    @staticmethod
+    def _parse_yes_no(body: str, directive: str) -> bool | None:
+        match = re.search(
+            rf"\b{re.escape(directive)}\s+(yes|no)\s*;", body, re.IGNORECASE
+        )
+        return None if not match else match.group(1).casefold() == "yes"
+
     def _nsec3_values(self, value: str | None) -> tuple[int | None, bool | None]:
         if value is None:
             return None, None
@@ -263,6 +321,10 @@ class DnssecPolicyInventoryReader:
             nsec3=False,
             nsec3_iterations=None,
             nsec3_optout=None,
+            timing=PolicyTiming(),
+            cds_digest_types=(),
+            cdnskey=None,
+            offline_ksk=None,
             status=status,
             warnings=warnings,
             zones=tuple(sorted(zones, key=str.casefold)),
