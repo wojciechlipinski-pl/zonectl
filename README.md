@@ -11,7 +11,7 @@ atomic replacement and rollback.
 
 ## Current release
 
-**4.13.0 — guarded, verified upgrades from stable GitHub releases**
+**4.14.0 — privacy-safe, read-only DNSSEC/KASP policy inventory**
 
 ## Highlights
 
@@ -19,6 +19,8 @@ atomic replacement and rollback.
 - transactional zone-file updates with `named-checkzone` and BIND activation;
 - create, disable, restore and quarantine zones through guarded workflows;
 - safely enable and withdraw DNSSEC using BIND KASP state gates;
+- inspect named DNSSEC/KASP policies, rollover timing and zone assignments
+  from CLI or TUI without exposing private key material;
 - migrate legacy declarations to one managed include file per zone;
 - inventory, audit and transactionally edit BIND ACLs and secondary groups;
 - assign primary zones to complete notify/transfer secondary pairs;
@@ -62,7 +64,7 @@ exact patch version.
 Install the Debian package attached to the GitHub release:
 
 ```bash
-sudo apt install ./zonectl_4.13.0-1_all.deb
+sudo apt install ./zonectl_4.14.0-1_all.deb
 zctl --version
 ```
 

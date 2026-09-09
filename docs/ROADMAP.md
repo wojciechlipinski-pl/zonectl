@@ -737,10 +737,14 @@ wielojęzyczność są planowane dla ZoneCTL 5.0.
 
 ### Bramka wydania ZoneCTL 4.14.0
 
-- [ ] Uruchomić pełne testy, Ruff, mypy, kontrolę prywatności oraz zbudować i
-  niezależnie zweryfikować wheel, DEB i `SHA256SUMS`.
-- [ ] Zainstalować dokładnie artefakt kandydata na produkcji, potwierdzić
+- [x] Uruchomić pełne testy, Ruff, mypy, kontrolę prywatności oraz zbudować i
+  niezależnie zweryfikować wheel, DEB i `SHA256SUMS`. Pełna regresja zakończyła
+  się wynikiem 970 testów zaliczonych i 1 pominiętego; pakiety CI mają zgodne
+  sumy, wersję `4.14.0-1`, architekturę `all` i nie zawierają `/etc/bind`.
+- [x] Zainstalować dokładnie artefakt kandydata na produkcji, potwierdzić
   wersję, `named-checkconf`, aktywny BIND i odczytowy raport polityk.
+  Aktualizacja z 4.13.0-1 do 4.14.0-1 zakończyła się poprawnie, a treść
+  produkcyjnego raportu JSON nie została ujawniona w logu kontroli.
 - [ ] Dopiero po tych kontrolach scalić przygotowanie wydania, utworzyć tag
   `v4.14.0` i opublikować GitHub Release jako ostatnią czynność.
 

@@ -1,3 +1,13 @@
+zonectl (4.14.0-1) unstable; urgency=medium
+
+  * Add privacy-safe discovery of named and built-in DNSSEC/KASP policies.
+  * Report key roles, algorithms, rollover and publication timing parameters.
+  * Classify obsolete, unknown and invalid BIND 9.20 policy configurations.
+  * Add read-only text/JSON CLI and an F5 policy view in the DNSSEC TUI.
+  * Extend the isolated demonstrator and privacy-focused regression coverage.
+
+ -- Wojciech Lipiński <wojciech.lipinski.elk@gmail.com>  Wed, 09 Sep 2026 18:00:00 +0200
+
 zonectl (4.13.0-1) unstable; urgency=medium
 
   * Add a guarded updater for stable public GitHub releases.
