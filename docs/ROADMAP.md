@@ -766,8 +766,13 @@ wielojęzyczność są planowane dla ZoneCTL 5.0.
 - [x] Objąć raport testami integracyjnymi BIND, prywatności i małych terminali;
   sprawdzać rzeczywistą składnię `inline-signing` w polityce zgodnie z
   możliwościami wykrytej wersji, bez ujawniania identyfikatora kompilacji.
-- [ ] Przeprowadzić pełną bramkę jakości, próbę produkcyjną i dopiero na końcu
-  przygotować tag oraz GitHub Release.
+- [x] Przeprowadzić pełną bramkę jakości i próbę produkcyjną przed publikacją.
+  Pełna regresja zakończyła się wynikiem 992 testów zaliczonych i 1
+  pominiętego; Ruff, mypy, kontrola prywatności, wheel, DEB i Lintian przeszły
+  poprawnie. Zweryfikowany artefakt CI został zainstalowany na produkcji jako
+  4.15.0-1; `named-checkconf`, aktywność BIND oraz raport możliwości w
+  formacie tekstowym i JSON potwierdzono bez zmiany struktury ani treści
+  `/etc/bind`. Tag i GitHub Release pozostają ostatnią czynnością.
 
 Poniższe rozszerzenia nie mogą opóźniać stabilizacji podstawowych operacji
 ZoneCTL: zarządzania strefami i rekordami, DNSSEC, secondary, ACL, RPZ,
