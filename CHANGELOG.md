@@ -10,6 +10,8 @@
 - evaluate every inventoried DNSSEC/KASP policy against the detected BIND
   capabilities and report compatible, review-required, blocked or unknown
   runtime compatibility separately from the policy safety classification
+- evaluate KSK/CSK algorithm and DS digest compatibility from public parent
+  evidence without serializing DS hashes, DNSKEY material or resolver addresses
 
 ### Safety
 
