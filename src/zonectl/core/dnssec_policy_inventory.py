@@ -6,6 +6,7 @@ import re
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
+from .bind_capabilities import BindCapabilities
 from .discovery import BindConfigDiscovery, BindDiscoveryError
 
 
@@ -70,6 +71,8 @@ class DnssecPolicy:
     status: str
     warnings: tuple[str, ...]
     zones: tuple[str, ...]
+    bind_compatibility: str = "NOT_CHECKED"
+    compatibility_findings: tuple[str, ...] = ()
 
     def to_dict(self) -> dict[str, object]:
         """Return a stable JSON-safe, allowlisted representation."""
@@ -84,6 +87,7 @@ class DnssecPolicyInventory:
     root_config: Path
     policies: tuple[DnssecPolicy, ...]
     undefined_references: tuple[str, ...]
+    bind_capabilities: BindCapabilities | None = None
 
     def to_dict(self) -> dict[str, object]:
         """Return a stable JSON-safe, allowlisted representation."""
@@ -92,6 +96,11 @@ class DnssecPolicyInventory:
             "root_config": str(self.root_config),
             "policies": [policy.to_dict() for policy in self.policies],
             "undefined_references": list(self.undefined_references),
+            "bind_capabilities": (
+                None
+                if self.bind_capabilities is None
+                else self.bind_capabilities.to_dict()
+            ),
         }
 
 
@@ -131,8 +140,11 @@ class DnssecPolicyInventoryReader:
         "max_zone_ttl": "max-zone-ttl",
     }
 
-    def __init__(self, root_config: Path) -> None:
+    def __init__(
+        self, root_config: Path, bind_capabilities: BindCapabilities | None = None
+    ) -> None:
         self.root_config = root_config
+        self.bind_capabilities = bind_capabilities
 
     def read(self) -> DnssecPolicyInventory:
         """Read includes, definitions and zone references using no subprocesses."""
@@ -175,6 +187,11 @@ class DnssecPolicyInventoryReader:
             nsec3 = self._parse_nsec3(body)
             warnings, status = self._classify(keys, nsec3)
             iterations, optout = self._nsec3_values(nsec3)
+            compatibility, compatibility_findings = self._compatibility(
+                built_in=False,
+                inline_signing=inline,
+                nsec3_iterations=iterations,
+            )
             policies.append(
                 DnssecPolicy(
                     name=name,
@@ -193,6 +210,8 @@ class DnssecPolicyInventoryReader:
                     zones=tuple(
                         sorted(zones_by_policy.get(folded, []), key=str.casefold)
                     ),
+                    bind_compatibility=compatibility,
+                    compatibility_findings=compatibility_findings,
                 )
             )
 
@@ -203,7 +222,12 @@ class DnssecPolicyInventoryReader:
                 key=str.casefold,
             )
         )
-        return DnssecPolicyInventory(discovery.root_config, tuple(policies), undefined)
+        return DnssecPolicyInventory(
+            discovery.root_config,
+            tuple(policies),
+            undefined,
+            self.bind_capabilities,
+        )
 
     def _policy_blocks(self, text: str, path: Path) -> list[tuple[str, str]]:
         blocks: list[tuple[str, str]] = []
@@ -300,8 +324,44 @@ class DnssecPolicyInventoryReader:
             return tuple(warnings), "WARN"
         return (), "PASS"
 
-    @staticmethod
-    def _built_in(name: str, zones: list[str]) -> DnssecPolicy:
+    def _compatibility(
+        self,
+        *,
+        built_in: bool,
+        inline_signing: bool | None,
+        nsec3_iterations: int | None,
+    ) -> tuple[str, tuple[str, ...]]:
+        capabilities = self.bind_capabilities
+        if capabilities is None:
+            return "NOT_CHECKED", ()
+        if not capabilities.detected:
+            return "UNKNOWN", ("Nie można potwierdzić wersji BIND",)
+
+        findings: list[str] = []
+        if capabilities.status == "BLOCKED":
+            findings.append("Wykryta wersja BIND nie jest wspierana przez ZoneCTL")
+        if capabilities.dnssec_policy is not True:
+            findings.append("Wykryty BIND nie obsługuje dnssec-policy")
+        if (
+            not built_in
+            and inline_signing is not None
+            and capabilities.inline_signing_in_policy is not True
+        ):
+            findings.append(
+                "inline-signing wewnątrz dnssec-policy wymaga BIND 9.20 lub nowszego"
+            )
+        if (
+            nsec3_iterations not in {None, 0}
+            and capabilities.nsec3_iterations_zero_required is True
+        ):
+            findings.append("Wykryty BIND wymaga NSEC3 iterations=0")
+        if findings:
+            return "BLOCKED", tuple(findings)
+        if capabilities.status == "WARN":
+            return "REVIEW", ("Seria BIND nie została jeszcze przetestowana",)
+        return "COMPATIBLE", ()
+
+    def _built_in(self, name: str, zones: list[str]) -> DnssecPolicy:
         keys: tuple[PolicyKey, ...]
         warnings: tuple[str, ...]
         if name == "default":
@@ -313,6 +373,11 @@ class DnssecPolicyInventoryReader:
         else:
             keys, status = (), "UNSIGNED"
             warnings = ("Polityka nie włącza podpisywania DNSSEC",)
+        compatibility, compatibility_findings = self._compatibility(
+            built_in=True,
+            inline_signing=True if name in {"default", "insecure"} else None,
+            nsec3_iterations=None,
+        )
         return DnssecPolicy(
             name=name,
             built_in=True,
@@ -328,4 +393,6 @@ class DnssecPolicyInventoryReader:
             status=status,
             warnings=warnings,
             zones=tuple(sorted(zones, key=str.casefold)),
+            bind_compatibility=compatibility,
+            compatibility_findings=compatibility_findings,
         )

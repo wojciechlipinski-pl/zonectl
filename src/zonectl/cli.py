@@ -1305,7 +1305,10 @@ def main(argv: list[str] | None = None) -> int:
         return 0 if capabilities.status == "PASS" else 1
     if args.command == "dnssec" and args.dnssec_command == "policies":
         try:
-            policy_inventory = DnssecPolicyInventoryReader(args.root_config).read()
+            bind_capabilities = BindCapabilityDetector().detect()
+            policy_inventory = DnssecPolicyInventoryReader(
+                args.root_config, bind_capabilities
+            ).read()
         except (BindDiscoveryError, OSError) as exc:
             print(f"BŁĄD: {exc}", file=sys.stderr)
             return 2
@@ -1314,9 +1317,15 @@ def main(argv: list[str] | None = None) -> int:
         else:
             print("POLITYKI DNSSEC/KASP — RAPORT TYLKO DO ODCZYTU")
             print(f"Konfiguracja: {policy_inventory.root_config}")
+            print(
+                "BIND: "
+                f"{bind_capabilities.version or 'nieznany'} "
+                f"[{bind_capabilities.status}]"
+            )
             for policy in policy_inventory.policies:
                 source = "wbudowana" if policy.built_in else "nazwana"
                 print(f"\n[{policy.status}] {policy.name} ({source})")
+                print(f"  Zgodność z BIND: {policy.bind_compatibility}")
                 print("  Strefy: " + (", ".join(policy.zones) or "-"))
                 print(
                     "  inline-signing: "
@@ -1361,6 +1370,8 @@ def main(argv: list[str] | None = None) -> int:
                     print(f"  offline-KSK: {'yes' if policy.offline_ksk else 'no'}")
                 for warning in policy.warnings:
                     print(f"  UWAGA: {warning}")
+                for finding in policy.compatibility_findings:
+                    print(f"  ZGODNOŚĆ: {finding}")
             if policy_inventory.undefined_references:
                 print(
                     "\nBŁĄD: strefy odwołują się do niezdefiniowanych polityk: "
@@ -1371,6 +1382,10 @@ def main(argv: list[str] | None = None) -> int:
             1
             if policy_inventory.undefined_references
             or any(policy.status == "BLOCKED" for policy in policy_inventory.policies)
+            or any(
+                policy.bind_compatibility in {"BLOCKED", "UNKNOWN"}
+                for policy in policy_inventory.policies
+            )
             else 0
         )
     try:

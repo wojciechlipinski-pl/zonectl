@@ -756,7 +756,7 @@ wielojęzyczność są planowane dla ZoneCTL 5.0.
 
 - [x] Dodać odczytowe, prywatnościowe wykrywanie wersji BIND oraz jawny model
   znanych różnic możliwości pomiędzy przetestowanymi seriami 9.18 i 9.20.
-- [ ] Weryfikować każdą politykę DNSSEC/KASP względem możliwości wykrytej
+- [x] Weryfikować każdą politykę DNSSEC/KASP względem możliwości wykrytej
   wersji BIND, bez polegania na założeniu zaszytym na stałe dla BIND 9.20.
 - [ ] Sprawdzać obsługę algorytmu i parametrów DS przez strefę nadrzędną.
 - [ ] Udostępnić zbiorczy raport zgodności w CLI i TUI, nadal wyłącznie do

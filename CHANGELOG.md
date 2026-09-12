@@ -7,6 +7,9 @@
 - add a privacy-safe, read-only `zctl bind capabilities` report that detects
   the installed BIND version and exposes only normalized, allowlisted
   compatibility facts in text or JSON
+- evaluate every inventoried DNSSEC/KASP policy against the detected BIND
+  capabilities and report compatible, review-required, blocked or unknown
+  runtime compatibility separately from the policy safety classification
 
 ### Safety
 

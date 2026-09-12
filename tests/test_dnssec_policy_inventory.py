@@ -3,7 +3,22 @@ from pathlib import Path
 import pytest
 
 from zonectl.core.discovery import BindDiscoveryError
+from zonectl.core.bind_capabilities import BindCapabilities
 from zonectl.core.dnssec_policy_inventory import DnssecPolicyInventoryReader
+
+
+def capabilities(version: str = "9.20.26", *, status: str = "PASS") -> BindCapabilities:
+    bind_920 = version.startswith("9.20")
+    return BindCapabilities(
+        detected=True,
+        version=version,
+        series="9.20" if bind_920 else "9.18",
+        status=status,
+        dnssec_policy=True,
+        inline_signing_in_policy=bind_920,
+        nsec3_iterations_zero_required=bind_920,
+        findings=(),
+    )
 
 
 def config(tmp_path: Path, policy: str, zone_policy: str = "modern") -> Path:
@@ -120,3 +135,57 @@ def test_builtin_default_remains_available(tmp_path: Path) -> None:
     assert policy.built_in is True
     assert policy.status == "PASS"
     assert policy.keys[0].role == "CSK"
+
+
+def test_reports_policy_compatible_with_bind_920(tmp_path: Path) -> None:
+    root = config(
+        tmp_path,
+        """dnssec-policy modern {
+  inline-signing yes;
+  keys { csk lifetime unlimited algorithm ED25519; };
+  nsec3param iterations 0 optout no salt-length 0;
+};""",
+    )
+
+    report = DnssecPolicyInventoryReader(root, capabilities()).read()
+    policy = next(item for item in report.policies if item.name == "modern")
+
+    assert policy.bind_compatibility == "COMPATIBLE"
+    assert report.bind_capabilities is not None
+    assert report.to_dict()["bind_capabilities"] is not None
+
+
+def test_blocks_policy_directive_unavailable_in_bind_918(tmp_path: Path) -> None:
+    root = config(
+        tmp_path,
+        """dnssec-policy modern {
+  inline-signing yes;
+  keys { csk lifetime unlimited algorithm ED25519; };
+};""",
+    )
+
+    report = DnssecPolicyInventoryReader(
+        root, capabilities("9.18.33", status="BLOCKED")
+    ).read()
+    policy = next(item for item in report.policies if item.name == "modern")
+
+    assert policy.bind_compatibility == "BLOCKED"
+    assert any("inline-signing" in item for item in policy.compatibility_findings)
+
+
+def test_marks_compatibility_unknown_when_bind_version_is_unavailable(
+    tmp_path: Path,
+) -> None:
+    unavailable = BindCapabilities(
+        detected=False,
+        version=None,
+        series=None,
+        status="BLOCKED",
+        dnssec_policy=None,
+        inline_signing_in_policy=None,
+        nsec3_iterations_zero_required=None,
+        findings=("unavailable",),
+    )
+    report = DnssecPolicyInventoryReader(config(tmp_path, ""), unavailable).read()
+
+    assert {item.bind_compatibility for item in report.policies} == {"UNKNOWN"}
