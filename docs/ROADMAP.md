@@ -761,7 +761,7 @@ wielojęzyczność są planowane dla ZoneCTL 5.0.
 - [x] Sprawdzać obsługę algorytmu i parametrów DS przez strefę nadrzędną,
   opierając wynik wyłącznie na zaobserwowanym publicznym DS i nie deklarując
   zgodności, gdy rekord nie został jeszcze opublikowany.
-- [ ] Udostępnić zbiorczy raport zgodności w CLI i TUI, nadal wyłącznie do
+- [x] Udostępnić zbiorczy raport zgodności w CLI i TUI, nadal wyłącznie do
   odczytu, z bezpieczną obsługą nieznanej i przyszłej wersji BIND.
 - [ ] Objąć raport testami integracyjnymi BIND, prywatności i małych terminali.
 - [ ] Przeprowadzić pełną bramkę jakości, próbę produkcyjną i dopiero na końcu

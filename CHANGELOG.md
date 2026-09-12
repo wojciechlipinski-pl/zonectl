@@ -12,6 +12,8 @@
   runtime compatibility separately from the policy safety classification
 - evaluate KSK/CSK algorithm and DS digest compatibility from public parent
   evidence without serializing DS hashes, DNSKEY material or resolver addresses
+- extend the policy CLI and TUI with a combined BIND compatibility summary and
+  an explicit optional parent-DS check for one selected zone
 
 ### Safety
 
