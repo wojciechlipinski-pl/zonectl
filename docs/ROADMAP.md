@@ -763,7 +763,9 @@ wielojęzyczność są planowane dla ZoneCTL 5.0.
   zgodności, gdy rekord nie został jeszcze opublikowany.
 - [x] Udostępnić zbiorczy raport zgodności w CLI i TUI, nadal wyłącznie do
   odczytu, z bezpieczną obsługą nieznanej i przyszłej wersji BIND.
-- [ ] Objąć raport testami integracyjnymi BIND, prywatności i małych terminali.
+- [x] Objąć raport testami integracyjnymi BIND, prywatności i małych terminali;
+  sprawdzać rzeczywistą składnię `inline-signing` w polityce zgodnie z
+  możliwościami wykrytej wersji, bez ujawniania identyfikatora kompilacji.
 - [ ] Przeprowadzić pełną bramkę jakości, próbę produkcyjną i dopiero na końcu
   przygotować tag oraz GitHub Release.
 

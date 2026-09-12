@@ -78,3 +78,11 @@ zone "alpha.example.test" {{
 
     assert "BIND: 9.20.26 [PASS]" in text
     assert "Zgodność z BIND: COMPATIBLE" in text
+
+
+def test_policy_view_uses_scrollable_small_terminal_safe_message_view() -> None:
+    source = inspect.getsource(CursesApp._dnssec_policy_inventory_view)
+
+    assert "self._message_view(" in source
+    assert "dnssec_policy_lines(" in source
+    assert "_run_with_wait_indicator" in source

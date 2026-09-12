@@ -15,6 +15,11 @@
 - extend the policy CLI and TUI with a combined BIND compatibility summary and
   an explicit optional parent-DS check for one selected zone
 
+### Tests
+
+- verify capability detection against the real `named-checkconf` grammar and
+  cover privacy-safe version output plus scrollable compact-terminal routing
+
 ### Safety
 
 - classify BIND versions below the supported 9.20 floor as blocked and
