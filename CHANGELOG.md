@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 4.15.0 - 2026-09-13
+
 ### Added
 
 - add a privacy-safe, read-only `zctl bind capabilities` report that detects
