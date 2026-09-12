@@ -2,6 +2,29 @@
 
 ## Unreleased
 
+### Added
+
+- add a privacy-safe, read-only `zctl bind capabilities` report that detects
+  the installed BIND version and exposes only normalized, allowlisted
+  compatibility facts in text or JSON
+- evaluate every inventoried DNSSEC/KASP policy against the detected BIND
+  capabilities and report compatible, review-required, blocked or unknown
+  runtime compatibility separately from the policy safety classification
+- evaluate KSK/CSK algorithm and DS digest compatibility from public parent
+  evidence without serializing DS hashes, DNSKEY material or resolver addresses
+- extend the policy CLI and TUI with a combined BIND compatibility summary and
+  an explicit optional parent-DS check for one selected zone
+
+### Tests
+
+- verify capability detection against the real `named-checkconf` grammar and
+  cover privacy-safe version output plus scrollable compact-terminal routing
+
+### Safety
+
+- classify BIND versions below the supported 9.20 floor as blocked and
+  untested future series as requiring operator review
+
 ## 4.14.0 - 2026-09-09
 
 ### Added

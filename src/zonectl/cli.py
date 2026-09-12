@@ -9,6 +9,7 @@ from collections.abc import Iterator, Sequence
 
 from . import __version__
 from .core.bind import BindService
+from .core.bind_capabilities import BindCapabilityDetector
 from .core.bind_access_inventory import (
     BindAccessInventoryError,
     BindAccessInventoryReader,
@@ -70,6 +71,7 @@ from .core.dnssec_confirm_ds import DnssecConfirmDsTransaction
 from .core.dnssec_guidance import build_dnssec_guidance
 from .core.dnssec_report import DnssecReporter
 from .core.dnssec_policy_inventory import DnssecPolicyInventoryReader
+from .core.dnssec_parent_compatibility import evaluate_parent_compatibility
 from .core.transaction import TransactionEngine, TransactionResult
 from .core.zone_create_transaction import ZoneCreateTransaction
 from .core.zone_disable_transaction import (
@@ -132,6 +134,11 @@ def parser() -> argparse.ArgumentParser:
 
     bind_config = sub.add_parser("bind", help="odczyt konfiguracji BIND")
     bind_sub = bind_config.add_subparsers(dest="bind_command", required=True)
+    bind_capabilities = bind_sub.add_parser(
+        "capabilities",
+        help="wykryj wersję i znane możliwości BIND bez zmian w systemie",
+    )
+    bind_capabilities.add_argument("--json", action="store_true")
     bind_inventory = bind_sub.add_parser(
         "inventory", help="pokaż ACL i grupy serwerów secondary bez zmian"
     )
@@ -425,6 +432,14 @@ def parser() -> argparse.ArgumentParser:
     )
     dnssec_policies.add_argument(
         "--root-config", type=Path, default=Path("/etc/bind/named.conf")
+    )
+    dnssec_policies.add_argument("--zone")
+    dnssec_policies.add_argument("--server", default="127.0.0.1")
+    dnssec_policies.add_argument("--resolver", action="append", dest="resolvers")
+    dnssec_policies.add_argument(
+        "--check-parent",
+        action="store_true",
+        help="dołącz publiczną kontrolę zgodności DS wybranej strefy",
     )
     dnssec_policies.add_argument("--json", action="store_true")
     dnssec_report = dnssec_sub.add_parser(
@@ -1271,20 +1286,86 @@ def main(argv: list[str] | None = None) -> int:
         return legacy_main(args.arguments)
     if args.command == "audit":
         return audit_main(args)
+    if args.command == "bind" and args.bind_command == "capabilities":
+        capabilities = BindCapabilityDetector().detect()
+        if args.json:
+            print(json.dumps(capabilities.to_dict(), ensure_ascii=False, indent=2))
+        else:
+            yes_no_unknown = {True: "TAK", False: "NIE", None: "NIEZNANE"}
+            print("MOŻLIWOŚCI BIND — TYLKO ODCZYT")
+            print(f"Status:                         {capabilities.status}")
+            print(f"Wersja:                         {capabilities.version or '-'}")
+            print(f"Seria:                          {capabilities.series or '-'}")
+            print(
+                "dnssec-policy:                  "
+                f"{yes_no_unknown[capabilities.dnssec_policy]}"
+            )
+            print(
+                "inline-signing w polityce:      "
+                f"{yes_no_unknown[capabilities.inline_signing_in_policy]}"
+            )
+            print(
+                "NSEC3 iterations=0 wymagane:    "
+                f"{yes_no_unknown[capabilities.nsec3_iterations_zero_required]}"
+            )
+            for finding in capabilities.findings:
+                print(f"UWAGA: {finding}")
+            print("\nWynik: raport odczytowy — niczego nie zmieniono")
+        return 0 if capabilities.status == "PASS" else 1
     if args.command == "dnssec" and args.dnssec_command == "policies":
         try:
-            policy_inventory = DnssecPolicyInventoryReader(args.root_config).read()
+            bind_capabilities = BindCapabilityDetector().detect()
+            policy_inventory = DnssecPolicyInventoryReader(
+                args.root_config, bind_capabilities
+            ).read()
         except (BindDiscoveryError, OSError) as exc:
             print(f"BŁĄD: {exc}", file=sys.stderr)
             return 2
+        parent_compatibility = None
+        if args.check_parent:
+            if not args.zone:
+                print("BŁĄD: --check-parent wymaga --zone", file=sys.stderr)
+                return 2
+            selected_policy = next(
+                (
+                    policy
+                    for policy in policy_inventory.policies
+                    if args.zone.rstrip(".").casefold()
+                    in {zone.rstrip(".").casefold() for zone in policy.zones}
+                ),
+                None,
+            )
+            if selected_policy is None:
+                print(
+                    "BŁĄD: strefa nie ma rozpoznanej polityki DNSSEC/KASP",
+                    file=sys.stderr,
+                )
+                return 2
+            resolvers = tuple(args.resolvers or ("1.1.1.1", "8.8.8.8", "9.9.9.9"))
+            ds_check = DnssecDsChecker(local_server=args.server).collect(
+                args.zone, resolvers
+            )
+            parent_compatibility = evaluate_parent_compatibility(
+                selected_policy, ds_check
+            )
         if args.json:
-            print(json.dumps(policy_inventory.to_dict(), ensure_ascii=False, indent=2))
+            payload = policy_inventory.to_dict()
+            payload["parent_compatibility"] = (
+                None if parent_compatibility is None else parent_compatibility.to_dict()
+            )
+            print(json.dumps(payload, ensure_ascii=False, indent=2))
         else:
             print("POLITYKI DNSSEC/KASP — RAPORT TYLKO DO ODCZYTU")
             print(f"Konfiguracja: {policy_inventory.root_config}")
+            print(
+                "BIND: "
+                f"{bind_capabilities.version or 'nieznany'} "
+                f"[{bind_capabilities.status}]"
+            )
             for policy in policy_inventory.policies:
                 source = "wbudowana" if policy.built_in else "nazwana"
                 print(f"\n[{policy.status}] {policy.name} ({source})")
+                print(f"  Zgodność z BIND: {policy.bind_compatibility}")
                 print("  Strefy: " + (", ".join(policy.zones) or "-"))
                 print(
                     "  inline-signing: "
@@ -1329,16 +1410,51 @@ def main(argv: list[str] | None = None) -> int:
                     print(f"  offline-KSK: {'yes' if policy.offline_ksk else 'no'}")
                 for warning in policy.warnings:
                     print(f"  UWAGA: {warning}")
+                for finding in policy.compatibility_findings:
+                    print(f"  ZGODNOŚĆ: {finding}")
             if policy_inventory.undefined_references:
                 print(
                     "\nBŁĄD: strefy odwołują się do niezdefiniowanych polityk: "
                     + ", ".join(policy_inventory.undefined_references)
                 )
+            if parent_compatibility is not None:
+                print("\nZGODNOŚĆ ZE STREFĄ NADRZĘDNĄ")
+                print(f"Status: {parent_compatibility.status}")
+                print(
+                    "Algorytmy DS: "
+                    + (
+                        ", ".join(
+                            str(value)
+                            for value in parent_compatibility.observed_ds_algorithms
+                        )
+                        or "-"
+                    )
+                )
+                print(
+                    "Typy skrótu DS: "
+                    + (
+                        ", ".join(
+                            str(value)
+                            for value in parent_compatibility.observed_digest_types
+                        )
+                        or "-"
+                    )
+                )
+                for finding in parent_compatibility.findings:
+                    print(f"UWAGA: {finding}")
             print("\nWynik: raport odczytowy — niczego nie zmieniono")
         return (
             1
             if policy_inventory.undefined_references
             or any(policy.status == "BLOCKED" for policy in policy_inventory.policies)
+            or any(
+                policy.bind_compatibility in {"BLOCKED", "UNKNOWN"}
+                for policy in policy_inventory.policies
+            )
+            or (
+                parent_compatibility is not None
+                and parent_compatibility.status in {"BLOCKED", "INDETERMINATE"}
+            )
             else 0
         )
     try:

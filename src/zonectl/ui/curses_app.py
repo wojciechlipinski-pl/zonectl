@@ -42,6 +42,7 @@ from typing import TypeVar
 
 from .. import __version__
 from ..core.bind import BindService
+from ..core.bind_capabilities import BindCapabilityDetector
 from ..core.audit_store import AuditStorageError, AuditStore, MAX_RESULTS
 from ..core.bind_access_inventory import (
     BindAccessInventoryError,
@@ -5036,7 +5037,7 @@ class CursesApp:
                 title="Polityki DNSSEC/KASP",
                 label="Odczyt definicji i przypisań polityk",
                 operation=lambda: DnssecPolicyInventoryReader(
-                    self._bind_root_config()
+                    self._bind_root_config(), BindCapabilityDetector().detect()
                 ).read(),
             )
             self._message_view(
@@ -5046,7 +5047,11 @@ class CursesApp:
                     inventory, zone_name=zone.name if zone is not None else None
                 ),
                 error=bool(inventory.undefined_references)
-                or any(policy.status == "BLOCKED" for policy in inventory.policies),
+                or any(
+                    policy.status == "BLOCKED"
+                    or policy.bind_compatibility in {"BLOCKED", "UNKNOWN"}
+                    for policy in inventory.policies
+                ),
             )
         except Exception as exc:
             self._message_view(

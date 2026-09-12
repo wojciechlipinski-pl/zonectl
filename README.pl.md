@@ -17,6 +17,7 @@ zctl --version
 zctl tui
 zctl domains
 zctl domains --grouped
+zctl bind capabilities
 ```
 
 Pakiet systemowy instaluje wyłącznie polecenie `zctl`. Historyczna nazwa
