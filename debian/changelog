@@ -1,3 +1,13 @@
+zonectl (4.15.0-1) unstable; urgency=medium
+
+  * Detect normalized, privacy-safe BIND runtime capabilities.
+  * Evaluate DNSSEC/KASP policies against the installed BIND release.
+  * Optionally assess algorithm and digest support from public parent DS data.
+  * Add combined CLI and TUI compatibility reports with safe unknown states.
+  * Extend integration, privacy and compact-terminal regression coverage.
+
+ -- Wojciech Lipiński <wojciech.lipinski.elk@gmail.com>  Sun, 13 Sep 2026 00:30:00 +0200
+
 zonectl (4.14.0-1) unstable; urgency=medium
 
   * Add privacy-safe discovery of named and built-in DNSSEC/KASP policies.

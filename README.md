@@ -11,7 +11,7 @@ atomic replacement and rollback.
 
 ## Current release
 
-**4.14.0 — privacy-safe, read-only DNSSEC/KASP policy inventory**
+**4.15.0 — BIND-aware DNSSEC/KASP compatibility reporting**
 
 ## Highlights
 
@@ -21,6 +21,8 @@ atomic replacement and rollback.
 - safely enable and withdraw DNSSEC using BIND KASP state gates;
 - inspect named DNSSEC/KASP policies, rollover timing and zone assignments
   from CLI or TUI without exposing private key material;
+- compare those policies and optional public parent DS evidence with the
+  capabilities of the installed BIND release;
 - migrate legacy declarations to one managed include file per zone;
 - inventory, audit and transactionally edit BIND ACLs and secondary groups;
 - assign primary zones to complete notify/transfer secondary pairs;
@@ -64,7 +66,7 @@ exact patch version.
 Install the Debian package attached to the GitHub release:
 
 ```bash
-sudo apt install ./zonectl_4.14.0-1_all.deb
+sudo apt install ./zonectl_4.15.0-1_all.deb
 zctl --version
 ```
 

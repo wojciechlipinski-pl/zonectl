@@ -781,10 +781,10 @@ walidacji, backupu i rollbacku.
   włączania DNSSEC zamiast prostego, podatnego na błędy wyboru algorytmu.
 - [x] Odczytowo pokazywać algorytm, model kluczy KSK/ZSK lub CSK,
   parametry publikacji i harmonogram rolloveru.
-- [ ] Weryfikować politykę względem możliwości wykrytej wersji BIND.
+- [x] Weryfikować politykę względem możliwości wykrytej wersji BIND.
 - [x] Ostrzegać i blokować raportowane polityki używające algorytmów
   przestarzałych, niezalecanych lub nierozpoznanych.
-- [ ] Sprawdzać obsługę algorytmu i parametrów DS przez strefę nadrzędną.
+- [x] Sprawdzać obsługę algorytmu i parametrów DS przez strefę nadrzędną.
 - [ ] Migrację aktywnej strefy pomiędzy politykami realizować wyłącznie jako
   osobną transakcję z planem, dry-runem, kontrolą DNSKEY/DS/KASP, okresem
   przejściowym i rollbackiem.
