@@ -90,6 +90,7 @@ jobs:
             src/zonectl/ui/curses_app.py \
             src/zonectl/cli.py \
             src/zonectl/core/dnssec_enable_transaction.py \
+            src/zonectl/core/bind_capabilities.py \
             src/zonectl/core/dnssec_disable_transaction.py \
             src/zonectl/core/dnssec_confirm_ds.py \
             src/zonectl/core/multi_zone_session.py \
@@ -156,6 +157,7 @@ jobs:
             src/zonectl/core/family_audit_adapter.py \
             src/zonectl/core/audit_query.py \
             src/zonectl/core/git_history.py \
+            src/zonectl/core/bind_capabilities.py \
             src/zonectl/ui/audit_view.py
       - name: Reject whitespace errors
         run: git diff --check $(git hash-object -t tree /dev/null) HEAD

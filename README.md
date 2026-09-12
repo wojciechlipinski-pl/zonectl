@@ -86,6 +86,7 @@ zctl --version
 zctl tui
 zctl domains
 zctl domains --grouped
+zctl bind capabilities
 ```
 
 Commands without their explicit commit flags are plans or dry-runs and do not

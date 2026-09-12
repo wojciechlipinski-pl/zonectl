@@ -752,6 +752,19 @@ wielojęzyczność są planowane dla ZoneCTL 5.0.
 
 ## Rozwój po osiągnięciu pełnej funkcjonalności podstawowej
 
+## ZoneCTL 4.15 — zgodność polityk z możliwościami BIND
+
+- [x] Dodać odczytowe, prywatnościowe wykrywanie wersji BIND oraz jawny model
+  znanych różnic możliwości pomiędzy przetestowanymi seriami 9.18 i 9.20.
+- [ ] Weryfikować każdą politykę DNSSEC/KASP względem możliwości wykrytej
+  wersji BIND, bez polegania na założeniu zaszytym na stałe dla BIND 9.20.
+- [ ] Sprawdzać obsługę algorytmu i parametrów DS przez strefę nadrzędną.
+- [ ] Udostępnić zbiorczy raport zgodności w CLI i TUI, nadal wyłącznie do
+  odczytu, z bezpieczną obsługą nieznanej i przyszłej wersji BIND.
+- [ ] Objąć raport testami integracyjnymi BIND, prywatności i małych terminali.
+- [ ] Przeprowadzić pełną bramkę jakości, próbę produkcyjną i dopiero na końcu
+  przygotować tag oraz GitHub Release.
+
 Poniższe rozszerzenia nie mogą opóźniać stabilizacji podstawowych operacji
 ZoneCTL: zarządzania strefami i rekordami, DNSSEC, secondary, ACL, RPZ,
 walidacji, backupu i rollbacku.

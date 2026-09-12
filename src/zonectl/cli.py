@@ -9,6 +9,7 @@ from collections.abc import Iterator, Sequence
 
 from . import __version__
 from .core.bind import BindService
+from .core.bind_capabilities import BindCapabilityDetector
 from .core.bind_access_inventory import (
     BindAccessInventoryError,
     BindAccessInventoryReader,
@@ -132,6 +133,11 @@ def parser() -> argparse.ArgumentParser:
 
     bind_config = sub.add_parser("bind", help="odczyt konfiguracji BIND")
     bind_sub = bind_config.add_subparsers(dest="bind_command", required=True)
+    bind_capabilities = bind_sub.add_parser(
+        "capabilities",
+        help="wykryj wersję i znane możliwości BIND bez zmian w systemie",
+    )
+    bind_capabilities.add_argument("--json", action="store_true")
     bind_inventory = bind_sub.add_parser(
         "inventory", help="pokaż ACL i grupy serwerów secondary bez zmian"
     )
@@ -1271,6 +1277,32 @@ def main(argv: list[str] | None = None) -> int:
         return legacy_main(args.arguments)
     if args.command == "audit":
         return audit_main(args)
+    if args.command == "bind" and args.bind_command == "capabilities":
+        capabilities = BindCapabilityDetector().detect()
+        if args.json:
+            print(json.dumps(capabilities.to_dict(), ensure_ascii=False, indent=2))
+        else:
+            yes_no_unknown = {True: "TAK", False: "NIE", None: "NIEZNANE"}
+            print("MOŻLIWOŚCI BIND — TYLKO ODCZYT")
+            print(f"Status:                         {capabilities.status}")
+            print(f"Wersja:                         {capabilities.version or '-'}")
+            print(f"Seria:                          {capabilities.series or '-'}")
+            print(
+                "dnssec-policy:                  "
+                f"{yes_no_unknown[capabilities.dnssec_policy]}"
+            )
+            print(
+                "inline-signing w polityce:      "
+                f"{yes_no_unknown[capabilities.inline_signing_in_policy]}"
+            )
+            print(
+                "NSEC3 iterations=0 wymagane:    "
+                f"{yes_no_unknown[capabilities.nsec3_iterations_zero_required]}"
+            )
+            for finding in capabilities.findings:
+                print(f"UWAGA: {finding}")
+            print("\nWynik: raport odczytowy — niczego nie zmieniono")
+        return 0 if capabilities.status == "PASS" else 1
     if args.command == "dnssec" and args.dnssec_command == "policies":
         try:
             policy_inventory = DnssecPolicyInventoryReader(args.root_config).read()

@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+### Added
+
+- add a privacy-safe, read-only `zctl bind capabilities` report that detects
+  the installed BIND version and exposes only normalized, allowlisted
+  compatibility facts in text or JSON
+
+### Safety
+
+- classify BIND versions below the supported 9.20 floor as blocked and
+  untested future series as requiring operator review
+
 ## 4.14.0 - 2026-09-09
 
 ### Added
