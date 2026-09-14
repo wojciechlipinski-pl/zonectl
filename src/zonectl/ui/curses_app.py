@@ -83,7 +83,7 @@ from ..core.dnssec_disable_transaction import (
 from ..core.dnssec_enable_plan import DnssecEnablePlan, DnssecEnablePlanner
 from ..core.dnssec_enable_transaction import DnssecEnableResult, DnssecEnableTransaction
 from ..core.dnssec_report import DnssecReporter
-from ..core.dnssec_policy_inventory import DnssecPolicyInventoryReader
+from ..core.dnssec_policy_inventory import DnssecPolicy, DnssecPolicyInventoryReader
 from ..core.dnssec_onboarding_audit import (
     DnssecOnboardingAuditItem,
     DnssecOnboardingAuditor,
@@ -4373,24 +4373,56 @@ class CursesApp:
             raise RuntimeError("Autodetekcja nie znalazła deklaracji BIND dla strefy")
         return DnssecDisablePlanner().plan(discovered)
 
-    def _dnssec_enable_plan(self, zone: Zone) -> DnssecEnablePlan:
+    def _dnssec_enable_plan(
+        self,
+        zone: Zone,
+        policy: str = "default",
+        acknowledge_policy_review: bool = False,
+    ) -> DnssecEnablePlan:
         self._ensure_dnssec_tui_allowed(zone)
         if self.config is None:
             raise RuntimeError("Brak konfiguracji ZoneCTL")
         discovered = self.config.discovered_zone(zone.name)
         if discovered is None:
             raise RuntimeError("Autodetekcja nie znalazła deklaracji BIND dla strefy")
-        return DnssecEnablePlanner().plan(discovered)
+        root_config = self._bind_root_config()
+        inventory = DnssecPolicyInventoryReader(
+            root_config, BindCapabilityDetector().detect()
+        ).read()
+        return DnssecEnablePlanner(root_config).plan(
+            discovered,
+            policy=policy,
+            policy_inventory=inventory,
+            acknowledge_policy_review=acknowledge_policy_review,
+        )
 
-    def _dnssec_enable_dry_run(self, zone: Zone) -> DnssecEnableResult:
-        plan = self._dnssec_enable_plan(zone)
+    def _dnssec_enable_dry_run(
+        self,
+        zone: Zone,
+        policy: str = "default",
+        acknowledge_policy_review: bool = False,
+    ) -> DnssecEnableResult:
+        plan = (
+            self._dnssec_enable_plan(zone)
+            if policy == "default" and not acknowledge_policy_review
+            else self._dnssec_enable_plan(zone, policy, acknowledge_policy_review)
+        )
         return DnssecEnableTransaction(
             Path("/var/backups/zonectl-dnssec-enable/backups"),
             Path("/var/backups/zonectl-dnssec-enable/manifests"),
         ).apply(plan)
 
-    def _dnssec_enable_commit(self, zone: Zone) -> DnssecEnableResult:
-        plan = self._dnssec_enable_plan(zone)
+    def _dnssec_enable_commit(
+        self,
+        zone: Zone,
+        policy: str = "default",
+        acknowledge_policy_review: bool = False,
+    ) -> DnssecEnableResult:
+        plan = (
+            self._dnssec_enable_plan(zone)
+            if policy == "default" and not acknowledge_policy_review
+            else self._dnssec_enable_plan(zone, policy, acknowledge_policy_review)
+        )
         return DnssecEnableTransaction(
             Path("/var/backups/zonectl-dnssec-enable/backups"),
             Path("/var/backups/zonectl-dnssec-enable/manifests"),
@@ -4497,9 +4529,17 @@ class CursesApp:
     def _dnssec_enable_result_lines(result: DnssecEnableResult) -> list[str]:
         lines = [
             f"Status: {result.status}",
+            f"Polityka: {result.policy}",
+            f"Bezpieczeństwo: {result.policy_safety}",
+            f"Zgodność BIND: {result.bind_compatibility}",
+            f"Model kluczy: {result.key_model}",
+            f"Algorytmy: {', '.join(result.algorithms) or '-'}",
             f"Commit: {'TAK' if result.committed else 'NIE'}",
             f"Rollback: {'TAK' if result.rolled_back else 'NIE'}",
         ]
+        lines.extend(f"Rollover: {fact}" for fact in result.rollover)
+        lines.extend(f"Publikacja: {fact}" for fact in result.publication)
+        lines.append(f"DS: {result.ds_guidance}")
         lines.extend(
             f"[{'OK' if step.ok else 'BŁĄD'}] {step.name}: {step.message}"
             for step in result.steps
@@ -4668,7 +4708,16 @@ class CursesApp:
                                 error=checked.operation != "CONFIRM_DS",
                             )
                         elif view is not None and view.operation == "ENABLE":
-                            enable_plan = self._dnssec_enable_plan(zone)
+                            selection = self._dnssec_policy_chooser(win)
+                            if selection is None:
+                                refresh = True
+                                continue
+                            selected_policy, acknowledged_review = selection
+                            enable_plan = self._dnssec_enable_plan(
+                                zone,
+                                selected_policy.name,
+                                acknowledged_review,
+                            )
                             self._message_view(
                                 win,
                                 title=f"Plan włączenia DNSSEC: {zone.name}",
@@ -4683,6 +4732,12 @@ class CursesApp:
                                             else "NIE"
                                         ),
                                         f"Polityka: {enable_plan.policy}",
+                                        f"Bezpieczeństwo: {enable_plan.policy_safety}",
+                                        f"Zgodność BIND: {enable_plan.bind_compatibility}",
+                                        f"Model kluczy: {enable_plan.key_model}",
+                                        "Algorytmy: "
+                                        + (", ".join(enable_plan.algorithms) or "-"),
+                                        f"Walidacja: {enable_plan.candidate_validation}",
                                         "",
                                         "Planowany diff:",
                                     ]
@@ -4859,11 +4914,20 @@ class CursesApp:
                     if view.operation != "FINALIZE":
                         if view.operation == "ENABLE":
                             try:
+                                selection = self._dnssec_policy_chooser(win)
+                                if selection is None:
+                                    refresh = True
+                                    continue
+                                selected_policy, acknowledged_review = selection
                                 enable_result = self._run_with_wait_indicator(
                                     win,
                                     title=f"Dry-run włączenia DNSSEC: {zone.name}",
                                     label="Walidacja planu bez zmian w BIND",
-                                    operation=lambda: self._dnssec_enable_dry_run(zone),
+                                    operation=lambda: self._dnssec_enable_dry_run(
+                                        zone,
+                                        selected_policy.name,
+                                        acknowledged_review,
+                                    ),
                                 )
                                 self._message_view(
                                     win,
@@ -4904,7 +4968,9 @@ class CursesApp:
                                                 title=f"Włączanie DNSSEC: {zone.name}",
                                                 label="Walidacja, aktywacja i kontrola BIND",
                                                 operation=lambda: self._dnssec_enable_commit(
-                                                    zone
+                                                    zone,
+                                                    selected_policy.name,
+                                                    acknowledged_review,
                                                 ),
                                             )
                                             self._message_view(
@@ -5060,6 +5126,107 @@ class CursesApp:
                 lines=[str(exc)],
                 error=True,
             )
+
+    def _dnssec_policy_chooser(
+        self, win: curses.window
+    ) -> tuple[DnssecPolicy, bool] | None:
+        """Choose an inventory policy without accepting a free-form name."""
+
+        inventory = self._run_with_wait_indicator(
+            win,
+            title="Wybór polityki DNSSEC/KASP",
+            label="Odczyt bezpiecznego inwentarza polityk BIND",
+            operation=lambda: DnssecPolicyInventoryReader(
+                self._bind_root_config(), BindCapabilityDetector().detect()
+            ).read(),
+        )
+        policies = [
+            policy
+            for policy in inventory.policies
+            if policy.name not in {"insecure", "none"}
+        ]
+        policies.sort(key=lambda item: (item.name != "default", item.name.casefold()))
+        if not policies:
+            raise RuntimeError(
+                "Inwentarz BIND nie zawiera polityki do włączenia DNSSEC"
+            )
+        selected = 0
+        offset = 0
+        while True:
+            win.erase()
+            height, width = win.getmaxyx()
+            visible = max(1, height - 4)
+            selected = min(selected, len(policies) - 1)
+            if selected < offset:
+                offset = selected
+            if selected >= offset + visible:
+                offset = selected - visible + 1
+            try:
+                win.addnstr(
+                    0,
+                    0,
+                    " Wybierz wykrytą politykę DNSSEC/KASP ".ljust(width),
+                    max(0, width - 1),
+                    curses.A_REVERSE | curses.A_BOLD,
+                )
+                for row, policy in enumerate(
+                    policies[offset : offset + visible], start=2
+                ):
+                    index = offset + row - 2
+                    roles = "+".join(dict.fromkeys(key.role for key in policy.keys))
+                    text = (
+                        f"{policy.name:<20} {policy.status:<8} "
+                        f"BIND {policy.bind_compatibility:<10} {roles or '-'}"
+                    )
+                    win.addnstr(
+                        row,
+                        1,
+                        text,
+                        max(0, width - 2),
+                        curses.A_REVERSE if index == selected else curses.A_NORMAL,
+                    )
+                footer = " ↑/↓ wybór  Enter zatwierdź  q/Esc anuluj "
+                win.addnstr(
+                    height - 1,
+                    0,
+                    footer.ljust(width),
+                    max(0, width - 1),
+                    curses.A_REVERSE,
+                )
+                win.refresh()
+            except curses.error:
+                pass
+            key = self._get_key(win)
+            if key in (ord("q"), ord("Q"), 27, curses.KEY_BACKSPACE, 127, 8):
+                return None
+            if key in (curses.KEY_DOWN, ord("j")):
+                selected = min(selected + 1, len(policies) - 1)
+            elif key in (curses.KEY_UP, ord("k")):
+                selected = max(0, selected - 1)
+            elif key in (10, 13, curses.KEY_ENTER):
+                policy = policies[selected]
+                if policy.status == "BLOCKED" or policy.bind_compatibility in {
+                    "BLOCKED",
+                    "UNKNOWN",
+                    "NOT_CHECKED",
+                }:
+                    self._message_view(
+                        win,
+                        title="Polityka zablokowana",
+                        lines=dnssec_policy_lines(inventory),
+                        error=True,
+                    )
+                    continue
+                acknowledged = False
+                if policy.bind_compatibility == "REVIEW":
+                    acknowledged = CursesDialogs.confirm(
+                        win,
+                        f"Zaakceptować ryzyko REVIEW dla {policy.name}?",
+                        key_reader=self._get_key,
+                    )
+                    if not acknowledged:
+                        continue
+                return policy, acknowledged
 
     def _draw_dnssec_status_48(
         self,

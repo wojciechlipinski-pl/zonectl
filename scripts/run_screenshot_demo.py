@@ -113,6 +113,8 @@ class ScreenshotDemoApp(CursesApp):
                 self._show_audit_browser(stdscr)
             elif key == ord("p"):
                 self._show_dnssec_policies(stdscr)
+            elif key == ord("e"):
+                self._show_dnssec_enable_plan(stdscr)
         self.stop_event.set()
 
     def _show_bind_report(self, win: curses.window) -> None:
@@ -230,6 +232,35 @@ class ScreenshotDemoApp(CursesApp):
             win,
             title="Polityki DNSSEC/KASP — demonstracja",
             lines=dnssec_policy_lines(inventory, zone_name="alpha.example.test"),
+        )
+
+    def _show_dnssec_enable_plan(self, win: curses.window) -> None:
+        """Show the 4.16 policy-selection plan using synthetic facts only."""
+
+        self._message_view(
+            win,
+            title="Plan włączenia DNSSEC 4.16 — demonstracja",
+            lines=[
+                "STREFA I WYBÓR",
+                "Strefa               alpha.example.test",
+                "Polityka             modern-example",
+                "Bezpieczeństwo       PASS",
+                "Zgodność BIND        COMPATIBLE",
+                "Walidacja kandydata  PASS (syntetyczna)",
+                "",
+                "KLUCZE I ROLLOVER",
+                "Model                CSK",
+                "Algorytm             ED25519",
+                "Rollover             CSK: lifetime=P1Y",
+                "DNSKEY TTL           1h",
+                "Parent DS TTL        1d",
+                "Publish safety       PT1H",
+                "",
+                "DS: oblicz SHA-256 po publikacji DNSKEY i przekaż ręcznie",
+                "do rejestratora. ZoneCTL nie zmienia delegacji ani DS.",
+                "",
+                "Wynik: DRY-RUN — niczego nie zmieniono",
+            ],
         )
 
     def _show_record_list(self, win: curses.window) -> None:

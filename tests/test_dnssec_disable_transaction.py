@@ -24,7 +24,7 @@ def setup_plan(tmp_path: Path):
         'zone "example.pl" {\n'
         "    type primary;\n"
         f'    file "{source}";\n'
-        "    dnssec-policy default;\n"
+        "    dnssec-policy modern-example;\n"
         "    inline-signing yes;\n"
         f'    key-directory "{keys}";\n'
         "};\n",
@@ -37,7 +37,7 @@ def setup_plan(tmp_path: Path):
         config_file=declaration,
         source_exists=True,
         source_writable=True,
-        dnssec_policy="default",
+        dnssec_policy="modern-example",
         inline_signing=True,
         key_directory=keys,
     )

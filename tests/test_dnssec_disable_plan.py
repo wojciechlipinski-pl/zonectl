@@ -25,7 +25,7 @@ def signed_zone(tmp_path: Path, *, zone_type: str = "primary") -> ZoneConfig:
         f"    type {zone_type};\n"
         f'    file "{zone_file}";\n'
         "    notify yes;\n"
-        "    dnssec-policy default;\n"
+        "    dnssec-policy modern-example;\n"
         "    inline-signing yes;\n"
         f'    key-directory "{keys}";\n'
         "};\n",
@@ -36,7 +36,7 @@ def signed_zone(tmp_path: Path, *, zone_type: str = "primary") -> ZoneConfig:
         zone_type=zone_type,
         source_file=zone_file,
         config_file=declaration,
-        dnssec_policy="default",
+        dnssec_policy="modern-example",
         inline_signing=True,
         key_directory=keys,
         source_exists=True,
@@ -58,7 +58,7 @@ def test_plan_has_no_side_effects_and_removes_only_dnssec_directives(
     assert "dnssec-policy" not in plan.candidate_text
     assert "inline-signing" not in plan.candidate_text
     assert "key-directory" not in plan.candidate_text
-    assert "-    dnssec-policy default;" in plan.unified_diff
+    assert "-    dnssec-policy modern-example;" in plan.unified_diff
     assert plan.key_files
     assert plan.signing_artifacts == (tmp_path / "example.pl.signed",)
     assert any("withdrawn" in action for action in plan.actions)

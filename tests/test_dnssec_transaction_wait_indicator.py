@@ -12,7 +12,7 @@ def test_dnssec_commits_use_shared_wait_dialog() -> None:
     expected = (
         (
             'title=f"Włączanie DNSSEC: {zone.name}"',
-            "operation=lambda: self._dnssec_enable_commit(zone)",
+            "operation=lambda: self._dnssec_enable_commit(",
         ),
         ('title=f"Potwierdzenie DS: {zone.name}"', "self._dnssec_confirm_ds("),
         ('title=f"Backup DNSSEC: {zone.name}"', "self._dnssec_withdrawal_backup("),
