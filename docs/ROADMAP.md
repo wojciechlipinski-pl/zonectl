@@ -880,8 +880,25 @@ włączania DNSSEC.
 
 Powyższe rozszerzenia nie mogą pogorszyć stabilności podstawowych operacji
 ZoneCTL: zarządzania strefami i rekordami, DNSSEC, secondary, ACL, RPZ,
-walidacji, backupu, audytu i rollbacku. W każdym wydaniu publikacja tagu,
-GitHub Release i publicznych pakietów pozostaje ostatnią czynnością.
+walidacji, backupu, audytu i rollbacku.
+
+## Stała kolejność domknięcia każdego wydania
+
+1. Zakończyć implementację, dokumentację, testy i kontrolę prywatności.
+2. Scalić funkcjonalność oraz przygotowanie numeru wersji do `main`.
+3. Zbudować i niezależnie zweryfikować wheel, DEB oraz `SHA256SUMS`.
+4. Zainstalować dokładnie zweryfikowany artefakt na produkcji i potwierdzić
+   działanie bez niezamierzonych zmian konfiguracji BIND.
+5. Zapisać wynik próby produkcyjnej w roadmapie i scalić go przed publikacją.
+6. Zbudować końcowe artefakty z dokładnie tego commita `main`, który będzie
+   oznaczony tagiem.
+7. Jako ostatnią czynność techniczną w repozytorium utworzyć tag, zatwierdzony
+   GitHub Release i publiczne artefakty; po publikacji nie dodawać commitów
+   korygujących to wydanie.
+8. Po opublikowaniu wydania przygotować wyłącznie komunikację zewnętrzną:
+   grafikę oraz notatkę na LinkedIn, zawsze bez rzeczywistych domen, adresów,
+   nazw hostów, danych kontaktowych, kluczy, skrótów DS i innych danych
+   środowiska produkcyjnego.
 
 ## Pomysły po 4.4
 
