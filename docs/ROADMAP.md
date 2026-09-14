@@ -819,12 +819,23 @@ włączania DNSSEC.
 
 ### Bramka wydania 4.16
 
-- [ ] Uruchomić pełne testy, Ruff, mypy, kontrolę prywatności, budowę wheel i
-  DEB, Lintian oraz niezależną kontrolę sum i zawartości pakietów.
-- [ ] Zainstalować dokładnie zweryfikowany artefakt kandydata na produkcji i
-  potwierdzić BIND, KASP oraz brak niezamierzonych zmian konfiguracji.
-- [ ] Dopiero po próbie produkcyjnej domknąć roadmapę, scalić końcowy commit,
+- [x] Uruchomić pełne testy, Ruff, mypy, kontrolę prywatności, budowę wheel i
+  DEB, Lintian oraz niezależną kontrolę sum i zawartości pakietów. Pełna
+  regresja zakończyła się wynikiem 999 testów zaliczonych i 1 pominiętego;
+  formatowanie i lint Ruff oraz mypy dla 64 modułów krytycznych dla CI
+  przeszły poprawnie. Kontrola prywatności, wheel, pakiet Debian, Lintian i CI
+  przeszły poprawnie, a SHA256 zweryfikowano niezależnie. Potwierdzono metadane,
+  wersję i punkt wejścia pakietu oraz brak `/etc/bind` w DEB.
+- [x] Zainstalować dokładnie zweryfikowany artefakt kandydata na produkcji i
+  potwierdzić BIND, KASP oraz brak niezamierzonych zmian konfiguracji. Dokładny
+  kandydat CI 4.16.0-1 został zainstalowany na produkcji; potwierdzono
+  `zctl 4.16.0`, `named-checkconf`, aktywny `bind9` oraz raporty możliwości i
+  środowiska działające wyłącznie do odczytu. Struktura i treść `/etc/bind`
+  pozostały bez zmian.
+- [x] Dopiero po próbie produkcyjnej domknąć roadmapę, scalić końcowy commit,
   zbudować artefakty z finalnego `main`, utworzyć tag i GitHub Release.
+  Końcowe artefakty trzeba teraz przebudować z finalnego `main`; tag i GitHub
+  Release pozostają ostatnią techniczną operacją w repozytorium.
 
 ## ZoneCTL 4.17 — migracja aktywnej strefy między politykami
 
