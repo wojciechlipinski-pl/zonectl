@@ -774,35 +774,114 @@ wielojęzyczność są planowane dla ZoneCTL 5.0.
   formacie tekstowym i JSON potwierdzono bez zmiany struktury ani treści
   `/etc/bind`. Tag i GitHub Release pozostają ostatnią czynnością.
 
-Poniższe rozszerzenia nie mogą opóźniać stabilizacji podstawowych operacji
+## ZoneCTL 4.16 — wybór polityki podczas włączania DNSSEC
+
+Wycofywanie DNSSEC jest już kompletną, dwuetapową operacją transakcyjną.
+Wersja 4.16 nie implementuje go ponownie; rozszerza testy wycofania o polityki
+nazwane i skupia się na bezpiecznym wyborze polityki podczas pierwszego
+włączania DNSSEC.
+
+### Wybór i ocena polityki
+
+- [ ] Pokazywać operatorowi wyłącznie polityki wykryte w konfiguracji BIND,
+  wraz z ich klasyfikacją bezpieczeństwa i zgodnością z wykrytą wersją BIND.
+- [ ] Umożliwić wybór całej polityki KASP bez ręcznego wpisywania jej nazwy;
+  zachować `default` jako prostą opcję domyślną.
+- [ ] Blokować wybór polityki o zgodności `BLOCKED`; dla `REVIEW` wymagać
+  jawnego potwierdzenia ryzyka, a przy `UNKNOWN` nie deklarować zgodności.
+
+### Plan i dry-run
+
+- [ ] Rozszerzyć plan włączenia o nazwę polityki, model KSK/ZSK lub CSK,
+  algorytmy, rollover, publikację kluczy i informację o wymaganym DS.
+- [ ] Walidować kandydacką deklarację rzeczywistym `named-checkconf` oraz
+  modelem możliwości BIND, bez zapisu konfiguracji, kluczy ani stanu KASP.
+- [ ] Pokazywać czytelny diff i podsumowanie ryzyka przed zatwierdzeniem.
+
+### Transakcyjne zastosowanie
+
+- [ ] Wykonać backup, atomową zmianę deklaracji strefy, ponowną walidację,
+  `rndc reconfig` i kontrolę załadowanej strefy oraz stanu KASP.
+- [ ] Przy każdym błędzie przywrócić deklarację z backupu i zapisać jednoznaczny
+  wynik audytu; nie modyfikować automatycznie delegacji ani rekordu DS.
+- [ ] Zachować domyślny dry-run; commit i aktywacja muszą pozostać osobnymi,
+  jawnymi decyzjami operatora.
+
+### CLI, TUI i testy
+
+- [ ] Udostępnić wybór polityki w CLI i kreatorze TUI, z ramkami oczekiwania,
+  potwierdzeniem nazwy strefy i obsługą małych terminali.
+- [ ] Dodać testy CSK, rozdzielonych KSK/ZSK, polityk `BLOCKED`, `REVIEW`
+  i `UNKNOWN`, konfliktu pliku oraz rollbacku po błędzie aktywacji.
+- [ ] Rozszerzyć istniejące testy `disable-plan`, etapu `insecure` i
+  `finalize` o strefę korzystającą z nazwanej polityki innej niż `default`.
+- [ ] Przygotować syntetyczną demonstrację i zrzuty bez danych środowiska.
+
+### Bramka wydania 4.16
+
+- [ ] Uruchomić pełne testy, Ruff, mypy, kontrolę prywatności, budowę wheel i
+  DEB, Lintian oraz niezależną kontrolę sum i zawartości pakietów.
+- [ ] Zainstalować dokładnie zweryfikowany artefakt kandydata na produkcji i
+  potwierdzić BIND, KASP oraz brak niezamierzonych zmian konfiguracji.
+- [ ] Dopiero po próbie produkcyjnej domknąć roadmapę, scalić końcowy commit,
+  zbudować artefakty z finalnego `main`, utworzyć tag i GitHub Release.
+
+## ZoneCTL 4.17 — migracja aktywnej strefy między politykami
+
+- [ ] Traktować migrację jako osobną operację krytyczną, niezależną od
+  pierwszego włączenia i istniejącej procedury wycofania DNSSEC.
+- [ ] Przygotować plan przejścia ze starej polityki na nową, z wykazem różnic
+  algorytmów, ról kluczy, czasów życia, rolloveru oraz wpływu na DS.
+- [ ] Wymagać dry-runu, backupu i zgodności obu polityk z BIND przed zmianą.
+- [ ] Obserwować DNSKEY, RRSIG, KASP i publiczny DS przez okres współistnienia
+  kluczy; nie uznawać migracji za zakończoną tylko na podstawie czasu.
+- [ ] Modelować jawne etapy, stan oczekiwania i bezpieczne punkty zatrzymania;
+  rollback dopuszczać wyłącznie tam, gdzie nie przerwie łańcucha zaufania.
+- [ ] Nie zmieniać DS u rejestratora automatycznie; generować instrukcję i
+  wymagać ponownej kontroli wielu resolverów przed przejściem dalej.
+- [ ] Zapewnić historię audytu, CLI, TUI, małe terminale, testy awarii każdego
+  etapu oraz syntetyczną demonstrację pełnego przejścia.
+- [ ] Zastosować pełną bramkę wydania i publikować pakiety dopiero po udanej
+  próbie produkcyjnej.
+
+## ZoneCTL 4.18 — diagnostyka operatora
+
+- [ ] Dodać odczytowe polecenie `zctl doctor` z wyjściem tekstowym i JSON.
+- [ ] Raportować wersje ZoneCTL, BIND i pakietu, dostępność wymaganych narzędzi,
+  poprawność konfiguracji oraz stan usługi BIND i timerów RPZ.
+- [ ] Sprawdzać uprawnienia i dostępność katalogów backupu, audytu i historii
+  Git, wolne miejsce oraz gotowość mechanizmów rollbacku.
+- [ ] Łączyć ostrzeżenia DNSSEC/KASP, zgodność BIND i stan integracji w jeden
+  wynik `PASS`, `WARN` albo `BLOCKED`, z konkretnym następnym krokiem.
+- [ ] Zapewnić tryb raportu przeznaczonego do zgłoszenia problemu, który
+  automatycznie usuwa nazwy stref, adresy, ścieżki środowiskowe, identyfikatory
+  hosta, dane kontaktowe, klucze, skróty DS i inne dane niedozwolone.
+- [ ] Dodać testy prywatności, uszkodzonych zależności, braku uprawnień,
+  nieaktywnej usługi i częściowo niedostępnego środowiska.
+- [ ] Dodać widok TUI dopiero po ustabilizowaniu kontraktu CLI/JSON oraz
+  przeprowadzić standardową bramkę jakości i próbę produkcyjną.
+
+## ZoneCTL 5.0 — wielojęzyczny interfejs
+
+- [ ] Oddzielić wszystkie komunikaty użytkownika od kodu bez zmiany znaczenia
+  istniejących ostrzeżeń, potwierdzeń i komunikatów bezpieczeństwa.
+- [ ] Wprowadzić katalogi `gettext` dla CLI, TUI, błędów, ostrzeżeń i pomocy.
+- [ ] Zachować język polski jako domyślny i dodać kompletny interfejs angielski.
+- [ ] Dodać jawny wybór języka w konfiguracji oraz opcjonalne wykrywanie z
+  locale systemu z bezpiecznym powrotem do polskiego.
+- [ ] Ustalić stabilne identyfikatory komunikatów, aby audyt i JSON nie zależały
+  od języka prezentacji.
+- [ ] Testować kompletność katalogów, oba języki, szerokość tekstu w TUI,
+  małe terminale i brak nieprzetłumaczonych fragmentów.
+- [ ] Zaktualizować dokumentację, demonstrator i galerię w obu językach bez
+  używania danych produkcyjnych.
+- [ ] Wydanie 5.0 opublikować dopiero po pełnej regresji, migracji konfiguracji,
+  próbie aktualizacji z ostatniej wersji 4.x i walidacji produkcyjnej.
+
+Powyższe rozszerzenia nie mogą pogorszyć stabilności podstawowych operacji
 ZoneCTL: zarządzania strefami i rekordami, DNSSEC, secondary, ACL, RPZ,
-walidacji, backupu i rollbacku.
-
-### Konfigurowalne polityki DNSSEC/KASP
-
-- [x] Wykrywać nazwane polityki `dnssec-policy` dostępne w konfiguracji BIND
-  i prezentować je operatorowi bez ujawniania kluczy prywatnych.
-- [ ] Umożliwić wybór całej, wcześniej zdefiniowanej polityki KASP podczas
-  włączania DNSSEC zamiast prostego, podatnego na błędy wyboru algorytmu.
-- [x] Odczytowo pokazywać algorytm, model kluczy KSK/ZSK lub CSK,
-  parametry publikacji i harmonogram rolloveru.
-- [x] Weryfikować politykę względem możliwości wykrytej wersji BIND.
-- [x] Ostrzegać i blokować raportowane polityki używające algorytmów
-  przestarzałych, niezalecanych lub nierozpoznanych.
-- [x] Sprawdzać obsługę algorytmu i parametrów DS przez strefę nadrzędną.
-- [ ] Migrację aktywnej strefy pomiędzy politykami realizować wyłącznie jako
-  osobną transakcję z planem, dry-runem, kontrolą DNSKEY/DS/KASP, okresem
-  przejściowym i rollbackiem.
-- [x] Zachować `dnssec-policy default` jako bezpieczną i prostą opcję domyślną.
-
-### Internationalization (i18n)
-
-- [ ] Oddzielić komunikaty użytkownika od kodu programu.
-- [ ] Zachować język polski jako domyślny i dodać język angielski.
-- [ ] Obsłużyć tłumaczenia CLI, TUI, ostrzeżeń i błędów przez `gettext`.
-- [ ] Dodać wybór języka w konfiguracji.
-- [ ] Opcjonalnie wykrywać język z locale systemu.
-- [ ] Testować kompletność katalogów tłumaczeń i oba warianty interfejsu.
+walidacji, backupu, audytu i rollbacku. W każdym wydaniu publikacja tagu,
+GitHub Release i publicznych pakietów pozostaje ostatnią czynnością.
 
 ## Pomysły po 4.4
 
