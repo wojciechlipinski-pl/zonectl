@@ -1,3 +1,13 @@
+zonectl (4.16.0-1) unstable; urgency=medium
+
+  * Select named DNSSEC/KASP policies from the discovered BIND inventory.
+  * Add guarded CLI and TUI policy choosers with compatibility details.
+  * Block unsafe or unknown policies and require REVIEW acknowledgement.
+  * Validate candidate configuration and retain transactional rollback gates.
+  * Cover named-policy withdrawal regressions and synthetic demonstrations.
+
+ -- Wojciech Lipiński <wojciech.lipinski.elk@gmail.com>  Sun, 14 Sep 2026 08:00:00 +0200
+
 zonectl (4.15.0-1) unstable; urgency=medium
 
   * Detect normalized, privacy-safe BIND runtime capabilities.

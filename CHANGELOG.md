@@ -2,6 +2,33 @@
 
 ## Unreleased
 
+## 4.16.0 - 2026-09-14
+
+### Added
+
+- select named DNSSEC/KASP policies only from the discovered BIND inventory,
+  with `default` retained as the simple built-in choice
+- add CLI and TUI policy choosers that present the key model, algorithms,
+  rollover and publication timing, safety classification and BIND compatibility
+- validate the complete candidate zone declaration with the real
+  `named-checkconf` before writing configuration or changing KASP state
+- extend the isolated screenshot demonstrator with a synthetic named-policy
+  enable plan and safety facts
+
+### Safety
+
+- block policies classified as `BLOCKED` or `UNKNOWN`, and require explicit
+  `REVIEW` acknowledgement before a review-required policy can be selected
+- preserve dry-run defaults, explicit commit and activation gates, zone-name
+  confirmation, backups, atomic replacement, post-write validation, activation
+  checks, audit results and rollback on failure
+
+### Tests
+
+- cover named-policy selection, candidate validation, compatibility gates,
+  file conflicts and activation rollback, plus regressions for disabling and
+  withdrawing DNSSEC from zones assigned a named policy other than `default`
+
 ## 4.15.0 - 2026-09-13
 
 ### Added
