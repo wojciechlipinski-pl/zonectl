@@ -5,6 +5,7 @@ from pathlib import Path
 
 from zonectl import cli
 from zonectl.core.discovery import ZoneConfig
+from zonectl.core.bind_capabilities import BindCapabilities
 from zonectl.core.dnssec_enable_transaction import (
     DnssecEnableResult,
     DnssecEnableStep,
@@ -61,6 +62,17 @@ def configure(monkeypatch, tmp_path: Path):
     FakeTransaction.calls = []
     monkeypatch.setattr(cli.ToolkitConfig, "load", lambda self: config)
     monkeypatch.setattr(cli, "DnssecEnableTransaction", FakeTransaction)
+    monkeypatch.setattr(
+        cli.BindCapabilityDetector,
+        "detect",
+        lambda self: BindCapabilities(
+            True, "9.20.0", "9.20", "PASS", True, True, True, ()
+        ),
+    )
+    monkeypatch.setattr(
+        "zonectl.core.dnssec_enable_plan.DnssecEnablePlanner._validate_candidate",
+        lambda *args: (True, "kod 0"),
+    )
     return config
 
 
@@ -68,7 +80,16 @@ def test_enable_defaults_to_dry_run(monkeypatch, capsys, tmp_path: Path) -> None
     config = configure(monkeypatch, tmp_path)
     before = config.discovered.config_file.read_bytes()
 
-    code = cli.main(["dnssec", "enable", "example.pl", "--json"])
+    code = cli.main(
+        [
+            "dnssec",
+            "enable",
+            "example.pl",
+            "--root-config",
+            str(config.discovered.config_file),
+            "--json",
+        ]
+    )
 
     assert code == 0
     assert config.discovered.config_file.read_bytes() == before
@@ -90,9 +111,21 @@ def test_enable_requires_both_commit_and_activate(
 def test_enable_passes_explicit_double_confirmation(
     monkeypatch, tmp_path: Path
 ) -> None:
-    configure(monkeypatch, tmp_path)
+    config = configure(monkeypatch, tmp_path)
 
-    code = cli.main(["dnssec", "enable", "example.pl", "--commit", "--activate"])
+    code = cli.main(
+        [
+            "dnssec",
+            "enable",
+            "example.pl",
+            "--root-config",
+            str(config.discovered.config_file),
+            "--commit",
+            "--activate",
+            "--confirm",
+            "example.pl",
+        ]
+    )
 
     assert code == 0
     assert FakeTransaction.calls[-1] == (True, True)

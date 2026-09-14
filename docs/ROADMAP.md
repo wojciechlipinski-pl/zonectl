@@ -783,39 +783,39 @@ włączania DNSSEC.
 
 ### Wybór i ocena polityki
 
-- [ ] Pokazywać operatorowi wyłącznie polityki wykryte w konfiguracji BIND,
+- [x] Pokazywać operatorowi wyłącznie polityki wykryte w konfiguracji BIND,
   wraz z ich klasyfikacją bezpieczeństwa i zgodnością z wykrytą wersją BIND.
-- [ ] Umożliwić wybór całej polityki KASP bez ręcznego wpisywania jej nazwy;
+- [x] Umożliwić wybór całej polityki KASP bez ręcznego wpisywania jej nazwy;
   zachować `default` jako prostą opcję domyślną.
-- [ ] Blokować wybór polityki o zgodności `BLOCKED`; dla `REVIEW` wymagać
+- [x] Blokować wybór polityki o zgodności `BLOCKED`; dla `REVIEW` wymagać
   jawnego potwierdzenia ryzyka, a przy `UNKNOWN` nie deklarować zgodności.
 
 ### Plan i dry-run
 
-- [ ] Rozszerzyć plan włączenia o nazwę polityki, model KSK/ZSK lub CSK,
+- [x] Rozszerzyć plan włączenia o nazwę polityki, model KSK/ZSK lub CSK,
   algorytmy, rollover, publikację kluczy i informację o wymaganym DS.
-- [ ] Walidować kandydacką deklarację rzeczywistym `named-checkconf` oraz
+- [x] Walidować kandydacką deklarację rzeczywistym `named-checkconf` oraz
   modelem możliwości BIND, bez zapisu konfiguracji, kluczy ani stanu KASP.
-- [ ] Pokazywać czytelny diff i podsumowanie ryzyka przed zatwierdzeniem.
+- [x] Pokazywać czytelny diff i podsumowanie ryzyka przed zatwierdzeniem.
 
 ### Transakcyjne zastosowanie
 
-- [ ] Wykonać backup, atomową zmianę deklaracji strefy, ponowną walidację,
+- [x] Wykonać backup, atomową zmianę deklaracji strefy, ponowną walidację,
   `rndc reconfig` i kontrolę załadowanej strefy oraz stanu KASP.
-- [ ] Przy każdym błędzie przywrócić deklarację z backupu i zapisać jednoznaczny
+- [x] Przy każdym błędzie przywrócić deklarację z backupu i zapisać jednoznaczny
   wynik audytu; nie modyfikować automatycznie delegacji ani rekordu DS.
-- [ ] Zachować domyślny dry-run; commit i aktywacja muszą pozostać osobnymi,
+- [x] Zachować domyślny dry-run; commit i aktywacja muszą pozostać osobnymi,
   jawnymi decyzjami operatora.
 
 ### CLI, TUI i testy
 
-- [ ] Udostępnić wybór polityki w CLI i kreatorze TUI, z ramkami oczekiwania,
+- [x] Udostępnić wybór polityki w CLI i kreatorze TUI, z ramkami oczekiwania,
   potwierdzeniem nazwy strefy i obsługą małych terminali.
-- [ ] Dodać testy CSK, rozdzielonych KSK/ZSK, polityk `BLOCKED`, `REVIEW`
+- [x] Dodać testy CSK, rozdzielonych KSK/ZSK, polityk `BLOCKED`, `REVIEW`
   i `UNKNOWN`, konfliktu pliku oraz rollbacku po błędzie aktywacji.
-- [ ] Rozszerzyć istniejące testy `disable-plan`, etapu `insecure` i
+- [x] Rozszerzyć istniejące testy `disable-plan`, etapu `insecure` i
   `finalize` o strefę korzystającą z nazwanej polityki innej niż `default`.
-- [ ] Przygotować syntetyczną demonstrację i zrzuty bez danych środowiska.
+- [x] Przygotować syntetyczną demonstrację i obsługę zrzutów bez danych środowiska.
 
 ### Bramka wydania 4.16
 

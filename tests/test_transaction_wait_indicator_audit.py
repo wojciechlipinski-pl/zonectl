@@ -54,6 +54,6 @@ def test_internal_dnssec_commit_helpers_are_invoked_inside_wait_dialogs() -> Non
     source = "".join(source.split())
 
     for helper in ("_dnssec_enable_commit", "_dnssec_finalize_commit"):
-        helper_at = source.index(f"self.{helper}(zone)")
+        helper_at = source.index(f"self.{helper}(")
         wait_at = source.rindex("self._run_with_wait_indicator", 0, helper_at)
         assert wait_at < helper_at

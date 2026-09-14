@@ -51,6 +51,7 @@ deterministic in-memory results. Available keys are:
 - `x` — show a controlled failure followed by a successful rollback;
 - `u` — open the read-only audit browser with synthetic operation history;
 - `p` — show named DNSSEC/KASP policies and their synthetic public parameters;
+- `e` — show the 4.16 named-policy enable plan with synthetic safety facts;
 - `q`, `Esc` or `F10` — exit the current view or the demo.
 
 ## Published gallery

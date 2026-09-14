@@ -25,5 +25,5 @@ def test_dnssec_dry_runs_use_wait_dialogs() -> None:
     for title, helper in expected:
         title_at = source.index(f'title=f"{title}: {{zone.name}}"')
         wait_at = source.rindex("self._run_with_wait_indicator", 0, title_at)
-        helper_at = source.index(f"self.{helper}(zone)", title_at)
+        helper_at = source.index(f"self.{helper}(", title_at)
         assert wait_at < title_at < helper_at

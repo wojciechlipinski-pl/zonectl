@@ -181,9 +181,11 @@ def test_enable_dry_run_never_commits_or_activates(monkeypatch) -> None:
 def test_unsigned_tui_uses_real_plan_and_dry_run() -> None:
     source = inspect.getsource(CursesApp._dnssec_status_view)
 
-    assert "plan = self._dnssec_enable_plan(zone)" in source
-    assert "plan.unified_diff.splitlines()" in source
-    assert "self._dnssec_enable_dry_run(zone)" in source
+    assert "selection = self._dnssec_policy_chooser(win)" in source
+    assert "enable_plan = self._dnssec_enable_plan(" in source
+    assert "enable_plan.unified_diff.splitlines()" in source
+    assert "self._dnssec_enable_dry_run(" in source
+    assert "selected_policy.name" in source
     assert "Dry-run włączenia DNSSEC" in source
 
 
@@ -216,7 +218,8 @@ def test_enable_commit_ui_requires_exact_confirmation() -> None:
 
     assert "Wpisz pełną nazwę strefy, aby włączyć DNSSEC" in source
     assert "Włączyć i aktywować DNSSEC" in source
-    assert "self._dnssec_enable_commit(zone)" in compact_source
+    assert "self._dnssec_enable_commit(" in compact_source
+    assert "selected_policy.name" in compact_source
     assert "self.config.read_only" in source
 
 

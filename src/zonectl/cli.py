@@ -514,6 +514,10 @@ def parser() -> argparse.ArgumentParser:
     )
     dnssec_enable_plan.add_argument("name")
     dnssec_enable_plan.add_argument("--policy", default="default")
+    dnssec_enable_plan.add_argument("--acknowledge-policy-review", action="store_true")
+    dnssec_enable_plan.add_argument(
+        "--root-config", type=Path, default=Path("/etc/bind/named.conf")
+    )
     dnssec_enable_plan.add_argument(
         "--key-directory",
         type=Path,
@@ -531,6 +535,11 @@ def parser() -> argparse.ArgumentParser:
     )
     dnssec_enable.add_argument("name")
     dnssec_enable.add_argument("--policy", default="default")
+    dnssec_enable.add_argument("--acknowledge-policy-review", action="store_true")
+    dnssec_enable.add_argument(
+        "--confirm",
+        help="pełna nazwa strefy wymagana razem z --commit i --activate",
+    )
     dnssec_enable.add_argument(
         "--key-directory", type=Path, default=Path("/var/lib/bind/keys")
     )
@@ -2573,6 +2582,17 @@ def main(argv: list[str] | None = None) -> int:
                 file=sys.stderr,
             )
             return 2
+        if (
+            args.dnssec_command == "enable"
+            and args.commit
+            and (args.confirm or "").rstrip(".").casefold()
+            != args.name.rstrip(".").casefold()
+        ):
+            print(
+                "BŁĄD: --commit wymaga --confirm z pełną nazwą strefy.",
+                file=sys.stderr,
+            )
+            return 2
         wanted = args.name.strip().rstrip(".").casefold()
         display_zone = next(
             (zone for zone in zones if zone.name.rstrip(".").casefold() == wanted),
@@ -2595,13 +2615,19 @@ def main(argv: list[str] | None = None) -> int:
             )
             return 2
         try:
-            enable_plan = DnssecEnablePlanner().plan(
+            capabilities = BindCapabilityDetector().detect()
+            policy_inventory = DnssecPolicyInventoryReader(
+                args.root_config, capabilities
+            ).read()
+            enable_plan = DnssecEnablePlanner(args.root_config).plan(
                 discovered,
                 policy=args.policy,
+                policy_inventory=policy_inventory,
+                acknowledge_policy_review=args.acknowledge_policy_review,
                 key_directory=args.key_directory,
                 zone_directory=args.zone_directory,
             )
-        except (DnssecEnablePlanError, OSError) as exc:
+        except (BindDiscoveryError, DnssecEnablePlanError, OSError) as exc:
             print(f"BŁĄD: {exc}", file=sys.stderr)
             return 2
         if args.dnssec_command == "enable":
@@ -2620,6 +2646,11 @@ def main(argv: list[str] | None = None) -> int:
                 print(f"Transakcja: {enable_result.transaction_id}")
                 print(f"Strefa:     {enable_result.zone}")
                 print(f"Status:     {enable_result.status}")
+                print(f"Polityka:   {enable_result.policy}")
+                print(f"Bezpieczeństwo: {enable_result.policy_safety}")
+                print(f"Zgodność BIND: {enable_result.bind_compatibility}")
+                print(f"Model kluczy: {enable_result.key_model}")
+                print(f"Algorytmy:   {', '.join(enable_result.algorithms) or '-'}")
                 print(f"Commit:     {'TAK' if enable_result.committed else 'NIE'}")
                 print(f"Rollback:   {'TAK' if enable_result.rolled_back else 'NIE'}")
                 if enable_result.backup_directory:
@@ -2631,6 +2662,7 @@ def main(argv: list[str] | None = None) -> int:
                     print(
                         f"[{'OK' if enable_step.ok else 'BŁĄD'}] {enable_step.name}: {enable_step.message}"
                     )
+                print(f"\nDS: {enable_result.ds_guidance}")
             return 0 if enable_result.status in {"DRY-RUN", "COMMIT"} else 1
         if args.json:
             print(json.dumps(enable_plan.to_dict(), ensure_ascii=False, indent=2))
@@ -2645,12 +2677,22 @@ def main(argv: list[str] | None = None) -> int:
             )
             print(f"Deklaracja:   {enable_plan.declaration_file}")
             print(f"Polityka:     {enable_plan.policy}")
+            print(f"Bezpieczeństwo: {enable_plan.policy_safety}")
+            print(f"Zgodność BIND: {enable_plan.bind_compatibility}")
+            print(f"Model kluczy: {enable_plan.key_model}")
+            print(f"Algorytmy:     {', '.join(enable_plan.algorithms) or '-'}")
+            print(f"Walidacja:     {enable_plan.candidate_validation}")
+            for fact in enable_plan.rollover:
+                print(f"Rollover:      {fact}")
+            for fact in enable_plan.publication:
+                print(f"Publikacja:    {fact}")
             print(f"Katalog kluczy: {enable_plan.key_directory}")
             print("\nPlanowany diff:\n")
             print(enable_plan.unified_diff, end="")
             print("\nPlanowane etapy:")
             for enable_action in enable_plan.actions:
                 print(f"- {enable_action}")
+            print(f"\nDS: {enable_plan.ds_guidance}")
             print("\nWynik: DRY-RUN — niczego nie zmieniono")
         return 0
     if args.command == "dnssec" and args.dnssec_command == "check-ds":

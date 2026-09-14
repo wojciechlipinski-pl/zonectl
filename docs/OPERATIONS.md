@@ -469,6 +469,24 @@ zctl dnssec enable-plan example.pl --json
 zctl dnssec enable example.pl
 ```
 
+Od 4.16 `--policy` wskazuje wyłącznie nazwę obecną w wykrytym inwentarzu
+BIND; prostą wartością domyślną pozostaje wbudowana polityka `default`.
+Plan pokazuje klasyfikację bezpieczeństwa, zgodność z wykrytą wersją BIND,
+model CSK albo KSK+ZSK, algorytmy, czasy rolloveru i publikacji oraz dalsze
+kroki dla DS. Zgodność `BLOCKED` i `UNKNOWN` blokuje operację. `REVIEW`
+wymaga jawnego `--acknowledge-policy-review`:
+
+```bash
+zctl dnssec enable-plan example.pl --policy modern-example
+zctl dnssec enable example.pl --policy modern-example
+zctl dnssec enable example.pl --policy modern-example \
+  --commit --activate --confirm example.pl
+```
+
+Plan waliduje sklonowaną konfigurację rzeczywistym `named-checkconf`, bez
+zapisu konfiguracji, kluczy lub KASP. ZoneCTL nigdy nie publikuje ani nie
+usuwa rekordu DS u rejestratora.
+
 Raport odpytuje lokalny BIND o `zonestatus`, stan KASP, DNSKEY i RRSIG.
 Następnie oblicza DS typu 2 (SHA-256) z kluczy DNSKEY oznaczonych flagą SEP
 i porównuje go z DS widocznym przez publiczny resolver. Domyślnie używany
@@ -491,8 +509,9 @@ Rdzeń przyszłej transakcji jest sprawdzany również na izolowanej konfiguracj
 przez prawdziwe `named-checkzone` i `named-checkconf`. Testy nie wywołują
 `rndc`, nie przeładowują usługi i nie korzystają z produkcyjnego `/etc/bind`.
 Polecenie `dnssec enable` pozostaje dry-runem bez flag. Zmiana i aktywacja
-wymagają równoczesnego, jawnego `--commit --activate`; podanie tylko jednej
-z tych flag kończy się błędem bez zapisów.
+wymagają równoczesnego, jawnego `--commit --activate` oraz
+`--confirm` z pełną nazwą strefy; brak któregokolwiek potwierdzenia kończy się
+błędem bez zapisów.
 
 Kontrolowany test rollbacku jest ograniczony w kodzie do strefy
 `zonectl-test.invalid`. Narzędzie `tools/dnssec_rollback_drill.py` domyślnie

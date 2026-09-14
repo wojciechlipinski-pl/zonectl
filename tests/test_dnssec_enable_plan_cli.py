@@ -5,6 +5,7 @@ from pathlib import Path
 
 from zonectl import cli
 from zonectl.core.discovery import ZoneConfig
+from zonectl.core.bind_capabilities import BindCapabilities
 from zonectl.core.models import Zone
 
 
@@ -44,8 +45,28 @@ def test_enable_plan_cli_json_has_no_side_effects(
     config = FakeConfig(tmp_path)
     before = config.discovered.config_file.read_bytes()
     monkeypatch.setattr(cli.ToolkitConfig, "load", lambda self: config)
+    monkeypatch.setattr(
+        cli.BindCapabilityDetector,
+        "detect",
+        lambda self: BindCapabilities(
+            True, "9.20.0", "9.20", "PASS", True, True, True, ()
+        ),
+    )
+    monkeypatch.setattr(
+        "zonectl.core.dnssec_enable_plan.DnssecEnablePlanner._validate_candidate",
+        lambda *args: (True, "kod 0"),
+    )
 
-    code = cli.main(["dnssec", "enable-plan", "example.pl", "--json"])
+    code = cli.main(
+        [
+            "dnssec",
+            "enable-plan",
+            "example.pl",
+            "--root-config",
+            str(config.discovered.config_file),
+            "--json",
+        ]
+    )
 
     assert code == 0
     assert config.discovered.config_file.read_bytes() == before
@@ -55,6 +76,10 @@ def test_enable_plan_cli_json_has_no_side_effects(
     assert payload["target_zone_file"] == "/var/lib/bind/Primary/example.pl"
     assert "dnssec-policy default;" in payload["candidate_text"]
     assert payload["actions"][-1] == "nie publikuj ani nie usuwaj DS automatycznie"
+    assert payload["policy_safety"] == "PASS"
+    assert payload["bind_compatibility"] == "COMPATIBLE"
+    assert payload["key_model"] == "CSK"
+    assert payload["candidate_validation"] == "PASS"
 
 
 def test_enable_plan_cli_rejects_rpz(monkeypatch, capsys, tmp_path: Path) -> None:

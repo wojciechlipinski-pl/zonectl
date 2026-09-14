@@ -36,6 +36,14 @@ class DnssecEnableResult:
     manifest: str | None = None
     backup_directory: str | None = None
     steps: list[DnssecEnableStep] = field(default_factory=list)
+    policy: str = "default"
+    policy_safety: str = "UNKNOWN"
+    bind_compatibility: str = "UNKNOWN"
+    key_model: str = "UNKNOWN"
+    algorithms: tuple[str, ...] = ()
+    rollover: tuple[str, ...] = ()
+    publication: tuple[str, ...] = ()
+    ds_guidance: str = ""
 
     @property
     def ok(self) -> bool:
@@ -88,7 +96,19 @@ class DnssecEnableTransaction:
             datetime.now().strftime("%Y%m%d-%H%M%S")
             + f"-dnssec-enable-{plan.zone}-{uuid.uuid4().hex[:8]}"
         )
-        result = DnssecEnableResult(txid, plan.zone, "PLAN")
+        result = DnssecEnableResult(
+            txid,
+            plan.zone,
+            "PLAN",
+            policy=plan.policy,
+            policy_safety=plan.policy_safety,
+            bind_compatibility=plan.bind_compatibility,
+            key_model=plan.key_model,
+            algorithms=plan.algorithms,
+            rollover=plan.rollover,
+            publication=plan.publication,
+            ds_guidance=plan.ds_guidance,
+        )
         self.audit_v1.start(
             txid,
             "dnssec.enable",
@@ -238,6 +258,24 @@ class DnssecEnableTransaction:
 
     @staticmethod
     def _preflight(plan: DnssecEnablePlan) -> DnssecEnableStep | None:
+        if plan.policy_safety == "BLOCKED" or plan.bind_compatibility in {
+            "BLOCKED",
+            "UNKNOWN",
+            "NOT_CHECKED",
+        }:
+            return DnssecEnableStep(
+                "policy-safety",
+                False,
+                f"Polityka {plan.policy}: {plan.policy_safety}, BIND {plan.bind_compatibility}",
+            )
+        if plan.bind_compatibility == "REVIEW" and not plan.review_acknowledged:
+            return DnssecEnableStep(
+                "policy-review", False, "Brak jawnego potwierdzenia polityki REVIEW"
+            )
+        if plan.candidate_validation == "BLOCKED":
+            return DnssecEnableStep(
+                "candidate-validation", False, plan.candidate_validation_message
+            )
         if not plan.declaration_file.is_file() or not plan.source_zone_file.is_file():
             return DnssecEnableStep(
                 "preflight", False, "Brak deklaracji lub pliku źródłowego"
