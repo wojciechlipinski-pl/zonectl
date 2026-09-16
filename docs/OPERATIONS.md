@@ -523,6 +523,59 @@ Backup deklaracji zachowuje tryb, UID i GID oryginału. Rollback odtwarza te
 metadane również z zapamiętanego stanu początkowego, aby BIND nie utracił
 prawa odczytu pliku po przywróceniu.
 
+### Migracja aktywnej polityki DNSSEC 4.17
+
+Migracja jest osobną operacją od włączenia i wycofania DNSSEC. Najpierw jawnie
+wskaż politykę aktualną i docelową; obie muszą pochodzić z inwentarza BIND:
+
+```bash
+zctl dnssec migration-plan example.test \
+  --source-policy old-policy --target-policy modern-policy
+zctl dnssec migration-start example.test \
+  --source-policy old-policy --target-policy modern-policy
+```
+
+Drugie polecenie nadal wykonuje tylko dry-run. Pierwsza zmiana wymaga wszystkich
+trzech bramek i dokładnej nazwy strefy:
+
+```bash
+zctl dnssec migration-start example.test \
+  --source-policy old-policy --target-policy modern-policy \
+  --commit --activate --confirm example.test
+```
+
+Stan można bezpiecznie zatrzymać i wznowić. `status` wyłącznie czyta manifest,
+`check` obserwuje DNSKEY, RRSIG, KASP, serwery autorytatywne i DS, a `advance`
+przechodzi najwyżej o jedną fazę i nigdy wyłącznie na podstawie czasu:
+
+```bash
+zctl dnssec migration-status example.test --json
+zctl dnssec migration-check example.test \
+  --resolver 1.1.1.1 --resolver 8.8.8.8
+zctl dnssec migration-advance example.test \
+  --resolver 1.1.1.1 --resolver 8.8.8.8
+zctl dnssec migration-finalize example.test --commit --confirm example.test
+```
+
+Fazy to `PLANNED`, `POLICY_APPLIED`, `WAITING_DNSKEY`, `WAITING_DS`,
+`WAITING_PROPAGATION`, `READY_TO_FINALIZE`, `COMPLETE`, `FAILED` i
+`ROLLED_BACK`. Przejścia związane z DS wymagają co najmniej dwóch resolverów.
+ZoneCTL nie modyfikuje danych u rejestratora: plan klasyfikuje wpływ na DS i
+podaje następną czynność operatora. Każda migracja przechodzi przez
+`WAITING_DS`, również gdy różnią się tylko czasy lub okresy życia kluczy,
+ponieważ nowa polityka może utworzyć nowy KSK. Sam ogólny wynik `MATCH` nie
+wystarcza: przed zmianą ZoneCTL zapisuje wyłącznie pary `key-tag:algorithm`
+źródłowych KSK, a potem wymaga, aby każdy z co najmniej dwóch resolverów
+widział DS odpowiadający nowemu identyfikatorowi docelowemu. Po takim
+zaobserwowaniu docelowego DS rozpoczyna się punkt bez powrotu i automatyczny
+rollback starej deklaracji jest blokowany. Manifest nie zawiera surowych
+DNSKEY, skrótów DS, adresów resolverów ani bezwzględnej ścieżki środowiska.
+
+Rollback najpierw odtwarza deklarację atomowo, a następnie kolejno uruchamia
+`named-checkconf`, `rndc reconfig`, kontrolę załadowania strefy i kontrolę KASP
+dla stanu źródłowego. Niepowodzenie któregokolwiek kroku zapisuje fazę
+`FAILED`; narzędzie nie zgłasza wtedy udanego rollbacku.
+
 ### Utworzenie strefy
 
 ```bash

@@ -84,6 +84,8 @@ from ..core.dnssec_enable_plan import DnssecEnablePlan, DnssecEnablePlanner
 from ..core.dnssec_enable_transaction import DnssecEnableResult, DnssecEnableTransaction
 from ..core.dnssec_report import DnssecReporter
 from ..core.dnssec_policy_inventory import DnssecPolicy, DnssecPolicyInventoryReader
+from ..core.dnssec_policy_migration import DnssecPolicyMigrationWorkflow
+from ..core.dnssec_policy_migration_plan import DnssecPolicyMigrationPlanner
 from ..core.dnssec_onboarding_audit import (
     DnssecOnboardingAuditItem,
     DnssecOnboardingAuditor,
@@ -4665,7 +4667,7 @@ class CursesApp:
                     f" Enter {view.operation_label if view else 'odśwież'}  "
                     "↑/↓ przewiń  PgUp/PgDn strona  F3 plan  "
                     f"F4 {view.operation_label if view else 'wskazówki'}  "
-                    "F5 polityki  r odśwież  q/Esc powrót "
+                    "F5 polityki  m migracja  r odśwież  q/Esc powrót "
                 )
                 win.addnstr(
                     height - 1,
@@ -4691,6 +4693,9 @@ class CursesApp:
                     refresh = True
                 elif key == curses.KEY_F5:
                     self._dnssec_policy_inventory_view(win, zone)
+                    refresh = True
+                elif key in (ord("m"), ord("M")):
+                    self._dnssec_policy_migration_view(win, zone)
                     refresh = True
                 elif key == curses.KEY_F3:
                     try:
@@ -5127,8 +5132,129 @@ class CursesApp:
                 error=True,
             )
 
+    def _dnssec_policy_migration_view(self, win: curses.window, zone: Zone) -> None:
+        """Plan and start an inventory-backed policy migration."""
+
+        if self.config is None:
+            raise RuntimeError("Brak konfiguracji ZoneCTL")
+        toolkit = self.config.toolkit
+        discovered = self.config.discovered_zone(zone.name)
+        if discovered is None or not discovered.dnssec_policy:
+            self._message_view(
+                win,
+                title="Migracja polityki DNSSEC",
+                lines=["Strefa nie ma wykrytej aktywnej polityki źródłowej."],
+                error=True,
+            )
+            return
+        source_selection = self._dnssec_policy_chooser(
+            win, required_name=discovered.dnssec_policy
+        )
+        if source_selection is None:
+            return
+        source, _source_ack = source_selection
+        target_selection = self._dnssec_policy_chooser(win, excluded_name=source.name)
+        if target_selection is None:
+            return
+        target, acknowledged = target_selection
+        try:
+            inventory = DnssecPolicyInventoryReader(
+                self._bind_root_config(), BindCapabilityDetector().detect()
+            ).read()
+            plan = self._run_with_wait_indicator(
+                win,
+                title=f"Plan migracji: {zone.name}",
+                label="Walidacja polityk i kandydackiej konfiguracji",
+                operation=lambda: DnssecPolicyMigrationPlanner(
+                    self._bind_root_config()
+                ).plan(
+                    discovered,
+                    source_policy=source.name,
+                    target_policy=target.name,
+                    policy_inventory=inventory,
+                    acknowledge_policy_review=acknowledged,
+                ),
+            )
+            lines = [
+                f"Źródło: {plan.source.name} ({plan.source.key_model})",
+                f"Cel: {plan.target.name} ({plan.target.key_model})",
+                f"Wpływ na DS: {plan.ds_impact}",
+                f"Bezpieczeństwo: {plan.safety_status}",
+                f"Walidacja: {plan.candidate_validation}",
+                "",
+                *plan.differences,
+                "",
+                plan.ds_guidance,
+                "",
+                *plan.unified_diff.splitlines(),
+            ]
+            self._message_view(
+                win,
+                title=f"Dry-run migracji {source.name} → {target.name}",
+                lines=lines,
+            )
+            if self.config.read_only:
+                self._read_only_message(win, zone)
+                return
+            confirmation = CursesDialogs.text_input(
+                win, " Wpisz pełną nazwę strefy, aby rozpocząć migrację: "
+            )
+            if (confirmation or "").rstrip(".").casefold() != zone.name.rstrip(
+                "."
+            ).casefold():
+                return
+            if not CursesDialogs.confirm(
+                win,
+                f"Zastosować i aktywować {target.name} dla {zone.name}?",
+                key_reader=self._get_key,
+            ):
+                return
+            result = self._run_with_wait_indicator(
+                win,
+                title=f"Migracja polityki: {zone.name}",
+                label="Backup, walidacja, reconfig i kontrola KASP",
+                operation=lambda: DnssecPolicyMigrationWorkflow(
+                    Path("/var/backups/zonectl-dnssec-policy-migration/backups"),
+                    Path("/var/backups/zonectl-dnssec-policy-migration/state"),
+                    root_config=self._bind_root_config(),
+                    source_ds_collector=lambda _zone: DnssecReporter(
+                        local_server=toolkit.get("local_server", "127.0.0.1"),
+                        resolver="1.1.1.1",
+                        timeout=int(toolkit.get("dig_timeout", "3")),
+                    )
+                    .collect(zone)
+                    .calculated_ds,
+                ).start(
+                    plan,
+                    commit=True,
+                    activate=True,
+                    confirmation=confirmation,
+                ),
+            )
+            self._message_view(
+                win,
+                title=f"Stan migracji: {zone.name}",
+                lines=[
+                    f"Status: {result.status}",
+                    f"Faza: {result.phase}",
+                    f"Następna akcja: {result.next_action}",
+                ],
+                error=result.status not in {"POLICY_APPLIED", "DRY-RUN"},
+            )
+        except Exception as exc:
+            self._message_view(
+                win,
+                title="Błąd migracji polityki DNSSEC",
+                lines=[str(exc)],
+                error=True,
+            )
+
     def _dnssec_policy_chooser(
-        self, win: curses.window
+        self,
+        win: curses.window,
+        *,
+        excluded_name: str | None = None,
+        required_name: str | None = None,
     ) -> tuple[DnssecPolicy, bool] | None:
         """Choose an inventory policy without accepting a free-form name."""
 
@@ -5144,6 +5270,14 @@ class CursesApp:
             policy
             for policy in inventory.policies
             if policy.name not in {"insecure", "none"}
+            and (
+                excluded_name is None
+                or policy.name.casefold() != excluded_name.casefold()
+            )
+            and (
+                required_name is None
+                or policy.name.casefold() == required_name.casefold()
+            )
         ]
         policies.sort(key=lambda item: (item.name != "default", item.name.casefold()))
         if not policies:

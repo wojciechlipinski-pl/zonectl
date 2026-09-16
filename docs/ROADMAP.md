@@ -839,18 +839,18 @@ włączania DNSSEC.
 
 ## ZoneCTL 4.17 — migracja aktywnej strefy między politykami
 
-- [ ] Traktować migrację jako osobną operację krytyczną, niezależną od
+- [x] Traktować migrację jako osobną operację krytyczną, niezależną od
   pierwszego włączenia i istniejącej procedury wycofania DNSSEC.
-- [ ] Przygotować plan przejścia ze starej polityki na nową, z wykazem różnic
+- [x] Przygotować plan przejścia ze starej polityki na nową, z wykazem różnic
   algorytmów, ról kluczy, czasów życia, rolloveru oraz wpływu na DS.
-- [ ] Wymagać dry-runu, backupu i zgodności obu polityk z BIND przed zmianą.
-- [ ] Obserwować DNSKEY, RRSIG, KASP i publiczny DS przez okres współistnienia
+- [x] Wymagać dry-runu, backupu i zgodności obu polityk z BIND przed zmianą.
+- [x] Obserwować DNSKEY, RRSIG, KASP i publiczny DS przez okres współistnienia
   kluczy; nie uznawać migracji za zakończoną tylko na podstawie czasu.
-- [ ] Modelować jawne etapy, stan oczekiwania i bezpieczne punkty zatrzymania;
+- [x] Modelować jawne etapy, stan oczekiwania i bezpieczne punkty zatrzymania;
   rollback dopuszczać wyłącznie tam, gdzie nie przerwie łańcucha zaufania.
-- [ ] Nie zmieniać DS u rejestratora automatycznie; generować instrukcję i
+- [x] Nie zmieniać DS u rejestratora automatycznie; generować instrukcję i
   wymagać ponownej kontroli wielu resolverów przed przejściem dalej.
-- [ ] Zapewnić historię audytu, CLI, TUI, małe terminale, testy awarii każdego
+- [x] Zapewnić historię audytu, CLI, TUI, małe terminale, testy awarii każdego
   etapu oraz syntetyczną demonstrację pełnego przejścia.
 - [ ] Zastosować pełną bramkę wydania i publikować pakiety dopiero po udanej
   próbie produkcyjnej.

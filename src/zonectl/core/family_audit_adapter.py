@@ -29,13 +29,22 @@ _OUTCOMES = {
     "COMMIT": Outcome.COMMITTED,
     "COMMITTED": Outcome.COMMITTED,
     "CONFIRMED": Outcome.COMMITTED,
+    "POLICY_APPLIED": Outcome.COMMITTED,
+    "COMPLETE": Outcome.COMMITTED,
     "DISABLED": Outcome.COMMITTED,
     "RESTORED": Outcome.COMMITTED,
     "QUARANTINED": Outcome.COMMITTED,
     "PURGED": Outcome.COMMITTED,
     "NO-CHANGE": Outcome.NO_CHANGE,
+    "NO_CHANGE": Outcome.NO_CHANGE,
+    "OK": Outcome.NO_CHANGE,
+    "OBSERVED": Outcome.NO_CHANGE,
+    "ADVANCED": Outcome.NO_CHANGE,
+    "WAITING": Outcome.NO_CHANGE,
+    "NOT_CHECKED": Outcome.READ_ONLY,
     "DRY-RUN": Outcome.DRY_RUN,
     "ROLLED-BACK": Outcome.ROLLED_BACK,
+    "ROLLED_BACK": Outcome.ROLLED_BACK,
     "ROLLBACK-FAILED": Outcome.ROLLBACK_FAILED,
     "BLOCKED": Outcome.BLOCKED,
     "REJECTED": Outcome.BLOCKED,
@@ -163,7 +172,8 @@ class FamilyAuditAdapter:
                     )[:32],
                 ),
                 manifest_ref=self._relative_ref(
-                    getattr(result, "manifest", None), self.manifest_directory
+                    getattr(result, "manifest", getattr(result, "state_file", None)),
+                    self.manifest_directory,
                 ),
                 backup_ref=self._relative_ref(
                     getattr(
