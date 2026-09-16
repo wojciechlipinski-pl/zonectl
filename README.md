@@ -11,7 +11,7 @@ atomic replacement and rollback.
 
 ## Current release
 
-**4.16.0 — guarded named DNSSEC/KASP policy selection**
+**4.17.0 — guarded migration between DNSSEC/KASP policies**
 
 ## Highlights
 
@@ -66,7 +66,7 @@ exact patch version.
 Install the Debian package attached to the GitHub release:
 
 ```bash
-sudo apt install ./zonectl_4.16.0-1_all.deb
+sudo apt install ./zonectl_4.17.0-1_all.deb
 zctl --version
 ```
 

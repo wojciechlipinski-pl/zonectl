@@ -2,6 +2,37 @@
 
 ## Unreleased
 
+## 4.17.0 - 2026-09-16
+
+### Added
+
+- add a separate critical workflow for migrating an already signed primary
+  zone between inventoried named BIND KASP policies
+- provide read-only source/target comparison, declaration diff, DS-impact
+  classification, dry-run-first CLI commands and an inventory-backed TUI route
+- persist explicit resumable phases with read-only DNSKEY, RRSIG, KASP,
+  authoritative and multi-resolver DS evidence gates
+
+### Safety
+
+- require source and target policy names, candidate validation, commit,
+  activation and full zone-name confirmation before the initial mutation
+- never update registrar DS; store no DNSKEY, DS digest or resolver address in
+  migration state, and prohibit rollback after target DS is observed
+- distinguish source and target KSKs only by persisted key-tag/algorithm pairs;
+  require target-specific evidence from every one of at least two resolvers
+- route every policy change through the DS review gate, including timing-only
+  changes, and fail closed on malformed or tampered migration state
+- retain protected backup, atomic declaration replacement, BIND verification,
+  exclusive locking and fully verified source-state rollback while preserving
+  enable/disable APIs
+
+### Tests
+
+- cover CSK to KSK+ZSK and algorithm/DS changes, policy compatibility gates,
+  every state transition, corrupt state, multi-resolver gating, rollback safety
+  and privacy-safe manifests using synthetic data only
+
 ## 4.16.0 - 2026-09-14
 
 ### Added
