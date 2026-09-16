@@ -71,6 +71,15 @@ from .core.dnssec_confirm_ds import DnssecConfirmDsTransaction
 from .core.dnssec_guidance import build_dnssec_guidance
 from .core.dnssec_report import DnssecReporter
 from .core.dnssec_policy_inventory import DnssecPolicyInventoryReader
+from .core.dnssec_policy_migration import (
+    DnssecPolicyMigrationWorkflow,
+    migration_ds_identity_evidence,
+)
+from .core.dnssec_policy_migration_plan import (
+    DnssecPolicyMigrationPlanError,
+    DnssecPolicyMigrationPlanner,
+)
+from .core.dnssec_policy_migration_state import MigrationEvidence
 from .core.dnssec_parent_compatibility import evaluate_parent_compatibility
 from .core.transaction import TransactionEngine, TransactionResult
 from .core.zone_create_transaction import ZoneCreateTransaction
@@ -562,6 +571,59 @@ def parser() -> argparse.ArgumentParser:
     dnssec_enable.add_argument("--commit", action="store_true")
     dnssec_enable.add_argument("--activate", action="store_true")
     dnssec_enable.add_argument("--json", action="store_true")
+    migration_common = argparse.ArgumentParser(add_help=False)
+    migration_common.add_argument("name")
+    migration_common.add_argument(
+        "--state-directory",
+        type=Path,
+        default=Path("/var/backups/zonectl-dnssec-policy-migration/state"),
+    )
+    migration_common.add_argument(
+        "--backup-root",
+        type=Path,
+        default=Path("/var/backups/zonectl-dnssec-policy-migration/backups"),
+    )
+    migration_common.add_argument(
+        "--root-config", type=Path, default=Path("/etc/bind/named.conf")
+    )
+    migration_common.add_argument("--json", action="store_true")
+    migration_plan = dnssec_sub.add_parser(
+        "migration-plan",
+        parents=[migration_common],
+        help="porównaj aktywną i docelową politykę KASP bez zmian",
+    )
+    migration_plan.add_argument("--source-policy", required=True)
+    migration_plan.add_argument("--target-policy", required=True)
+    migration_plan.add_argument("--acknowledge-policy-review", action="store_true")
+    migration_start = dnssec_sub.add_parser(
+        "migration-start",
+        parents=[migration_common],
+        help="rozpocznij migrację polityki; domyślnie dry-run",
+    )
+    migration_start.add_argument("--source-policy", required=True)
+    migration_start.add_argument("--target-policy", required=True)
+    migration_start.add_argument("--acknowledge-policy-review", action="store_true")
+    migration_start.add_argument("--commit", action="store_true")
+    migration_start.add_argument("--activate", action="store_true")
+    migration_start.add_argument("--confirm")
+    for migration_subcommand_name, help_text in (
+        ("migration-status", "pokaż zapisany stan migracji bez zapytań sieciowych"),
+        ("migration-check", "sprawdź DNSKEY, RRSIG, KASP i DS bez zmiany fazy"),
+        ("migration-advance", "wznów i przejdź o jedną fazę po spełnieniu bramek"),
+        ("migration-resume", "alias bezpiecznego wznowienia/advance"),
+        ("migration-finalize", "sfinalizuj migrację gotową według dowodów"),
+        ("migration-rollback", "wycofaj przed punktem bez powrotu"),
+    ):
+        migration_subcommand_parser = dnssec_sub.add_parser(
+            migration_subcommand_name, parents=[migration_common], help=help_text
+        )
+        migration_subcommand_parser.add_argument(
+            "--resolver", action="append", dest="resolvers"
+        )
+        if migration_subcommand_name in {"migration-finalize", "migration-rollback"}:
+            migration_subcommand_parser.add_argument("--confirm")
+        if migration_subcommand_name in {"migration-finalize", "migration-rollback"}:
+            migration_subcommand_parser.add_argument("--commit", action="store_true")
     dnssec_disable_plan = dnssec_sub.add_parser(
         "disable-plan",
         help="pokaż wieloetapowy plan bezpiecznego wycofania DNSSEC bez zmian",
@@ -2322,6 +2384,170 @@ def main(argv: list[str] | None = None) -> int:
                     + "; ".join(access_usage.values)
                 )
         return 0
+    if args.command == "dnssec" and args.dnssec_command in {
+        "migration-plan",
+        "migration-start",
+        "migration-status",
+        "migration-check",
+        "migration-advance",
+        "migration-resume",
+        "migration-finalize",
+        "migration-rollback",
+    }:
+        wanted = args.name.strip().rstrip(".").casefold()
+        display_zone = next(
+            (item for item in zones if item.name.rstrip(".").casefold() == wanted),
+            None,
+        )
+        discovered = config.discovered_zone(args.name)
+        if display_zone is None or discovered is None:
+            print(f"BŁĄD: Nie znaleziono strefy: {args.name}", file=sys.stderr)
+            return 2
+        migration_display_zone = display_zone
+        resolvers = (
+            tuple(args.resolvers or ("1.1.1.1", "8.8.8.8", "9.9.9.9"))
+            if hasattr(args, "resolvers")
+            else ()
+        )
+
+        def migration_evidence(state: object) -> MigrationEvidence:
+            current = config.discovered_zone(args.name)
+            policy_name = getattr(state, "target_policy", "")
+            report = DnssecReporter(
+                local_server=config.toolkit.get("local_server", "127.0.0.1"),
+                resolver=resolvers[0] if resolvers else "1.1.1.1",
+                timeout=int(config.toolkit.get("dig_timeout", "3")),
+            ).collect(migration_display_zone)
+            ds = DnssecDsChecker(
+                local_server=config.toolkit.get("local_server", "127.0.0.1"),
+                timeout=int(config.toolkit.get("dig_timeout", "3")),
+            ).collect(migration_display_zone.name, resolvers)
+            resolver_ok, target_observed, source_observed = (
+                migration_ds_identity_evidence(
+                    tuple(getattr(state, "source_key_ids", ())),
+                    ds.expected_ds,
+                    tuple(
+                        (check.status, check.records) for check in ds.resolver_checks
+                    ),
+                )
+            )
+            authority_ok = bool(ds.authority_checks) and all(
+                check.status == "MATCH" for check in ds.authority_checks
+            )
+            return MigrationEvidence(
+                loaded=report.loaded is True,
+                kasp_target_policy=bool(
+                    current
+                    and current.dnssec_policy
+                    and current.dnssec_policy.casefold() == str(policy_name).casefold()
+                ),
+                dnskey_present=bool(report.dnskey_records),
+                rrsig_present=bool(report.rrsig_records),
+                authoritative_consistent=authority_ok,
+                resolver_count=len(ds.resolver_checks),
+                resolvers_consistent=resolver_ok,
+                target_ds_observed=target_observed,
+                source_ds_observed=source_observed,
+            )
+
+        workflow = DnssecPolicyMigrationWorkflow(
+            args.backup_root,
+            args.state_directory,
+            root_config=args.root_config,
+            evidence_collector=migration_evidence,
+            source_ds_collector=lambda _zone: DnssecReporter(
+                local_server=config.toolkit.get("local_server", "127.0.0.1"),
+                resolver=resolvers[0] if resolvers else "1.1.1.1",
+                timeout=int(config.toolkit.get("dig_timeout", "3")),
+            )
+            .collect(migration_display_zone)
+            .calculated_ds,
+        )
+        try:
+            if args.dnssec_command in {"migration-plan", "migration-start"}:
+                migration_inventory = DnssecPolicyInventoryReader(
+                    args.root_config, BindCapabilityDetector().detect()
+                ).read()
+                migration_plan_result = DnssecPolicyMigrationPlanner(
+                    args.root_config
+                ).plan(
+                    discovered,
+                    source_policy=args.source_policy,
+                    target_policy=args.target_policy,
+                    policy_inventory=migration_inventory,
+                    acknowledge_policy_review=args.acknowledge_policy_review,
+                )
+                if args.dnssec_command == "migration-plan":
+                    if args.json:
+                        print(
+                            json.dumps(
+                                migration_plan_result.to_dict(),
+                                ensure_ascii=False,
+                                indent=2,
+                            )
+                        )
+                    else:
+                        print("PLAN MIGRACJI POLITYKI DNSSEC — TYLKO ODCZYT")
+                        print(f"Strefa: {migration_plan_result.zone}")
+                        print(f"Źródło: {migration_plan_result.source.name}")
+                        print(f"Cel:    {migration_plan_result.target.name}")
+                        print(f"DS:     {migration_plan_result.ds_impact}")
+                        for difference in migration_plan_result.differences:
+                            print(f"- {difference}")
+                        print("\n" + migration_plan_result.unified_diff)
+                        print(migration_plan_result.ds_guidance)
+                    return 0
+                migration_result = workflow.start(
+                    migration_plan_result,
+                    commit=args.commit,
+                    activate=args.activate,
+                    confirmation=args.confirm,
+                )
+            elif args.dnssec_command == "migration-status":
+                migration_result = workflow.status(args.name)
+            elif args.dnssec_command == "migration-check":
+                migration_result = workflow.check(args.name)
+            elif args.dnssec_command in {"migration-advance", "migration-resume"}:
+                migration_result = workflow.advance(args.name)
+            elif args.dnssec_command == "migration-finalize":
+                migration_result = workflow.finalize(
+                    args.name, commit=args.commit, confirmation=args.confirm
+                )
+            else:
+                if not args.commit:
+                    print(
+                        "BŁĄD: rollback wymaga --commit i --confirm.", file=sys.stderr
+                    )
+                    return 2
+                migration_result = workflow.rollback(
+                    args.name, confirmation=args.confirm or ""
+                )
+        except (
+            BindDiscoveryError,
+            DnssecPolicyMigrationPlanError,
+            OSError,
+            ValueError,
+        ) as exc:
+            print(f"BŁĄD: {exc}", file=sys.stderr)
+            return 2
+        if args.json:
+            print(json.dumps(migration_result.to_dict(), ensure_ascii=False, indent=2))
+        else:
+            print(f"Transakcja:     {migration_result.transaction_id}")
+            print(f"Strefa:         {migration_result.zone}")
+            print(f"Operacja:       {migration_result.operation}")
+            print(f"Status:         {migration_result.status}")
+            print(f"Faza:           {migration_result.phase}")
+            print(f"Następna akcja: {migration_result.next_action}")
+            for migration_step in migration_result.steps:
+                print(
+                    f"[{'OK' if migration_step.ok else 'BŁĄD'}] {migration_step.name}: {migration_step.message}"
+                )
+        return (
+            0
+            if migration_result.status not in {"REJECTED", "CONFLICT", "FAILED"}
+            else 1
+        )
     if args.command == "dnssec" and args.dnssec_command == "confirm-ds":
         if args.commit != args.acknowledge_published:
             print(

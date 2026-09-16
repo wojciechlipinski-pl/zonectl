@@ -1,3 +1,13 @@
+zonectl (4.17.0-1) unstable; urgency=medium
+
+  * Add guarded migration between inventoried DNSSEC/KASP policies.
+  * Persist explicit evidence-gated phases with safe stop and resume.
+  * Require multiple public resolvers before DS-related transitions.
+  * Block rollback after the modeled trust-chain point of no return.
+  * Add dry-run CLI, inventory-backed TUI, tests and synthetic documentation.
+
+ -- Wojciech Lipiński <wojciech.lipinski.elk@gmail.com>  Wed, 16 Sep 2026 21:00:00 +0200
+
 zonectl (4.16.0-1) unstable; urgency=medium
 
   * Select named DNSSEC/KASP policies from the discovered BIND inventory.
