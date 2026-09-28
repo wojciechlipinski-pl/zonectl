@@ -290,6 +290,7 @@ delete DNSSEC keys or recovery packages.
 
 - [English operations guide](docs/en/OPERATIONS.md)
 - [Polish operations guide](docs/OPERATIONS.md)
+- [ZoneCTL Doctor and privacy-safe GitHub reports](docs/DOCTOR.md)
 - [Guarded GitHub release upgrades](docs/en/UPGRADE.md)
 - [Bezpieczna aktualizacja z GitHub Release](docs/UPGRADE.md)
 - [Polish README](README.pl.md)

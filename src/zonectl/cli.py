@@ -52,6 +52,16 @@ from .core.audit_store import AuditStorageError, AuditStore, MAX_RESULTS, Outcom
 from .core.git_history import GitHistoryError, LocalGitHistory
 from .core.models import Zone
 from .core.paths import AUDIT_V1_LOG, DEFAULT_CONFIG, DEFAULT_GROUPS, DEFAULT_ZONES
+from .core.paths import BACKUP_DIR, GIT_HISTORY_DIR, LOG_DIR, STATE_DIR
+from .core.doctor import (
+    DEFAULT_REPOSITORY,
+    Doctor,
+    json_text as doctor_json_text,
+    prepare_issue,
+    render_text as render_doctor_text,
+    submit_issue,
+    write_public_report,
+)
 from .core.dnssec_enable_plan import (
     DnssecEnablePlanError,
     DnssecEnablePlanner,
@@ -140,6 +150,39 @@ def parser() -> argparse.ArgumentParser:
         "--grouped", action="store_true", help="pokaż domeny w grupach"
     )
     sub.add_parser("groups", help="wyświetl przypisanie domen do grup")
+
+    doctor = sub.add_parser(
+        "doctor",
+        help="sprawdź host, BIND i gotowość rollbacku bez zmian w systemie",
+    )
+    doctor.add_argument(
+        "--root-config", type=Path, default=Path("/etc/bind/named.conf")
+    )
+    doctor.add_argument("--json", action="store_true")
+    doctor.add_argument(
+        "--prepare-issue",
+        action="store_true",
+        help="zapisz bezpieczny raport i pokaż gotowy link GitHub Issue",
+    )
+    doctor.add_argument(
+        "--submit-github",
+        action="store_true",
+        help="utwórz publiczne Issue przez istniejącą sesję gh",
+    )
+    doctor.add_argument(
+        "--confirm-public",
+        help="publiczna wysyłka wymaga dokładnej wartości WYŚLIJ",
+    )
+    doctor.add_argument(
+        "--repository",
+        default=DEFAULT_REPOSITORY,
+        help="repozytorium docelowe OWNER/REPO",
+    )
+    doctor.add_argument(
+        "--report-directory",
+        type=Path,
+        default=STATE_DIR / "doctor-reports",
+    )
 
     bind_config = sub.add_parser("bind", help="odczyt konfiguracji BIND")
     bind_sub = bind_config.add_subparsers(dest="bind_command", required=True)
@@ -1357,6 +1400,64 @@ def main(argv: list[str] | None = None) -> int:
         return legacy_main(args.arguments)
     if args.command == "audit":
         return audit_main(args)
+    if args.command == "doctor":
+        if args.json and (args.prepare_issue or args.submit_github):
+            print(
+                "BŁĄD: --json nie może być łączone z przygotowaniem lub wysyłką Issue.",
+                file=sys.stderr,
+            )
+            return 2
+        if args.submit_github and not args.prepare_issue:
+            print(
+                "BŁĄD: --submit-github wymaga także --prepare-issue i podglądu raportu.",
+                file=sys.stderr,
+            )
+            return 2
+        report = Doctor(
+            zonectl_version=__version__,
+            root_config=args.root_config,
+            directories=(
+                ("backup", BACKUP_DIR),
+                ("audyt", LOG_DIR),
+                ("stan", STATE_DIR),
+                ("historia Git", GIT_HISTORY_DIR),
+            ),
+        ).collect()
+        if args.json:
+            print(doctor_json_text(report))
+        else:
+            print(render_doctor_text(report))
+        if args.prepare_issue:
+            try:
+                report_path = write_public_report(report, args.report_directory)
+                prepared = prepare_issue(
+                    report,
+                    repository=args.repository,
+                    report_path=report_path,
+                )
+                print("\nPUBLICZNE ZGŁOSZENIE NIE ZOSTAŁO JESZCZE WYSŁANE")
+                print("Najpierw przejrzyj zapisany raport:")
+                print(report_path)
+                print("\nSkopiuj link do przeglądarki, aby ręcznie utworzyć Issue:")
+                print(prepared.url)
+                if not prepared.body_in_url:
+                    print(
+                        "Raport jest zbyt długi dla bezpiecznego URL; "
+                        "wklej treść z zapisanego pliku do formularza."
+                    )
+                if args.submit_github:
+                    print("\nTREŚĆ PRZEZNACZONA DO PUBLICZNEJ WYSYŁKI:\n")
+                    print(prepared.body)
+                    issue_url = submit_issue(
+                        prepared,
+                        repository=args.repository,
+                        confirmation=args.confirm_public or "",
+                    )
+                    print(f"\nUtworzono publiczne zgłoszenie: {issue_url}")
+            except (OSError, RuntimeError, ValueError) as exc:
+                print(f"BŁĄD: {exc}", file=sys.stderr)
+                return 2
+        return {"PASS": 0, "WARN": 1, "BLOCKED": 2}[report.status]
     if args.command == "bind" and args.bind_command == "capabilities":
         capabilities = BindCapabilityDetector().detect()
         if args.json:
