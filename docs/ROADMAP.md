@@ -874,8 +874,20 @@ włączania DNSSEC.
   nieaktywnej usługi i częściowo niedostępnego środowiska.
 - [x] Dodać widok TUI po ustabilizowaniu kontraktu CLI/JSON, zachowujący tryby
   `LINK`, `ZAPISZ` i jawnie potwierdzone `WYŚLIJ` na małym terminalu.
-- [ ] Przeprowadzić standardową bramkę jakości, zbudować kandydata i wykonać
+- [x] Przeprowadzić standardową bramkę jakości, zbudować kandydata i wykonać
   próbę produkcyjną przed przygotowaniem numeru wersji oraz publikacją.
+
+### Próba produkcyjna 4.18.0 — 2026-09-28
+
+- zweryfikowano sumy SHA-256 artefaktów z kompilacji dokładnego commita
+  `main`, metadane pakietu DEB i brak plików zarządzających `/etc/bind`;
+- aktualizacja z 4.17.0 do 4.18.0 zakończyła się powodzeniem, a wersja pakietu
+  systemowego i polecenia `zctl` jest zgodna;
+- `named-checkconf` przeszedł poprawnie, usługa BIND pozostała aktywna, a
+  metadane i statyczna zawartość konfiguracji BIND nie uległy zmianie;
+- `zctl doctor --json` wykonał pełny zestaw kontroli: wszystkie kontrole
+  krytyczne zakończyły się `PASS`; pojedynczy `WARN` dotyczył opcjonalnego,
+  nieskonfigurowanego lokalnego repozytorium historii Git.
 
 ## ZoneCTL 5.0 — wielojęzyczny interfejs
 
