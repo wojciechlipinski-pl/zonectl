@@ -11,7 +11,7 @@ atomic replacement and rollback.
 
 ## Current release
 
-**4.17.0 — guarded migration between DNSSEC/KASP policies**
+**4.18.0 — privacy-safe operator diagnostics and GitHub issue preparation**
 
 ## Highlights
 
@@ -27,7 +27,11 @@ atomic replacement and rollback.
 - inventory, audit and transactionally edit BIND ACLs and secondary groups;
 - assign primary zones to complete notify/transfer secondary pairs;
 - create backups and JSON manifests for configuration-changing operations;
-- use read-only plans and dry-runs before every material change.
+- use read-only plans and dry-runs before every material change;
+- diagnose BIND, DNSSEC/KASP, RPZ, storage and rollback readiness with
+  privacy-safe `zctl doctor` text or JSON reports;
+- prepare a sanitized GitHub issue link, with optional submission only through
+  an existing authenticated `gh` session and explicit confirmation;
 - install or migrate the optional CERT Polska RPZ integration transactionally,
   with five-minute updates, validation, monitoring and rollback.
 
@@ -66,7 +70,7 @@ exact patch version.
 Install the Debian package attached to the GitHub release:
 
 ```bash
-sudo apt install ./zonectl_4.17.0-1_all.deb
+sudo apt install ./zonectl_4.18.0-1_all.deb
 zctl --version
 ```
 
