@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 4.18.0 - 2026-09-28
+
 ### Added
 
 - add privacy-safe, read-only `zctl doctor` diagnostics in text and versioned

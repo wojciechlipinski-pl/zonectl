@@ -8,7 +8,7 @@ ZoneCTL jest terminalowym narzędziem do bezpiecznego zarządzania strefami DNS 
 
 ## Wersja
 
-**4.17.0 — bezpieczna migracja między politykami DNSSEC/KASP**
+**4.18.0 — bezpieczna diagnostyka operatora i przygotowanie zgłoszeń GitHub**
 
 ## Uruchomienie
 

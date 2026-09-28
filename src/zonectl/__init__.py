@@ -1,3 +1,3 @@
 """ZoneCTL — Transactional DNS Management Toolkit."""
 
-__version__ = "4.17.0"
+__version__ = "4.18.0"
