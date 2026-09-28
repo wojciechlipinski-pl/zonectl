@@ -2,6 +2,32 @@
 
 ## Unreleased
 
+### Added
+
+- add privacy-safe, read-only `zctl doctor` diagnostics in text and versioned
+  JSON, covering required tools, BIND configuration and service state, managed
+  RPZ, DNSSEC/KASP policy safety, private state directories, free space and
+  rollback readiness
+- add a responsive `F5 Doctor` TUI route with the same diagnostic contract
+- add a headless GitHub Issue workflow that can save a private report, print a
+  browser-copyable link or optionally submit through an existing authenticated
+  `gh` session
+
+### Safety
+
+- construct public reports from an allowlist and reject addresses, environment
+  paths, contact data and key- or digest-like values in a second privacy scan
+- never read, store or print GitHub credentials; direct submission requires a
+  full preview and the exact confirmation `WYŚLIJ` twice in the TUI
+- keep reports mode `0600` in a mode-`0700` directory and fall back to a short
+  Issue-template URL when the complete body would exceed a safe URL length
+
+### Tests
+
+- cover missing tools, inactive services, partial environments, unsafe report
+  data, private atomic files, long URLs, unauthenticated GitHub CLI and explicit
+  public-submission confirmation
+
 ## 4.17.0 - 2026-09-16
 
 ### Added

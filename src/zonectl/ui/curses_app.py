@@ -86,6 +86,15 @@ from ..core.dnssec_report import DnssecReporter
 from ..core.dnssec_policy_inventory import DnssecPolicy, DnssecPolicyInventoryReader
 from ..core.dnssec_policy_migration import DnssecPolicyMigrationWorkflow
 from ..core.dnssec_policy_migration_plan import DnssecPolicyMigrationPlanner
+from ..core.doctor import (
+    DEFAULT_REPOSITORY,
+    PUBLIC_CONFIRMATION,
+    Doctor,
+    prepare_issue,
+    render_text as render_doctor_text,
+    submit_issue,
+    write_public_report,
+)
 from ..core.dnssec_onboarding_audit import (
     DnssecOnboardingAuditItem,
     DnssecOnboardingAuditor,
@@ -117,7 +126,14 @@ from ..core.multi_zone_session import (
     MultiZoneEditSession,
     MultiZoneSessionError,
 )
-from ..core.paths import AUDIT_V1_LOG, EDIT_LOCK_DIR
+from ..core.paths import (
+    AUDIT_V1_LOG,
+    BACKUP_DIR,
+    EDIT_LOCK_DIR,
+    GIT_HISTORY_DIR,
+    LOG_DIR,
+    STATE_DIR,
+)
 from ..core.record_filter import RecordFilter, RecordFilterError
 from ..core.record_validation import (
     ValidationSeverity,
@@ -260,6 +276,8 @@ class CursesApp:
                 self._bind_access_view(stdscr)
             elif key == curses.KEY_F6:
                 self._audit_browser_view(stdscr)
+            elif key == curses.KEY_F5:
+                self._doctor_view(stdscr)
             elif key == curses.KEY_F3:
                 self._selected_zone_preview(stdscr)
             elif key == curses.KEY_F4:
@@ -691,6 +709,7 @@ class CursesApp:
             ("Insert", "Dodaj"),
             ("r", "Odśwież"),
             ("F6", "Audyt"),
+            ("F5", "Doctor"),
             ("F9", "ACL/secondary"),
             ("F10", "Wyjście"),
         )
@@ -3457,6 +3476,141 @@ class CursesApp:
                         lines=[f"{type(exc).__name__}: {exc}"],
                         error=True,
                     )
+
+    def _doctor_view(self, win: curses.window) -> None:
+        """Run read-only diagnostics and prepare an explicitly approved Issue."""
+        root_config = (
+            self.config.bind_config_path
+            if self.config is not None
+            else Path("/etc/bind/named.conf")
+        )
+        try:
+            report = self._run_with_wait_indicator(
+                win,
+                title="ZoneCTL Doctor — tylko odczyt",
+                label="Kontrola hosta, BIND i gotowości rollbacku",
+                operation=lambda: Doctor(
+                    zonectl_version=__version__,
+                    root_config=root_config,
+                    directories=(
+                        ("backup", BACKUP_DIR),
+                        ("audyt", LOG_DIR),
+                        ("stan", STATE_DIR),
+                        ("historia Git", GIT_HISTORY_DIR),
+                    ),
+                ).collect(),
+            )
+        except (OSError, RuntimeError, ValueError) as exc:
+            self._message_view(
+                win,
+                title="ZoneCTL Doctor — błąd diagnostyki",
+                lines=[f"{type(exc).__name__}: {exc}"],
+                error=True,
+            )
+            return
+
+        self._message_view(
+            win,
+            title=f"ZoneCTL Doctor — {report.status}",
+            lines=render_doctor_text(report).splitlines(),
+            error=report.status == "BLOCKED",
+        )
+        action = CursesDialogs.text_input(
+            win,
+            " Wpisz LINK, ZAPISZ lub WYŚLIJ; Esc anuluje: ",
+        )
+        if action is None:
+            return
+        action = action.strip().upper()
+        if action not in {"LINK", "ZAPISZ", PUBLIC_CONFIRMATION}:
+            return
+        try:
+            report_path = write_public_report(report, STATE_DIR / "doctor-reports")
+            prepared = prepare_issue(
+                report,
+                repository=DEFAULT_REPOSITORY,
+                report_path=report_path,
+            )
+            if action == "ZAPISZ":
+                self._message_view(
+                    win,
+                    title="Doctor — raport zapisany lokalnie",
+                    lines=[
+                        "Nie wysłano żadnych danych.",
+                        "Plik raportu:",
+                        str(report_path),
+                    ],
+                )
+                return
+            if action == "LINK":
+                self._message_view(
+                    win,
+                    title="Doctor — link do ręcznego zgłoszenia",
+                    lines=[
+                        "Nie wysłano żadnych danych.",
+                        "Skopiuj link i otwórz go w przeglądarce:",
+                        prepared.url,
+                        "",
+                        "Treść raportu jest także zapisana lokalnie:",
+                        str(report_path),
+                        *(
+                            []
+                            if prepared.body_in_url
+                            else [
+                                "Raport jest zbyt długi dla URL; wklej treść",
+                                "z zapisanego pliku do otwartego formularza.",
+                            ]
+                        ),
+                    ],
+                )
+                return
+            self._message_view(
+                win,
+                title="Doctor — podgląd publicznego zgłoszenia",
+                lines=[
+                    "Poniższa treść zostanie opublikowana publicznie na GitHubie:",
+                    "",
+                    prepared.title,
+                    "",
+                    *prepared.body.splitlines(),
+                ],
+            )
+            confirmation = CursesDialogs.text_input(
+                win,
+                f" Wpisz ponownie {PUBLIC_CONFIRMATION}, aby utworzyć publiczne Issue: ",
+            )
+            if confirmation != PUBLIC_CONFIRMATION:
+                self._message_view(
+                    win,
+                    title="Doctor — wysyłka anulowana",
+                    lines=["Nie wysłano żadnych danych."],
+                )
+                return
+            issue_url = self._run_with_wait_indicator(
+                win,
+                title="Publiczne zgłoszenie GitHub",
+                label="Wysyłanie zatwierdzonego raportu",
+                operation=lambda: submit_issue(
+                    prepared,
+                    repository=DEFAULT_REPOSITORY,
+                    confirmation=confirmation,
+                ),
+            )
+            self._message_view(
+                win,
+                title="Doctor — zgłoszenie utworzone",
+                lines=[issue_url],
+            )
+        except (OSError, RuntimeError, ValueError) as exc:
+            self._message_view(
+                win,
+                title="Doctor — nie wysłano zgłoszenia",
+                lines=[
+                    str(exc),
+                    "Raport pozostaje lokalny; użyj trybu LINK lub ZAPISZ.",
+                ],
+                error=True,
+            )
 
     @staticmethod
     def _safe_addnstr(

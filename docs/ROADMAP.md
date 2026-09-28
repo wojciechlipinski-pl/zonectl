@@ -857,20 +857,25 @@ włączania DNSSEC.
 
 ## ZoneCTL 4.18 — diagnostyka operatora
 
-- [ ] Dodać odczytowe polecenie `zctl doctor` z wyjściem tekstowym i JSON.
-- [ ] Raportować wersje ZoneCTL, BIND i pakietu, dostępność wymaganych narzędzi,
+- [x] Dodać odczytowe polecenie `zctl doctor` z wyjściem tekstowym i JSON.
+- [x] Raportować wersje ZoneCTL, BIND i pakietu, dostępność wymaganych narzędzi,
   poprawność konfiguracji oraz stan usługi BIND i timerów RPZ.
-- [ ] Sprawdzać uprawnienia i dostępność katalogów backupu, audytu i historii
+- [x] Sprawdzać uprawnienia i dostępność katalogów backupu, audytu i historii
   Git, wolne miejsce oraz gotowość mechanizmów rollbacku.
-- [ ] Łączyć ostrzeżenia DNSSEC/KASP, zgodność BIND i stan integracji w jeden
+- [x] Łączyć ostrzeżenia DNSSEC/KASP, zgodność BIND i stan integracji w jeden
   wynik `PASS`, `WARN` albo `BLOCKED`, z konkretnym następnym krokiem.
-- [ ] Zapewnić tryb raportu przeznaczonego do zgłoszenia problemu, który
+- [x] Zapewnić tryb raportu przeznaczonego do zgłoszenia problemu, który
   automatycznie usuwa nazwy stref, adresy, ścieżki środowiskowe, identyfikatory
   hosta, dane kontaktowe, klucze, skróty DS i inne dane niedozwolone.
-- [ ] Dodać testy prywatności, uszkodzonych zależności, braku uprawnień,
+- [x] Przygotować dla serwerów bez środowiska graficznego prywatny raport i
+  link do formularza GitHub, a opcjonalną bezpośrednią wysyłkę dopuścić tylko
+  przez istniejącą sesję `gh`, po pełnym podglądzie i podwójnym potwierdzeniu.
+- [x] Dodać testy prywatności, uszkodzonych zależności, braku uprawnień,
   nieaktywnej usługi i częściowo niedostępnego środowiska.
-- [ ] Dodać widok TUI dopiero po ustabilizowaniu kontraktu CLI/JSON oraz
-  przeprowadzić standardową bramkę jakości i próbę produkcyjną.
+- [x] Dodać widok TUI po ustabilizowaniu kontraktu CLI/JSON, zachowujący tryby
+  `LINK`, `ZAPISZ` i jawnie potwierdzone `WYŚLIJ` na małym terminalu.
+- [ ] Przeprowadzić standardową bramkę jakości, zbudować kandydata i wykonać
+  próbę produkcyjną przed przygotowaniem numeru wersji oraz publikacją.
 
 ## ZoneCTL 5.0 — wielojęzyczny interfejs
 

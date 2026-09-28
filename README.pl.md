@@ -39,6 +39,7 @@ syntetyczne.
 [Zobacz kompletną galerię zrzutów](docs/SCREENSHOTS.md).
 
 Eksploatacja: [instrukcja operatorska](docs/OPERATIONS.md) ·
+[Doctor i bezpieczne zgłoszenia GitHub](docs/DOCTOR.md) ·
 [odtwarzanie po awarii](docs/DISASTER_RECOVERY.md) ·
 [przykłady rekordów DNS](docs/RECORD_EXAMPLES.md) ·
 [bezpieczna aktualizacja wydania](docs/UPGRADE.md)
