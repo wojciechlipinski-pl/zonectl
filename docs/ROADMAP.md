@@ -904,10 +904,23 @@ Po jawnym włączeniu i potwierdzonej inicjalizacji lokalnej historii Git
   walidacji BIND; nie łączyć dodatkowej historii z backupem ani rollbackiem.
 - [x] Dodać testy stanów konfiguracji, prywatności, braku inicjalizacji,
   poprawnego repozytorium lokalnego i niedozwolonego remote.
-- [ ] Przetestować aktualizację 4.18 → 4.19 z historią Git zarówno wyłączoną,
+- [x] Przetestować aktualizację 4.18 → 4.19 z historią Git zarówno wyłączoną,
   jak i włączoną oraz potwierdzić zachowanie istniejącego repozytorium.
-- [ ] Przeprowadzić pełną bramkę wydania i próbę produkcyjną przed tagiem,
+- [x] Przeprowadzić pełną bramkę wydania i próbę produkcyjną przed tagiem,
   GitHub Release oraz komunikacją LinkedIn.
+
+### Próba produkcyjna 4.19.0 — 2026-10-03
+
+- dokładny pakiet DEB z workflow `37122656638` przeszedł weryfikację
+  `SHA256SUMS`, testy pakietu, instalację izolowaną i Lintian;
+- aktualizacja produkcyjna z 4.18.0 do 4.19.0 zakończyła się powodzeniem, a
+  `named-checkconf` i usługa BIND pozostały w stanie poprawnym;
+- Doctor zwrócił pełny status `PASS` dla włączonej, prywatnej historii Git bez
+  `remote`, a istniejące repozytorium pozostało czyste;
+- wariant z historią wyłączoną przeszedł testy izolowane i automatyczne jako
+  poprawny stan `PASS`; łącznie zaliczono 1068 testów przy 1 pominiętym;
+- dopiero po zapisaniu tego wyniku wolno utworzyć tag, GitHub Release i
+  publiczne artefakty wersji 4.19.0.
 
 ## ZoneCTL 5.0 — wielojęzyczny interfejs
 
