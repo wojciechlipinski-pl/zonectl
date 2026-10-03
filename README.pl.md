@@ -157,7 +157,8 @@ zctl git-history log --limit 20
 ```
 
 Ta historia nie zastępuje backupów transakcyjnych ZoneCTL ani backupu całej
-maszyny i nie jest wysyłana do GitHuba.
+maszyny i nie jest wysyłana do GitHuba. Snapshoty pozostają celowo ręczne:
+wykonuj je dopiero po udanej transakcji i walidacji BIND.
 
 W widoku rekordów naciśnij `/`. Zwykły tekst nadal przeszukuje wszystkie
 widoczne pola. Filtry pól można łączyć spacjami (AND):

@@ -852,7 +852,7 @@ włączania DNSSEC.
   wymagać ponownej kontroli wielu resolverów przed przejściem dalej.
 - [x] Zapewnić historię audytu, CLI, TUI, małe terminale, testy awarii każdego
   etapu oraz syntetyczną demonstrację pełnego przejścia.
-- [ ] Zastosować pełną bramkę wydania i publikować pakiety dopiero po udanej
+- [x] Zastosować pełną bramkę wydania i publikować pakiety dopiero po udanej
   próbie produkcyjnej.
 
 ## ZoneCTL 4.18 — diagnostyka operatora
@@ -888,6 +888,26 @@ włączania DNSSEC.
 - `zctl doctor --json` wykonał pełny zestaw kontroli: wszystkie kontrole
   krytyczne zakończyły się `PASS`; pojedynczy `WARN` dotyczył opcjonalnego,
   nieskonfigurowanego lokalnego repozytorium historii Git.
+
+Po jawnym włączeniu i potwierdzonej inicjalizacji lokalnej historii Git
+2026-10-01 produkcyjny Doctor osiągnął pełny status `PASS`.
+
+## ZoneCTL 4.19 — stabilizacja Doctor i historii Git
+
+- [x] Rozróżnić w Doctor historię Git wyłączoną, niezainicjalizowaną, gotową
+  oraz niebezpieczną, bez ujawniania ścieżki repozytorium.
+- [x] Uznawać jawnie wyłączoną funkcję opcjonalną za poprawny stan `PASS`, a
+  brak inicjalizacji po jej włączeniu za wymagający działania `WARN`.
+- [x] Blokować dowiązania, zbyt szerokie uprawnienia, uszkodzone repozytorium
+  i każdy skonfigurowany `remote`.
+- [x] Zachować ręczne snapshoty wykonywane dopiero po udanej transakcji i
+  walidacji BIND; nie łączyć dodatkowej historii z backupem ani rollbackiem.
+- [x] Dodać testy stanów konfiguracji, prywatności, braku inicjalizacji,
+  poprawnego repozytorium lokalnego i niedozwolonego remote.
+- [ ] Przetestować aktualizację 4.18 → 4.19 z historią Git zarówno wyłączoną,
+  jak i włączoną oraz potwierdzić zachowanie istniejącego repozytorium.
+- [ ] Przeprowadzić pełną bramkę wydania i próbę produkcyjną przed tagiem,
+  GitHub Release oraz komunikacją LinkedIn.
 
 ## ZoneCTL 5.0 — wielojęzyczny interfejs
 

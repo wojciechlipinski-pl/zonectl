@@ -10,9 +10,11 @@ from zonectl.core.doctor import (
     Doctor,
     DoctorCheck,
     DoctorReport,
+    GitHistorySettings,
     issue_body,
     prepare_issue,
     privacy_findings,
+    read_git_history_settings,
     submit_issue,
     write_public_report,
 )
@@ -96,6 +98,163 @@ def test_doctor_reports_denied_directory_and_low_space(
     assert by_code["directory.backup"].status == "BLOCKED"
     assert by_code["storage.backup"].status == "WARN"
     assert by_code["rollback.readiness"].status == "BLOCKED"
+
+
+def test_doctor_treats_disabled_git_history_as_healthy() -> None:
+    report = Doctor(
+        zonectl_version="4.18.0",
+        command_runner=_runner,
+        which=lambda name: f"/usr/bin/{name}",
+        git_history=GitHistorySettings(False, Path("/not/inspected")),
+        policy_probe=lambda path: DoctorCheck(
+            "dnssec.policies", "PASS", "polityki bez blokad"
+        ),
+    ).collect()
+
+    check = {item.code: item for item in report.checks}["directory.historia-git"]
+    assert check.status == "PASS"
+    assert "wyłączona" in check.summary
+
+
+def test_doctor_warns_when_enabled_git_history_is_not_initialized(
+    tmp_path: Path,
+) -> None:
+    report = Doctor(
+        zonectl_version="4.18.0",
+        command_runner=_runner,
+        which=lambda name: f"/usr/bin/{name}",
+        git_history=GitHistorySettings(True, tmp_path / "missing"),
+        policy_probe=lambda path: DoctorCheck(
+            "dnssec.policies", "PASS", "polityki bez blokad"
+        ),
+    ).collect()
+
+    check = {item.code: item for item in report.checks}["directory.historia-git"]
+    assert check.status == "WARN"
+    assert "niezainicjalizowana" in check.summary
+
+
+def test_doctor_accepts_private_remote_free_git_history(tmp_path: Path) -> None:
+    repository = tmp_path / "history"
+    (repository / ".git").mkdir(parents=True)
+    repository.chmod(0o750)
+    report = Doctor(
+        zonectl_version="4.18.0",
+        command_runner=_runner,
+        which=lambda name: f"/usr/bin/{name}",
+        git_history=GitHistorySettings(True, repository),
+        policy_probe=lambda path: DoctorCheck(
+            "dnssec.policies", "PASS", "polityki bez blokad"
+        ),
+    ).collect()
+
+    by_code = {item.code: item for item in report.checks}
+    assert by_code["directory.historia-git"].status == "PASS"
+    assert by_code["storage.historia-git"].status == "PASS"
+
+
+def test_doctor_blocks_git_history_with_remote(tmp_path: Path) -> None:
+    repository = tmp_path / "history"
+    (repository / ".git").mkdir(parents=True)
+    repository.chmod(0o750)
+
+    def runner(command: list[str] | tuple[str, ...], timeout: int) -> SimpleNamespace:
+        if list(command)[:3] == ["git", "-C", str(repository)]:
+            return _result(stdout="origin\n")
+        return _runner(command, timeout)
+
+    report = Doctor(
+        zonectl_version="4.18.0",
+        command_runner=runner,
+        which=lambda name: f"/usr/bin/{name}",
+        git_history=GitHistorySettings(True, repository),
+        policy_probe=lambda path: DoctorCheck(
+            "dnssec.policies", "PASS", "polityki bez blokad"
+        ),
+    ).collect()
+
+    check = {item.code: item for item in report.checks}["directory.historia-git"]
+    assert check.status == "BLOCKED"
+    assert "remote" in check.summary
+
+
+@pytest.mark.parametrize(
+    ("repository_kind", "expected_summary"),
+    [
+        ("symlink", "niebezpieczny typ"),
+        ("broad_permissions", "zbyt szerokie uprawnienia"),
+        ("broken_repository", "uszkodzona lub niedostępna"),
+    ],
+)
+def test_doctor_blocks_unsafe_git_history(
+    tmp_path: Path,
+    repository_kind: str,
+    expected_summary: str,
+) -> None:
+    repository = tmp_path / "history"
+    target = tmp_path / "target"
+    target.mkdir()
+    if repository_kind == "symlink":
+        repository.symlink_to(target, target_is_directory=True)
+    else:
+        (repository / ".git").mkdir(parents=True)
+        repository.chmod(0o775 if repository_kind == "broad_permissions" else 0o750)
+
+    def runner(command: list[str] | tuple[str, ...], timeout: int) -> SimpleNamespace:
+        if repository_kind == "broken_repository" and list(command)[:2] == [
+            "git",
+            "-C",
+        ]:
+            return _result(code=128, stderr="not a git repository")
+        return _runner(command, timeout)
+
+    report = Doctor(
+        zonectl_version="4.18.0",
+        command_runner=runner,
+        which=lambda name: f"/usr/bin/{name}",
+        git_history=GitHistorySettings(True, repository),
+        policy_probe=lambda path: DoctorCheck(
+            "dnssec.policies", "PASS", "polityki bez blokad"
+        ),
+    ).collect()
+
+    check = {item.code: item for item in report.checks}["directory.historia-git"]
+    assert check.status == "BLOCKED"
+    assert expected_summary in check.summary
+
+
+def test_doctor_blocks_enabled_git_history_without_git(tmp_path: Path) -> None:
+    report = Doctor(
+        zonectl_version="4.18.0",
+        command_runner=_runner,
+        which=lambda name: None if name == "git" else f"/usr/bin/{name}",
+        git_history=GitHistorySettings(True, tmp_path / "history"),
+        policy_probe=lambda path: DoctorCheck(
+            "dnssec.policies", "PASS", "polityki bez blokad"
+        ),
+    ).collect()
+
+    check = {item.code: item for item in report.checks}["tool.git"]
+    assert check.status == "BLOCKED"
+    assert "brak narzędzia Git" in check.summary
+
+
+def test_read_git_history_settings_is_failure_tolerant(tmp_path: Path) -> None:
+    missing = read_git_history_settings(tmp_path / "missing.conf")
+    assert missing.enabled is False
+
+    invalid = tmp_path / "invalid.conf"
+    invalid.write_text("not an ini file", encoding="utf-8")
+    assert read_git_history_settings(invalid).enabled is None
+
+    configured = tmp_path / "toolkit.conf"
+    repository = tmp_path / "history"
+    configured.write_text(
+        f"[toolkit]\ngit_history_enabled = yes\ngit_history_directory = {repository}\n",
+        encoding="utf-8",
+    )
+    settings = read_git_history_settings(configured)
+    assert settings == GitHistorySettings(True, repository)
 
 
 @pytest.mark.parametrize(

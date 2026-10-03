@@ -90,6 +90,7 @@ from ..core.doctor import (
     DEFAULT_REPOSITORY,
     PUBLIC_CONFIRMATION,
     Doctor,
+    GitHistorySettings,
     prepare_issue,
     render_text as render_doctor_text,
     submit_issue,
@@ -3496,7 +3497,14 @@ class CursesApp:
                         ("backup", BACKUP_DIR),
                         ("audyt", LOG_DIR),
                         ("stan", STATE_DIR),
-                        ("historia Git", GIT_HISTORY_DIR),
+                    ),
+                    git_history=GitHistorySettings(
+                        self.config.git_history_enabled
+                        if self.config is not None
+                        else False,
+                        self.config.git_history_directory
+                        if self.config is not None
+                        else GIT_HISTORY_DIR,
                     ),
                 ).collect(),
             )

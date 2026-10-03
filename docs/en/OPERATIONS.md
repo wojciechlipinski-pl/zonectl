@@ -393,6 +393,13 @@ Take a snapshot only after the transaction and BIND verification succeed.
 Local Git is not used for rollback and never replaces transaction or full-host
 backups.
 
+Doctor reports four explicit states: disabled by configuration is a healthy
+`PASS`, enabled but uninitialized is `WARN`, a private remote-free repository
+is `PASS`, and an unsafe path type, broad permissions, a broken repository or
+any configured remote is `BLOCKED`. Snapshots deliberately remain manual so
+this supplementary history cannot be mistaken for a backup or transactional
+rollback component.
+
 ## Post-change checklist
 
 ```bash

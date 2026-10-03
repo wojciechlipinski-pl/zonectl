@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+import configparser
 import json
 import os
 import re
 import shutil
+import stat
 import subprocess
 import tempfile
 from collections.abc import Callable, Sequence
@@ -22,6 +24,40 @@ DEFAULT_REPOSITORY = "wojciechlipinski-pl/zonectl"
 PUBLIC_CONFIRMATION = "WYŚLIJ"
 MIN_FREE_BYTES = 256 * 1024 * 1024
 MAX_ISSUE_URL_LENGTH = 1800
+
+
+@dataclass(frozen=True)
+class GitHistorySettings:
+    """Minimal optional-history settings readable without loading all config."""
+
+    enabled: bool | None
+    directory: Path
+
+
+def read_git_history_settings(config_path: Path) -> GitHistorySettings:
+    """Read only Git-history settings while keeping Doctor failure tolerant."""
+    from .paths import GIT_HISTORY_DIR
+
+    parser = configparser.ConfigParser(interpolation=None)
+    try:
+        loaded = parser.read(config_path, encoding="utf-8")
+    except (configparser.Error, OSError, UnicodeError):
+        return GitHistorySettings(None, GIT_HISTORY_DIR)
+    if not loaded:
+        return GitHistorySettings(False, GIT_HISTORY_DIR)
+    if "toolkit" not in parser:
+        return GitHistorySettings(None, GIT_HISTORY_DIR)
+    section = parser["toolkit"]
+    raw_enabled = section.get("git_history_enabled")
+    enabled = raw_enabled is not None and raw_enabled.strip().casefold() in {
+        "1",
+        "yes",
+        "true",
+        "on",
+        "tak",
+    }
+    raw_directory = section.get("git_history_directory", str(GIT_HISTORY_DIR)).strip()
+    return GitHistorySettings(enabled, Path(raw_directory).expanduser())
 
 
 class CommandResult(Protocol):
@@ -180,6 +216,7 @@ class Doctor:
         zonectl_version: str,
         root_config: Path = Path("/etc/bind/named.conf"),
         directories: Sequence[tuple[str, Path]] = (),
+        git_history: GitHistorySettings | None = None,
         command_runner: CommandRunner = _run,
         which: Callable[[str], str | None] = shutil.which,
         disk_usage: Callable[[Path], DiskUsage] = _disk_usage,
@@ -189,6 +226,7 @@ class Doctor:
         self.zonectl_version = zonectl_version
         self.root_config = root_config
         self.directories = tuple(directories)
+        self.git_history = git_history or GitHistorySettings(False, Path("."))
         self.command_runner = command_runner
         self.which = which
         self.disk_usage = disk_usage
@@ -338,6 +376,8 @@ class Doctor:
         for label, path in self.directories:
             checks.extend(self._directory_checks(label, path))
 
+        checks.extend(self._git_history_checks())
+
         checks.append(self.policy_probe(self.root_config))
 
         backup_ready = any(
@@ -365,6 +405,98 @@ class Doctor:
             package_version=package_version,
             checks=tuple(checks),
         )
+
+    def _git_history_checks(self) -> tuple[DoctorCheck, ...]:
+        """Classify disabled, uninitialized, ready and unsafe local history."""
+        settings = self.git_history
+        if settings.enabled is None:
+            return (
+                DoctorCheck(
+                    "directory.historia-git",
+                    "WARN",
+                    "nie można odczytać konfiguracji historii Git",
+                    "sprawdź sekcję toolkit w konfiguracji ZoneCTL",
+                ),
+            )
+        if not settings.enabled:
+            return (
+                DoctorCheck(
+                    "directory.historia-git",
+                    "PASS",
+                    "opcjonalna historia Git wyłączona zgodnie z konfiguracją",
+                ),
+            )
+
+        path = settings.directory
+        if self.which("git") is None:
+            return (
+                DoctorCheck(
+                    "tool.git",
+                    "BLOCKED",
+                    "historia Git jest włączona, lecz brak narzędzia Git",
+                    "zainstaluj Git albo wyłącz opcjonalną historię",
+                ),
+            )
+        if not path.exists():
+            return (
+                DoctorCheck(
+                    "directory.historia-git",
+                    "WARN",
+                    "historia Git jest włączona, lecz niezainicjalizowana",
+                    "uruchom plan, a następnie potwierdzoną inicjalizację historii Git",
+                ),
+            )
+        if path.is_symlink() or not path.is_dir():
+            return (
+                DoctorCheck(
+                    "directory.historia-git",
+                    "BLOCKED",
+                    "ścieżka historii Git ma niebezpieczny typ",
+                    "usuń dowiązanie lub plik i użyj prywatnego katalogu",
+                ),
+            )
+        try:
+            mode = stat.S_IMODE(path.stat().st_mode)
+        except OSError:
+            mode = 0o777
+        if mode & 0o027:
+            return (
+                DoctorCheck(
+                    "directory.historia-git",
+                    "BLOCKED",
+                    "katalog historii Git ma zbyt szerokie uprawnienia",
+                    "usuń zapis grupowy i wszystkie uprawnienia innych użytkowników",
+                ),
+            )
+        if not (path / ".git").is_dir():
+            return (
+                DoctorCheck(
+                    "directory.historia-git",
+                    "WARN",
+                    "historia Git jest włączona, lecz niezainicjalizowana",
+                    "uruchom plan, a następnie potwierdzoną inicjalizację historii Git",
+                ),
+            )
+        remote = self.command_runner(["git", "-C", str(path), "remote"], 10)
+        if remote.returncode != 0:
+            return (
+                DoctorCheck(
+                    "directory.historia-git",
+                    "BLOCKED",
+                    "lokalna historia Git jest uszkodzona lub niedostępna",
+                    "sprawdź prywatne repozytorium historii Git",
+                ),
+            )
+        if remote.stdout.strip():
+            return (
+                DoctorCheck(
+                    "directory.historia-git",
+                    "BLOCKED",
+                    "lokalna historia Git ma niedozwolony remote",
+                    "usuń remote; historia stref musi pozostać wyłącznie lokalna",
+                ),
+            )
+        return self._directory_checks("historia Git", path)
 
     def _directory_checks(self, label: str, path: Path) -> tuple[DoctorCheck, ...]:
         code = re.sub(r"[^a-z0-9]+", "-", label.casefold()).strip("-") or "state"

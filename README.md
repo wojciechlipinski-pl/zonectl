@@ -180,7 +180,8 @@ zctl git-history log --limit 20
 ```
 
 This local history never replaces ZoneCTL transaction backups or a full-host
-backup and is not synchronized to GitHub.
+backup and is not synchronized to GitHub. Snapshots remain deliberately manual:
+create one only after the transaction and BIND validation have succeeded.
 
 The record view supports structured filters, for example:
 
