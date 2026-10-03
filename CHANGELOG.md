@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 4.19.0 - 2026-10-03
+
 ### Changed
 
 - make Doctor distinguish disabled, uninitialized, ready and unsafe optional

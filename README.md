@@ -11,7 +11,7 @@ atomic replacement and rollback.
 
 ## Current release
 
-**4.18.0 — privacy-safe operator diagnostics and GitHub issue preparation**
+**4.19.0 — reliable Doctor checks for optional local Git history**
 
 ## Highlights
 
@@ -30,6 +30,8 @@ atomic replacement and rollback.
 - use read-only plans and dry-runs before every material change;
 - diagnose BIND, DNSSEC/KASP, RPZ, storage and rollback readiness with
   privacy-safe `zctl doctor` text or JSON reports;
+- distinguish disabled, uninitialized, ready and unsafe local Git history,
+  blocking broad permissions, broken repositories and configured remotes;
 - prepare a sanitized GitHub issue link, with optional submission only through
   an existing authenticated `gh` session and explicit confirmation;
 - install or migrate the optional CERT Polska RPZ integration transactionally,
@@ -70,7 +72,7 @@ exact patch version.
 Install the Debian package attached to the GitHub release:
 
 ```bash
-sudo apt install ./zonectl_4.18.0-1_all.deb
+sudo apt install ./zonectl_4.19.0-1_all.deb
 zctl --version
 ```
 

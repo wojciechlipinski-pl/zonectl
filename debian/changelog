@@ -1,3 +1,13 @@
+zonectl (4.19.0-1) unstable; urgency=medium
+
+  * Distinguish disabled, uninitialized, ready and unsafe Git history in Doctor.
+  * Treat explicitly disabled optional history as a healthy state.
+  * Block unsafe path types, broad permissions, broken repositories and remotes.
+  * Keep snapshots manual after successful transactions and BIND validation.
+  * Extend Doctor, CLI and TUI coverage for local-history safety states.
+
+ -- Wojciech Lipiński <wojciech.lipinski.elk@gmail.com>  Sat, 03 Oct 2026 14:30:00 +0200
+
 zonectl (4.18.0-1) unstable; urgency=medium
 
   * Add privacy-safe read-only operator diagnostics in text and JSON.
