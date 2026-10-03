@@ -8,7 +8,7 @@ ZoneCTL jest terminalowym narzędziem do bezpiecznego zarządzania strefami DNS 
 
 ## Wersja
 
-**4.19.0 — wiarygodna diagnostyka opcjonalnej lokalnej historii Git**
+**4.19.1 — niezawodne kopiowanie bezpiecznych linków zgłoszeń Doctor**
 
 ## Uruchomienie
 

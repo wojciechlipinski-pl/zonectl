@@ -11,7 +11,7 @@ atomic replacement and rollback.
 
 ## Current release
 
-**4.19.0 — reliable Doctor checks for optional local Git history**
+**4.19.1 — reliable copying of privacy-safe Doctor issue links**
 
 ## Highlights
 
@@ -72,7 +72,7 @@ exact patch version.
 Install the Debian package attached to the GitHub release:
 
 ```bash
-sudo apt install ./zonectl_4.19.0-1_all.deb
+sudo apt install ./zonectl_4.19.1-1_all.deb
 zctl --version
 ```
 

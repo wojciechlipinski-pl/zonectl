@@ -922,6 +922,15 @@ Po jawnym włączeniu i potwierdzonej inicjalizacji lokalnej historii Git
 - dopiero po zapisaniu tego wyniku wolno utworzyć tag, GitHub Release i
   publiczne artefakty wersji 4.19.0.
 
+### Wydanie poprawkowe 4.19.1 — 2026-10-03
+
+- [x] Odseparować link zgłoszenia Doctor od bocznego panelu TUI, aby ręczne
+  zaznaczenie nie obejmowało sąsiedniego tekstu.
+- [x] Dodać kopiowanie dokładnego adresu klawiszem `c` przez OSC 52 oraz
+  zachować udokumentowany wariant CLI dla terminali bez tej funkcji.
+- [x] Pokryć widok testami małych i dużych terminali, pełną regresją oraz
+  publiczną bramką CI przed tagiem i GitHub Release.
+
 ## ZoneCTL 5.0 — wielojęzyczny interfejs
 
 - [ ] Oddzielić wszystkie komunikaty użytkownika od kodu bez zmiany znaczenia

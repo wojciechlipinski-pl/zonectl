@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 4.19.1 - 2026-10-03
+
 ### Fixed
 
 - show Doctor issue links in a dedicated single-column TUI view so mouse
