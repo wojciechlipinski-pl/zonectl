@@ -931,6 +931,17 @@ Po jawnym włączeniu i potwierdzonej inicjalizacji lokalnej historii Git
 - [x] Pokryć widok testami małych i dużych terminali, pełną regresją oraz
   publiczną bramką CI przed tagiem i GitHub Release.
 
+#### Próba produkcyjna 4.19.1 — 2026-10-03
+
+- dokładny pakiet DEB z workflow `37124382631` przeszedł kontrolę
+  `SHA256SUMS`, testy pakietu, instalację izolowaną oraz Lintian;
+- aktualizacja produkcyjna z 4.19.0 do 4.19.1 zakończyła się powodzeniem;
+- `named-checkconf` przeszedł bez błędów, a usługa BIND pozostała aktywna;
+- Doctor rozpoznał ZoneCTL `4.19.1`, pakiet `4.19.1-1` i zwrócił pełny
+  status `PASS` bez wprowadzania zmian;
+- tag, GitHub Release i publiczne artefakty wolno utworzyć dopiero po
+  scaleniu niniejszego wyniku do `main`.
+
 ## ZoneCTL 5.0 — wielojęzyczny interfejs
 
 - [ ] Oddzielić wszystkie komunikaty użytkownika od kodu bez zmiany znaczenia
