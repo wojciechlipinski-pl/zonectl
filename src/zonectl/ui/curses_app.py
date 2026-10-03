@@ -29,6 +29,7 @@ from zonectl.ui.semantic_status import (
 )
 from zonectl.ui.wait_indicator import WaitIndicator
 
+import base64
 import curses
 import queue
 import sys
@@ -2967,6 +2968,114 @@ class CursesApp:
             except curses.error:
                 pass
 
+    def _doctor_issue_link_view(
+        self,
+        win: curses.window,
+        *,
+        url: str,
+        report_path: Path,
+        body_in_url: bool,
+    ) -> None:
+        """Show an isolated URL and offer explicit terminal clipboard copy."""
+        offset = 0
+        status = "Naciśnij c, aby skopiować dokładny link do schowka terminala."
+        try:
+            win.timeout(-1)
+            while True:
+                win.erase()
+                height, width = win.getmaxyx()
+                content_width = max(1, width - 4)
+                url_lines = [
+                    url[index : index + content_width]
+                    for index in range(0, len(url), content_width)
+                ] or [""]
+                visible = max(1, height - 6)
+                maximum = max(0, len(url_lines) - visible)
+                offset = min(offset, maximum)
+                self._safe_addnstr(
+                    win,
+                    0,
+                    0,
+                    " Doctor — link do ręcznego zgłoszenia ".ljust(width),
+                    max(0, width - 1),
+                    curses.A_REVERSE | curses.A_BOLD,
+                )
+                for row, line in enumerate(
+                    url_lines[offset : offset + visible], start=2
+                ):
+                    self._safe_addnstr(
+                        win,
+                        row,
+                        2,
+                        line,
+                        content_width,
+                        curses.A_NORMAL,
+                    )
+                guidance = status
+                if not body_in_url:
+                    guidance = (
+                        f"c kopiuje link; treść raportu wklej z pliku: {report_path}"
+                    )
+                self._safe_addnstr(
+                    win,
+                    max(1, height - 2),
+                    1,
+                    guidance,
+                    max(0, width - 2),
+                    curses.A_DIM,
+                )
+                footer = " c kopiuj  ↑/↓ PgUp/PgDn Home/End  q/Esc powrót "
+                self._safe_addnstr(
+                    win,
+                    max(0, height - 1),
+                    0,
+                    footer.ljust(width),
+                    max(0, width - 1),
+                    curses.A_REVERSE,
+                )
+                win.refresh()
+                key = self._get_key(win)
+                if key in (ord("c"), ord("C")):
+                    status = (
+                        "Wysłano link do schowka terminala; wklej go i sprawdź."
+                        if self._copy_to_terminal_clipboard(url)
+                        else "Terminal nie przyjął linku; użyj polecenia CLI."
+                    )
+                elif key in (curses.KEY_DOWN, ord("j")):
+                    offset = min(offset + 1, maximum)
+                elif key in (curses.KEY_UP, ord("k")):
+                    offset = max(0, offset - 1)
+                elif key == curses.KEY_NPAGE:
+                    offset = min(offset + visible, maximum)
+                elif key == curses.KEY_PPAGE:
+                    offset = max(0, offset - visible)
+                elif key == curses.KEY_HOME:
+                    offset = 0
+                elif key == curses.KEY_END:
+                    offset = maximum
+                elif key in (ord("q"), ord("Q"), 27, curses.KEY_F10):
+                    return
+        except curses.error:
+            return
+        finally:
+            try:
+                win.timeout(150)
+            except curses.error:
+                pass
+
+    @staticmethod
+    def _copy_to_terminal_clipboard(text: str) -> bool:
+        """Request clipboard copy through OSC 52 after an explicit keypress."""
+        if not text or any(character in text for character in "\r\n\x00"):
+            return False
+        try:
+            payload = base64.b64encode(text.encode("utf-8")).decode("ascii")
+            sys.stdout.write(f"\x1b]52;c;{payload}\x07")
+            sys.stdout.flush()
+        except (AttributeError, OSError, UnicodeError):
+            return False
+        return True
+
     def _draw_message_view_48(
         self,
         win: curses.window,
@@ -3551,25 +3660,11 @@ class CursesApp:
                 )
                 return
             if action == "LINK":
-                self._message_view(
+                self._doctor_issue_link_view(
                     win,
-                    title="Doctor — link do ręcznego zgłoszenia",
-                    lines=[
-                        "Nie wysłano żadnych danych.",
-                        "Skopiuj link i otwórz go w przeglądarce:",
-                        prepared.url,
-                        "",
-                        "Treść raportu jest także zapisana lokalnie:",
-                        str(report_path),
-                        *(
-                            []
-                            if prepared.body_in_url
-                            else [
-                                "Raport jest zbyt długi dla URL; wklej treść",
-                                "z zapisanego pliku do otwartego formularza.",
-                            ]
-                        ),
-                    ],
+                    url=prepared.url,
+                    report_path=report_path,
+                    body_in_url=prepared.body_in_url,
                 )
                 return
             self._message_view(

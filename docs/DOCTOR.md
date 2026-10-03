@@ -68,6 +68,12 @@ Press `F5` on the main screen. After the read-only check, choose:
 The public-send path shows the complete body and requires `WYŚLIJ` a second
 time.
 
+The link uses a dedicated single-column screen. Press `c` to request an exact
+clipboard copy through OSC 52; this avoids copying wrapped lines or text from
+the operational side panel. Terminal clipboard support is optional. If it is
+disabled, leave the TUI and run `zctl doctor --prepare-issue`, then copy the
+single URL line from the ordinary shell output.
+
 ---
 
 # ZoneCTL Doctor i bezpieczne zgłoszenia GitHub
@@ -91,3 +97,9 @@ Program zapisze prywatny raport oraz wyświetli link do skopiowania na komputer
 z przeglądarką. Automatyczna wysyłka jest opcjonalna i działa wyłącznie przez
 wcześniej uwierzytelnionego klienta `gh`, po podglądzie i jawnym potwierdzeniu
 `WYŚLIJ`.
+
+W TUI link ma osobny, jednokolumnowy ekran. Klawisz `c` wysyła dokładny URL do
+schowka terminala przez OSC 52, dzięki czemu kopiowanie nie obejmuje prawego
+panelu ani wizualnych podziałów wiersza. Jeśli terminal blokuje OSC 52, wyjdź z
+TUI i użyj `zctl doctor --prepare-issue`, a następnie skopiuj pojedynczy wiersz
+URL ze zwykłej powłoki.
