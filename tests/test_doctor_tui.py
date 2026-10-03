@@ -13,6 +13,9 @@ def test_main_tui_routes_f5_to_doctor() -> None:
     assert "curses.KEY_F5" in main
     assert '"F5", "Doctor"' in footer
     assert "Doctor(" in view
+    assert "GitHistorySettings(" in view
+    assert "git_history_enabled" in view
+    assert "git_history_directory" in view
     assert "_run_with_wait_indicator" in view
 
 

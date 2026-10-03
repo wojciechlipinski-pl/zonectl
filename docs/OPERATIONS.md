@@ -689,6 +689,13 @@ Snapshot wolno wykonać dopiero po udanej transakcji i weryfikacji BIND. Git
 jest tylko dodatkową historią: nie bierze udziału w rollbacku, nie usuwa ani
 nie zastępuje backupów i nie może mieć skonfigurowanego `remote`.
 
+Doctor rozróżnia jawnie cztery stany tej funkcji: wyłączona konfiguracją jest
+poprawnym stanem `PASS`, włączona lecz niezainicjalizowana daje `WARN`, gotowe
+prywatne repozytorium bez `remote` daje `PASS`, a niebezpieczny typ ścieżki,
+zbyt szerokie uprawnienia, uszkodzone repozytorium lub obecność `remote` daje
+`BLOCKED`. Snapshoty pozostają ręczne, aby dodatkowa historia nie była mylona
+z backupem ani częścią transakcyjnego rollbacku.
+
 Przed wydaniem, migracją lub większą zmianą konfiguracji należy potwierdzić,
 że ostatnie zadanie Veeam zakończyło się powodzeniem. Po odtworzeniu maszyny
 z Veeam trzeba wykonać co najmniej:

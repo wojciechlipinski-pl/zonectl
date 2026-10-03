@@ -52,10 +52,11 @@ from .core.audit_store import AuditStorageError, AuditStore, MAX_RESULTS, Outcom
 from .core.git_history import GitHistoryError, LocalGitHistory
 from .core.models import Zone
 from .core.paths import AUDIT_V1_LOG, DEFAULT_CONFIG, DEFAULT_GROUPS, DEFAULT_ZONES
-from .core.paths import BACKUP_DIR, GIT_HISTORY_DIR, LOG_DIR, STATE_DIR
+from .core.paths import BACKUP_DIR, LOG_DIR, STATE_DIR
 from .core.doctor import (
     DEFAULT_REPOSITORY,
     Doctor,
+    read_git_history_settings,
     json_text as doctor_json_text,
     prepare_issue,
     render_text as render_doctor_text,
@@ -1420,8 +1421,8 @@ def main(argv: list[str] | None = None) -> int:
                 ("backup", BACKUP_DIR),
                 ("audyt", LOG_DIR),
                 ("stan", STATE_DIR),
-                ("historia Git", GIT_HISTORY_DIR),
             ),
+            git_history=read_git_history_settings(args.config),
         ).collect()
         if args.json:
             print(doctor_json_text(report))

@@ -2,6 +2,23 @@
 
 ## Unreleased
 
+### Changed
+
+- make Doctor distinguish disabled, uninitialized, ready and unsafe optional
+  local Git history instead of warning whenever its directory is absent
+- keep zone-history snapshots explicitly manual after successful transaction
+  and BIND validation; no automatic snapshot or remote synchronization is added
+
+### Safety
+
+- classify broad permissions, unsafe path types, broken repositories and any
+  configured Git remote as blocked without exposing repository paths or output
+
+### Tests
+
+- cover disabled and missing history, private remote-free repositories,
+  forbidden remotes and failure-tolerant configuration discovery
+
 ## 4.18.0 - 2026-09-28
 
 ### Added
