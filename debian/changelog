@@ -1,3 +1,12 @@
+zonectl (4.19.1-1) unstable; urgency=medium
+
+  * Show Doctor issue links in a dedicated single-column TUI view.
+  * Prevent mouse selection from including the operational side panel.
+  * Add exact terminal clipboard copy with the c key through OSC 52.
+  * Document the CLI fallback for terminals without OSC 52 support.
+
+ -- Wojciech Lipiński <wojciech.lipinski.elk@gmail.com>  Sat, 03 Oct 2026 15:00:00 +0200
+
 zonectl (4.19.0-1) unstable; urgency=medium
 
   * Distinguish disabled, uninitialized, ready and unsafe Git history in Doctor.

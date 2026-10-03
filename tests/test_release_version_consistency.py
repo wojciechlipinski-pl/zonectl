@@ -11,7 +11,7 @@ def test_release_version_is_consistent_across_public_artifacts() -> None:
     metadata = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
     version = metadata["project"]["version"]
 
-    assert version == "4.19.0"
+    assert version == "4.19.1"
     assert zonectl.__version__ == version
     assert (
         (ROOT / "debian/changelog")
