@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Fixed
+
+- show Doctor issue links in a dedicated single-column TUI view so mouse
+  selection no longer includes the operational side panel
+- add explicit `c` clipboard copy through OSC 52, preserving the exact URL
+  without visual wrapping or adjacent text
+
 ## 4.19.0 - 2026-10-03
 
 ### Changed

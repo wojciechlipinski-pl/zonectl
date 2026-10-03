@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import base64
 import curses
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
@@ -114,6 +116,40 @@ def test_message_view_stays_within_terminal_bounds(
         ],
     )
     assert window.writes
+
+
+def test_doctor_link_clipboard_uses_exact_osc52_payload(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    writes: list[str] = []
+    fake_stdout = SimpleNamespace(write=writes.append, flush=lambda: None)
+    monkeypatch.setattr(curses_app.sys, "stdout", fake_stdout)
+    url = "https://github.com/example/project/issues/new?title=Doctor&body=PASS"
+
+    assert CursesApp._copy_to_terminal_clipboard(url)
+    encoded = base64.b64encode(url.encode("utf-8")).decode("ascii")
+    assert writes == [f"\x1b]52;c;{encoded}\x07"]
+
+
+@pytest.mark.parametrize(("height", "width"), [(12, 40), (24, 80), (30, 160)])
+def test_doctor_link_view_stays_within_terminal_bounds(
+    monkeypatch: pytest.MonkeyPatch,
+    height: int,
+    width: int,
+) -> None:
+    monkeypatch.setattr(curses, "has_colors", lambda: False)
+    window = StrictWindow(height, width)
+    app = CursesApp([], bind=object())
+
+    app._doctor_issue_link_view(
+        window,
+        url="https://github.com/example/project/issues/new?title=Doctor&body=PASS",
+        report_path=Path("/tmp/report.md"),
+        body_in_url=True,
+    )
+
+    assert window.writes
+    assert all("STAN OPERACYJNY" not in text for _, _, text in window.writes)
 
 
 @pytest.mark.parametrize(

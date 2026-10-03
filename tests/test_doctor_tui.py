@@ -36,3 +36,13 @@ def test_doctor_tui_offers_headless_link_and_local_report() -> None:
     assert 'action == "ZAPISZ"' in view
     assert "prepared.url" in view
     assert "write_public_report" in view
+    assert "_doctor_issue_link_view" in view
+
+
+def test_doctor_link_view_isolated_from_two_column_message_panel() -> None:
+    view = inspect.getsource(CursesApp._doctor_issue_link_view)
+
+    assert "_draw_message_view_48" not in view
+    assert "STAN OPERACYJNY" not in view
+    assert 'ord("c")' in view
+    assert "_copy_to_terminal_clipboard" in view
